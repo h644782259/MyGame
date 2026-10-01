@@ -30,14 +30,22 @@ namespace Emberfall
             RestoreEnergy(deltaTime * EnergyPerSecond);
         }
 
-        public bool TryConsume(int skill, int rank)
+        public bool TryConsume(int skill, int rank, float cooldownMultiplier = 1f)
         {
             if (skill < 0 || skill >= cooldowns.Length || GameBalance.IsPassive(skill) || rank < 1 || rank > 3 || cooldowns[skill] > 0) return false;
             float cost = GameBalance.SkillEnergyCost(HeroClass, skill);
             if (Energy < cost) return false;
             Energy -= cost;
-            cooldowns[skill] = GameBalance.EffectiveCooldown(HeroClass, skill, rank);
+            cooldowns[skill] = ModifiedCooldown(GameBalance.EffectiveCooldown(HeroClass, skill, rank), cooldownMultiplier);
             return true;
+        }
+
+        public static float ModifiedCooldown(float baseSeconds, float multiplier)
+        {
+            if (float.IsNaN(baseSeconds) || float.IsInfinity(baseSeconds) || baseSeconds <= 0) return 1f;
+            if (float.IsNaN(multiplier) || float.IsInfinity(multiplier)) multiplier = 1f;
+            // Run bonuses never compound an existing timer or create zero cooldown.
+            return Math.Max(1f, baseSeconds * Math.Max(.7f, Math.Min(1f, multiplier)));
         }
 
         public void RestoreEnergy(float amount)
@@ -51,6 +59,8 @@ namespace Emberfall
             if (seconds <= 0 || float.IsNaN(seconds) || float.IsInfinity(seconds)) return;
             for (int i = 0; i < cooldowns.Length; i++) cooldowns[i] = Math.Max(0, cooldowns[i] - seconds);
         }
+
+        public void ResetCooldowns() { Array.Clear(cooldowns, 0, cooldowns.Length); }
 
         public void FillEnergy() { Energy = MaximumEnergy; }
     }

@@ -1,0 +1,224 @@
+using UnityEngine;
+namespace Emberfall
+{
+    public sealed partial class GameUI
+    {
+        private int mobileFashionSlot;
+        private Vector2 mobileFashionScroll, mobileChestScroll;
+        private string mobileChestError, mobileChestOdds;
+        private string mobileFashionStatus, mobileFashionProfile;
+        private bool mobileFashionFailed;
+        private PlayerController mobileFashionStatusOwner;
+
+        private void DrawMobileFashion()
+        {
+            var progression = session.Progression; var profile = progression.Profile;
+            if (mobileFashionProfile != progression.CurrentSlotId || mobileFashionStatusOwner != session.Player)
+            {
+                mobileFashionProfile = progression.CurrentSlotId; mobileFashionStatusOwner = session.Player;
+                mobileFashionStatus = null; mobileFashionScroll = Vector2.zero;
+            }
+            var layout = MobilePanelGeometry();
+            if (DrawMobilePanelChrome(layout, "时装收藏", "星纹 " + profile.fashionThreads + "  ·  外观自由穿戴，属性取最高收藏")) return;
+            string[] names = { "翅膀", "武器外观" };
+            for (int i = 0; i < names.Length; i++)
+                if (Button(MobilePanelRect(layout.Tab(i, 2)), names[i], mobileFashionSlot == i ? gold : jade))
+                { mobileFashionSlot = i; mobileFashionScroll = Vector2.zero; BlockUITransition(); return; }
+            FashionSlot slot = (FashionSlot)mobileFashionSlot;
+            FashionData worn = progression.EquippedFashion(slot), strongest = progression.StrongestFashion(slot);
+            float width = layout.TabbedBody.Width - 18, textWidth = width - 154;
+            string summary = "穿戴中：" + (worn == null ? "无" : worn.name) + "\n收藏属性：" + (strongest == null ? "无" : GameBalance.RarityName(strongest.rarity) + " · " + ProgressionService.FashionBonus(slot, strongest.rarity));
+            float summaryHeight = Mathf.Max(64, 16 + MeasureMobileParagraph(summary, textWidth, 14));
+            string status = string.IsNullOrEmpty(mobileFashionStatus) ? progression.LastError : mobileFashionStatus;
+            float statusHeight = string.IsNullOrEmpty(status) ? 0 : MeasureMobileParagraph(status, width - 16, 14, true) + 12;
+            float total = statusHeight + summaryHeight + 16;
+            for (int rank = 0; rank < 4; rank++) total += MobileFashionRowHeight(slot, (Rarity)rank, textWidth) + 8;
+            string rules = "每次开箱积累星纹；重复收藏额外增加。" + ProgressionService.FashionChoiceCost + " 星纹可在营地兑换缺少的传说部位。";
+            total += 8 + MeasureMobileParagraph(rules, width - 16, 14) + 12;
+            mobileFashionScroll = BeginTouchScroll("mobile-fashion-collection", MobilePanelRect(layout.TabbedBody), mobileFashionScroll,
+                new Rect(0, 0, width * TouchRatio, Mathf.Max(layout.TabbedBody.Height, total) * TouchRatio));
+            if (statusHeight > 0) DrawMobileParagraph(8, 0, width - 16, status, 14,
+                mobileFashionFailed || string.IsNullOrEmpty(mobileFashionStatus) ? gold : jade, true);
+            Fill(TouchRect(0, statusHeight, width, summaryHeight), card);
+            DrawMobileParagraph(8, statusHeight + 8, textWidth, summary, 14, pale);
+            bool unequip = Button(TouchRect(width - 136, statusHeight + 8, 128, 48), "卸下外观", jade, worn != null);
+            float y = statusHeight + summaryHeight + 12; string chosenId = null;
+            for (int rank = 0; rank < 4; rank++)
+            {
+                Rarity rarity = (Rarity)rank;
+                string id = "fashion-" + mobileFashionSlot + "-" + rank;
+                FashionData owned = profile.fashions.Find(value => value != null && value.id == id);
+                bool current = worn != null && worn.id == id;
+                float rowHeight = MobileFashionRowHeight(slot, rarity, textWidth);
+                Color accent = GameBalance.RarityColor(rarity);
+                Fill(TouchRect(0, y, width, rowHeight), card); Fill(TouchRect(0, y, 3, rowHeight), accent);
+                float at = y + 8;
+                at += DrawMobileParagraph(10, at, textWidth, ProgressionService.FashionName(slot, rarity), 16, accent, true);
+                at += DrawMobileParagraph(10, at, textWidth, GameBalance.RarityName(rarity) + " · " + ProgressionService.FashionBonus(slot, rarity), 14, pale);
+                DrawMobileParagraph(10, at, textWidth, owned == null ? "未收藏 · 来自通关宝箱" : "已收藏 · 无等级要求", 14, owned == null ? muted : jade);
+                if (Button(TouchRect(width - 136, y + (rowHeight - 48) * .5f, 128, 48), current ? "穿戴中" : owned == null ? "未解锁" : "穿戴", accent, owned != null && !current)) chosenId = id;
+                y += rowHeight + 8;
+            }
+            y += DrawMobileParagraph(8, y + 4, width - 16, rules, 14, muted) + 8;
+            EndTouchScroll();
+            if (unequip) { MobileFashionResult(progression.UnequipFashion(slot), "已卸下外观，收藏属性保留"); BlockUITransition(); return; }
+            if (chosenId != null) { MobileFashionResult(progression.EquipFashion(chosenId), "外观已穿戴"); BlockUITransition(); return; }
+            if (Button(MobilePanelRect(layout.FooterButton(0, 2)), "返回行囊", jade)) { panel = Panel.Inventory; BlockUITransition(); return; }
+            bool ownedLegendary = profile.fashions.Exists(value => value != null && value.slot == slot && value.rarity == Rarity.Legendary);
+            string exchange = ownedLegendary ? "传说已收藏" : !session.IsInCamp ? "回营地兑换传说" : ProgressionService.FashionChoiceCost + " 星纹 · 兑换传说";
+            if (Button(MobilePanelRect(layout.FooterButton(1, 2)), exchange, gold, session.IsInCamp && !ownedLegendary && profile.fashionThreads >= ProgressionService.FashionChoiceCost))
+            { MobileFashionResult(progression.ChooseLegendaryFashion(slot, session.IsInCamp), "传说收藏已解锁"); BlockUITransition(); }
+        }
+
+        private void MobileFashionResult(bool accepted, string message)
+        {
+            mobileFashionFailed = !accepted;
+            mobileFashionStatus = accepted ? message : string.IsNullOrEmpty(session.Progression.LastError) ? "操作未保存，请重试。" : session.Progression.LastError;
+            if (!accepted) { CancelMobileScroll(); mobileFashionScroll = Vector2.zero; }
+            Feedback(accepted, mobileFashionStatus);
+        }
+
+        private float MobileFashionRowHeight(FashionSlot slot, Rarity rarity, float width)
+        {
+            return Mathf.Max(80, 16 + MeasureMobileParagraph(ProgressionService.FashionName(slot, rarity), width, 16, true) +
+                MeasureMobileParagraph(GameBalance.RarityName(rarity) + " · " + ProgressionService.FashionBonus(slot, rarity), width, 14) +
+                MeasureMobileParagraph("未收藏 · 来自通关宝箱", width, 14));
+        }
+
+        private void DrawMobileChests()
+        {
+            var progression = session.Progression;
+            var savedReward = progression.LastChestReward;
+            // Switching profiles or reloading a persisted receipt must restore the
+            // saved result, never replay the random grant or keep another slot's UI.
+            if (progression.Profile.pendingChestReveal && savedReward != null && chestReceiptId != savedReward.Id)
+            { ResetChestReveal(); mobileChestError = null; mobileChestScroll = Vector2.zero; }
+            if (!progression.Profile.pendingChestReveal && chestRevealResult != null)
+            { ResetChestReveal(); mobileChestError = null; mobileChestScroll = Vector2.zero; }
+            bool revealed = chestRevealResult != null && progression.Profile.pendingChestReveal;
+            bool complete = revealed && ChestAnimationDone;
+            var reward = revealed ? savedReward : null;
+            Color accent = reward != null && reward.Rarity.HasValue ? GameBalance.RarityColor(reward.Rarity.Value) : gold;
+            if (revealed && complete && !rewardSoundPlayed)
+            {
+                rewardSoundPlayed = true;
+                GameAudio.Play(reward == null || !reward.Rarity.HasValue ? SoundCue.UI : reward.Rarity.Value == Rarity.Legendary ? SoundCue.Victory : reward.Rarity.Value == Rarity.Epic ? SoundCue.LevelUp : reward.Rarity.Value == Rarity.Rare ? SoundCue.Loot : SoundCue.Cast);
+            }
+            var layout = MobilePanelGeometry();
+            string title = chestDetails ? "奖励规则" : revealed ? complete ? "星光已归你所有" : "封印正在苏醒" : "遗迹馈赠";
+            string subtitle = chestDetails ? "三份宝箱机会相同" : revealed ? "其余宝箱已封存" : "选一个开启 · 开启后其余关闭";
+            if (DrawMobilePanelChrome(layout, title, subtitle, true, true)) return;
+            if (chestDetails) DrawMobileChestDetails(layout);
+            else if (revealed) DrawMobileChestResult(layout, reward, accent, complete);
+            else if (DrawMobileChestChoices(layout)) return;
+
+            if (Button(MobilePanelRect(layout.FooterButton(0, 2)), chestDetails ? "返回宝箱" : "概率 / 规则", jade))
+            { chestDetails = !chestDetails; mobileChestScroll = Vector2.zero; BlockUITransition(); return; }
+            if (Button(MobilePanelRect(layout.FooterButton(1, 2)), revealed ? complete ? "收下" : "跳过动画" : "仅选一份", gold, revealed && !chestDetails, null, true))
+            {
+                if (!complete) chestRevealedAt = Time.unscaledTime - ChestDuration;
+                else
+                {
+                    FinishChestReveal();
+                    mobileChestError = panel == Panel.Chests ? progression.LastError : null;
+                    if (panel == Panel.Chests) { CancelMobileScroll(); mobileChestScroll = Vector2.zero; }
+                }
+                BlockUITransition();
+            }
+        }
+
+        private bool DrawMobileChestChoices(MobilePanelLayout layout)
+        {
+            float width = layout.Body.Width - 18;
+            float errorHeight = string.IsNullOrEmpty(mobileChestError) ? 0 : MeasureMobileParagraph(mobileChestError, width - 16, 14) + 12;
+            mobileChestScroll = BeginTouchScroll("mobile-chest-choice", MobilePanelRect(layout.Body), mobileChestScroll,
+                new Rect(0, 0, width * TouchRatio, Mathf.Max(layout.Body.Height, errorHeight + MobileCollectionLayout.ChestHeight + 8) * TouchRatio));
+            if (errorHeight > 0) DrawMobileParagraph(8, 0, width - 16, mobileChestError, 14, new Color(1, .55f, .45f));
+            int choice = -1;
+            for (int i = 0; i < 3; i++)
+            {
+                var tile = MobileCollectionLayout.ChestCard(width, i);
+                Rect cardRect = TouchRect(tile.X, tile.Y + errorHeight, tile.Width, tile.Height);
+                Fill(cardRect, new Color(.055f, .08f, .11f)); Border(cardRect, new Color(.36f, .48f, .53f));
+                Text(TouchRect(tile.X + 10, errorHeight + 7, tile.Width - 20, 20), i == 0 ? "I" : i == 1 ? "II" : "III", TouchFont(14), muted);
+                DrawRewardChest(TouchRect(tile.X + 8, errorHeight + 19, tile.Width - 16, 100), false, 1, 0);
+                var action = MobileCollectionLayout.ChestAction(width, i);
+                if (Button(TouchRect(action.X, action.Y + errorHeight, action.Width, action.Height), "开启", gold,
+                    !chestOpening && session.Progression.Profile.pendingFashionChest && !session.Progression.Profile.pendingChestReveal)) choice = i;
+            }
+            EndTouchScroll();
+            if (choice < 0) return false;
+            chestOpening = true;
+            string result = session.Progression.OpenDungeonChest(choice);
+            if (result == null)
+            {
+                chestOpening = false;
+                mobileChestError = string.IsNullOrEmpty(session.Progression.LastError) ? "暂时无法开启，请重试" : session.Progression.LastError;
+                mobileChestScroll = Vector2.zero; Feedback(false, "宝箱暂时无法开启");
+            }
+            else
+            {
+                revealedChest = choice; chestRevealResult = result; chestRevealedAt = Time.unscaledTime;
+                chestDetails = false; rewardSoundPlayed = false; chestReceiptId = session.Progression.LastChestReward.Id;
+                mobileChestError = null; mobileChestScroll = Vector2.zero; GameAudio.Play(SoundCue.Cast);
+            }
+            BlockUITransition(); return true;
+        }
+
+        private void DrawMobileChestResult(MobilePanelLayout layout, ChestReward reward, Color accent, bool complete)
+        {
+            float progress = Mathf.Clamp01((Time.unscaledTime - chestRevealedAt) / ChestDuration);
+            var art = layout.BodyLeft;
+            Fill(MobilePanelRect(art), new Color(.055f, .08f, .11f)); Border(MobilePanelRect(art), accent);
+            DrawRewardChest(TouchRect(art.X + 8, art.Y + 8, art.Width - 16, art.Height - 16), true, 1, progress);
+            if (progress > .35f)
+            {
+                Rect clip = TouchRect(art.X + 8, art.Y + 8, art.Width - 16, art.Height - 16);
+                GUI.BeginGroup(clip);
+                DrawRewardRadiance(new Rect(0, 0, clip.width, clip.height), accent, progress);
+                GUI.EndGroup();
+            }
+            string result = !complete || reward == null ? "开启中…" :
+                (reward.Rarity.HasValue ? GameBalance.RarityName(reward.Rarity.Value) + " · " + reward.Name + (reward.Duplicate ? "\n重复收藏已转金币" : "\n新外观已收藏") + "\n\n" : "") +
+                "+" + reward.Gold + " 金币\n星纹 " + session.Progression.Profile.fashionThreads;
+            var viewport = layout.BodyRight;
+            float width = viewport.Width - 34;
+            string error = string.IsNullOrEmpty(mobileChestError) ? session.Progression.LastError : mobileChestError;
+            float total = 24 + MeasureMobileParagraph(result, width, 18, true) + MeasureMobileParagraph(error, width, 14);
+            mobileChestScroll = BeginTouchScroll("mobile-chest-result", MobilePanelRect(viewport), mobileChestScroll,
+                new Rect(0, 0, (width + 16) * TouchRatio, Mathf.Max(viewport.Height, total) * TouchRatio));
+            float y = 8;
+            if (!string.IsNullOrEmpty(error)) y += DrawMobileParagraph(8, y, width, error, 14, new Color(1, .55f, .45f)) + 8;
+            DrawMobileParagraph(8, y, width, result, 18, accent, true);
+            EndTouchScroll();
+        }
+
+        private void DrawMobileChestDetails(MobilePanelLayout layout)
+        {
+            int minimum = TierRewardRules.ChestGoldMinimum(session.Progression.Profile.pendingChestTier);
+            string details = "每次只开启一份，三份机会完全相同。\n\n" +
+                "金币 " + minimum + "～" + (minimum + 40) + "，另有机会获得时装。\n" + MobileChestOddsText + "\n\n" +
+                "以上为每次开启的绝对概率。重复时装转金币并额外增加星纹，每次开启均增加星纹。\n\n" +
+                "未开启的宝箱随角色存档保留。奖励先保存再展示；跳过动画不会重新抽取。";
+            float width = layout.Body.Width - 34;
+            float total = MeasureMobileParagraph(details, width, 15) + 24;
+            mobileChestScroll = BeginTouchScroll("mobile-chest-details", MobilePanelRect(layout.Body), mobileChestScroll,
+                new Rect(0, 0, (width + 16) * TouchRatio, Mathf.Max(layout.Body.Height, total) * TouchRatio));
+            DrawMobileParagraph(8, 8, width, details, 15, pale);
+            EndTouchScroll();
+        }
+
+        private string MobileChestOddsText
+        {
+            get
+            {
+                if (mobileChestOdds != null) return mobileChestOdds;
+                // Read the deterministic production table, never roll a reward.
+                int[] counts = new int[4]; int empty = 0;
+                for (int roll = 0; roll < 100; roll++) { Rarity? rarity = ProgressionService.RollFashionRarity(roll); if (rarity.HasValue) counts[(int)rarity.Value]++; else empty++; }
+                mobileChestOdds = "普通 " + counts[0] + "% · 稀有 " + counts[1] + "%\n史诗 " + counts[2] + "% · 传说 " + counts[3] + "% · 无时装 " + empty + "%";
+                return mobileChestOdds;
+            }
+        }
+    }
+}

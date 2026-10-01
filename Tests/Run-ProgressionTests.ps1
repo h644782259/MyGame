@@ -8,6 +8,10 @@ try {
         (Join-Path $projectDirectory 'Assets/Scripts/Core/GameTypes.cs'),
         (Join-Path $projectDirectory 'Assets/Scripts/Core/ProgressionService.cs'),
         (Join-Path $projectDirectory 'Assets/Scripts/Core/CombatBalance.cs'),
+        (Join-Path $projectDirectory 'Assets/Scripts/Core/HubTravelRules.cs'),
+        (Join-Path $projectDirectory 'Assets/Scripts/Core/MasteryCoreRuntime.cs'),
+        (Join-Path $projectDirectory 'Assets/Scripts/Core/TierRewardRules.cs'),
+        (Join-Path $projectDirectory 'Assets/Scripts/Core/TierRewardBand.cs'),
         (Join-Path $PSScriptRoot 'ProgressionTests.cs')
     )
     [ProgressionTests]::Run($testDirectory)

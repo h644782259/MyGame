@@ -6,7 +6,20 @@ namespace Emberfall
     // Each model owns its palette. Materials are reused across all of its parts.
     public sealed class CombatModel : MonoBehaviour
     {
-        private readonly Dictionary<Color, Material> palette = new Dictionary<Color, Material>();
+        private struct SurfaceKey
+        {
+            public Color Color;
+            public VisualSurface Surface;
+            public SurfaceKey(Color color, VisualSurface surface) { Color = color; Surface = surface; }
+        }
+        private readonly Dictionary<SurfaceKey, Material> palette = new Dictionary<SurfaceKey, Material>();
+        private TailoredCloth tailoredCloth;
+        private LargeBossRig largeBossRig;
+        private bool articulatedEnemy, quadruped;
+        private Transform tailRig;
+        private readonly Transform[] paws = new Transform[4];
+        private Vector3[] pawOrigins;
+        private float smoothedSpeed, enemyPose;
         private Transform leftLeg, rightLeg, leftArm, rightArm, body, decoration;
         private Transform spine, pelvis, headRig, leftElbow, rightElbow, leftKnee, rightKnee, cloak;
         private Transform swordRig, staffRig, bowRig, arrowRig, castingOrb;
@@ -73,15 +86,15 @@ namespace Emberfall
                 foreach (var pair in palette)
                     if (pair.Value != null)
                     {
-                        Color color = pair.Key;
+                        Color color = pair.Key.Color;
                         color.a = deathOpacity;
                         pair.Value.color = color;
                     }
                 return;
             }
-            float flash = Mathf.Clamp01(1f - (Time.time - recoilStarted) / .11f) * .52f;
+            float flash = Mathf.Clamp01(1f - (Time.time - recoilStarted) / .11f) * .35f * EffectPreferences.EffectsScale;
             foreach (var pair in palette)
-                if (pair.Value != null) pair.Value.color = Color.Lerp(pair.Key, new Color(1f, .92f, .73f), flash);
+                if (pair.Value != null) pair.Value.color = Color.Lerp(pair.Key.Color, new Color(1f, .92f, .73f), flash);
         }
 
         public static CombatModel Hero(Transform parent, HeroClass hero)
@@ -215,8 +228,9 @@ namespace Emberfall
 
         private void GlowingPart(string name, PrimitiveType shape, Vector3 at, Vector3 size, Color color, Transform parent)
         {
-            Part(name, shape, at, size, color, parent);
-            Material material = Mat(color);
+            Transform part = Part(name, shape, at, size, color, parent);
+            Material material = Mat(color, VisualSurface.Crystal);
+            if (part != null) part.GetComponent<Renderer>().sharedMaterial = material;
             material.EnableKeyword("_EMISSION");
             material.SetColor("_EmissionColor", color * .7f);
         }
@@ -396,6 +410,15 @@ namespace Emberfall
         {
             CombatModel model = Create(parent);
             model.BuildEnemy(kind, boss);
+            model.EnhanceEnemy(kind, boss);
+            return model;
+        }
+
+        internal static CombatModel LargeExpedition(Transform parent)
+        {
+            CombatModel model = Create(parent);
+            model.largeBossRig = model.gameObject.AddComponent<LargeBossRig>();
+            model.largeBossRig.Build((color, surface) => model.Mat(color, surface));
             return model;
         }
 
@@ -429,10 +452,16 @@ namespace Emberfall
                     model.Part("Ear", PrimitiveType.Cube, new Vector3(sign*.17f,1.2f,.5f), new Vector3(.1f,.32f,.19f), fur).localRotation=Quaternion.Euler(-15,0,sign*15);
                     model.Part("Luminous eye", PrimitiveType.Sphere, new Vector3(sign*.22f,.96f,.72f), Vector3.one*.09f, new Color(.75f,1f,.6f));
                 }
-                model.leftLeg = model.Joint("Wolf left gait", Vector3.zero);
-                model.rightLeg = model.Joint("Wolf right gait", Vector3.zero);
-                for (int i=0;i<4;i++) model.Part("Paw",PrimitiveType.Capsule,new Vector3(i%2==0?-.22f:.22f,.29f,i<2?.4f:-.4f),new Vector3(.15f,.3f,.2f),fur,i%2==0?model.leftLeg:model.rightLeg);
-                model.Part("Tail",PrimitiveType.Capsule,new Vector3(0,.75f,-.72f),new Vector3(.18f,.4f,.19f),fur).localRotation=Quaternion.Euler(-45,0,0);
+                model.quadruped = true;
+                model.pawOrigins = new Vector3[4];
+                for (int i = 0; i < 4; i++)
+                {
+                    model.pawOrigins[i] = new Vector3(i % 2 == 0 ? -.22f : .22f, .47f, i < 2 ? .4f : -.4f);
+                    model.paws[i] = model.Joint("Wolf articulated leg", model.pawOrigins[i]);
+                    model.Part("Paw", PrimitiveType.Capsule, new Vector3(0,-.18f,.035f), new Vector3(.15f,.24f,.2f), fur, model.paws[i]);
+                }
+                model.tailRig = model.Joint("Wolf tail base", new Vector3(0,.75f,-.5f));
+                model.Part("Tail",PrimitiveType.Capsule,new Vector3(0,0,-.22f),new Vector3(.18f,.4f,.19f),fur,model.tailRig).localRotation=Quaternion.Euler(-60,0,0);
             }
             return model;
         }
@@ -462,27 +491,25 @@ namespace Emberfall
             return model;
         }
 
-        private Material Mat(Color color)
+        private Material Mat(Color color, VisualSurface surface = VisualSurface.Cloth)
         {
             Material material;
-            if (palette.TryGetValue(color, out material)) return material;
-            material = new Material(Shader.Find("Standard"));
-            material.color = color;
-            material.SetFloat("_Glossiness", .28f);
-            palette.Add(color, material);
+            SurfaceKey key = new SurfaceKey(color, surface);
+            if (palette.TryGetValue(key, out material)) return material;
+            Shader shader = Shader.Find("Standard");
+            if (shader == null) shader = Shader.Find("Sprites/Default");
+            material = new Material(shader) { color = color };
+            ProceduralVisuals.ApplySurface(material, surface);
+            palette.Add(key, material);
             return material;
         }
 
         private Transform Part(string name, PrimitiveType shape, Vector3 position, Vector3 size, Color color, Transform parent = null)
         {
-            GameObject obj = GameObject.CreatePrimitive(shape);
-            obj.name = name;
+            GameObject obj = ProceduralVisuals.Create(name, shape, Mat(color, ProceduralVisuals.SurfaceFor(name)));
             obj.transform.SetParent(parent == null ? transform : parent, false);
             obj.transform.localPosition = position;
             obj.transform.localScale = size;
-            Collider collider = obj.GetComponent<Collider>();
-            if (collider != null) Destroy(collider);
-            obj.GetComponent<Renderer>().sharedMaterial = Mat(color);
             return obj.transform;
         }
 
@@ -526,19 +553,8 @@ namespace Emberfall
             obj.transform.SetParent(transform, false);
             obj.transform.localPosition = new Vector3(0, 1.66f, -.23f);
             cloak = obj.transform;
-            Mesh mesh = new Mesh();
-            mesh.name = "Cloak Mesh";
-            mesh.vertices = new[] {
-                new Vector3(-.32f,0,0), new Vector3(.32f,0,0),
-                new Vector3(-.51f,-1.24f,-.22f), new Vector3(.51f,-1.24f,-.22f),
-                new Vector3(-.32f,0,-.07f), new Vector3(.32f,0,-.07f),
-                new Vector3(-.51f,-1.24f,-.29f), new Vector3(.51f,-1.24f,-.29f)
-            };
-            mesh.triangles = new[] { 0,2,1,1,2,3,4,5,6,5,7,6,0,4,2,4,6,2,1,3,5,5,3,7,2,6,3,3,6,7,0,1,4,1,5,4 };
-            mesh.RecalculateNormals();
-            obj.AddComponent<MeshFilter>().sharedMesh = mesh;
-            obj.AddComponent<MeshRenderer>().sharedMaterial = Mat(color);
-            obj.AddComponent<OwnedCombatMesh>().Value = mesh;
+            tailoredCloth = obj.AddComponent<TailoredCloth>();
+            tailoredCloth.Initialize(Mat(color, VisualSurface.Cloth));
         }
 
         private void BuildHero(HeroClass hero)
@@ -634,9 +650,9 @@ namespace Emberfall
             {
                 RemovePart(transform.Find("Wizard Hat"));
                 Tapered("Pointed Wizard Hat", transform, new Vector3(0, 2.24f, -.02f),
-                    .29f, .018f, .62f, new Vector3(-.14f, 0, -.11f), accent * .48f, 7);
+                    .29f, .018f, .62f, new Vector3(-.14f, 0, -.11f), accent * .48f, 18);
                 Tapered("Layered Robe", transform, new Vector3(0, .4f, 0), .49f, .31f, .62f,
-                    Vector3.zero, accent * .68f, 10);
+                    Vector3.zero, accent * .68f, 20);
                 for (int i = -1; i <= 1; i += 2)
                 {
                     Transform stole = Part("Embroidered Stole", PrimitiveType.Cube, new Vector3(i * .22f, 1.3f, .246f),
@@ -795,7 +811,7 @@ namespace Emberfall
             mesh.RecalculateNormals();
             mesh.RecalculateBounds();
             part.gameObject.AddComponent<MeshFilter>().sharedMesh = mesh;
-            part.gameObject.AddComponent<MeshRenderer>().sharedMaterial = Mat(color);
+            part.gameObject.AddComponent<MeshRenderer>().sharedMaterial = Mat(color, ProceduralVisuals.SurfaceFor(name));
             part.gameObject.AddComponent<OwnedCombatMesh>().Value = mesh;
             return part;
         }
@@ -862,7 +878,9 @@ namespace Emberfall
         private void AnimateHero(float speed, float attack, bool hurt)
         {
             float dt = Time.deltaTime;
-            speed = Mathf.Clamp01(speed);
+            smoothedSpeed = Mathf.Lerp(smoothedSpeed, Mathf.Clamp01(speed), 1f - Mathf.Exp(-dt * 12f));
+            speed = smoothedSpeed;
+            if (tailoredCloth != null) tailoredCloth.SetMotion(speed, actionDuration > 0 && actionAge < actionDuration ? 1 : 0);
             gaitPhase += dt * (speed > .03f ? 10.5f : 2f);
             if (actionDuration > 0) actionAge = Mathf.Min(actionAge + dt, actionDuration);
             float t = actionDuration > 0 ? actionAge / actionDuration : 1f;
@@ -870,7 +888,8 @@ namespace Emberfall
             float stride = Mathf.Sin(gaitPhase) * speed;
             float lift = Mathf.Abs(Mathf.Sin(gaitPhase));
             float breathing = Mathf.Sin(Time.time * 2f + phase);
-            transform.localPosition = Vector3.up * (lift * .035f * speed);
+            float landing = Mathf.Pow(lift, 2f);
+            transform.localPosition = Vector3.up * (landing * .032f * speed);
             pelvis.localPosition = new Vector3(stride * .024f, .83f, 0);
             pelvis.localRotation = Quaternion.Euler(0, stride * -4f, stride * 2f);
             leftLeg.localRotation = Quaternion.Euler(stride * 30f, 0, -2f);
@@ -1046,29 +1065,118 @@ namespace Emberfall
             }
         }
 
-        public void Animate(float speed, float attack, bool hurt)
+        private void EnhanceEnemy(EnemyKind kind, bool boss)
         {
-            if (isHero) { AnimateHero(speed, attack, hurt); return; }
-            float walk=Mathf.Sin(Time.time*11f+phase)*Mathf.Min(speed,1f)*27f;
-            if(slime)
+            if (kind == EnemyKind.Slime)
             {
-                float bounce=Mathf.Sin(Time.time*(speed>.1f?9f:3f)+phase);
-                body.localScale=new Vector3(1.16f-bounce*.06f,.98f+bounce*.08f,1.03f-bounce*.06f);
-                transform.localPosition=new Vector3(0,Mathf.Max(0,bounce)*.11f,0);
+                Part("Slime soft highlight", PrimitiveType.Sphere, new Vector3(-.23f,.84f,.29f),
+                    new Vector3(.2f,.09f,.1f), new Color(.79f,.95f,.59f));
+                return;
             }
-            else if(floating)
+            if (kind == EnemyKind.Wisp)
             {
-                transform.localPosition=Vector3.up*(Mathf.Sin(Time.time*3f+phase)*.15f);
+                for (int side = -1; side <= 1; side += 2)
+                    Tapered("Spirit swept horn", transform, new Vector3(side*.31f,1.7f,0), .11f,.012f,.4f,
+                        new Vector3(side*.2f,0,-.12f), new Color(.74f,.64f,1f), 12);
+                return;
+            }
+            bool guardian = kind == EnemyKind.Guardian;
+            Color metal = guardian ? new Color(.38f,.43f,.53f) : new Color(.38f,.28f,.19f);
+            if (guardian)
+            {
+                // A heavy chest shell and broad stepped shoulders read at gameplay zoom.
+                Part("Guardian chest plate", PrimitiveType.Cube, new Vector3(0,1.35f,.35f),
+                    new Vector3(.99f,.56f,.22f), metal);
+                Part("Guardian ember crystal", PrimitiveType.Sphere, new Vector3(0,1.43f,.49f),
+                    new Vector3(.18f,.26f,.08f), new Color(1f,.38f,.18f));
+                for (int side = -1; side <= 1; side += 2)
+                {
+                    Transform shoulder = side < 0 ? leftArm : rightArm;
+                    Part("Guardian layered pauldron", PrimitiveType.Cube, new Vector3(side*.1f,.08f,0),
+                        new Vector3(.56f,.23f,.58f), metal, shoulder).localRotation = Quaternion.Euler(0,0,side*12f);
+                    if (boss) Tapered("Guardian crown spike", transform, new Vector3(side*.28f,2.24f,0),
+                        .085f,.008f,.35f,new Vector3(side*.09f,0,-.04f),new Color(.84f,.64f,.37f),12);
+                }
             }
             else
             {
-                if(leftLeg!=null) leftLeg.localRotation=Quaternion.Euler(walk,0,0);
-                if(rightLeg!=null) rightLeg.localRotation=Quaternion.Euler(-walk,0,0);
-                if(leftArm!=null) leftArm.localRotation=Quaternion.Euler(-walk*.6f,0,-8f);
-                if(rightArm!=null) rightArm.localRotation=Quaternion.Euler(attack>0?-75f+attack*160f:walk*.6f,attack>0?-40f:0,8f);
-                transform.localPosition=Vector3.up*(Mathf.Abs(Mathf.Sin(Time.time*11f+phase))*.035f*Mathf.Min(speed,1f));
+                Part("Goblin brow left", PrimitiveType.Capsule, new Vector3(-.12f,2.075f,.23f),
+                    new Vector3(.055f,.1f,.045f), new Color(.24f,.36f,.16f)).localRotation = Quaternion.Euler(0,0,60f);
+                Part("Goblin brow right", PrimitiveType.Capsule, new Vector3(.12f,2.075f,.23f),
+                    new Vector3(.055f,.1f,.045f), new Color(.24f,.36f,.16f)).localRotation = Quaternion.Euler(0,0,-60f);
+                Part("Goblin nose", PrimitiveType.Sphere, new Vector3(0,1.98f,.28f),new Vector3(.13f,.14f,.17f),new Color(.42f,.59f,.25f));
             }
-            if(decoration!=null) decoration.Rotate(0,Time.deltaTime*80f,0,Space.Self);
+            spine = Joint("Enemy spine", new Vector3(0,1.12f,0));
+            pelvis = Joint("Enemy pelvis", new Vector3(0,.83f,0));
+            var parts = new List<Transform>();
+            foreach (Transform part in transform) if (part != spine && part != pelvis) parts.Add(part);
+            foreach (Transform part in parts) part.SetParent(part == leftLeg || part == rightLeg ? pelvis : spine, true);
+            headRig = NewJoint("Enemy neck", spine, new Vector3(0,.68f,0));
+            foreach (Transform part in parts)
+                if (part.name == "Head" || part.name.StartsWith("Eyes") || part.name.Contains("Crown") ||
+                    part.name.Contains("crown spike") || part.name.Contains("Horn") || part.name.Contains("Ear") ||
+                    part.name.Contains("brow") || part.name.Contains("nose") || part.name.Contains("Cap")) part.SetParent(headRig,true);
+            leftElbow = ArticulateArm(leftArm,metal); rightElbow = ArticulateArm(rightArm,metal);
+            leftKnee = ArticulateLeg(leftLeg,metal); rightKnee = ArticulateLeg(rightLeg,metal);
+            articulatedEnemy = true;
+        }
+
+        public void Animate(float speed, float attack, bool hurt)
+        {
+            if (isHero) { AnimateHero(speed, attack, hurt); return; }
+            if (largeBossRig != null) { transform.localPosition = Vector3.zero; largeBossRig.Animate(speed, attack); ApplyRecoil(); return; }
+            float dt = Time.deltaTime;
+            smoothedSpeed = Mathf.Lerp(smoothedSpeed, Mathf.Clamp01(speed), 1f-Mathf.Exp(-dt*10f));
+            gaitPhase += dt * Mathf.Lerp(2.2f,10.2f,smoothedSpeed);
+            float stride = Mathf.Sin(gaitPhase), walk = stride * smoothedSpeed * 27f;
+            if (slime)
+            {
+                float bounce = Mathf.Sin(gaitPhase + phase);
+                float squash = bounce * (.035f + smoothedSpeed*.055f) - attack*.055f;
+                body.localScale = new Vector3(1.16f*(1-squash*.5f),.98f*(1+squash),1.03f*(1-squash*.5f));
+                transform.localPosition = new Vector3(0,Mathf.Max(0,bounce)*(.025f+smoothedSpeed*.09f),0);
+            }
+            else if (floating)
+            {
+                transform.localPosition = Vector3.up*(Mathf.Sin(Time.time*2.5f+phase)*.11f);
+                if (body != null) body.localRotation = Quaternion.Euler(stride*3f,0,Mathf.Sin(Time.time*1.7f+phase)*5f);
+            }
+            else if (quadruped)
+            {
+                for (int i=0;i<4;i++)
+                {
+                    float legPhase = gaitPhase + (i == 0 || i == 3 ? 0 : Mathf.PI);
+                    paws[i].localRotation = Quaternion.Euler(Mathf.Sin(legPhase)*smoothedSpeed*29f,0,0);
+                    paws[i].localPosition = pawOrigins[i] + Vector3.up*Mathf.Max(0,Mathf.Cos(legPhase))*.04f*smoothedSpeed;
+                }
+                if (tailRig != null) tailRig.localRotation = Quaternion.Euler(stride*5f,Mathf.Sin(gaitPhase*.65f)*16f,0);
+                transform.localPosition = Vector3.up*(Mathf.Abs(stride)*.035f*smoothedSpeed);
+            }
+            else
+            {
+                if (leftLeg != null) leftLeg.localRotation=Quaternion.Euler(walk,0,-2f);
+                if (rightLeg != null) rightLeg.localRotation=Quaternion.Euler(-walk,0,2f);
+                if (leftArm != null) leftArm.localRotation=Quaternion.Euler(-walk*.6f,0,-8f);
+                if (articulatedEnemy)
+                {
+                    // Controller supplies .95 while anticipating, then 1 -> 0 at release.
+                    // Smooth transitions do not modify its actual warning or damage timing.
+                    enemyPose = Mathf.Lerp(enemyPose,attack,1f-Mathf.Exp(-dt*24f));
+                    float release = Mathf.Sin(Mathf.Clamp01((.94f-enemyPose)/.7f)*Mathf.PI);
+                    float windup = Mathf.SmoothStep(0,1,Mathf.Clamp01((enemyPose-.4f)/.5f));
+                    spine.localRotation=Quaternion.Euler(smoothedSpeed*6f-windup*12f+release*13f,windup*-18f+release*19f, -stride*2f*smoothedSpeed);
+                    headRig.localRotation=Quaternion.Euler(windup*8f,windup*10f,-stride*1.5f*smoothedSpeed);
+                    pelvis.localRotation=Quaternion.Euler(0,stride*-4f*smoothedSpeed,stride*2f*smoothedSpeed);
+                    rightArm.localRotation=Quaternion.Euler(walk*.5f-windup*133f-release*26f,windup*-12f,12f+windup*23f);
+                    rightElbow.localRotation=Quaternion.Euler(-12f-windup*49f+release*8f,0,0);
+                    leftElbow.localRotation=Quaternion.Euler(-18f-windup*20f,0,0);
+                    leftKnee.localRotation=Quaternion.Euler(Mathf.Max(0,-stride)*smoothedSpeed*35f,0,0);
+                    rightKnee.localRotation=Quaternion.Euler(Mathf.Max(0,stride)*smoothedSpeed*35f,0,0);
+                }
+                else if(rightArm!=null) rightArm.localRotation=Quaternion.Euler(attack>0?-75f+attack*160f:walk*.6f,attack>0?-40f:0,8f);
+                transform.localPosition=Vector3.up*(Mathf.Abs(stride)*.028f*smoothedSpeed);
+            }
+            if(decoration!=null) decoration.Rotate(0,dt*65f,0,Space.Self);
             ApplyRecoil();
             if (enemyOwner != null && enemyOwner.StatusEffects != null)
                 transform.localPosition += Vector3.up * enemyOwner.StatusEffects.AirborneHeight;

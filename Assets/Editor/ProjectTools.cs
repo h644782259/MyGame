@@ -29,7 +29,7 @@ namespace Emberfall.Editor
         {
             PlayerSettings.companyName = "EmberfallStudio";
             PlayerSettings.productName = "Emberfall";
-            PlayerSettings.bundleVersion = "0.3.1";
+            PlayerSettings.bundleVersion = "0.4.0";
             PlayerSettings.defaultScreenWidth = 1600;
             PlayerSettings.defaultScreenHeight = 900;
             PlayerSettings.fullScreenMode = FullScreenMode.Windowed;
@@ -45,6 +45,7 @@ namespace Emberfall.Editor
             QualitySettings.antiAliasing = 4;
             QualitySettings.pixelLightCount = 4;
             IncludeRuntimeShaders();
+            AppIconSetup.Apply();
         }
 
         private static void IncludeRuntimeShaders()

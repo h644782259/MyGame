@@ -56,6 +56,10 @@ namespace Emberfall
         public const float CounterWindow = 2f;
         public const float FocusDuration = 1.8f;
         public const float FocusRange = 14f;
+        public const float BasicPoisonCoefficient=.14f, BasicPoisonDuration=4f, PoisonDetonationTicks=3f;
+        public const float BasicFrostMarkDuration=3f, BasicFrostProcCooldown=1.2f;
+        public static float NovaFreezeDuration(int rank){return 1.5f+Math.Max(1,Math.Min(3,rank))*.25f;}
+
         public static float MeteorDirectMultiplier(ElementalistSpecialization specialization, bool cinderTrail)
         {
             return (specialization == ElementalistSpecialization.Shatter ? .85f : specialization == ElementalistSpecialization.Burn ? .8f : 1f) * (cinderTrail ? .8f : 1f);

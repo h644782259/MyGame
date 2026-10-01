@@ -86,8 +86,8 @@ public static class CombatBalanceTests
         Check(healthRatio>2f&&healthRatio<2.1f,"tier100 versus11 HP is material but bounded");
         Check(damageRatio>2.7f&&damageRatio<2.8f&&damageRatio>healthRatio,"tier threat grows faster than HP");
         Check(Near(CombatBalance.RankPower(1),1)&&Near(CombatBalance.RankPower(3),1.6f),"three existing skill ranks retained");
-        Check(Near(CombatBalance.AdvancedSequenceMultiplier,.24f),"large multi-event sequences normalized");
-        Check(Near(46.24f*CombatBalance.AdvancedSequenceMultiplier,11.0976f),"Vanguard rank3 ultimate total envelope, not a single strike");
+        Check(Near(SkillDamageBudgets.AdvancedScale(HeroClass.Vanguard,9),.24f),"ultimate keeps its per-skill bounded envelope");
+        Check(Near(46.24f*SkillDamageBudgets.AdvancedScale(HeroClass.Vanguard,9),11.0976f),"Vanguard rank3 ultimate total envelope, not a single strike");
         Check(11.0976f*2500 < CombatBalance.EnemyHealth(100,1,true,EnemyKind.Guardian),"high-investment reference full ultimate cannot delete a fresh baseline boss");
         BudgetContracts();
         return "PASS: "+assertions+" combat-balance assertions";
@@ -130,7 +130,7 @@ public static class CombatBalanceTests
                 Check(build==0?proxy>30&&proxy<45:build==1?proxy>18&&proxy<30:proxy>10&&proxy<20,"explicit output-rate ruler design band, not measured TTK");
                 double taken=CombatBalance.EnemyDamage(level,1,true)*1.4*CombatBalance.ArmorDamageMultiplier((float)armor,level)/hp;
                 Check(taken>.06&&taken<.30,"baseline boss slam remains relevant without a one-hit kill");
-                if(level>=50)Check(attack*46.24*CombatBalance.AdvancedSequenceMultiplier*1.65<boss*.8,"whole critical Vanguard ultimate leaves follow-up room");
+                if(level>=50)Check(attack*46.24*SkillDamageBudgets.AdvancedScale(HeroClass.Vanguard,9)*1.65<boss*.8,"whole critical Vanguard ultimate leaves follow-up room");
                 if(level==100&&build==2)
                 {
                     double pushSlam=CombatBalance.EnemyDamage(100,100,true)*1.4*CombatBalance.ArmorDamageMultiplier((float)armor,100)/hp;
@@ -143,8 +143,8 @@ public static class CombatBalanceTests
         // external vulnerability, and no perfect-dodge one-shot core bonus.
         const double arcanistHighAttack=2431.05, rangerHighAttack=2020.83;
         double boss100=CombatBalance.EnemyHealth(100,1,true,EnemyKind.Guardian);
-        Check(arcanistHighAttack*47.84*CombatBalance.AdvancedSequenceMultiplier*1.65<boss100*.8,"critical Arcanist upper envelope below80% of fresh baseline boss");
-        Check(rangerHighAttack*58.24*CombatBalance.AdvancedSequenceMultiplier*1.65<boss100*.8,"critical Ranger upper envelope below80% of fresh baseline boss");
+        Check(arcanistHighAttack*47.84*SkillDamageBudgets.AdvancedScale(HeroClass.Arcanist,9)*1.65<boss100*.8,"critical Arcanist upper envelope below80% of fresh baseline boss");
+        Check(rangerHighAttack*58.24*SkillDamageBudgets.AdvancedScale(HeroClass.Ranger,9)*1.65<boss100*.8,"critical Ranger upper envelope below80% of fresh baseline boss");
         // Returning blade trades8% of basic damage for a1.1x secondary hit;
         // this remains a net gain with two targets even before its new counter.
         Check(8*.92+1.10>8,"four two-target basic attacks plus one return exceed baseline");

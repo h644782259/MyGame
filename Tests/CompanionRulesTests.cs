@@ -36,6 +36,31 @@ public static class CompanionRulesTests
         Check(Near(CompanionRules.DamageMultiplier(false), 1f) && Near(CompanionRules.HealthMultiplier(false), 1f), "ordinary gear does not inherit twin multipliers");
         Check(Near(4 * CompanionRules.DamageMultiplier(false), 4f) && Near(2 * CompanionRules.DamageMultiplier(true), 3.2f), "two pets do not accidentally gain four-pet aggregate base DPS");
         Check(CompanionRules.RankPower(0) < CompanionRules.RankPower(1), "starter remains weaker than learned command rank");
+        for (int learned = 0; learned <= 3; learned++)
+        {
+            Check(CompanionRules.EffectiveRank(0, true, true, 3, learned, 3) == learned,
+                "permanent foundation follows its actual learned wolf rank");
+            Check(CompanionRules.EffectiveRank(1, false, true, 3, 3, learned) == learned,
+                "bonded spirit follows downgraded or upgraded learned rank without recast");
+            Check(CompanionRules.EffectiveRank(1, false, false, 2, 3, learned) == 2 &&
+                CompanionRules.EffectiveRank(2, false, false, 2, 3, learned) == 2,
+                "timed spirit/tree preserve their cast rank");
+            foreach (bool empowered in new[] { false, true })
+                Check(Near(CompanionRules.ActiveCommandMultiplier(learned, empowered),
+                    CompanionRules.CommandMultiplier(learned) * (empowered ? CompanionRules.EmpoweredCommandMultiplier : 1)),
+                    "active command changes rank contribution without losing its paid empowerment");
+        }
+        Check(CompanionRules.EffectiveRank(1, false, true, 3, 3, -7) == 0 &&
+            CompanionRules.EffectiveRank(1, false, true, 1, 3, 99) == 3, "effective rank clamps invalid investment");
+        float retainedHealth = 44;
+        for (int repeat = 0; repeat < 32; repeat++)
+        {
+            retainedHealth = CompanionRules.PreserveRecastHealth(retainedHealth, 50);
+            retainedHealth = CompanionRules.PreserveRecastHealth(retainedHealth, 79.2f);
+            Check(retainedHealth == 44, "rank/health-gear toggles and repeated preset refresh never heal a damaged body");
+        }
+        Check(CompanionRules.PreserveRecastHealth(60, 50) == 50 && CompanionRules.PreserveRecastHealth(0, 80) == 0,
+            "lower maximum only clamps excess HP and cannot revive a dead partner");
         for (int rank = 1; rank <= 3; rank++)
         {
             Check(Near(CompanionRules.RankPower(rank), 1 + (rank - 1) * .3f), "three learned ranks retain power scaling " + rank);
@@ -53,6 +78,16 @@ public static class CompanionRulesTests
                 Check(CompanionRules.HealthFraction(form, rank, false) > 0, "every form has positive health");
                 Check(CompanionRules.HealthFraction(form, rank, false) >= CompanionRules.HealthFraction(form, rank - 1, false), "ranks never lower pet max health");
             }
+        }
+        Check(Near(GameBalance.EffectiveCooldown(HeroClass.Summoner,2,1),14f),"reviewed base wolf contract really has a fourteen-second cooldown");
+        for(int rank=1;rank<=3;rank++)
+        {
+            float wolfCooldown=GameBalance.EffectiveCooldown(HeroClass.Summoner,2,rank);
+            var opportunity=new CompanionCommandOpportunity();opportunity.Grant(10f);
+            Check(opportunity.Remaining(10f+wolfCooldown)>=2f,
+                "perfect-dodge contract token keeps at least two seconds after the actual wolf cooldown at rank "+rank);
+            Check(opportunity.TryConsume(10f+wolfCooldown)&&!opportunity.TryConsume(10f+wolfCooldown),
+                "the ready wolf command can consume exactly one live token at rank "+rank);
         }
         Check(Near(CompanionRules.DamageTaken(100, false, false), 100), "ordinary direct attacks are not silently negated");
         Check(Near(CompanionRules.DamageTaken(100, true, false), 55), "AOE mitigation protects pets against unavoidable group damage");

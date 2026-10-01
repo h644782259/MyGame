@@ -1,0 +1,154 @@
+using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
+
+namespace Emberfall
+{
+    public sealed class RunRecapSnapshot
+    {
+        public readonly bool Won, InDungeon, Challenge, PendingChest, FirstClearChoice;
+        public readonly int Tier, Wave, TotalWaves, Seed, Materials, ExchangeCost, GoldLost;
+        public readonly string LastDamageSource, ModeName, FailureReason;
+        public readonly int RewardGold, RewardExperience, RewardMaterials;
+        public readonly float LastDamageAmount;
+        public readonly ReadOnlyCollection<KeyValuePair<string,int>> Actions;
+        public readonly ReadOnlyCollection<string> Mechanics, Blessings;
+        public RunRecapSnapshot(bool won, bool dungeon, bool challenge, int tier, int wave, int totalWaves, int seed,
+            int materials, int exchangeCost, string damageSource, float damageAmount,
+            IEnumerable<KeyValuePair<string,int>> actions, IEnumerable<string> mechanics, IEnumerable<string> blessings,
+            bool pendingChest, bool firstClearChoice, int goldLost = 0, string modeName = null, string failureReason = null,
+            int rewardGold = 0, int rewardExperience = 0, int rewardMaterials = 0)
+        {
+            Won=won; InDungeon=dungeon; Challenge=challenge; Tier=Math.Max(1,tier);
+            TotalWaves=Math.Max(1,totalWaves); Wave=Math.Max(0,Math.Min(TotalWaves,wave)); Seed=seed;
+            Materials=Math.Max(0,materials); ExchangeCost=Math.Max(1,exchangeCost); GoldLost=Math.Max(0,goldLost);
+            LastDamageSource=damageSource??""; ModeName=modeName??""; FailureReason=failureReason??"";
+            RewardGold=Math.Max(0,rewardGold);RewardExperience=Math.Max(0,rewardExperience);RewardMaterials=Math.Max(0,rewardMaterials);
+            LastDamageAmount=float.IsNaN(damageAmount)||float.IsInfinity(damageAmount)?0:Math.Max(0,damageAmount);
+            Actions=new List<KeyValuePair<string,int>>(actions??new KeyValuePair<string,int>[0]).AsReadOnly();
+            Mechanics=new List<string>(mechanics??new string[0]).AsReadOnly();
+            Blessings=new List<string>(blessings??new string[0]).AsReadOnly();
+            PendingChest=pendingChest; FirstClearChoice=firstClearChoice;
+        }
+    }
+
+    // Presentation only: no combat, rewards, save changes, or parsing of prose logs.
+    public sealed class RunRecapPresentation
+    {
+        public readonly RunRecapSnapshot Snapshot;
+        public readonly KeyValuePair<string,int>[] Metrics, Rewards;
+        public readonly string[] ExtraActions, Mechanics, Blessings;
+        public readonly string Tip, FailureLabel;
+        public bool HasFailureBanner { get { return FailureLabel.Length>0&&Snapshot.FailureReason!="PlayerDefeated"; } }
+        public bool HasDamage { get { return !Snapshot.Won && !HasFailureBanner && Snapshot.LastDamageAmount>0 && !string.IsNullOrWhiteSpace(Snapshot.LastDamageSource) && Snapshot.LastDamageSource!="未记录"; } }
+        public bool HasProgress { get { return Snapshot.Materials>0 || Snapshot.PendingChest || Snapshot.FirstClearChoice || Snapshot.GoldLost>0 || Rewards.Length>0; } }
+        public float ExchangeProgress { get { return Math.Min(1f,Snapshot.Materials/(float)Snapshot.ExchangeCost); } }
+        public RunRecapPresentation(RunRecapSnapshot snapshot)
+        {
+            Snapshot=snapshot??throw new ArgumentNullException(nameof(snapshot));
+            FailureLabel=snapshot.Won?"":FailureText(snapshot.FailureReason);
+            var rewards=new List<KeyValuePair<string,int>>();
+            if(snapshot.RewardGold>0)rewards.Add(new KeyValuePair<string,int>("金币",snapshot.RewardGold));
+            if(snapshot.RewardExperience>0)rewards.Add(new KeyValuePair<string,int>("经验",snapshot.RewardExperience));
+            if(snapshot.RewardMaterials>0)rewards.Add(new KeyValuePair<string,int>("碎片",snapshot.RewardMaterials));
+            Rewards=rewards.ToArray();
+            var actions=new List<KeyValuePair<string,int>>();
+            foreach(var action in snapshot.Actions)
+                if(!string.IsNullOrWhiteSpace(action.Key) && action.Value>0 && action.Key!="换装")actions.Add(action);
+            actions.Sort((a,b)=> { int order=Priority(a.Key).CompareTo(Priority(b.Key));return order!=0?order:string.CompareOrdinal(a.Key,b.Key); });
+            Metrics=actions.GetRange(0,Math.Min(4,actions.Count)).ToArray();
+            var extra=new List<string>();
+            for(int i=Metrics.Length;i<actions.Count;i++)extra.Add(actions[i].Key+" "+actions[i].Value);
+            ExtraActions=extra.ToArray(); Mechanics=Clean(snapshot.Mechanics); Blessings=Clean(snapshot.Blessings);
+            Tip=snapshot.Won?"":ChooseTip(snapshot);
+        }
+        private static int Priority(string action)
+        {
+            switch(action)
+            {
+                case "完美闪避":return 0; case "打断":return 1; case "职业能力":return 2;
+                case "碎冰连招":case "毒层引爆":case "双契共鸣":case "剑卫反击":return 3;
+                case "普攻回能":return 4; case "成功闪避":return 5; default:return 6;
+            }
+        }
+        private static string[] Clean(IEnumerable<string> values)
+        {
+            var list=new List<string>();
+            foreach(string value in values)if(!string.IsNullOrWhiteSpace(value)&&!list.Contains(value))list.Add(value);
+            return list.ToArray();
+        }
+        private static string ChooseTip(RunRecapSnapshot snapshot)
+        {
+            if(snapshot.FailureReason=="TimeExpired")return snapshot.ModeName.Contains("守望")?"留在中心占领圈，先清理圈边敌人":"减少阶段间空档，优先清理远程敌人";
+            if(snapshot.FailureReason=="SpawnBlocked")return "回营重新进入，生成新的来袭位置";
+            if(snapshot.FailureReason=="Abandoned")return "";
+            int dodge=0;
+            foreach(var action in snapshot.Actions)if(action.Key=="完美闪避")dodge=action.Value;
+            if(snapshot.LastDamageSource.Contains("弹幕")||snapshot.LastDamageSource.Contains("魔灵"))return "遇到远程攻击，横向闪避离开弹道";
+            if(dodge==0)return "等预警临近命中，再向侧方闪避一次";
+            return snapshot.InDungeon?"先选已通关阶数，保留闪避应对连招":"先回营补给，再挑战这类敌人";
+        }
+        private static string FailureText(string reason)
+        {
+            switch(reason)
+            {
+                case "TimeExpired":return "时限已到";case "SpawnBlocked":return "来袭位置受阻";
+                case "PlayerDefeated":return "角色倒下";case "Abandoned":return "已结束挑战";
+                case "":case "None":return "";default:return reason;
+            }
+        }
+        public static string IconFor(string action)
+        { return action.Contains("闪避")?"dodge":action=="普攻回能"||action=="打断"?"attack":action=="支线"?"confirm":"skills"; }
+    }
+
+    public sealed class RunRecapLayout
+    {
+        public struct Area
+        {
+            public readonly float X,Y,Width,Height;
+            public Area(float x,float y,float width,float height){X=x;Y=y;Width=width;Height=height;}
+            public bool Overlaps(Area other){return X<other.X+other.Width&&X+Width>other.X&&Y<other.Y+other.Height&&Y+Height>other.Y;}
+        }
+        public readonly Area Frame,Header,Viewport,Primary;
+        public readonly int Columns;
+        public readonly float Gap=12,MetricHeight=88,ContentWidth;
+        public RunRecapLayout(float width,float height,bool mobile)
+        {
+            width=Math.Max(280,width);height=Math.Max(220,height);
+            float margin=mobile?8:20,frameWidth=Math.Min(mobile?920:960,width-margin*2),frameHeight=Math.Min(mobile?720:656,height-margin*2);
+            float x=(width-frameWidth)*.5f,y=(height-frameHeight)*.5f,padding=mobile?16:24;
+            float headerHeight=mobile?66:86,footerHeight=mobile?64:74;
+            Frame=new Area(x,y,frameWidth,frameHeight);
+            Header=new Area(x+padding,y+10,frameWidth-padding*2,headerHeight-14);
+            Viewport=new Area(x+padding,y+headerHeight,frameWidth-padding*2,frameHeight-headerHeight-footerHeight);
+            Primary=new Area(x+padding,y+frameHeight-footerHeight+10,frameWidth-padding*2,mobile?44:46);
+            ContentWidth=Viewport.Width-14;
+            Columns=ContentWidth>=700?4:ContentWidth>=470?3:2;
+        }
+        public Area Metric(int index,float y)
+        {
+            float width=(ContentWidth-Gap*(Columns-1))/Columns;
+            return new Area(index%Columns*(width+Gap),y+index/Columns*(MetricHeight+Gap),width,MetricHeight);
+        }
+        public float MetricRowsHeight(int count){return count<=0?0:((count+Columns-1)/Columns)*(MetricHeight+Gap)-Gap;}
+    }
+    public static class RunRecapChipLayout
+    {
+        public static RunRecapLayout.Area[] Pack(string[] labels,float availableWidth)
+        {
+            availableWidth=Math.Max(80,availableWidth);
+            var result=new RunRecapLayout.Area[labels.Length];float x=0,y=0;
+            for(int i=0;i<labels.Length;i++)
+            {
+                float textWidth=0;
+                foreach(char c in labels[i]??"")textWidth+=c>255?14:8;
+                float width=Math.Min(availableWidth,Math.Max(80,textWidth+24));
+                if(x>0&&x+width>availableWidth){x=0;y+=38;}
+                result[i]=new RunRecapLayout.Area(x,y,width,30);x+=width+8;
+            }
+            return result;
+        }
+        public static float Height(RunRecapLayout.Area[] chips)
+        { return chips.Length==0?0:chips[chips.Length-1].Y+chips[chips.Length-1].Height; }
+    }
+}

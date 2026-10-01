@@ -14,6 +14,7 @@ namespace Emberfall.Editor
         // permits intentional pause for this enumerator. Null means another frame.
         public static IEnumerator Validate(GameSession game, Action<bool, string> check, Action<string> log)
         {
+            typeof(InventoryUIValidation).GetMethod("RequireIsolatedRuntime", BindingFlags.Static | BindingFlags.NonPublic).Invoke(null, new object[] { game });
             PlayerController player = game.Player;
             SkillRuntime runtime = Read<SkillRuntime>(player, "skillRuntime");
             SkillChargeController charge = player.GetComponent<SkillChargeController>();
@@ -61,7 +62,7 @@ namespace Emberfall.Editor
             finally { game.SetPaused(false); }
             charge.Cancel();
             check(chargeEffect == null || !chargeEffect.gameObject.activeInHierarchy, hero + " cancelling immediately hides owned charge geometry");
-            check(!charge.IsCharging && charge.CancelledThisFrame && player.Energy == 100 && player.SkillCooldownRemaining(9) == 0,
+            check(!charge.IsCharging && charge.TargetEnemy == null && charge.CancelledThisFrame && player.Energy == 100 && player.SkillCooldownRemaining(9) == 0,
                 hero + " cancellation consumes the input frame without charging its budget");
             check(!targeting.Begin(0), hero + " cancel input cannot accidentally become a same-frame ordinary skill");
 
@@ -85,7 +86,7 @@ namespace Emberfall.Editor
             Invoke(charge, "Advance", SkillChargeController.Duration(hero, 9));
             float energy = 100 - GameBalance.SkillEnergyCost(hero, 9);
             float cooldown = GameBalance.EffectiveCooldown(hero, 9, game.Progression.Profile.skillRanks[9]);
-            check(!charge.IsCharging && Mathf.Abs(player.Energy - energy) < .001f && Mathf.Abs(player.SkillCooldownRemaining(9) - cooldown) < .001f,
+            check(!charge.IsCharging && charge.TargetEnemy == null && Mathf.Abs(player.Energy - energy) < .001f && Mathf.Abs(player.SkillCooldownRemaining(9) - cooldown) < .001f,
                 hero + " exact completion commits the real cast budget once");
             check(Vector3.Distance(player.AimPoint, locked) < .001f && Vector3.Angle(player.transform.forward, direction) < .01f,
                 hero + " release retains its original point and direction after movement and aim changes");
@@ -100,7 +101,7 @@ namespace Emberfall.Editor
             check(runtime.TryConsume(7, 3), hero + " resource revalidation fixture changes the shared budget during pending cast");
             energy = player.Energy;
             Invoke(charge, "Advance", 10f);
-            check(!charge.IsCharging && Mathf.Abs(player.Energy - energy) < .001f && player.SkillCooldownRemaining(9) == 0,
+            check(!charge.IsCharging && charge.TargetEnemy == null && Mathf.Abs(player.Energy - energy) < .001f && player.SkillCooldownRemaining(9) == 0,
                 hero + " insufficient energy at completion safely discards the pending cast");
 
             nextFrame = Time.frameCount;
@@ -112,7 +113,7 @@ namespace Emberfall.Editor
             Begin(targeting, 9, chosen, check);
             player.Teleport(player.transform.position + Vector3.left);
             Invoke(charge, "Advance", 10f);
-            check(!charge.IsCharging && Mathf.Abs(player.Energy - energy) < .001f && player.SkillCooldownRemaining(9) == 0 && Mathf.Abs(player.SkillCooldownRemaining(0) - originalCooldown) < .001f,
+            check(!charge.IsCharging && charge.TargetEnemy == null && Mathf.Abs(player.Energy - energy) < .001f && player.SkillCooldownRemaining(9) == 0 && Mathf.Abs(player.SkillCooldownRemaining(0) - originalCooldown) < .001f,
                 hero + " teleport cancels only the pending charge and preserves committed resources");
 
             nextFrame = Time.frameCount;
@@ -124,7 +125,7 @@ namespace Emberfall.Editor
             {
                 typeof(PlayerController).GetProperty("Health").SetValue(player, 0f, null);
                 Invoke(charge, "Advance", 10f);
-                check(!charge.IsCharging && player.Energy == 100 && player.SkillCooldownRemaining(9) == 0, hero + " dead-owner validation prevents a pending cast from releasing");
+                check(!charge.IsCharging && charge.TargetEnemy == null && player.Energy == 100 && player.SkillCooldownRemaining(9) == 0, hero + " dead-owner validation prevents a pending cast from releasing");
             }
             finally { typeof(PlayerController).GetProperty("Health").SetValue(player, originalHealth, null); }
             runtime.Advance(200); runtime.FillEnergy();

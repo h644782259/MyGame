@@ -35,6 +35,26 @@ public static class RunChoicesTests
             foreach(RunBlessing b in Enum.GetValues(typeof(RunBlessing)))check(!state.Has(b),"exit clears temporary buffs");
             state.Prepare(3,(HeroClass)hero,ranks,seed);check(!state.AwaitingChoice,"no choice after final wave");
         }
+        // Same inputs and selections must yield byte-for-byte identical card order.
+        for(int seed=0;seed<500;seed++)
+        {
+            var a=new RunChoices();var b=new RunChoices();var ranks=new int[10];
+            for(int i=0;i<ranks.Length;i++)ranks[i]=3;
+            for(int wave=1;wave<=2;wave++)
+            {
+                a.Prepare(wave,HeroClass.Arcanist,ranks,seed);b.Prepare(wave,HeroClass.Arcanist,ranks,seed);
+                check(string.Join(",",a.Offer)==string.Join(",",b.Offer),"seeded offer order is deterministic");
+                a.Choose(seed%3);b.Choose(seed%3);
+            }
+        }
+        check(Enum.GetValues(typeof(RunBlessing)).Length==14,"six original plus eight distinct additions");
+        foreach(RunBlessing blessing in Enum.GetValues(typeof(RunBlessing)))
+        {
+            check(RunChoices.StackLimit(blessing)==1,"every blessing has explicit one-stack cap");
+            check(RunChoices.Description(blessing).Contains("最多1层")&&RunChoices.Description(blessing).Contains("离开本局"),"card explains stack limit and run-only lifetime");
+            check(!string.IsNullOrEmpty(RunChoices.Name(blessing)),"every addition has a named card");
+        }
+        check(!RunChoices.IsCompatible((RunBlessing)99,HeroClass.Ranger,null)&&RunChoices.StackLimit((RunBlessing)99)==0,"unknown blessing is ineligible");
         return "PASS: "+assertions+" run-choice assertions";
     }
 }

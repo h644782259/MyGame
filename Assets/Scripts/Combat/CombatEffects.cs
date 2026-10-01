@@ -7,6 +7,7 @@ namespace Emberfall
     {
         public static GameObject Ring(Vector3 center, float radius, Color color, float lifetime, float width = .1f, bool expand = true)
         {
+            if (expand && FadingCombatEffect.ActiveCount >= (Application.isMobilePlatform ? 32 : 48)) return null;
             GameObject obj = new GameObject("Combat Ring");
             obj.transform.position = center + Vector3.up * .065f;
             LineRenderer line = obj.AddComponent<LineRenderer>();
@@ -18,7 +19,13 @@ namespace Emberfall
                 float angle = i * Mathf.PI * 2f / 64f;
                 line.SetPosition(i, new Vector3(Mathf.Sin(angle), 0, Mathf.Cos(angle)));
             }
-            line.widthMultiplier = width;
+            // Player areas are light rims, not opaque floor coverage. Enemy threat
+            // boundaries use their own higher-priority renderer and remain distinct.
+            if (radius >= 2.5f) color.a = Mathf.Min(color.a, Application.isMobilePlatform ? .48f : .66f);
+            line.widthMultiplier = Mathf.Min(width, radius >= 2.5f ? .12f : width);
+            line.sortingOrder = 5;
+            line.numCornerVertices = 2;
+            line.numCapVertices = 2;
             line.sharedMaterial = NewGlow();
             line.startColor = line.endColor = color;
             obj.AddComponent<FadingCombatEffect>().Setup(line, color, radius, lifetime, expand);
@@ -27,24 +34,16 @@ namespace Emberfall
 
         public static void Slash(Vector3 center, Vector3 forward, float radius, Color color)
         {
-            GameObject obj = new GameObject("Sword Arc");
-            obj.transform.position = center + Vector3.up * .83f;
-            obj.transform.rotation = Quaternion.LookRotation(forward);
-            LineRenderer line = obj.AddComponent<LineRenderer>();
-            line.useWorldSpace = false;
-            line.positionCount = 24;
-            for (int i = 0; i < 24; i++)
-            {
-                float angle = Mathf.Lerp(-75, 75, i / 23f) * Mathf.Deg2Rad;
-                line.SetPosition(i, new Vector3(Mathf.Sin(angle), -.1f * Mathf.Cos(angle), Mathf.Cos(angle)));
-            }
-            line.widthMultiplier = .16f;
-            line.sharedMaterial = NewGlow();
-            line.startColor = line.endColor = color;
-            obj.AddComponent<FadingCombatEffect>().Setup(line, color, radius, .23f, true);
+            var game = GameSession.Instance;
+            if (game != null) FilledSkillVfx.Crescent(game.Player, center, forward, radius, color);
         }
 
-        public static Material NewGlow() { return new Material(Shader.Find("Sprites/Default")); }
+        public static Material NewGlow()
+        {
+            Material material = new Material(Shader.Find("Sprites/Default"));
+            material.enableInstancing = true;
+            return material;
+        }
 
         public static float SegmentDistance(Vector3 point, Vector3 a, Vector3 b)
         {
@@ -62,10 +61,15 @@ namespace Emberfall
         private LineRenderer line;
         private Color color;
         private float radius, lifetime, age;
-        private bool expand;
-        public void Setup(LineRenderer renderer, Color value, float size, float duration, bool growing)
+        private bool expand, slash, registered;
+        public static int ActiveCount { get; private set; }
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetCount() { ActiveCount = 0; }
+        public void Setup(LineRenderer renderer, Color value, float size, float duration, bool growing, bool ribbon = false)
         {
-            line = renderer; color = value; radius = size; lifetime = Mathf.Max(.05f, duration); expand = growing;
+            line = renderer; color = value; radius = size; lifetime = Mathf.Max(.05f, duration); expand = growing; slash = ribbon;
+            color.a *= growing ? Mathf.Lerp(.4f,1f,EffectPreferences.EffectsScale) : 1f;
+            registered = true; ActiveCount++;
             transform.localScale = Vector3.one * (expand ? radius * .4f : radius);
         }
         private void Update()
@@ -73,12 +77,13 @@ namespace Emberfall
             age += Time.deltaTime;
             float fraction = age / lifetime;
             if (fraction >= 1) { Destroy(gameObject); return; }
-            if (expand) transform.localScale = Vector3.one * radius * Mathf.Lerp(.4f, 1f, Mathf.Min(1, fraction * 2.5f));
+            if (expand) transform.localScale = Vector3.one * radius * Mathf.Lerp(slash ? .75f : .4f, 1f, 1f-Mathf.Pow(1f-Mathf.Clamp01(fraction*1.7f),3f));
+            if (slash) transform.Rotate(0,Time.deltaTime*100f*(1f-fraction),0,Space.Self);
             Color faded = color;
             faded.a *= Mathf.Clamp01((1f - fraction) * 2f);
             line.startColor = line.endColor = faded;
         }
-        private void OnDestroy() { if (line != null && line.sharedMaterial != null) Destroy(line.sharedMaterial); }
+        private void OnDestroy() { if (registered) ActiveCount = Mathf.Max(0,ActiveCount-1); if (line != null && line.sharedMaterial != null) Destroy(line.sharedMaterial); }
     }
 
     internal sealed class CombatProjectile : MonoBehaviour
@@ -89,6 +94,7 @@ namespace Emberfall
         private int dodgeEpoch;
         private bool pendingDodge;
         private int skillIndex = -1, castId;
+        private ProjectileVolleyBudget<EnemyController> volley;
         private string damageSource = "敌方弹幕";
         private GameSession session;
         private PlayerController owner;
@@ -107,7 +113,7 @@ namespace Emberfall
         private Material bodyMaterial, trailMaterial;
         private Color color;
 
-        public static void Friendly(PlayerController player, GameSession game, Vector3 at, Vector3 forward, CombatDamage amount, Color tint, bool piercing = false, bool arrow = false, bool basic = false, float size = 1f, float velocity = 0f, EnemyController tracking = null, CombatDamage blastDamage = default(CombatDamage), float blastRadius = 0f, int skillIndex = -1, int castId = 0, SummonedCompanion companionSource = null)
+        public static void Friendly(PlayerController player, GameSession game, Vector3 at, Vector3 forward, CombatDamage amount, Color tint, bool piercing = false, bool arrow = false, bool basic = false, float size = 1f, float velocity = 0f, EnemyController tracking = null, CombatDamage blastDamage = default(CombatDamage), float blastRadius = 0f, int skillIndex = -1, int castId = 0, SummonedCompanion companionSource = null, ProjectileVolleyBudget<EnemyController> volley = null)
         {
             CombatProjectile projectile = Make(at, forward, tint, arrow);
             projectile.owner = player;
@@ -115,6 +121,7 @@ namespace Emberfall
             projectile.session = game;
             projectile.epoch = player.CombatEpoch;
             projectile.damage = amount;
+            projectile.volley = volley;
             projectile.speed = arrow ? 20f : 16f;
             projectile.lifetime = 1.15f;
             projectile.radius = piercing ? .38f : .22f;
@@ -124,19 +131,29 @@ namespace Emberfall
             projectile.arrowShape = arrow;
             projectile.explosionDamage = blastDamage;
             projectile.explosionRadius = blastRadius;
-            projectile.skillIndex = skillIndex; projectile.castId = castId;
+            projectile.skillIndex = skillIndex; projectile.castId = castId==0?player.NewCastId():castId;
             projectile.transform.localScale *= size;
             projectile.radius *= Mathf.Min(2f,size);
             if (velocity > 0) projectile.speed = velocity;
             if (tracking != null) projectile.lifetime = 2.5f;
         }
 
+        internal static bool CanLaunchFromMuzzle(PlayerController player,Vector3 muzzle,CombatDamage amount,int castId)
+        {
+            if(player==null||player.IsDead)return false;
+            if(CombatSight.Direct(player.transform.position,muzzle))return true;
+            DestructibleProp prop;float fraction;
+            if(DestructibleProp.FindProjectileHit(player,player.transform.position,muzzle,.22f,out prop,out fraction))prop.Impact(player,castId,amount);
+            return false;
+        }
+
         // Ordinary shots keep their original range. A mage locks only the target
         // chosen at cast time; an arrow gets a very short, bounded correction.
         public static void BasicShot(PlayerController player,GameSession game,Vector3 muzzle,Vector3 target,CombatDamage amount,Color tint,bool arrow,EnemyController selected)
         {
-            if (!WorldTraversal.HasLineOfSight(player.transform.position, muzzle))
-            { CombatFx.Ring(player.transform.position, .4f, tint, .15f); return; }
+            int attackId=player.NewCastId();
+            if (!CanLaunchFromMuzzle(player,muzzle,amount,attackId))
+            {CombatFx.Ring(player.transform.position,.4f,tint,.15f);return;}
             Vector3 direction=CombatFx.Flat(target-muzzle);
             if(direction.sqrMagnitude<.0001f) direction=player.transform.forward;
             CombatProjectile projectile=Make(muzzle,direction,tint,arrow);
@@ -149,6 +166,7 @@ namespace Emberfall
             projectile.lifetime=1.15f;
             projectile.radius=.22f;
             projectile.basicAttack=true;
+            projectile.castId=attackId;
             projectile.arrowShape=arrow;
             projectile.basicAimTarget=selected;
             projectile.homingTarget=arrow?null:selected;
@@ -184,7 +202,7 @@ namespace Emberfall
                 float hitRadius = projectile.radius + .46f;
                 if (CombatFx.SegmentDistance(origin, projectile.transform.position, end) >= hitRadius ||
                     CombatFx.SegmentDistance(destination, projectile.transform.position, end) <= hitRadius ||
-                    !WorldTraversal.HasLineOfSight(projectile.transform.position, origin)) continue;
+                    !CombatSight.Direct(projectile.transform.position, origin)) continue;
                 projectile.pendingDodge = true;
                 projectile.dodgeOrigin = origin;
                 projectile.dodgeDeadline = projectile.age + .25f;
@@ -194,10 +212,9 @@ namespace Emberfall
 
         private static CombatProjectile Make(Vector3 at, Vector3 forward, Color tint, bool arrow)
         {
-            GameObject obj = GameObject.CreatePrimitive(arrow ? PrimitiveType.Capsule : PrimitiveType.Sphere);
-            obj.name = arrow ? "Spectral Arrow" : "Arcane Bolt";
-            Collider collider = obj.GetComponent<Collider>();
-            if (collider != null) Destroy(collider);
+            Material surface = new Material(Shader.Find("Standard")) { color = tint };
+            ProceduralVisuals.ApplySurface(surface,arrow ? VisualSurface.Metal : VisualSurface.Crystal);
+            GameObject obj = ProceduralVisuals.Create(arrow ? "Spectral Arrow" : "Arcane Bolt",arrow ? PrimitiveType.Capsule : PrimitiveType.Sphere,surface);
             obj.transform.position = new Vector3(at.x, 1f, at.z);
             Vector3 normalized = CombatFx.Flat(forward).normalized;
             if (normalized.sqrMagnitude < .1f) normalized = Vector3.forward;
@@ -206,24 +223,23 @@ namespace Emberfall
             CombatProjectile projectile = obj.AddComponent<CombatProjectile>();
             projectile.direction = normalized;
             projectile.color = tint;
-            projectile.bodyMaterial = new Material(Shader.Find("Unlit/Color"));
-            projectile.bodyMaterial.color = tint;
-            obj.GetComponent<Renderer>().sharedMaterial = projectile.bodyMaterial;
+            projectile.bodyMaterial = surface;
             TrailRenderer trail = obj.AddComponent<TrailRenderer>();
             projectile.trailMaterial = CombatFx.NewGlow();
             trail.sharedMaterial = projectile.trailMaterial;
-            trail.time = .13f;
+            trail.time = EffectPreferences.ReducedEffects ? .08f : .16f;
+            trail.numCapVertices = 2; trail.numCornerVertices = 2;
             trail.startWidth = arrow ? .11f : .22f;
             trail.endWidth = 0;
             trail.startColor = tint;
             trail.endColor = new Color(tint.r,tint.g,tint.b,0);
-            trail.minVertexDistance = .12f;
+            trail.minVertexDistance = .065f;
             return projectile;
         }
 
         private void Update()
         {
-            if (session == null || session.Player == null || session.Player != playerGeneration || !session.HasStarted || session.IsDead || session.Player.CombatEpoch != epoch || (!hostile && owner == null))
+            if (session == null || session.Player == null || session.Player != playerGeneration || !session.HasStarted || session.IsDead || session.CombatEnded || session.Player.CombatEpoch != epoch || (!hostile && owner == null))
             { Destroy(gameObject); return; }
             float dt = Time.deltaTime;
             if (dt <= 0) return;
@@ -243,14 +259,14 @@ namespace Emberfall
             }
             Vector3 previous = transform.position;
             Vector3 nextPosition = previous + direction * speed * dt;
-            bool terrainHit = !WorldTraversal.HasLineOfSight(previous, nextPosition);
+            bool terrainHit = !CombatSight.Direct(previous, nextPosition);
             if (terrainHit)
             {
                 float clear = 0, blocked = 1;
                 for (int sample = 0; sample < 10; sample++)
                 {
                     float fraction = (clear + blocked) * .5f;
-                    if (WorldTraversal.HasLineOfSight(previous, Vector3.Lerp(previous, nextPosition, fraction))) clear = fraction;
+                    if (CombatSight.Direct(previous, Vector3.Lerp(previous, nextPosition, fraction))) clear = fraction;
                     else blocked = fraction;
                 }
                 nextPosition = Vector3.Lerp(previous, nextPosition, clear);
@@ -267,7 +283,7 @@ namespace Emberfall
             }
             if (hostile)
             {
-                bool strikesPlayer = CombatFx.SegmentDistance(session.Player.transform.position, previous, transform.position) < radius + .46f && WorldTraversal.HasLineOfSight(previous, session.Player.transform.position);
+                bool strikesPlayer = CombatFx.SegmentDistance(session.Player.transform.position, previous, transform.position) < radius + .46f && CombatSight.Direct(previous, session.Player.transform.position);
                 Vector3 segment = CombatFx.Flat(transform.position - previous);
                 float playerFraction = !strikesPlayer ? 1f : segment.sqrMagnitude < .00001f ? 0 : Mathf.Clamp01(Vector3.Dot(CombatFx.Flat(session.Player.transform.position - previous), segment) / segment.sqrMagnitude);
                 if (SummonedCompanion.HitHostileProjectile(previous, transform.position, damage.Amount, playerFraction))
@@ -276,7 +292,7 @@ namespace Emberfall
                 {
                     if (age > dodgeDeadline || session.Player.CombatEpoch != dodgeEpoch) pendingDodge = false;
                     else if (!strikesPlayer && CombatFx.SegmentDistance(dodgeOrigin, previous, transform.position) < radius + .46f &&
-                        WorldTraversal.HasLineOfSight(previous, dodgeOrigin))
+                        CombatSight.Direct(previous, dodgeOrigin))
                     { pendingDodge = false; session.Player.NotifyPerfectDodge(); }
                 }
                 if (strikesPlayer)
@@ -289,16 +305,20 @@ namespace Emberfall
             }
             else
             {
+                DestructibleProp hitProp;float propFraction;
+                DestructibleProp.FindProjectileHit(owner,previous,transform.position,radius,out hitProp,out propFraction);
                 for (int i = session.Enemies.Count - 1; i >= 0; i--)
                 {
                     EnemyController enemy = session.Enemies[i];
                     if (enemy == null || enemy.IsDead || hitTargets.Contains(enemy)) continue;
-                    float hitRadius = enemy.IsBoss ? 1.05f : .6f;
+                    float hitRadius = enemy.ProjectileHitRadius;
+                    if(hitProp!=null&&PropImpactGeometry.EntryFraction(previous.x,previous.z,transform.position.x,transform.position.z,enemy.transform.position.x,enemy.transform.position.z,hitRadius+radius)>propFraction)continue;
                     if (CombatFx.SegmentDistance(enemy.transform.position, previous, transform.position) > hitRadius + radius) continue;
-                    if (!WorldTraversal.HasLineOfSight(previous, enemy.transform.position)) continue;
+                    if (!CombatSight.Direct(previous, enemy.transform.position)) continue;
                     hitTargets.Add(enemy);
                     Vector3 hitPosition = enemy.transform.position;
-                    enemy.TakeDamage(owner.ResolveSkillImpact(enemy, skillIndex, castId, damage.Amount, damage.IsCritical), direction, .18f, critical:damage.IsCritical);
+                    CombatDamage impact=volley==null?damage:volley.Apply(enemy,damage,false);
+                    if(impact.Amount>0){if(!basicAttack&&companionSource==null)owner.RegisterSkillHit(castId);enemy.TakeDamage(owner.ResolveSkillImpact(enemy, skillIndex, castId, impact.Amount, impact.IsCritical, impact.CriticalMultiplier), direction, .18f, critical:impact.IsCritical);}
                     if (companionSource != null) companionSource.OnConfirmedHit(enemy);
                     CombatFx.Ring(hitPosition, .7f, color, .2f);
                     if (basicAttack && !energyAwarded)
@@ -308,11 +328,18 @@ namespace Emberfall
                     }
                     if(explosionDamage.Amount>0)
                     {
-                        owner.HitArea(hitPosition,explosionRadius,explosionDamage,.15f,.15f);
+                        owner.HitArea(hitPosition,explosionRadius,explosionDamage,.15f,.15f,castId,volley);
                         CombatFx.Ring(hitPosition,explosionRadius,color,.3f,.11f);
                     }
                     if (!pierce) { Destroy(gameObject); return; }
                     i=Mathf.Min(i,session.Enemies.Count);
+                }
+                if(hitProp!=null)
+                {
+                    Vector3 point=hitProp.transform.position;
+                    hitProp.Impact(owner,castId,damage);
+                    if(explosionDamage.Amount>0)owner.HitArea(point,explosionRadius,explosionDamage,.15f,.15f,castId,volley);
+                    CombatFx.Ring(point,.45f,color,.2f,.04f);Destroy(gameObject);return;
                 }
             }
             if (terrainHit) { CombatFx.Ring(transform.position, .4f, color, .15f); Destroy(gameObject); return; }
@@ -347,7 +374,9 @@ namespace Emberfall
         private Color color;
         private GameObject marker, fallingOrb;
         private Material orbMaterial;
-        private bool fireVisual, poisonVisual, lightningVisual;
+        private bool fireVisual, poisonVisual, lightningVisual, solidImpactSpawned;
+        private readonly ScheduledImpactBatch<EnemyController> pendingTickTargets = new ScheduledImpactBatch<EnemyController>();
+        private bool IsCurrentCast { get { return owner != null && session != null && session.Player == owner && !owner.IsDead && session.HasStarted && !session.CombatEnded && owner.CombatEpoch == epoch; } }
 
         public static void Spawn(PlayerController player, GameSession game, Vector3 at, float size, CombatDamage amount, float disable,
             float startup, float activeTime, float tickInterval, Color tint, bool followPlayer = false, bool fallingMeteor = false, float pulling = 0f, CombatDamage finisher = default(CombatDamage), int statusSkill = -1, int statusRank = 1, int castId = 0)
@@ -360,8 +389,9 @@ namespace Emberfall
             area.delay = startup; area.duration = activeTime; area.interval = Mathf.Max(.1f,tickInterval);
             area.color = tint; area.follow = followPlayer; area.meteor = fallingMeteor;
             area.pullStrength = pulling; area.finalDamage = finisher;
-            area.statusSkill = statusSkill; area.statusRank = statusRank; area.castId = castId;
+            area.statusSkill = statusSkill; area.statusRank = statusRank; area.castId = castId==0?player.NewCastId():castId;
             area.nextTick = startup;
+            if (startup > 0) FilledSkillVfx.Charge(obj.transform, player, obj.transform.position, size, tint, startup);
             area.marker = CombatFx.Ring(at, size, tint, startup + activeTime + .2f, .075f, false);
             area.fireVisual = fallingMeteor || (player.HeroClass == HeroClass.Arcanist && tint.r > .8f && tint.g < .7f);
             area.poisonVisual = !area.fireVisual &&
@@ -369,29 +399,25 @@ namespace Emberfall
                  (statusSkill == 5 && player.HeroClass == HeroClass.Ranger) ||
                  (statusSkill == 1 && player.HeroClass == HeroClass.Summoner));
             area.lightningVisual = player.HeroClass == HeroClass.Arcanist && tint.b > .9f && tint.r > .55f && tint.g < .7f;
-            if (area.fireVisual || area.poisonVisual || area.lightningVisual)
-                ElementalCombatVfx.Area(obj.transform, size,
-                    area.fireVisual ? ElementalCombatVfx.Element.Fire :
-                    area.poisonVisual ? ElementalCombatVfx.Element.Poison : ElementalCombatVfx.Element.Lightning);
             if (fallingMeteor)
             {
-                area.fallingOrb = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-                area.fallingOrb.name = "Falling Meteor";
-                Destroy(area.fallingOrb.GetComponent<Collider>());
+                area.orbMaterial = new Material(Shader.Find("Standard")) { color = new Color(.64f,.19f,.075f) };
+                ProceduralVisuals.ApplySurface(area.orbMaterial,VisualSurface.Crystal);
+                area.orbMaterial.SetColor("_EmissionColor",new Color(.85f,.21f,.035f));
+                area.fallingOrb = ProceduralVisuals.Create("Falling Meteor",PrimitiveType.Sphere,area.orbMaterial);
+                area.fallingOrb.GetComponent<MeshFilter>().sharedMesh=ProceduralVisuals.WeatheredRock;
                 area.fallingOrb.transform.SetParent(obj.transform, false);
                 area.fallingOrb.transform.localPosition = Vector3.up * 9f;
                 area.fallingOrb.transform.localScale = Vector3.one * 1.1f;
-                area.orbMaterial = new Material(Shader.Find("Unlit/Color"));
-                area.orbMaterial.color = new Color(1f,.6f,.26f);
-                area.fallingOrb.GetComponent<Renderer>().sharedMaterial = area.orbMaterial;
+
             }
         }
 
         private void Update()
         {
-            if (owner == null || session == null || session.Player != owner || owner.IsDead || !session.HasStarted || owner.CombatEpoch != epoch)
-            { Destroy(gameObject); return; }
-            if (Time.deltaTime <= 0) return;
+            if (!IsCurrentCast)
+            { Retire(); return; }
+            if (session.InputBlocked || Time.deltaTime <= 0) return;
             age += Time.deltaTime;
             if (follow) transform.position = owner.transform.position;
             if (marker != null) marker.transform.position = transform.position + Vector3.up * .065f;
@@ -402,47 +428,74 @@ namespace Emberfall
                     EnemyController enemy=session.Enemies[i];
                     if(enemy==null || enemy.IsDead) continue;
                     Vector3 delta=CombatFx.Flat(transform.position-enemy.transform.position);
-                    if(delta.magnitude<radius+1f && delta.magnitude>.55f)
-                        enemy.transform.position = WorldTraversal.Move(enemy.transform.position, delta.normalized * Mathf.Min(delta.magnitude - .55f, pullStrength * Time.deltaTime * (enemy.IsBoss ? .25f : 1f)), enemy.NavigationRadius);
+                    if(delta.magnitude<radius+1f && delta.magnitude>.55f && CombatSight.Area(transform.position,enemy.transform.position))
+                        enemy.ApplyPull(delta.normalized * Mathf.Min(delta.magnitude - .55f, pullStrength * Time.deltaTime));
                 }
             }
             if (fallingOrb != null)
             {
-                fallingOrb.transform.localPosition = Vector3.up * Mathf.Lerp(9f,.5f,Mathf.Clamp01(age/Mathf.Max(.01f,delay)));
+                float fallProgress=Mathf.Clamp01(age/Mathf.Max(.01f,delay));
+                fallingOrb.transform.localPosition = Vector3.up * Mathf.Lerp(9f,.5f,fallProgress*fallProgress);
+                fallingOrb.transform.Rotate(Time.deltaTime*120f,Time.deltaTime*70f,0,Space.Self);
                 if (age >= delay) { Destroy(fallingOrb); fallingOrb = null; }
             }
-            if (age >= nextTick && nextTick <= delay + duration + .01f)
+            for (int tick = 0; tick < ScheduledTickWindow.MaximumCatchUp; tick++)
             {
-                nextTick += interval;
-                CombatFx.Ring(transform.position,radius,color,.42f,.15f);
-                if (lightningVisual)
-                    for (int bolt = 0; bolt < 3; bolt++)
-                    {
-                        Vector2 point = Random.insideUnitCircle * radius * .85f;
-                        Vector3 end = transform.position + new Vector3(point.x, .15f, point.y);
-                        ElementalCombatVfx.Lightning(transform.position + Vector3.up * Random.Range(2.1f, 3.5f), end);
-                    }
-                if (!meteor && !follow)
+                if (!IsCurrentCast) { Retire(); return; }
+                if (session.InputBlocked) return;
+                if (!pendingTickTargets.Pending)
                 {
-                    for (int j = 0; j < 3; j++)
+                    if (ScheduledTickWindow.Collect(ref nextTick, age, delay + duration, interval, 1) == 0) break;
+                    pendingTickTargets.Begin(session.Enemies, true);
+                    if (!solidImpactSpawned)
                     {
-                        Vector2 offset = Random.insideUnitCircle * radius * .65f;
-                        CombatFx.Slash(transform.position + new Vector3(offset.x, .4f, offset.y),Vector3.forward,.4f,color);
+                        solidImpactSpawned = true;
+                        if (fireVisual || poisonVisual || lightningVisual)
+                            ElementalCombatVfx.Area(transform, radius, fireVisual ? ElementalCombatVfx.Element.Fire :
+                                poisonVisual ? ElementalCombatVfx.Element.Poison : ElementalCombatVfx.Element.Lightning);
+                        if (fireVisual) FilledSkillVfx.Impact(owner, transform.position, radius, FilledVfxKind.Fire, new Color(1f,.43f,.12f));
+                        else if (owner.HeroClass == HeroClass.Arcanist && statusSkill == 0)
+                            FilledSkillVfx.Impact(owner, transform.position, radius, FilledVfxKind.Ice, new Color(.2f,.75f,1f));
+                        else if (owner.HeroClass == HeroClass.Summoner)
+                            FilledSkillVfx.Impact(owner, transform.position, radius, FilledVfxKind.Summon, color);
+                        else if (owner.HeroClass == HeroClass.Vanguard)
+                            FilledSkillVfx.Crescent(owner, transform.position, owner.transform.forward, radius, color);
+                    }
+                    if (tick == 0)
+                    { DestructibleProp.StrikeArea(owner,transform.position,radius,damage,castId); CombatFx.Ring(transform.position,radius,color,.42f,.15f); }
+                    if (tick == 0 && lightningVisual)
+                        for (int bolt = 0; bolt < 3; bolt++)
+                        {
+                            Vector2 point = Random.insideUnitCircle * radius * .85f;
+                            Vector3 end = transform.position + new Vector3(point.x, .15f, point.y);
+                            ElementalCombatVfx.Lightning(transform.position + Vector3.up * Random.Range(2.1f, 3.5f), end);
+                        }
+                    if (tick == 0 && !meteor && !follow)
+                    {
+                        for (int j = 0; j < 3; j++)
+                        {
+                            Vector2 offset = Random.insideUnitCircle * radius * .65f;
+                            CombatFx.Slash(transform.position + new Vector3(offset.x, .4f, offset.y),Vector3.forward,.4f,color);
+                        }
                     }
                 }
-                for (int i = session.Enemies.Count - 1; i >= 0; i--)
+                while (pendingTickTargets.Pending)
                 {
-                    EnemyController enemy = session.Enemies[i];
-                    if (enemy == null || enemy.IsDead) continue;
+                    if (!IsCurrentCast) { Retire(); return; }
+                    if (session.InputBlocked) return;
+                    EnemyController enemy;
+                    if (!pendingTickTargets.TryTake(out enemy)) break;
+                    if (enemy == null || enemy.IsDead || !session.Enemies.Contains(enemy)) continue;
                     Vector3 delta = CombatFx.Flat(enemy.transform.position - transform.position);
-                    if (delta.magnitude <= radius + (enemy.IsBoss ? .85f : .4f))
+                    if (delta.magnitude <= radius + (enemy.IsBoss ? .85f : .4f) + enemy.HitFootprintBonus && CombatSight.Area(transform.position,enemy.transform.position))
                     {
                         if (fireVisual)
                             ElementalCombatVfx.OnEnemy(enemy, ElementalCombatVfx.Element.Fire, 2.5f);
                         if (poisonVisual)
                             ElementalCombatVfx.OnEnemy(enemy, ElementalCombatVfx.Element.Poison, 2f);
-                        enemy.TakeDamage(owner.ResolveSkillImpact(enemy, statusSkill, castId, damage.Amount, damage.IsCritical),delta.normalized,.3f,stun,critical:damage.IsCritical);
-                        if (lightningVisual)
+                        enemy.TakeDamage(owner.ResolveSkillImpact(enemy, statusSkill, castId, damage.Amount, damage.IsCritical, damage.CriticalMultiplier),delta.normalized,.3f,stun,critical:damage.IsCritical);
+                        owner.RegisterSkillHit(castId);
+                        if (tick == 0 && lightningVisual)
                             ElementalCombatVfx.Lightning(transform.position + Vector3.up * 2f,
                                 enemy.transform.position + Vector3.up * (enemy.IsBoss ? 2f : 1f));
                         if (enemy.StatusEffects != null && statusSkill == 0 && owner.HeroClass == HeroClass.Arcanist)
@@ -450,22 +503,29 @@ namespace Emberfall
                         if (enemy.StatusEffects != null && ((statusSkill == 5 && owner.HeroClass == HeroClass.Ranger) || (statusSkill == 1 && owner.HeroClass == HeroClass.Summoner)))
                         {
                             enemy.StatusEffects.Slow(3f, .3f + statusRank * .07f);
-                            enemy.StatusEffects.Poison(owner, 3.5f + statusRank * .5f, damage.Amount * .2f);
+                            enemy.StatusEffects.Poison(owner, SummonerDamageRules.ThornPoisonDuration(statusRank), damage.Amount * SummonerDamageRules.ThornPoisonFraction);
                         }
                     }
                 }
             }
-            if (!finished && finalDamage.Amount>0 && age>=delay+duration)
+            if (!IsCurrentCast) { Retire(); return; }
+            if (session.InputBlocked) return;
+            bool ticksDrained = !pendingTickTargets.Pending && ScheduledTickWindow.Drained(nextTick, delay + duration);
+            if (!finished && finalDamage.Amount>0 && age>=delay+duration && ticksDrained)
             {
                 finished=true;
                 AdvancedSkillVfx.Rune(owner,transform.position,radius*1.1f,color,.65f,3);
-                owner.HitArea(transform.position,radius*1.1f,finalDamage,.7f,.65f);
+                owner.HitArea(transform.position,radius*1.1f,finalDamage,.7f,.65f,castId);
             }
-            if (age > delay + duration + .1f) Destroy(gameObject);
+            if (age > delay + duration + .1f && ticksDrained) Retire();
         }
+
+        private void Retire() { pendingTickTargets.Clear(); Destroy(gameObject); }
+        private void OnDisable() { pendingTickTargets.Clear(); }
 
         private void OnDestroy()
         {
+            pendingTickTargets.Clear();
             if (marker != null) Destroy(marker);
             if (orbMaterial != null) Destroy(orbMaterial);
         }

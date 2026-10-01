@@ -98,8 +98,8 @@ def main():
     if not dotnet:
         parser.error(".NET 8 SDK is required. Install it from https://dotnet.microsoft.com/download/dotnet/8.0 or set --dotnet.")
     timestamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%fZ")
-    output = ROOT / "Tests/TestResults" / ("Cloud-" + timestamp)
-    output.mkdir(parents=True)
+    output = ROOT / "Tests/TestResults" / "Cloud-Latest"
+    output.mkdir(parents=True, exist_ok=True)
     initial_sources = source_hashes()
     report = {"startedUtc": timestamp, "project": str(ROOT), "checks": [],
               "scope": "Standalone production-logic tests; optional Unity API/source compilation. "
@@ -158,9 +158,73 @@ def main():
             if name == "companion-rules": extra.append(ROOT / "Assets/Scripts/Combat/CompanionRules.cs")
             entry = ('using System; internal static class Program { static void Main(string[] args) { Console.WriteLine(' + test_file + '.Run(' + ('args[0]' if name == 'rebalance-progression' else '') + ')); } }')
             checks.append((name, extra, entry))
+        for name, source, test in [("mobile-layout", "UI/MobileControlLayout", "MobileControlLayoutTests"), ("safe-exit", "Core/SafeExitRequest", "SafeExitRequestTests"), ("mobile-skills", "Combat/MobileSkillPolicy", "MobileSkillPolicyTests"), ("mobile-camera", "Core/MobileCameraGesture", "MobileCameraGestureTests"), ("touch-scroll", "UI/TouchScrollGesture", "TouchScrollGestureTests"), ("room-chain", "Core/RoomChainState", "RoomChainStateTests"), ("large-boss-phases", "Core/LargeBossPhaseState", "LargeBossPhaseTests"), ("adventure-results", "Core/AdventureResultPolicy", "AdventureResultPolicyTests"), ("combat-sight", "Core/CombatSightRules", "CombatSightRulesTests"), ("tier-reward-bands", "Core/TierRewardBand", "TierRewardBandTests"), ("touch-release-latch", "UI/TouchReleaseLatch", "TouchReleaseLatchTests")]:
+            checks.append((name,[ROOT / ("Assets/Scripts/"+source+".cs"),ROOT / ("Tests/"+test+".cs")],
+                'using System; internal static class Program { static void Main() { Console.WriteLine('+test+'.Run()); } }'))
+        checks.append(("interface-safety",[ROOT/"Assets/Scripts/UI/ObjectiveCardLayout.cs",ROOT/"Assets/Scripts/Core/PortalInteractionPolicy.cs",ROOT/"Assets/Scripts/Core/SaveLifecycleGate.cs",ROOT/"Tests/InterfaceSafetyTests.cs"],
+            'using System; internal static class Program { static void Main() { Console.WriteLine(InterfaceSafetyTests.Run()); } }'))
+        checks.append(("destructible-props",[ROOT/"Assets/Scripts/Core/DestructiblePropRules.cs",ROOT/"Tests/DestructiblePropTests.cs"],
+            'using System; internal static class Program { static void Main() { Console.WriteLine(DestructiblePropTests.Run()); } }'))
+        checks.append(("destructible-traversal",[ROOT/"Assets/Scripts/World/WorldTraversal.cs",ROOT/"Tests/DestructibleTraversalTests.cs"],
+            'using System; internal static class Program { static void Main() { Console.WriteLine(DestructibleTraversalTests.Run()); } }'))
+        checks.append(("safe-save-flow",[ROOT/"Assets/Scripts/Core/GameTypes.cs",ROOT/"Assets/Scripts/Core/ProgressionService.cs",ROOT/"Assets/Scripts/Core/SafeSaveFlow.cs",ROOT/"Tests/ProgressionTests.cs",ROOT/"Tests/SafeSaveFlowTests.cs"],
+            'using System; internal static class Program { static void Main(string[] args) { Console.WriteLine(SafeSaveFlowTests.Run(args[0])); } }'))
+        checks.append(("hub-economy",[ROOT/"Assets/Scripts/Core/GameTypes.cs",ROOT/"Assets/Scripts/Core/ProgressionService.cs",ROOT/"Tests/ProgressionTests.cs",ROOT/"Tests/HubTravelEconomyTests.cs"],
+            'using System; internal static class Program { static void Main(string[] args) { Console.WriteLine(HubTravelEconomyTests.Run(args[0])); } }'))
+        checks.append(("mode-rewards",[ROOT/"Assets/Scripts/Core/GameTypes.cs",ROOT/"Assets/Scripts/Core/ProgressionService.cs",ROOT/"Tests/ProgressionTests.cs",ROOT/"Tests/ModeRewardTests.cs"],
+            'using System; internal static class Program { static void Main(string[] args) { Console.WriteLine(ModeRewardTests.Run(args[0])); } }'))
+        checks.append(("run-combat-rules",[ROOT/"Assets/Scripts/Core/GameTypes.cs",ROOT/"Assets/Scripts/Core/SkillRuntime.cs",ROOT/"Assets/Scripts/Core/RunChoices.cs",ROOT/"Assets/Scripts/Combat/CombatDamage.cs",ROOT/"Assets/Scripts/Combat/EnemyControlPolicy.cs",ROOT/"Assets/Scripts/Combat/BossAttackPolicy.cs",ROOT/"Assets/Scripts/Combat/ArenaBossPatternPolicy.cs",ROOT/"Tests/SkillRuntimeTests.cs",ROOT/"Tests/RunCombatRulesTests.cs"],
+            'using System; internal static class Program { static void Main() { Console.WriteLine(RunCombatRulesTests.Run()); } }'))
+        checks.append(("progression-attention",[ROOT/"Assets/Scripts/Core/GameTypes.cs",ROOT/"Assets/Scripts/Core/ProgressionService.cs",ROOT/"Assets/Scripts/Core/ProgressionAttention.cs",ROOT/"Tests/ProgressionTests.cs",ROOT/"Tests/ProgressionAttentionTests.cs"],
+            'using System; internal static class Program { static void Main(string[] args) { Console.WriteLine(ProgressionAttentionTests.Run(args[0])); } }'))
+        checks.append(("expedition-modes",[ROOT/"Assets/Scripts/Core/ExpeditionModeState.cs",ROOT/"Assets/Scripts/Core/TierRewardBand.cs",ROOT/"Tests/ExpeditionModeStateTests.cs"],
+            'using System; internal static class Program { static void Main() { Console.WriteLine(ExpeditionModeStateTests.Run()); } }'))
+        checks.append(("run-recap",[ROOT/"Assets/Scripts/UI/RunRecapPresentation.cs",ROOT/"Tests/RunRecapPresentationTests.cs"],
+            'using System; internal static class Program { static void Main() { Console.WriteLine(RunRecapPresentationTests.Run()); } }'))
+        checks.append(("filled-vfx",[ROOT/"Assets/Scripts/Core/FilledVfxRecipes.cs",ROOT/"Tests/FilledVfxRecipeTests.cs"],
+            'using System; internal static class Program { static void Main() { Console.WriteLine(FilledVfxRecipeTests.Run()); } }'))
+        checks.append(("procedural-visuals",[ROOT/"Assets/Scripts/Combat/VisualMeshRecipes.cs",ROOT/"Tests/ProceduralVisualTests.cs"],
+            'using System; internal static class Program { static void Main() { Console.WriteLine(ProceduralVisualTests.Run()); } }'))
+        checks.append(("save-deletion",[ROOT/"Assets/Scripts/Core/GameTypes.cs",ROOT/"Assets/Scripts/Core/ProgressionService.cs",ROOT/"Tests/ProgressionTests.cs",ROOT/"Tests/SaveDeletionTests.cs"],
+            'using System; internal static class Program { static void Main(string[] args) { Console.WriteLine(SaveDeletionTests.Run(args[0])); } }'))
+        checks.append(("scheduled-ticks",[ROOT/"Assets/Scripts/Core/ScheduledTickWindow.cs",ROOT/"Tests/ScheduledTickWindowTests.cs"],
+            'using System; internal static class Program { static void Main() { Console.WriteLine(ScheduledTickWindowTests.Run()); } }'))
+        checks.append(("combat-pacing-followup",[ROOT/"Assets/Scripts/Combat/BossAttackPolicy.cs",ROOT/"Assets/Scripts/Combat/CompanionRules.cs",ROOT/"Assets/Scripts/Combat/SummonerDamageRules.cs",ROOT/"Tests/CombatPacingFollowupTests.cs"],
+            'using System; internal static class Program { static void Main() { Console.WriteLine(CombatPacingFollowupTests.Run()); } }'))
+        checks.append(("combat-sight-traversal",[ROOT/"Assets/Scripts/World/WorldTraversal.cs",ROOT/"Assets/Scripts/Core/CombatSightRules.cs",ROOT/"Assets/Scripts/Combat/CombatSight.cs",ROOT/"Tests/DestructibleTraversalTests.cs",ROOT/"Tests/CombatSightTraversalTests.cs"],
+            'using System; internal static class Program { static void Main() { Console.WriteLine(CombatSightTraversalTests.Run()); } }'))
+        checks.append(("combo-resource-budgets",[ROOT/"Assets/Scripts/Core/GameTypes.cs",ROOT/"Assets/Scripts/Core/SkillDamageBudgets.cs",ROOT/"Assets/Scripts/Core/SkillRuntime.cs",ROOT/"Assets/Scripts/Core/ScheduledTickWindow.cs",ROOT/"Assets/Scripts/Combat/CombatDamage.cs",ROOT/"Assets/Scripts/Combat/ProjectileVolleyBudget.cs",ROOT/"Assets/Scripts/Combat/SummonerDamageRules.cs",ROOT/"Assets/Scripts/Combat/CompanionRules.cs",ROOT/"Assets/Scripts/Combat/PlayerUpgradeRules.cs",ROOT/"Tests/SkillRuntimeTests.cs",ROOT/"Tests/ComboBudgetSimulation.cs",ROOT/"Tests/ComboBudgetTests.cs"],
+            'using System; internal static class Program { static void Main(string[] args) { Console.WriteLine(ComboBudgetTests.Run(args[0])); } }'))
+        checks.append(("skill-damage-budgets",[ROOT/"Assets/Scripts/Core/GameTypes.cs",ROOT/"Assets/Scripts/Core/SkillRuntime.cs",ROOT/"Assets/Scripts/Core/SkillDamageBudgets.cs",ROOT/"Assets/Scripts/Combat/CombatDamage.cs",ROOT/"Assets/Scripts/Combat/ProjectileVolleyBudget.cs",ROOT/"Tests/SkillRuntimeTests.cs",ROOT/"Tests/SkillDamageBudgetTests.cs"],
+            'using System; internal static class Program { static void Main() { Console.WriteLine(SkillDamageBudgetTests.Run()); } }'))
+        for name, test, helpers in [("mobile-skills-workshop-layout", "MobileSkillsWorkshopLayoutTests", ["MobileControlLayout", "MobilePanelLayout"]), ("mobile-collection-layout", "MobileCollectionLayoutTests", ["MobileControlLayout", "MobilePanelLayout", "MobileCollectionLayout"])]:
+            checks.append((name, [ROOT/("Assets/Scripts/UI/"+helper+".cs") for helper in helpers]+[ROOT/("Tests/"+test+".cs")],
+                'using System; internal static class Program { static void Main() { Console.WriteLine('+test+'.Run()); } }'))
+        checks.append(("mobile-save-location",[ROOT/"Assets/Scripts/UI/MobileControlLayout.cs",ROOT/"Assets/Scripts/UI/MobilePanelLayout.cs",ROOT/"Assets/Scripts/UI/MobileSavePathText.cs",ROOT/"Tests/MobileSaveLocationTests.cs"],
+            'using System; internal static class Program { static void Main() { Console.WriteLine(MobileSaveLocationTests.Run()); } }'))
+        checks.append(("save-idempotence",[ROOT/"Assets/Scripts/Core/GameTypes.cs",ROOT/"Assets/Scripts/Core/ProgressionService.cs",ROOT/"Tests/ProgressionTests.cs",ROOT/"Tests/SaveIdempotenceTests.cs"],
+            'using System; internal static class Program { static void Main(string[] args) { Console.WriteLine(SaveIdempotenceTests.Run(args[0])); } }'))
+        checks.append(("equipment-lookups",[ROOT/"Assets/Scripts/Core/GameTypes.cs",ROOT/"Assets/Scripts/Core/ProgressionService.cs",ROOT/"Tests/ProgressionTests.cs",ROOT/"Tests/EquipmentLookupTests.cs"],
+            'using System; internal static class Program { static void Main(string[] args) { Console.WriteLine(EquipmentLookupTests.Run(args[0])); } }'))
+        checks.append(("explicit-action-persistence",[ROOT/"Assets/Scripts/Core/GameTypes.cs",ROOT/"Assets/Scripts/Core/ProgressionService.cs",ROOT/"Tests/ProgressionTests.cs",ROOT/"Tests/ExplicitActionPersistenceTests.cs"],
+            'using System; internal static class Program { static void Main(string[] args) { Console.WriteLine(ExplicitActionPersistenceTests.Run(args[0])); } }'))
+        checks.append(("progression-growth",[ROOT/"Assets/Scripts/Core/GameTypes.cs",ROOT/"Assets/Scripts/Core/ProgressionService.cs",ROOT/"Tests/ProgressionTests.cs",ROOT/"Tests/ProgressionGrowthTests.cs"],
+            'using System; internal static class Program { static void Main(string[] args) { Console.WriteLine(ProgressionGrowthTests.Run(args[0])); } }'))
+        checks.append(("enemy-kill-rewards", [ROOT/"Assets/Scripts/Core/GameTypes.cs", ROOT/"Assets/Scripts/Core/ProgressionService.cs", ROOT/"Tests/ProgressionTests.cs", ROOT/"Tests/EnemyKillRewardTests.cs"],
+            'using System; internal static class Program { static void Main(string[] args) { Console.WriteLine(EnemyKillRewardTests.Run(args[0])); } }'))
+        checks.append(("world-loot-receipts", [ROOT/"Assets/Scripts/Core/GameTypes.cs", ROOT/"Assets/Scripts/Core/ProgressionService.cs", ROOT/"Tests/ProgressionTests.cs", ROOT/"Tests/WorldLootReceiptTests.cs"],
+            'using System; internal static class Program { static void Main(string[] args) { Console.WriteLine(WorldLootReceiptTests.Run(args[0])); } }'))
+        checks.append(("build-presets", [ROOT/"Assets/Scripts/Core/GameTypes.cs", ROOT/"Assets/Scripts/Core/ProgressionService.cs", ROOT/"Tests/ProgressionTests.cs", ROOT/"Tests/BuildPresetTests.cs"],
+            'using System; internal static class Program { static void Main(string[] args) { Console.WriteLine(BuildPresetTests.Run(args[0])); } }'))
+        checks.append(("build-size-policy", [ROOT/"Assets/Editor/BuildSizePolicy.cs", ROOT/"Tests/BuildSizePolicyTests.cs"],
+            'using System; internal static class Program { static void Main() { Console.WriteLine(BuildSizePolicyTests.Run()); } }'))
         for _, sources, _ in checks:
             if ROOT / "Assets/Scripts/Core/GameTypes.cs" in sources:
                 sources.append(ROOT / "Assets/Scripts/Core/CombatBalance.cs")
+        for _,sources,_ in checks:
+            if ROOT/"Assets/Scripts/Core/ProgressionService.cs" in sources:
+                for helper in ["HubTravelRules","MasteryCoreRuntime","TierRewardRules","TierRewardBand"]:sources.append(ROOT/("Assets/Scripts/Core/"+helper+".cs"))
+            if ROOT/"Tests/CombatBalanceTests.cs" in sources:sources.append(ROOT/"Assets/Scripts/Core/SkillDamageBudgets.cs")
         for name, sources, program in checks:
             project = write_project(workspace / name, sources, program)
             commands = [[dotnet, "restore", str(project), "--configfile", str(config), "--verbosity", "quiet"],

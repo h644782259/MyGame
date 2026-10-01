@@ -25,8 +25,9 @@ namespace Emberfall
             return value.Trim();
         } }
         private EnemyController enemy;
-        private float slowTime, slowStrength, markTime, markStrength, poisonTime, poisonDamage, poisonTick, downTime, frozenTime;
-        private float frostMarkTime, burnTime, burnDamage, burnTick;
+        private float slowTime, slowStrength, markTime, markStrength, poisonTime, poisonDamage, downTime, frozenTime;
+        private float frostMarkTime, burnTime, burnDamage;
+        private ScheduledTickWindow poisonSchedule, burnSchedule;
         private int burnEpoch;
         private PlayerController burnSource;
         private readonly RecentCastGate meteorCasts = new RecentCastGate();
@@ -48,11 +49,12 @@ namespace Emberfall
         }
         public void Freeze(float duration)
         {
-            if (enemy == null || enemy.IsDead || duration <= 0) return;
-            frozenTime = Mathf.Max(frozenTime, duration * (enemy.IsBoss ? .24f : 1));
-            // Boss resistance shortens hard control, never the combo opportunity.
+            if (enemy == null || enemy.IsDead || duration <= 0 || float.IsNaN(duration) || float.IsInfinity(duration)) return;
+            float granted = enemy.ApplyControl(duration);
+            if (!enemy.IsBoss && granted <= 0) granted = Mathf.Min(duration, enemy.ControlStunRemaining);
+            frozenTime = Mathf.Max(frozenTime, granted);
+            // Boss armor blocks hard freeze, not the frost-mark/shatter opportunity.
             if (enemy.IsBoss) frostMarkTime = Mathf.Max(frostMarkTime, duration + 2f);
-            enemy.ApplyControl(duration);
             Slow(duration + 2, .4f);
         }
         public void FrostMark(float duration)
@@ -72,17 +74,21 @@ namespace Emberfall
 
         public void Knockdown(float duration)
         {
-            downTime = Mathf.Max(downTime, duration * (enemy.IsBoss ? .24f : 1));
-            enemy.ApplyControl(duration);
+            if (enemy == null || enemy.IsDead || duration <= 0 || float.IsNaN(duration) || float.IsInfinity(duration)) return;
+            float granted = enemy.ApplyControl(duration);
+            if (!enemy.IsBoss && granted <= 0) granted = Mathf.Min(duration, enemy.ControlStunRemaining);
+            downTime = Mathf.Max(downTime, granted);
         }
         public void Knockup(float duration, float height)
         {
-            if (enemy == null || enemy.IsDead || duration <= 0 || IsAirborne || airborneRecovery > 0) return;
-            airborneDuration = Mathf.Clamp(duration, .3f, 1.2f) * (enemy.IsBoss ? .24f : 1f);
+            if (enemy == null || enemy.IsDead || enemy.IsBoss || duration <= 0 || float.IsNaN(duration) || float.IsInfinity(duration) || IsAirborne || airborneRecovery > 0) return;
+            float granted = enemy.ApplyControl(Mathf.Clamp(duration, .3f, 1.2f));
+            if (granted <= 0) granted = Mathf.Min(1.2f, enemy.ControlStunRemaining);
+            if (granted <= 0) return;
+            airborneDuration = granted;
             airborneTime = airborneDuration;
             airborneHeight = Mathf.Clamp(height, .25f, 2f) * (enemy.IsBoss ? .18f : 1f);
-            airborneRecovery = airborneDuration + (enemy.IsBoss ? 2.5f : .35f);
-            enemy.ApplyControl(duration);
+            airborneRecovery = airborneDuration + (enemy.IsBoss ? 2.5f : enemy.Tier == EnemyController.ThreatTier.Elite ? 1.1f : .45f);
             enemy.Provoke();
         }
         public void Mark(float duration, float vulnerability)
@@ -93,9 +99,11 @@ namespace Emberfall
         }
         public void Poison(PlayerController source, float duration, float damagePerTick)
         {
-            if (source == null || enemy.IsDead) return;
-            if (poisonTime <= 0) { poisonStacks = 0; poisonDamage = 0; poisonTick = .75f; }
-            poisonTime = Mathf.Max(poisonTime, duration);
+            if (source == null || source.IsDead || enemy == null || enemy.IsDead || !FinitePositive(duration) || !FinitePositive(damagePerTick)) return;
+            if (poisonSchedule == null || poisonSchedule.Complete || poisonSource != source || sourceEpoch != source.CombatEpoch)
+            { poisonStacks = 0; poisonDamage = 0; poisonSchedule = new ScheduledTickWindow(duration,StatusTickRates.Poison,StatusTickRates.Poison); }
+            else poisonSchedule.Refresh(duration);
+            poisonTime = poisonSchedule.Remaining;
             poisonStacks = Mathf.Min(3, poisonStacks + 1);
             poisonDamage = Mathf.Max(poisonDamage, damagePerTick);
             poisonSource = source; sourceEpoch = source.CombatEpoch;
@@ -129,65 +137,66 @@ namespace Emberfall
             if (source == null || PoisonStacks < 3 || poisonSource != source || sourceEpoch != source.CombatEpoch) return false;
             PrepareCastOwner(source);
             if (!poisonCasts.TryEnter(castId)) return false;
-            storedDamage = poisonDamage * poisonStacks * 3f;
-            poisonTime = poisonDamage = 0; poisonStacks = 0;
+            storedDamage = poisonDamage * poisonStacks * PlayerUpgradeRules.PoisonDetonationTicks;
+            poisonTime = poisonDamage = 0; poisonStacks = 0; if (poisonSchedule != null) poisonSchedule.Clear();
             return true;
         }
 
         public void Burn(PlayerController source, float duration, float totalDamage)
         {
-            if (source == null || source.IsDead || enemy == null || enemy.IsDead || duration <= 0 || totalDamage <= 0) return;
-            burnTime = Mathf.Max(burnTime, duration);
+            if (source == null || source.IsDead || enemy == null || enemy.IsDead || !FinitePositive(duration) || !FinitePositive(totalDamage)) return;
+            if (burnSchedule == null || burnSchedule.Complete || burnSource != source || burnEpoch != source.CombatEpoch)
+            { burnDamage = 0; burnSchedule = new ScheduledTickWindow(duration,StatusTickRates.Burn,StatusTickRates.Burn); }
+            else burnSchedule.Refresh(duration);
+            burnTime = burnSchedule.Remaining;
             burnDamage = Mathf.Max(burnDamage, totalDamage / duration);
-            if (burnSource == null || burnTick <= 0) burnTick = .5f;
             burnSource = source; burnEpoch = source.CombatEpoch;
             enemy.Provoke();
             ElementalCombatVfx.OnEnemy(enemy, ElementalCombatVfx.Element.Fire, duration);
         }
-
+        private static bool FinitePositive(float value)
+        { return value > 0 && !float.IsNaN(value) && !float.IsInfinity(value); }
+        private bool ValidSource(PlayerController source,int epoch)
+        { var game=GameSession.Instance;return source!=null&&!source.IsDead&&source.CombatEpoch==epoch&&game!=null&&game.HasStarted&&game.Player==source&&!game.CombatEnded; }
         private void Update()
         {
             if (enemy == null || enemy.IsDead) return;
+            var game=GameSession.Instance;
+            if(game==null||!game.HasStarted||game.InputBlocked)return;
             float dt = Time.deltaTime;
-            if (dt <= 0) return;
+            if (!FinitePositive(dt)) return;
             slowTime = Mathf.Max(0, slowTime - dt);
             markTime = Mathf.Max(0, markTime - dt);
             downTime = Mathf.Max(0, downTime - dt);
             frozenTime = Mathf.Max(0, frozenTime - dt);
             frostMarkTime = Mathf.Max(0, frostMarkTime - dt);
-            if (burnTime > 0)
+            // Both clocks see this frame before a damage callback can open a
+            // choice menu. Unclaimed events stay queued until combat resumes.
+            if (burnSchedule != null && !burnSchedule.Complete)
             {
-                if (burnSource == null || burnSource.IsDead || burnSource.CombatEpoch != burnEpoch || GameSession.Instance == null || GameSession.Instance.Player != burnSource)
-                { burnTime = burnDamage = 0; burnSource = null; }
-                else
-                {
-                    float elapsed = Mathf.Min(dt, burnTime);
-                    burnTime = Mathf.Max(0, burnTime - dt);
-                    burnTick -= elapsed;
-                    int catchup = 0;
-                    while (burnTick <= 0 && !enemy.IsDead && catchup++ < 8)
-                    {
-                        burnTick += .5f;
-                        enemy.TakeDamage(burnDamage * .5f, Vector3.zero, impact: false);
-                    }
-                    if (burnTime <= 0) { burnDamage = 0; burnSource = null; }
-                }
+                if (!ValidSource(burnSource,burnEpoch))
+                { burnSchedule.Clear(); burnTime = burnDamage = 0; burnSource = null; }
+                else { burnSchedule.Elapse(dt,true); burnTime=burnSchedule.Remaining; }
             }
+            if (poisonSchedule != null && !poisonSchedule.Complete)
+            {
+                if (!ValidSource(poisonSource,sourceEpoch))
+                { poisonSchedule.Clear(); poisonTime=poisonDamage=0; poisonStacks=0; poisonSource=null; }
+                else { poisonSchedule.Elapse(dt,true); poisonTime=poisonSchedule.Remaining; }
+            }
+            for(int i=0;i<ScheduledTickWindow.MaximumCatchUp&&!enemy.IsDead&&!game.InputBlocked&&!game.CombatEnded&&burnSchedule!=null&&burnSchedule.TryTakeDueTick(true);i++)
+                enemy.TakeDamage(burnDamage*StatusTickRates.Burn,Vector3.zero,impact:false);
+            if(burnSchedule!=null&&burnSchedule.Complete){burnTime=burnDamage=0;burnSource=null;}
             airborneTime = Mathf.Max(0, airborneTime - dt);
             airborneRecovery = Mathf.Max(0, airborneRecovery - dt);
             if (slowTime <= 0) slowStrength = 0;
             if (markTime <= 0) markStrength = 0;
-            if (poisonTime <= 0) return;
-            if (poisonSource == null || poisonSource.IsDead || poisonSource.CombatEpoch != sourceEpoch || GameSession.Instance == null || GameSession.Instance.Player != poisonSource)
-            { poisonTime = 0; poisonDamage = 0; poisonStacks = 0; return; }
-            poisonTime = Mathf.Max(0, poisonTime - dt);
-            poisonTick -= dt;
-            if (poisonTick <= 0)
-            {
-                poisonTick += .75f;
-                enemy.TakeDamage(poisonDamage * poisonStacks, Vector3.zero, impact: false);
-                CombatFx.Ring(enemy.transform.position, .6f, new Color(.55f, 1f, .28f), .35f, .06f);
-            }
+            int poisonDue=0;
+            for(;poisonDue<ScheduledTickWindow.MaximumCatchUp&&!enemy.IsDead&&!game.InputBlocked&&!game.CombatEnded&&poisonSchedule!=null&&poisonSchedule.TryTakeDueTick(true);poisonDue++)
+                enemy.TakeDamage(poisonDamage*poisonStacks,Vector3.zero,impact:false);
+            if(poisonDue>0&&!enemy.IsDead)CombatFx.Ring(enemy.transform.position,.6f,new Color(.55f,1f,.28f),.35f,.06f);
+            if(poisonSchedule!=null&&poisonSchedule.Complete){poisonTime=poisonDamage=0;poisonStacks=0;poisonSource=null;}
+
         }
         private void LateUpdate()
         {

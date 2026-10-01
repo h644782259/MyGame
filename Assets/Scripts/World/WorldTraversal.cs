@@ -6,7 +6,8 @@ namespace Emberfall
     /// <summary>Shared ground rules for direct movement, leaps and creature routes.</summary>
     public static class WorldTraversal
     {
-        private struct Obstacle { public Vector2 Center, Half; public float Radius; }
+        public sealed class ObstacleHandle { internal ObstacleHandle(){} }
+        private struct Obstacle { public Vector2 Center, Half; public float Radius; public ObstacleHandle Handle; }
         private static readonly List<Obstacle> obstacles = new List<Obstacle>();
         private static readonly Dictionary<int, bool[]> grids = new Dictionary<int, bool[]>();
         private static Vector3[] river;
@@ -14,6 +15,7 @@ namespace Emberfall
         private static Rect bridge;
         private static float arena = 22;
         private static int revision;
+        public static int Revision {get{return revision;}}
         private const float Cell = .7f;
         private const int Side = 67;
         private const float GridOrigin = -23.1f;
@@ -23,15 +25,38 @@ namespace Emberfall
         }
         public static void AddCircle(Vector3 center, float radius)
         {
-            obstacles.Add(new Obstacle { Center = new Vector2(center.x, center.z), Radius = radius }); grids.Clear();
+            obstacles.Add(new Obstacle { Center = new Vector2(center.x, center.z), Radius = radius }); grids.Clear(); revision++;
         }
         public static void AddBox(Vector3 center, Vector2 size)
         {
-            obstacles.Add(new Obstacle { Center = new Vector2(center.x, center.z), Half = size * .5f }); grids.Clear();
+            obstacles.Add(new Obstacle { Center = new Vector2(center.x, center.z), Half = size * .5f }); grids.Clear(); revision++;
         }
+        public static ObstacleHandle AddDynamicCircle(Vector3 center,float radius)
+        {
+            if(!Finite(center.x)||!Finite(center.z)||!Finite(radius)||radius<=0)return null;
+            var handle=new ObstacleHandle();
+            obstacles.Add(new Obstacle{Center=new Vector2(center.x,center.z),Radius=radius,Handle=handle});
+            grids.Clear();revision++;return handle;
+        }
+        public static ObstacleHandle AddDynamicBox(Vector3 center,Vector2 size)
+        {
+            if(!Finite(center.x)||!Finite(center.z)||!Finite(size.x)||!Finite(size.y)||size.x<=0||size.y<=0)return null;
+            var handle=new ObstacleHandle();
+            obstacles.Add(new Obstacle{Center=new Vector2(center.x,center.z),Half=size*.5f,Handle=handle});
+            grids.Clear();revision++;return handle;
+        }
+        public static bool RemoveDynamicObstacle(ObstacleHandle handle)
+        {
+            if(handle==null)return false;
+            for(int i=0;i<obstacles.Count;i++)if(object.ReferenceEquals(obstacles[i].Handle,handle))
+            {obstacles.RemoveAt(i);grids.Clear();revision++;return true;}
+            return false;
+        }
+        public static bool HasLineOfSightIgnoringObstacle(Vector3 from,Vector3 to,ObstacleHandle handle)
+        {return ClearSegment(from,to,.04f,true,handle);}
         public static void SetRiver(Vector3[] centerline, float width, Rect crossing)
         {
-            river = centerline; riverHalfWidth = width * .5f; bridge = crossing; grids.Clear();
+            river = centerline; riverHalfWidth = width * .5f; bridge = crossing; grids.Clear(); revision++;
         }
         public static bool IsWalkable(Vector3 point, float radius = .45f)
         {
@@ -42,12 +67,17 @@ namespace Emberfall
                 if (CombatFx.SegmentDistance(point, river[i - 1], river[i]) < riverHalfWidth + radius) return false;
             return true;
         }
-        private static bool ClearOfSolids(Vector3 point, float radius)
+        // Navigation map classification uses the same geometry as movement. Bridges
+        // remain ground; solid obstacles are never mislabelled as water.
+        public static bool IsOpenWater(Vector3 point, float radius = .16f)
+        { return ClearOfSolids(point, radius) && !IsWalkable(point, radius); }
+        private static bool ClearOfSolids(Vector3 point, float radius, ObstacleHandle ignored=null)
         {
             Vector2 p = new Vector2(point.x, point.z);
             if (p.sqrMagnitude > (arena - radius) * (arena - radius)) return false;
             foreach (Obstacle obstacle in obstacles)
             {
+                if(ignored!=null&&object.ReferenceEquals(obstacle.Handle,ignored))continue;
                 Vector2 delta = p - obstacle.Center;
                 if (obstacle.Radius > 0) { if (delta.sqrMagnitude < (obstacle.Radius + radius) * (obstacle.Radius + radius)) return false; }
                 else
@@ -89,13 +119,13 @@ namespace Emberfall
 
         private static bool Finite(float value) { return !float.IsNaN(value) && !float.IsInfinity(value); }
 
-        private static bool ClearSegment(Vector3 from, Vector3 to, float radius, bool ignoreWater)
+        private static bool ClearSegment(Vector3 from, Vector3 to, float radius, bool ignoreWater, ObstacleHandle ignored=null)
         {
             int samples = Mathf.Max(1, Mathf.CeilToInt(CombatFx.Flat(to - from).magnitude / .18f));
             for (int i = 0; i <= samples; i++)
             {
                 Vector3 p = Vector3.Lerp(from, to, i / (float)samples);
-                if (ignoreWater ? !ClearOfSolids(p, radius) : !IsWalkable(p, radius)) return false;
+                if (ignoreWater ? !ClearOfSolids(p, radius, ignored) : !IsWalkable(p, radius)) return false;
             }
             return true;
         }

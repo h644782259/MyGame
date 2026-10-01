@@ -1,0 +1,85 @@
+using System.Collections.Generic;
+using UnityEngine;
+namespace Emberfall
+{
+ public sealed partial class GameSession
+ {
+  public RoomChainState RoomChainRun {get;private set;}
+  private sealed class RoomEnemyReceipt{public RoomChainPlan Plan;public int Index;}
+  private readonly Dictionary<EnemyController,RoomEnemyReceipt> roomEnemies=new Dictionary<EnemyController,RoomEnemyReceipt>();
+  private GameObject roomExitMarker;private bool roomResultRecorded;
+  public bool NearRoomExit {get{return RoomChainRun!=null&&RoomChainRun.DoorUnlocked&&Player!=null&&Vector3.Distance(Player.transform.position,new Vector3(0,0,14))<3.8f;}}
+  public static string ChainRoomName(int index){return new[]{"林缘前厅","断梁书库","沉桥水院","星泉休憩室","王座封印"}[Mathf.Clamp(index,0,4)];}
+  public string RoomObjectiveStatus {get{return RoomChainRun==null?"":RoomChainRun.Finished?(RoomChainRun.Failed?"远征结束 · 返回营地":"远征完成 · 领取结算"):"房间 "+(RoomChainRun.Room.Index+1)+" / 5 · "+(RoomChainRun.DoorUnlocked?"北门已解锁":RoomChainRun.Room.Interlude?"选择星泉祝福":"清理 "+Enemies.Count+" 名守卫");}}
+  private void ResetRoomChain(bool dungeon)
+  {
+   if(RoomChainRun!=null)RoomChainRun.Dispose();RoomChainRun=null;roomEnemies.Clear();roomExitMarker=null;roomResultRecorded=false;
+   if(dungeon&&SelectedArenaMode==3){RoomChainRun=new RoomChainState();DungeonLayout=RoomChainRun.Room.Layout;modeReceipt=System.Guid.NewGuid().ToString("N");}
+  }
+  private void BeginRoomChainScene()
+  {
+   var plan=RoomChainRun.Room;DungeonWave=plan.Index+1;wavePopulation=Mathf.Max(1,plan.EnemyCount);objectiveHealedThisWave=false;
+   roomExitMarker=WorldBuilder.MakeLootBeacon(new Vector3(0,0,14),new Color(.25f,.8f,1));roomExitMarker.name="Locked room gate";roomExitMarker.transform.SetParent(world.transform,true);roomExitMarker.SetActive(false);
+   if(plan.Index==1)BuildSideEvent();
+   if(plan.Interlude)
+   {Player.Heal(Player.MaxHealth*.25f);RunChoices.Prepare(1,Progression.Profile.heroClass,Progression.Profile.skillRanks,runSeed+577);UpdateTimeScale();return;}
+   for(int index=0;index<plan.EnemyCount;index++)
+   {
+    bool boss=plan.Boss&&index==0;EnemyKind kind=boss?EnemyKind.Guardian:index%3==0?EnemyKind.Wisp:index%3==1?EnemyKind.Goblin:EnemyKind.Guardian;
+    float angle=index*2.39996f+plan.Index*.42f;Vector3 desired=new Vector3(Mathf.Sin(angle)*10,0,Mathf.Cos(angle)*9+2),point;
+    if(!TrySafeSpawn(desired,boss?1.3f:.65f,5.5f,out point)||!RoomChainRun.Register(plan,index)){RoomChainRun.Fail();FinalizeRoomChain();return;}
+    try
+    {
+     SpawnEnemy(kind,DungeonEntryLevel,point,boss);EnemyController enemy=Enemies[Enemies.Count-1];
+     if(boss)LargeExpeditionBoss.Configure(enemy,DungeonTier,runSeed+plan.Index*911);
+     roomEnemies.Add(enemy,new RoomEnemyReceipt{Plan=plan,Index=index});
+    }
+    catch(System.Exception error){RoomChainRun.Fail();Notify("房间生成失败："+error.Message);FinalizeRoomChain();return;}
+   }
+  }
+  private void RecordRoomDefeat(EnemyController enemy)
+  {
+   RoomEnemyReceipt receipt;if(RoomChainRun==null||!roomEnemies.TryGetValue(enemy,out receipt))return;
+   roomEnemies.Remove(enemy);RoomChainRun.Defeat(receipt.Plan,receipt.Index);
+   if(RoomChainRun.DoorUnlocked){if(roomExitMarker!=null)roomExitMarker.SetActive(true);Notify("房间肃清 · 北门已解锁，靠近后进入下一间");}
+  }
+  public bool EnterNextRoom()
+  {
+   if(RoomChainRun==null||!NearRoomExit||InputBlocked)return false;
+   if(!SaveBeforeLeaving())return false;
+   if(!RoomChainRun.Next(true,false))return false;
+   SuspendInputs();changingZone=true;sideEventEnemies.Clear();sideEventStarted=false;sideCrystal=null;
+   int previousCombatEpoch=Player.CombatEpoch;
+   foreach(var enemy in Enemies)if(enemy!=null){enemy.gameObject.SetActive(false);Destroy(enemy.gameObject);}Enemies.Clear();roomEnemies.Clear();
+   foreach(var obj in transientObjects)if(obj!=null){obj.SetActive(false);Destroy(obj);}transientObjects.Clear();
+   if(world!=null){world.SetActive(false);Destroy(world);}
+   Player.RetireCombatForWorldTransition();RetireWorldLootReceipts(previousCombatEpoch);
+   DungeonLayout=RoomChainRun.Room.Layout;world=WorldBuilder.Build(ZoneKind.Dungeon,DungeonLayout,Progression.Profile.bestFloor);
+   // Room travel cancels stale effects but deliberately keeps every skill cooldown.
+   Player.Teleport(new Vector3(0,0,-12));Camera.main.GetComponent<AdventureCamera>().Snap();BeginRoomChainScene();
+   changingZone=false;UpdateTimeScale();Notify(ChainRoomName(RoomChainRun.Room.Index)+" · 房间 "+(RoomChainRun.Room.Index+1)+" / 5");return true;
+  }
+  private bool ConfirmRoomInterlude(int index)
+  {
+   if(RoomChainRun==null||!RoomChainRun.Room.Interlude||!RunChoices.Choose(index)||!RoomChainRun.ChooseInterlude())return false;
+   if(roomExitMarker!=null)roomExitMarker.SetActive(true);UpdateTimeScale();Notify("祝福已选 · 北门通往最终首领");return true;
+  }
+  private void FinalizeRoomChain()
+  {
+   if(RoomChainRun==null||!RoomChainRun.Finished||roomResultRecorded)return;
+   roomResultRecorded=true;DungeonCleared=!RoomChainRun.Failed;
+   if(DungeonCleared){TrySettleRoomReward();GameAudio.Play(SoundCue.Victory);}
+   LastRunSummary=BuildRunSummary(DungeonCleared);SuspendInputs();UpdateTimeScale();
+  }
+  private bool TrySettleRoomReward()
+  {
+   if(RoomChainRun==null||!RoomChainRun.Finished||RoomChainRun.Failed||RoomChainRun.RewardClaimed)return true;
+   int beforeGold=Progression.Profile.gold,beforeMaterials=Progression.Profile.mechanicMaterials;long xp=TotalEarnedExperience(Progression.Profile);
+   int reward=200+DungeonTier*35;if(HasBlessing(RunBlessing.RiskContract))reward=Mathf.RoundToInt(reward*1.3f);
+   bool saved=Progression.TryGrantModeReward(modeReceipt,reward,160+DungeonTier*25,TierRewardBand.Materials(4,DungeonTier));
+   if(!saved){Notify(Progression.LastError);return false;}
+   RoomChainRun.ClaimReward(true);modeGoldReward=Progression.Profile.gold-beforeGold;modeMaterialReward=Progression.Profile.mechanicMaterials-beforeMaterials;modeXpReward=(int)System.Math.Max(0,TotalEarnedExperience(Progression.Profile)-xp);
+   LastRunSummary=BuildRunSummary(true);return true;
+  }
+ }
+}

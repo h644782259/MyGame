@@ -99,6 +99,7 @@ namespace Emberfall.Editor
                 ValidateHotbarDrag();
                 ValidateConsumableHotbar();
                 ValidateMultipleSaveSlots();
+                ValidateBuildPresets();
                 report.status = "PASS";
                 Debug.Log("Emberfall Unity validation PASS: " + report.assertions + " assertions. Report: " + Path.Combine(output, "validation-report.json"));
             }
@@ -345,6 +346,51 @@ namespace Emberfall.Editor
             Check(repaired.Profile.equippedSkills[10] == GameBalance.HotbarPotion && repaired.Profile.equippedSkills[11] == -1 && repaired.Profile.potions == 0,
                 "consumable repair: independent page shortcut retained at quantity zero");
             report.passedStages.Add("consumable hotbar: assignment, mixed swaps, zero supply, page isolation, snapshot, JSON persistence and repair");
+        }
+
+        private static void ValidateBuildPresets()
+        {
+            foreach (HeroClass hero in Enum.GetValues(typeof(HeroClass)))
+            {
+                string name = "build-presets-" + hero;
+                ProgressionService service = Fresh(name, hero);
+                Check(service.Profile.buildPresets.Length == 2 && !service.HasBuildPreset(0) && !service.HasBuildPreset(1),
+                    name + ": empty preset slots survive real JsonUtility defaults");
+                service.Profile.level = 100;
+                for (int skill = 0; skill < GameBalance.SkillCount; skill++) service.Profile.skillRanks[skill] = 3;
+                service.Profile.masteryRanks = new[] { 20, 0, 0, 10 }; service.Profile.masteryCore = 0;
+                service.Profile.specialization = hero == HeroClass.Arcanist ? ElementalistSpecialization.Burn : ElementalistSpecialization.None;
+                service.Save();
+                Check(service.SaveBuildPreset(0, true), name + ": first preset durably recorded");
+                string preset = JsonUtility.ToJson(service.Profile.buildPresets[0]);
+                Check(service.ResetBuild(true) && service.Profile.skillPoints == 89 && service.Profile.masteryCore == -1,
+                    name + ": joint reset refunds skills and mastery while retaining ten first ranks");
+                service.Profile.masteryRanks[1] = 10; service.Profile.masteryCore = 1; service.Save();
+                Check(service.SaveBuildPreset(1, true) && service.Load(), name + ": distinct second preset and both real JSON slots reload");
+                Check(service.HasBuildPreset(0) && service.HasBuildPreset(1) && JsonUtility.ToJson(service.Profile.buildPresets[0]) == preset,
+                    name + ": nested arrays and saved item references remain exact after JSON roundtrip");
+                Check(service.ApplyBuildPreset(0, true) && service.Profile.skillPoints == 39 && service.Profile.masteryCore == 0,
+                    name + ": first build reapplies its original shared-point budget");
+                for (int skill = 0; skill < GameBalance.SkillCount; skill++)
+                    Check(service.Profile.skillRanks[skill] == 3, name + ": restored rank remains exact for skill " + skill);
+                Check(service.ApplyBuildPreset(1, true) && service.Profile.skillPoints == 79 && service.Profile.masteryCore == 1,
+                    name + ": second build remains independent");
+                GameProfile before = service.Profile;
+                string state = JsonUtility.ToJson(before), primary = File.ReadAllText(service.SaveFilePath), backup = File.ReadAllText(service.SaveFilePath + ".bak");
+                string temporary = service.SaveFilePath + ".tmp";
+                Directory.CreateDirectory(temporary);
+                try
+                {
+                    Check(!service.ApplyBuildPreset(0, true) && ReferenceEquals(before, service.Profile) && JsonUtility.ToJson(service.Profile) == state,
+                        name + ": failed real-JSON apply retains complete live identity and state");
+                    Check(File.ReadAllText(service.SaveFilePath) == primary && File.ReadAllText(service.SaveFilePath + ".bak") == backup,
+                        name + ": failed apply preserves both real JSON documents");
+                }
+                finally { Directory.Delete(temporary); }
+                Check(service.ApplyBuildPreset(0, true) && service.Load() && service.Profile.skillPoints == 39,
+                    name + ": failed apply retries and reloads exactly once");
+            }
+            report.passedStages.Add("two build presets: four-class real JSON nested-array roundtrip, joint respec, independent application and failed-write retry");
         }
 
         private static ProgressionService Fresh(string name, HeroClass hero = HeroClass.Vanguard)
