@@ -10,7 +10,7 @@ assert 'CombatProjectile.BasicShot(' in b and 'StartCoroutine' not in b and 'Inv
 assert 'BasicActionTimeline.Contact(heroClass == HeroClass.Ranger)' in m
 assert 'Time.frameCount != actionStartedFrame' in m
 assert 'BasicActionTimeline.ArrowVisible(t, acting)' in m and 'BasicActionTimeline.BowDraw(t)' in m
-assert p.count('CombatEpoch++;') == p.count('if (model != null) model.CancelAction();')
+assert all('model.CancelAction();' in tail[:100] for tail in p.split('CombatEpoch++;')[1:])
 assert 'session.IsDead || session.CombatEnded || session.Player.CombatEpoch != epoch' in fx
 assert 'if (IsDead) return;' in p and 'if (session.InputBlocked)' in p
 print('PASS: 8 basic action timing wiring contracts')

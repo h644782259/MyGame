@@ -120,6 +120,9 @@ namespace Emberfall
         private bool hostile, pierce, basicAttack, energyAwarded, arrowShape;
         private EnemyController homingTarget;
         private EnemyController basicAimTarget;
+        private EnemyController impactMarkTarget;
+        private float impactMarkStrength;
+        private string terminationReason = "disposed";
         private bool bodyHeightFlight;
         private float launchHeight, impactHeight, aimedDistance, distanceTravelled;
         private int epoch;
@@ -127,7 +130,7 @@ namespace Emberfall
         private Material bodyMaterial, trailMaterial;
         private Color color;
 
-        public static void Friendly(PlayerController player, GameSession game, Vector3 at, Vector3 forward, CombatDamage amount, Color tint, bool piercing = false, bool arrow = false, bool basic = false, float size = 1f, float velocity = 0f, EnemyController tracking = null, CombatDamage blastDamage = default(CombatDamage), float blastRadius = 0f, int skillIndex = -1, int castId = 0, SummonedCompanion companionSource = null, ProjectileVolleyBudget<EnemyController> volley = null)
+        public static void Friendly(PlayerController player, GameSession game, Vector3 at, Vector3 forward, CombatDamage amount, Color tint, bool piercing = false, bool arrow = false, bool basic = false, float size = 1f, float velocity = 0f, EnemyController tracking = null, CombatDamage blastDamage = default(CombatDamage), float blastRadius = 0f, int skillIndex = -1, int castId = 0, SummonedCompanion companionSource = null, ProjectileVolleyBudget<EnemyController> volley = null, EnemyController markTarget = null, float markStrength = 0)
         {
             CombatProjectile projectile = Make(at, forward, tint, arrow);
             projectile.owner = player;
@@ -136,6 +139,7 @@ namespace Emberfall
             projectile.epoch = player.CombatEpoch;
             projectile.damage = amount;
             projectile.volley = volley;
+            projectile.impactMarkTarget = markTarget; projectile.impactMarkStrength = markStrength;
             projectile.speed = arrow ? 20f : 16f;
             projectile.lifetime = 1.15f;
             projectile.radius = piercing ? .38f : .22f;
@@ -150,6 +154,7 @@ namespace Emberfall
             projectile.radius *= Mathf.Min(2f,size);
             if (velocity > 0) projectile.speed = velocity;
             if (tracking != null) projectile.lifetime = 2.5f;
+            if (CombatReviewEvents.Enabled) CombatReviewEvents.Emit("projectilelaunch",player.GetInstanceID(),tracking==null?0:tracking.GetInstanceID(),skill:skillIndex,detail:projectile.GetInstanceID().ToString());
         }
 
         internal static bool CanLaunchFromMuzzle(PlayerController player,Vector3 muzzle,CombatDamage amount,int castId)
@@ -190,6 +195,7 @@ namespace Emberfall
             projectile.aimedDistance=Mathf.Max(.25f,CombatFx.Flat(target-muzzle).magnitude);
             projectile.transform.position=muzzle;
             projectile.AlignBodyFlight();
+            if (CombatReviewEvents.Enabled) CombatReviewEvents.Emit("projectilelaunch",player.GetInstanceID(),selected==null?0:selected.GetInstanceID(),detail:projectile.GetInstanceID().ToString());
         }
 
         public static void Hostile(GameSession game, Vector3 at, Vector3 forward, float amount, float velocity = 8f, string sourceName = "敌方弹幕")
@@ -254,11 +260,11 @@ namespace Emberfall
         private void Update()
         {
             if (session == null || session.Player == null || session.Player != playerGeneration || !session.HasStarted || session.IsDead || session.CombatEnded || session.Player.CombatEpoch != epoch || (!hostile && owner == null))
-            { Destroy(gameObject); return; }
+            { terminationReason = "retired"; Destroy(gameObject); return; }
             float dt = Time.deltaTime;
             if (dt <= 0) return;
             age += dt;
-            if (age > lifetime) { Destroy(gameObject); return; }
+            if (age > lifetime) { terminationReason = "expired"; Destroy(gameObject); return; }
             if (homingTarget != null && !homingTarget.IsDead && homingTarget.gameObject.activeInHierarchy)
             {
                 Vector3 towards = CombatFx.Flat(homingTarget.transform.position-transform.position).normalized;
@@ -332,7 +338,11 @@ namespace Emberfall
                     hitTargets.Add(enemy);
                     Vector3 hitPosition = enemy.transform.position;
                     CombatDamage impact=volley==null?damage:volley.Apply(enemy,damage,false);
+                    float healthBefore = enemy.Health;
+                    if (LockedImpactMarkPolicy.ShouldApply(impactMarkTarget, enemy, !enemy.IsDead, impact.Amount, impactMarkStrength) && enemy.StatusEffects != null)
+                        enemy.StatusEffects.Mark(4f, impactMarkStrength);
                     if(impact.Amount>0){if(!basicAttack&&companionSource==null)owner.RegisterSkillHit(castId);enemy.TakeDamage(owner.ResolveSkillImpact(enemy, skillIndex, castId, impact.Amount, impact.IsCritical, impact.CriticalMultiplier), direction, .18f, critical:impact.IsCritical);}
+                    if (CombatReviewEvents.Enabled) CombatReviewEvents.Emit("projectilehit",owner.GetInstanceID(),enemy.GetInstanceID(),Mathf.Max(0,healthBefore-enemy.Health),skillIndex,GetInstanceID().ToString());
                     if (companionSource != null) companionSource.OnConfirmedHit(enemy);
                     CombatFx.Ring(hitPosition, .7f, color, .2f);
                     if (basicAttack && !energyAwarded)
@@ -356,13 +366,14 @@ namespace Emberfall
                     CombatFx.Ring(point,.45f,color,.2f,.04f);Destroy(gameObject);return;
                 }
             }
-            if (terrainHit) { CombatFx.Ring(transform.position, .4f, color, .15f); Destroy(gameObject); return; }
+            if (terrainHit) { terminationReason = "terrain"; CombatFx.Ring(transform.position, .4f, color, .15f); Destroy(gameObject); return; }
             float bound = session.ArenaRadius + 3f;
             if (Mathf.Abs(transform.position.x) > bound || Mathf.Abs(transform.position.z) > bound) Destroy(gameObject);
         }
 
         private void OnDestroy()
         {
+            if (!hostile && owner != null && CombatReviewEvents.Enabled) CombatReviewEvents.Emit("projectileend",owner.GetInstanceID(),skill:skillIndex,detail:GetInstanceID()+":"+terminationReason+":hits="+hitTargets.Count);
             hostileProjectiles.Remove(this);
             if (bodyMaterial != null) Destroy(bodyMaterial);
             if (trailMaterial != null) Destroy(trailMaterial);

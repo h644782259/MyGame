@@ -1,0 +1,13 @@
+# Combat review: bounded approach, locked impact, event feedback
+
+Heavy boss close-range preference now requests the same 1.8-second maximum / 1.5-second stall approach budget used by the post-volley tactic. At expiry the controller can use an in-range, traversable charge or a visible volley; it never treats a blocked path as a legal attack. Pointblank reachable slams remain immediate choices. Stun/windup still do not spend approach time.
+
+Phantom volley retains its immutable target identity. Its existing four-second, rank-scaled mark is applied only after collision and visibility accept an actual positive hit on that target, before resolving damage. Pierced bystanders and dead/missing locks do not inherit the mark.
+
+The Vanguard ultimate's existing 8x judgment event now occurs first, 0.15 seconds after charge release, followed by the existing 2.2x sword-array events. Event count, total coefficient, per-sword footprint, rank-three tail, charge cost and cooldown are retained. This intentionally changes the timing and order of delivery; it is not a claim that short-window burst balance is unchanged. The matching model release reaches contact at this first event. Ordinary immediate skill actions begin at release; basic attacks yield during the key part of an active skill pose. Successful dodge, charge cancellation, death and world epochs clear stale model poses. Already committed skill sequences keep their existing lifecycle semantics.
+
+Eight effect sources remain bounded: six ordinary voices and two reserved critical voices. Critical feedback can replace a reserved voice when saturated. Ordinary hits/critical hits share a 100ms minimum interval. Judgment feedback fires on the actual judgment event.
+
+Opt-in CombatReviewEvents hooks report real attack/skill attempts and releases, refused energy, charge cancellation, player/enemy HP loss and death, and projectile launch/hit/end. Projectile hit amounts are actual HP differences; end records include projectile identity, reason and enemy-hit count. No raw miss is inferred from cancellation or disposal. The bus does not store history without an observer.
+
+Validation: 5,677 new pure-rule assertions, ten new source connections, eight prior basic timeline and 29 prior combat timing source contracts passed. Runtime API compilation against local Unity 2021 references passed with zero warnings/errors. Pure tests cover 6m retreat, 10m blocked approach and pointblank obstruction, legal fallback ranges, mark identity/positive-hit gating, reordered ultimate totals, action priority and every 8-voice busy mask. Collision adapters, gameplay feel, sound mixing and rendered action timing still require real Unity/device validation; source tests are not PlayMode tests.

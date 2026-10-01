@@ -156,7 +156,9 @@ namespace Emberfall
             if (largeBoss != null) amount *= largeBoss.State.IncomingMultiplier;
             if (Kind == EnemyKind.Guardian && !IsBoss && !preparing && CombatFx.Flat(direction).sqrMagnitude > .01f && Vector3.Dot(transform.forward, -CombatFx.Flat(direction).normalized) > .45f)
                 amount *= .65f;
+            float previousHealth = Health;
             Health = Mathf.Max(0,Health-amount);
+            CombatReviewEvents.Emit("damage",0,GetInstanceID(),previousHealth-Health,detail:"enemy_health_loss");
             aggro = true;
             hurtTime = .15f;
             if (impact && (critical || Time.time >= nextImpactTime))
@@ -182,6 +184,7 @@ namespace Emberfall
             session.SpawnCombatDamage(transform.position+Vector3.up*(IsBoss?3.6f:1.9f),Mathf.CeilToInt(amount).ToString(),critical);
             if (Health <= 0 && !deathReported)
             {
+                CombatReviewEvents.Emit("enemydeath",0,GetInstanceID());
                 deathReported = true;
                 if (largeBoss != null) largeBoss.StopEncounter();
                 CancelAttack();
@@ -320,7 +323,7 @@ namespace Emberfall
             else if (aggro)
             {
                 if (delta.sqrMagnitude>.01f) transform.rotation=Quaternion.Slerp(transform.rotation,Quaternion.LookRotation(delta),dt*9f);
-                bool approach = IsBoss && advanceBudget.Advance(dt, distance, BossAttackPolicy.ShouldAdvance(distance, previousMove, repeatedMove));
+                bool approach = IsBoss && advanceBudget.Advance(dt, distance, BossAttackPolicy.PreferredApproach(arenaBossPattern, distance, previousMove, repeatedMove, CanUseBossAttack(BossAttackPolicy.Move.Slam, combatTargetPosition)));
                 float range = IsBoss ? (approach ? BossAttackPolicy.ChargeRange : BossAttackPolicy.EngageRange) : Kind==EnemyKind.Wisp ? 7.5f : Kind==EnemyKind.Guardian ? 2.5f : 1.8f;
                 if (IsBoss && arenaBossPattern == 1 && !advanceBudget.FallbackActive) range = Mathf.Min(range, BossAttackPolicy.CloseRange);
                 bool attackPath = IsBoss ? CanUseBossAttack(SelectBossMove(distance, combatTargetPosition), combatTargetPosition) : Kind == EnemyKind.Wisp ? WorldTraversal.HasLineOfSight(transform.position, combatTargetPosition) : WorldTraversal.HasGroundPath(transform.position, combatTargetPosition, .12f);
@@ -386,6 +389,7 @@ namespace Emberfall
 
         private bool CanUseBossAttack(BossAttackPolicy.Move move, Vector3 target)
         {
+            if (!BossAttackPolicy.InRange(move, CombatFx.Flat(target - transform.position).magnitude)) return false;
             if (move == BossAttackPolicy.Move.Fan) return WorldTraversal.HasLineOfSight(transform.position, target);
             if (!WorldTraversal.HasGroundPath(transform.position, target, .12f)) return false;
             if (move != BossAttackPolicy.Move.Charge) return true;
@@ -399,8 +403,8 @@ namespace Emberfall
             BossAttackPolicy.Move fallback = BossAttackPolicy.Select(distance, previousMove, repeatedMove);
             BossAttackPolicy.Move preferred = ArenaBossPatternPolicy.Preferred(arenaBossPattern, distance, previousMove, repeatedMove);
             BossAttackPolicy.Move selected = preferred != fallback && !CanUseBossAttack(preferred, target) ? fallback : preferred;
-            return BossAttackPolicy.AfterAdvanceBudget(selected, distance, advanceBudget.FallbackActive,
-                CanUseBossAttack(BossAttackPolicy.Move.Fan, target));
+            return BossAttackPolicy.LegalFallback(selected, distance, advanceBudget.FallbackActive,
+                CanUseBossAttack(BossAttackPolicy.Move.Charge, target), CanUseBossAttack(BossAttackPolicy.Move.Fan, target));
         }
 
         private void BeginAttack()

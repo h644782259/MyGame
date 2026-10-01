@@ -47,7 +47,12 @@ namespace Emberfall
 
         public void Cancel()
         {
-            if (IsCharging) cancelledFrame = Time.frameCount;
+            if (IsCharging)
+            {
+                if (owner != null) CombatReviewEvents.Emit("chargecancel",owner.GetInstanceID(),skill:SkillIndex);
+                if (owner != null) owner.CancelCombatPose();
+                cancelledFrame = Time.frameCount;
+            }
             SkillIndex = -1; TargetEnemy = null;
             elapsed = duration = 0;
             ClearEffect();

@@ -118,11 +118,13 @@ namespace Emberfall
                     LaunchArea(fault, 2.6f * range, .6f + rank * .12f, 1f + rank * .2f);
                     if (rank==3 && step==steps-1) Burst(fault,4f*range,damage*SkillDamageBudgets.AdvancedAuxiliary(heroClass,skill,rank),color,3,SkillVisualRecipe.Steel);
                     break;
-                case 9: // Successive executions culminate in one enormous falling blade.
-                    if (step < steps-1)
+                case 9: // The main judgment lands first; the unchanged sword budget follows.
+                    if (step == 0) GameAudio.Play(SoundCue.Judgment);
+                    if (CombatReviewEvents.Enabled) CombatReviewEvents.Emit("skillimpact",owner.GetInstanceID(),skill:skill,detail:step==0?"judgment":"sword-array");
+                    if (step > 0)
                     {
-                        float radius = (2.4f+step*.55f)*range;
-                        AdvancedSkillVfx.FallingBlade(owner,target+Circle(step*2.1f,1.8f*range),color,.85f);
+                        float radius = (2.4f+(step-1)*.55f)*range;
+                        AdvancedSkillVfx.FallingBlade(owner,target+Circle((step-1)*2.1f,1.8f*range),color,.85f);
                         CombatFx.Ring(target,radius,color,.5f,.18f);
                         owner.HitArea(target,radius,damage*SkillDamageBudgets.AdvancedImpact(heroClass,skill,rank,step),.1f,.2f,castId:castId);
                     }
@@ -130,8 +132,8 @@ namespace Emberfall
                     {
                         AdvancedSkillVfx.FallingBlade(owner,target,new Color(1f,.95f,.63f),2.1f);
                         Burst(target,6.2f*range,damage*SkillDamageBudgets.AdvancedImpact(heroClass,skill,rank,step),color,3,SkillVisualRecipe.Steel);
-                        if (rank==3) SpawnTail(target,5.2f*range,.25f);
                     }
+                    if (rank==3 && step==steps-1) SpawnTail(target,5.2f*range,.25f);
                     break;
             }
         }
@@ -195,11 +197,10 @@ namespace Emberfall
                     break;
                 case 7:
                     EnemyController mark=lockedTarget != null && !lockedTarget.IsDead ? lockedTarget : null;
-                    if (mark != null && mark.StatusEffects != null) mark.StatusEffects.Mark(4f, .08f + rank * .04f);
                     Vector3 fireDirection=mark!=null?CombatFx.Flat(mark.transform.position-owner.transform.position).normalized:forward;
                     Vector3 side=Vector3.Cross(Vector3.up,fireDirection)*(step%2==0?-.55f:.55f);
                     if (CombatSight.Direct(owner.transform.position, owner.transform.position + side + fireDirection))
-                        CombatProjectile.Friendly(owner,session,owner.transform.position+side+fireDirection,fireDirection,damage*SkillDamageBudgets.AdvancedImpact(heroClass,skill,rank,step),color,rank>=2,true,false,range,24f*range,mark,castId:castId);
+                        CombatProjectile.Friendly(owner,session,owner.transform.position+side+fireDirection,fireDirection,damage*SkillDamageBudgets.AdvancedImpact(heroClass,skill,rank,step),color,rank>=2,true,false,range,24f*range,mark,castId:castId,markTarget:lockedTarget,markStrength:.08f+rank*.04f);
                     if(step%4==0) AdvancedSkillVfx.Beam(owner,owner.transform.position+side+Vector3.up,owner.transform.position+fireDirection*7f+side+Vector3.up,color,.2f,.07f);
                     break;
                 case 9:

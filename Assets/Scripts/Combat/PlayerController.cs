@@ -215,7 +215,9 @@ namespace Emberfall
             damage = Mathf.Max(damage, amount * CombatBalance.MinimumCombinedDamageMultiplier);
             if (session.HasBlessing(RunBlessing.RiskContract)) damage *= 1.15f;
             session.RecordIncomingDamage(source, Mathf.Min(Health, damage));
+            float healthBeforeHit = Health;
             Health = Mathf.Max(0,Health - damage);
+            CombatReviewEvents.Emit("takendamage",GetInstanceID(),amount:healthBeforeHit-Health,detail:source);
             if(Health>0){float recovery=masteryCore.DamageTaken(Health/MaxHealth);if(recovery>0){Heal(MaxHealth*recovery);session.RecordCombatAction("生机核心");}}
             GameAudio.Play(SoundCue.Hit);
             invulnerability = .2f;
@@ -225,6 +227,7 @@ namespace Emberfall
             if (Health > 0) TryDefensePassive();
             if (Health <= 0)
             {
+                CombatReviewEvents.Emit("death",GetInstanceID());
                 CombatEpoch++;
                 if (model != null) model.CancelAction();
             masteryCore.Reset();coreWardTime=0;
@@ -559,10 +562,12 @@ namespace Emberfall
 
         private void BasicAttack()
         {
+            if (model.BasicActionBlocked) return;
             if (charge != null && (charge.IsCharging || charge.ConsumedThisFrame)) return;
             if ((HeroClass==HeroClass.Arcanist || HeroClass==HeroClass.Summoner) && !ValidAimTarget(AimTarget)) AimTarget=MagicConeTarget();
             FaceAim();
             GameAudio.Play(SoundCue.Attack);
+            CombatReviewEvents.Emit("attack",GetInstanceID());
             attackCooldown = SkillDamageBudgets.BasicInterval(HeroClass);
             if (mobilityTime > 0) attackCooldown *= .8f;
             if (ActiveRunBonuses != null) attackCooldown /= ActiveRunBonuses.AttackSpeedMultiplier;
@@ -923,6 +928,10 @@ namespace Emberfall
             return true;
         }
 
+        internal void CancelCombatPose() { if (model != null) model.CancelAction(); }
+        internal float CounterOpportunityRemaining { get { return IsDead ? 0 : counterTime; } }
+        internal EnemyController CurrentOpportunityTarget { get { return ValidAimTarget(AimTarget) ? AimTarget : null; } }
+
         internal bool TryBlink(Vector3 direction) { return TryBlinkCore(direction, true); }
 
         private bool TryBlinkCore(Vector3 direction, bool allowBuffer)
@@ -950,6 +959,7 @@ namespace Emberfall
             if (!WorldTraversal.TryResolveBlink(origin, forward, 4.8f, .45f, session.ArenaRadius - .65f, out destination))
             { TraversalFailure(); return false; }
             if (charge != null) charge.Cancel();
+            model.CancelAction();
             transform.position = destination;
             dodgeCooldown = 2.1f;
             invulnerability = Mathf.Max(invulnerability, .38f);
@@ -1015,12 +1025,14 @@ namespace Emberfall
             else if(!CanUseMovementSkill(skill,rank)) failure="前方有障碍或没有安全落点，请走桥或调整方向。";
             if(failure==null) return true;
             session.ReportControlFailure("skill"+skill,rank<=0?"未学":skillRuntime.Remaining(skill)>0?"冷却":Energy<GameBalance.SkillEnergyCost(HeroClass,skill)?"缺能":"无落点");
+            if (Energy<GameBalance.SkillEnergyCost(HeroClass,skill)) CombatReviewEvents.Emit("noenergy",GetInstanceID(),skill:skill);
             if(skillFeedbackCooldown<=0) { session.Notify(failure); skillFeedbackCooldown=.8f; }
             return false;
         }
 
         internal bool CastImmediateSkill(int skill)
         {
+            CombatReviewEvents.Emit("skillattempt",GetInstanceID(),skill:skill);
             if(SkillTargetingController.RequiresConfirmation(HeroClass,skill) || !CanBeginSkillTargeting(skill)) return false;
             // Mouse aim is resolved independently of movement. Re-read a selected
             // living target's position here so immediate directional casts face it.
@@ -1032,6 +1044,7 @@ namespace Emberfall
 
         internal bool ConfirmTargetedSkill(int skill,Vector3 worldPoint)
         {
+            CombatReviewEvents.Emit("skillattempt",GetInstanceID(),skill:skill);
             if(!SkillTargetingController.RequiresConfirmation(HeroClass,skill) || !CanBeginSkillTargeting(skill)) return false;
             EnemyController selected=AimTarget;
             aimPoint=CombatSight.GroundPoint(transform.position,worldPoint);
@@ -1105,6 +1118,7 @@ namespace Emberfall
             session.RecordCombatAction("职业能力");
             if (executingChargedSkill && session.HasBlessing(RunBlessing.ChargedWard)) chargedWardTime = Mathf.Max(chargedWardTime, 2f);
             GameAudio.Play(SoundCue.Cast);
+            CombatReviewEvents.Emit("skillrelease",GetInstanceID(),skill:slot);
             if ((HeroClass == HeroClass.Vanguard && slot == 5) || (HeroClass == HeroClass.Ranger && slot == 4)) movementSkillLock = .15f;
             if (executingChargedSkill) model.ReleaseCharge(slot);
             else model.PlayAction(slot,false);

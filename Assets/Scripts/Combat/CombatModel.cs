@@ -864,15 +864,18 @@ namespace Emberfall
             swingCount++;
             actionDuration = basic ? BasicActionTimeline.Duration(heroClass == HeroClass.Ranger, basicInterval > 0 ? basicInterval : SkillDamageBudgets.BasicInterval(heroClass))
                 : (skill == 9 ? 1.12f : skill >= 4 ? .84f : .68f);
-            if (basic) actionAge = actionDuration * BasicActionTimeline.Contact(heroClass == HeroClass.Ranger);
+            actionAge = actionDuration * (basic ? BasicActionTimeline.Contact(heroClass == HeroClass.Ranger) : .52f);
         }
 
+        public bool BasicActionBlocked { get { return BasicActionTimeline.BlocksBasic(actionBasic, actionAge, actionDuration); } }
         public void CancelAction() { actionAge = actionDuration = 0; }
 
         public void ReleaseCharge(int skill)
         {
             PlayAction(skill, false);
-            actionAge = actionDuration * .30f;
+            if (heroClass == HeroClass.Vanguard && skill == 9)
+                actionDuration = SkillDamageBudgets.AdvancedFirstEvent(heroClass, skill) / (.52f - .30f);
+            actionAge = actionDuration * (heroClass == HeroClass.Vanguard && skill == 9 ? .30f : .52f);
         }
 
         private static Quaternion Pose(Vector3 idle, Vector3 windup, Vector3 release, float normalizedTime)

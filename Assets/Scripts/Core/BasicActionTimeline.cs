@@ -5,6 +5,8 @@ namespace Emberfall
     // for the actual attack interval; no delayed gameplay event is scheduled.
     public static class BasicActionTimeline
     {
+        public static bool BlocksBasic(bool basic, float age, float duration)
+        { return !basic && duration > 0 && age < duration * .65f; }
         public const float BowRelease = .32f, BowSettled = .48f, ArrowReload = .83f;
         public static float Contact(bool bow) { return bow ? BowRelease : .52f; }
         public static float Duration(bool bow, float interval)

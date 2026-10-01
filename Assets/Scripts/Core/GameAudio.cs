@@ -3,19 +3,18 @@ using UnityEngine;
 
 namespace Emberfall
 {
-    public enum SoundCue { Attack, Cast, Hit, Dodge, Loot, LevelUp, Victory, Death, UI, CriticalHit }
 
     /// <summary>Eight bounded effect voices plus one quiet, seamless background loop.</summary>
     public sealed class GameAudio : MonoBehaviour
     {
         private const int VoiceCount = 8;
-        private const int CueCount = 10;
+        private const int CueCount = 11;
         private const int SampleRate = 22050;
         private const float DefaultVolume = .5f;
         private const float BackgroundVolume = .14f;
         private const double Tau = Math.PI * 2.0;
-        private static readonly float[] Durations = { .16f, .34f, .13f, .22f, .38f, .64f, .95f, .65f, .09f, .17f };
-        private static readonly float[] MinimumIntervals = { .075f, .12f, .075f, .15f, .16f, .25f, .5f, .5f, .055f, .085f };
+        private static readonly float[] Durations = { .16f, .34f, .13f, .22f, .38f, .64f, .95f, .65f, .09f, .17f, .42f };
+        private static readonly float[] MinimumIntervals = { .075f, .12f, .075f, .15f, .16f, .25f, .5f, .5f, .055f, .085f, .12f };
         private static GameAudio instance;
         private static bool muted;
         private static bool quitting;
@@ -27,6 +26,7 @@ namespace Emberfall
         private AudioListener listener;
         private float[] lastPlayed;
         private int nextVoice;
+        private float lastImpact = float.NegativeInfinity;
         private float nextListenerCheck;
 
         public struct Diagnostics
@@ -162,19 +162,15 @@ namespace Emberfall
             EnsureListener();
             float now = Time.unscaledTime;
             if (now - lastPlayed[cue] < MinimumIntervals[cue]) return;
-            AudioSource voice = null;
-            for (int offset = 0; offset < VoiceCount; offset++)
-            {
-                int candidate = (nextVoice + offset) % VoiceCount;
-                if (voices[candidate] != null && !voices[candidate].isPlaying)
-                {
-                    voice = voices[candidate];
-                    nextVoice = (candidate + 1) % VoiceCount;
-                    break;
-                }
-            }
-            // Never stack additional one-shots on a busy source: the actual voice cap stays eight.
-            if (voice == null) return;
+            if (AudioVoicePolicy.IsImpact((SoundCue)cue) && now - lastImpact < .1f) return;
+            int busy = 0;
+            for(int i=0;i<VoiceCount;i++) if(voices[i] == null || voices[i].isPlaying) busy |= 1 << i;
+            int selected = AudioVoicePolicy.Select((SoundCue)cue, busy, nextVoice);
+            if (selected < 0 || voices[selected] == null) return;
+            AudioSource voice = voices[selected];
+            if (voice.isPlaying) voice.Stop(); // Only a reserved critical channel can be replaced.
+            nextVoice = (nextVoice + 1) % VoiceCount;
+            if (AudioVoicePolicy.IsImpact((SoundCue)cue)) lastImpact = now;
             if (clips[cue] == null) clips[cue] = Synthesize((SoundCue)cue);
             lastPlayed[cue] = now;
             voice.volume = DefaultVolume * masterVolume * (cue == (int)SoundCue.UI ? .55f : 1f);
@@ -280,6 +276,7 @@ namespace Emberfall
                         phase += Tau * frequency / SampleRate;
                         value = (Math.Sin(phase) * .28 + noise * .55) * Math.Exp(-progress * 4);
                         break;
+                    case SoundCue.Judgment:
                     case SoundCue.Cast:
                         frequency = 350 + progress * 850;
                         phase += Tau * frequency / SampleRate;

@@ -14,7 +14,7 @@ check('advanceBudget.Advance(dt, distance' in enemy and '!advanceBudget.Fallback
 prepare=enemy[enemy.index('private void PrepareAttack'):enemy.index('private float ImpactRadius')]
 check('advanceBudget.Reset();' in prepare,'every real new attack resets its own approach budget')
 select=enemy[enemy.index('private BossAttackPolicy.Move SelectBossMove'):enemy.index('private void BeginAttack')]
-check('BossAttackPolicy.AfterAdvanceBudget(selected, distance, advanceBudget.FallbackActive,' in select and 'CanUseBossAttack(BossAttackPolicy.Move.Fan, target)' in select,'expired chase resolves to an actually visible ranged attack, including the anti-repeat charge band')
+check('BossAttackPolicy.LegalFallback(selected, distance, advanceBudget.FallbackActive,' in select and 'CanUseBossAttack(BossAttackPolicy.Move.Fan, target)' in select,'expired chase resolves to an actually visible ranged attack, including the anti-repeat charge band')
 check('AdventureResultPolicy.AcceptsDamage(session.HasStarted,session.CombatEnded)' in enemy,'late ordinary-dungeon and mode damage are terminal guarded')
 check('burnSchedule.Elapse(dt,true)' in status and 'poisonSchedule.Elapse(dt,true)' in status and status.count('TryTakeDueTick(true)')==2,'both damage statuses share finite scheduler')
 check('game.InputBlocked' in status and 'source.CombatEpoch==epoch' in status,'status clocks obey pause and reject stale caster')

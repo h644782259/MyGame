@@ -79,7 +79,7 @@ namespace Emberfall
         public static float AdvancedImpact(HeroClass hero,int skill,int rank,int step)
         {
             bool final=step>=AdvancedSteps(hero,skill,rank)-1;
-            if(hero==HeroClass.Vanguard){if(skill==5)return 5.2f;if(skill==7)return 2.8f;if(skill==9)return final?8f:2.2f;}
+            if(hero==HeroClass.Vanguard){if(skill==5)return 5.2f;if(skill==7)return 2.8f;if(skill==9)return step==0?8f:2.2f;}
             if(hero==HeroClass.Arcanist){if(skill==4)return 2.9f;if(skill==7)return final?(Rank(rank)==3?6f:4f):.85f;if(skill==9)return final?9f:2.2f;}
             if(hero==HeroClass.Ranger){if(skill==4)return 1.65f;if(skill==5)return .7f;if(skill==7)return 1.05f;if(skill==9)return final?8.5f:1.35f;}
             return 0;
@@ -98,7 +98,7 @@ namespace Emberfall
         public static float AdvancedInterval(HeroClass hero,int skill)
         {if(skill==6)return 1;if(hero==HeroClass.Vanguard)return skill==7?.18f:skill==9?.4f:.2f;if(hero==HeroClass.Arcanist)return skill==7||skill==9?.45f:.2f;return skill==7?.12f:skill==9?.25f:.2f;}
         public static float AdvancedFirstEvent(HeroClass hero,int skill)
-        {return skill==6?1:skill==9?.6f:hero==HeroClass.Arcanist&&skill==7?.3f:0;}
+        {return skill==6?1:hero==HeroClass.Vanguard&&skill==9?.15f:skill==9?.6f:hero==HeroClass.Arcanist&&skill==7?.3f:0;}
         public static float ChargeSeconds(HeroClass hero,int skill)
         {if(skill==9)return hero==HeroClass.Vanguard?.9f:hero==HeroClass.Ranger?.75f:1.1f;if(hero==HeroClass.Arcanist&&skill==1)return .55f;if(hero==HeroClass.Vanguard&&skill==7)return .5f;if(hero==HeroClass.Summoner&&skill==4)return .4f;return 0;}
     }
