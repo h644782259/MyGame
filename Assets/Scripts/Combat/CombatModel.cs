@@ -4,7 +4,7 @@ using UnityEngine;
 namespace Emberfall
 {
     // Each model owns its palette. Materials are reused across all of its parts.
-    public sealed class CombatModel : MonoBehaviour
+    public sealed partial class CombatModel : MonoBehaviour
     {
         private struct SurfaceKey
         {
@@ -106,6 +106,7 @@ namespace Emberfall
             model.BuildHero(hero);
             model.EnhanceHero(hero);
             if (hero == HeroClass.Summoner) model.SummonerCrown();
+            model.BuildClassCostume();
             return model;
         }
 
@@ -125,16 +126,7 @@ namespace Emberfall
                 fashionWings.SetParent(spine, false);
                 fashionWings.localPosition = new Vector3(0, .26f, -.43f);
                 Color color = GameBalance.RarityColor(wings.rarity);
-                int feathers = 2 + (int)wings.rarity;
-                for (int side = -1; side <= 1; side += 2)
-                    for (int i = 0; i < feathers; i++)
-                    {
-                        Transform feather = Part("Wing feather", PrimitiveType.Capsule,
-                            new Vector3(side * (.38f + i * .19f), .12f - i * .09f, -.04f),
-                            new Vector3(.22f, .72f - i * .055f, .12f), color, fashionWings);
-                        feather.localRotation = Quaternion.Euler(15f, 0, side * (38f + i * 13f));
-                    }
-                Part("Wing jewel", PrimitiveType.Sphere, Vector3.zero, new Vector3(.22f, .25f, .15f), Color.white, fashionWings);
+                BuildFashionWingShape(wings,color);
             }
             Transform weaponAnchor = heroClass == HeroClass.Ranger ? bowRig :
                 heroClass == HeroClass.Vanguard ? swordRig : staffRig;
@@ -337,6 +329,7 @@ namespace Emberfall
 
         private void BuildEquipmentArmor(EquipmentAppearance look)
         {
+            if(heroClass!=HeroClass.Vanguard){BuildClassEquipmentArmor(look);return;}
             equipmentArmor = GearRoot("Equipped Armor", spine);
             equipmentArmor.localPosition = Vector3.down * 1.12f;
             float width = .68f + look.Tier * .065f;
