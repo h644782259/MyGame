@@ -219,7 +219,7 @@ namespace Emberfall
             CancelAttack(true);
             if (specialWindup) largeBoss.InterruptWindup();
             attackCooldown = Mathf.Max(attackCooldown, IsBoss ? 1.3f : .8f);
-            session.SpawnFloatingText(transform.position + Vector3.up * (IsBoss ? 3.2f : 2f),
+            session.SpawnMechanismText(transform.position + Vector3.up * (IsBoss ? 3.2f : 2f),
                 "打断！", new Color(.35f, 1f, .85f));
             return true;
         }
@@ -437,7 +437,7 @@ namespace Emberfall
             windup = IsBoss ? BossAttackPolicy.Windup(ToMove(type), followUp) : Kind == EnemyKind.Wisp ? .72f : Kind == EnemyKind.Guardian ? .85f : Kind == EnemyKind.Slime ? .6f : .48f;
             totalWindup = windup;
             CreateWarning();
-            if (IsBoss) session.SpawnFloatingText(transform.position + Vector3.up * 3.1f,
+            if (IsBoss) session.SpawnMechanismText(transform.position + Vector3.up * 3.1f,
                 CanBeSkillInterrupted ? "青色符号 · 可打断" : "无打断符号 · 霸体恢复", CanBeSkillInterrupted ? new Color(.35f, 1f, .85f) : new Color(1f, .48f, .25f));
         }
 

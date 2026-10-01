@@ -23,11 +23,11 @@ select = body(number, 'private static bool TrySelectAdmission')
 check('MobileControls.Active?20:36' in select, 'Admission uses actual desktop/mobile display limits')
 check(not any(token in select for token in ('new ', '=>', '.Retire()', '.Remove', '.Add(')),
       'Admission scanning creates no explicit heap objects and does not mutate visible text')
-check('if(!isCritical)return false' in select and '!number.critical' in select,
+check('if(!isCritical)return false' in select and '!number.critical&&!number.mechanism' in select,
       'Only critical text can replace an ordinary number at the cap')
-check('number==replacement' in select and 'nearby>=(isCritical?6:4)' in select,
+check('number==replacement' in select and 'nearby>=(isMechanism?4:isCritical?6:4)' in select,
       'Local admission evaluates the prospective replacement and original local limits')
-check('camera.WorldToScreenPoint(origin)' in select and '<110' in select and '<2f' in select,
+check('camera.WorldToScreenPoint(origin)' in select and '<110*Density' in select and '<2f' in select,
       'Screen-space proximity and camera-free fallback remain unchanged')
 spawn = body(number, 'public static FloatingNumber Spawn')
 check(spawn.count('TrySelectAdmission(') == 1 and spawn.index('TrySelectAdmission(') < spawn.index('new GameObject('),
@@ -35,7 +35,7 @@ check(spawn.count('TrySelectAdmission(') == 1 and spawn.index('TrySelectAdmissio
 check('InitializeAdmitted(' in spawn and '.Initialize(' not in spawn,
       'Factory consumes its immediate local admission without rescanning')
 initialize = body(number, 'public void Initialize(')
-check('if (counted) return' in initialize and 'TrySelectAdmission(' in initialize and 'InitializeAdmitted(' in initialize,
+check('if(counted)return' in initialize and 'TrySelectAdmission(' in initialize and 'InitializeAdmitted(' in initialize,
       'Existing direct initialization remains guarded and uses the same policy')
 accepted = body(number, 'private void InitializeAdmitted')
 check(accepted.index('replacement.Retire()') < accepted.index('ActiveCount++'),
@@ -44,6 +44,14 @@ for source, method in ((session, 'public void SpawnFloatingText'), (feedback, 'p
     caller = body(source, method)
     check('FloatingNumber.Spawn(' in caller and 'new GameObject(' not in caller and 'ActiveCount' not in caller,
           method + ' delegates admission and creation to the common factory')
+check('MechanismCount>=CombatTextLayout.MechanismLimit' in select and 'ActiveCount-MechanismCount>=globalLimit' in select,
+      'Independent mechanism reserve does not consume damage capacity')
+check('isMechanism:true' in feedback and 'SpawnMechanismText' in feedback,
+      'Mechanism captions use an explicit admission channel')
+check('CombatTextLayout.CandidateCount' in number and 'box.Overlaps(number.bounds)' in number and 'RequestCharactersInTexture' in number and 'localBounds.size' in number,
+      'Bounded slot search uses glyph metrics and actual renderer bounds')
+check('OnDisable(){ReleaseCount();}' in number and 'MechanismCount=Mathf.Max(0,MechanismCount-1)' in number,
+      'Disable immediately returns both allocation budgets')
 check('systemMessagesView ?? (systemMessagesView = systemMessages.AsReadOnly())' in feedback,
       'System log caches one read-only live wrapper rather than allocating per read')
 check('systemMessages.Count >= 32' in feedback and 'systemMessages.RemoveAt(0)' in feedback,

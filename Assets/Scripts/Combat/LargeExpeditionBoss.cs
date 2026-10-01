@@ -45,7 +45,7 @@ namespace Emberfall
                 Vector3 toward = CombatFx.Flat(game.Player.transform.position-phaseCenter);
                 startAngle = Mathf.Atan2(toward.x,toward.z)*Mathf.Rad2Deg + 35f;
                 CreateAnchors(); EnsureBeam();
-                game.SpawnFloatingText(transform.position+Vector3.up*3.6f,"断能蓄力 · 摧毁供能锚",new Color(.35f,.92f,1));
+                game.SpawnMechanismText(transform.position+Vector3.up*3.6f,"断能蓄力 · 摧毁供能锚",new Color(.35f,.92f,1));
                 game.LogSystem("星环执政官 · 橙红边界表示危险，青色符号可打断，摧毁供能锚可中止扫射并暴露核心");
             }
             for (int i=0;i<anchors.Length;i++)
@@ -78,7 +78,7 @@ namespace Emberfall
         private void AnnounceExposure()
         {
             if(game==null||boss==null||boss.IsDead)return;
-            game.SpawnFloatingText(transform.position+Vector3.up*3.2f,"核心暴露 · 伤害 +35%",new Color(1,.82f,.35f));
+            game.SpawnMechanismText(transform.position+Vector3.up*3.2f,"核心暴露 · 伤害 +35%",new Color(1,.82f,.35f));
             CombatFx.Ring(transform.position,1.6f,new Color(.2f,.9f,1),.5f,.1f);
         }
         private void CreateAnchors()

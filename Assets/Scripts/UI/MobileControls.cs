@@ -5,7 +5,7 @@ namespace Emberfall
 {
     /// <summary>Independent touch ownership keeps movement, combat and skill dragging separate.</summary>
     [DefaultExecutionOrder(-200)]
-    public sealed class MobileControls : MonoBehaviour
+    public sealed partial class MobileControls : MonoBehaviour
     {
         private enum Role { Move, Attack, Skill, Aim, Camera, Consumed }
         private readonly Dictionary<int, Role> fingers = new Dictionary<int, Role>();
@@ -138,8 +138,8 @@ namespace Emberfall
                     else role = Role.Attack;
                 }
                 else if (Area(Layout.Interact).Contains(point)) { if(ui!=null)ui.ActivateMobileInteraction(finger);role=Role.Consumed; }
-                else if (Dodge.Contains(point)) { dodge = true; role = Role.Consumed; }
-                else if (Potion.Contains(point)) { potion = true; role = Role.Consumed; }
+                else if (Dodge.Contains(point)) { CheckDodgeFeedback(); dodge = true; role = Role.Consumed; }
+                else if (Potion.Contains(point)) { CheckPotionFeedback(); potion = true; role = Role.Consumed; }
                 else if (Cancel.Contains(point) && CanCancel)
                 {
                     if (targeting != null) targeting.Cancel();
@@ -204,6 +204,7 @@ namespace Emberfall
             Circle(Potion, new Color(.18f, .38f, .27f, .9f), "potion");
             if (CanCancel) Circle(Cancel, new Color(.48f, .17f, .20f, .94f), "cancel");
             else Circle(Jump, new Color(.22f, .27f, .40f, .9f), "jump");
+            DrawAvailability();
             GUI.matrix = oldMatrix; GUI.color = oldColor;
         }
         private void Circle(Rect rect, Color color, string icon)

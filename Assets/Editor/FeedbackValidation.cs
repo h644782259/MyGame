@@ -18,6 +18,10 @@ namespace Emberfall.Editor
             Camera camera = Camera.main;
             if (camera == null) throw new InvalidOperationException("Feedback fixture requires the gameplay camera.");
             bool simulation = MobileControls.SimulationEnabled;
+            RenderTexture previousTarget=camera.targetTexture;
+            // Dimension-only camera surface; never Create/Render this large texture.
+            var layoutSurface=new RenderTexture(8192,8192,0);
+            camera.targetTexture=layoutSurface;
             var stored = (List<GameSession.SystemMessage>)typeof(GameSession).GetField("systemMessages", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(game);
             GameSession.SystemMessage[] previousMessages = stored.ToArray();
             try
@@ -62,6 +66,13 @@ namespace Emberfall.Editor
                     check(!FloatingNumber.CanSpawn(At(camera, cap * 3), true) && Objects().Length == objects,
                         "A full critical-only display rejects additional critical text before allocation");
                     RetireAll();
+                    for(int i=0;i<cap;i++)check(FloatingNumber.Spawn(At(camera,i),"1",Color.white)!=null,"Refill damage budget");
+                    for(int i=0;i<CombatTextLayout.MechanismLimit;i++)check(FloatingNumber.Spawn(At(camera,cap+i),"打断",Color.cyan,isMechanism:true)!=null,"Mechanism reserve survives full damage budget");
+                    objects=Objects().Length;
+                    check(FloatingNumber.Spawn(At(camera,cap+5),"满额",Color.cyan,isMechanism:true)==null&&Objects().Length==objects,"Full mechanism pool rejects before allocation");
+                    check(FloatingNumber.MechanismCount==4&&FloatingNumber.ActiveCount==cap+4,"Separate total bound");
+                    RetireAll();
+                    check(FloatingNumber.MechanismCount==0&&FloatingNumber.ActiveCount==0,"Both pools return immediately on retirement");
 
                     Vector3 cluster = At(camera, -20);
                     int laneMask = 0;
@@ -72,7 +83,7 @@ namespace Emberfall.Editor
                         laneMask |= 1 << (int)typeof(FloatingNumber).GetField("lane", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(number);
                         if (i == 3) check(!FloatingNumber.CanSpawn(cluster), "Four nearby ordinary numbers block a fifth ordinary number");
                     }
-                    check(laneMask == 63 && !FloatingNumber.CanSpawn(cluster, true), "Six nearby numbers occupy distinct lanes and block a seventh critical");
+                    check(CountBits(laneMask) == 6 && !FloatingNumber.CanSpawn(cluster, true), "Six nearby numbers occupy distinct measured slots and block a seventh critical");
                     // Reject replacement only when the crowded cluster has no
                     // ordinary entry of its own that could free a local lane.
                     RetireAll();
@@ -94,7 +105,7 @@ namespace Emberfall.Editor
             }
             finally
             {
-                RetireAll(); MobileControls.SimulationEnabled = simulation;
+                RetireAll(); MobileControls.SimulationEnabled = simulation;camera.targetTexture=previousTarget;UnityEngine.Object.Destroy(layoutSurface);
                 stored.Clear(); stored.AddRange(previousMessages);
             }
             yield return null;
@@ -102,7 +113,8 @@ namespace Emberfall.Editor
         }
 
         private static Vector3 At(Camera camera, int index)
-        { return camera.ScreenToWorldPoint(new Vector3(index * 160f, 80f, 12f)); }
+        { int cell=index<0?120:index;return camera.ScreenToWorldPoint(new Vector3(320+(cell%12)*640,120+(cell/12)*640,12)); }
+        private static int CountBits(int bits){int result=0;while(bits!=0){result+=bits&1;bits>>=1;}return result;}
         private static FloatingNumber[] Objects()
         { return UnityEngine.Object.FindObjectsByType<FloatingNumber>(FindObjectsInactive.Include); }
         private static void RetireAll()

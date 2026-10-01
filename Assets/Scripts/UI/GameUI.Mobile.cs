@@ -39,7 +39,9 @@ namespace Emberfall
             for(int i=0;i<MobileSkillPolicy.ButtonCount;i++)if(hotbarSlots[i].Contains(point)&&MobileSkillPolicy.SkillAtButton(i)==mobileTap.Skill)inside=true;
             int skill;
             if(mobileTap.Release(finger,inside,false,out skill))
-            {var targeting=session.Player.GetComponent<SkillTargetingController>();if(targeting!=null)targeting.Begin(skill);}
+            {var targeting=session.Player.GetComponent<SkillTargetingController>();
+                if(targeting!=null&&!targeting.Begin(skill))
+                {if(string.IsNullOrEmpty(session.ControlFailure("skill"+skill)))session.ReportControlFailure("skill"+skill,"暂不可用");}}
         }
         private bool CanMobileInteract {get{return session!=null&&!session.InputBlocked&&!session.DungeonSelectionOpen&&(session.NearRoomExit||session.SideEventAvailable||session.NearbyHubNpc!=HubNpcKind.None||session.IsInCamp||session.InDungeon||session.IsNearDungeonEntrance);}}
         public void ActivateMobileInteraction(int triggeringFinger=TouchReleaseLatch.AnyPointer)
@@ -61,8 +63,9 @@ namespace Emberfall
             var l=MobileControls.Layout;GameProfile p=session.Progression.Profile;
             Color accent=GameBalance.ClassColor(p.heroClass);
             Rect status=TouchRect(12,12,175,58);blockedRects.Add(status);Box(status,accent,false);
-            Text(TouchRect(22,17,155,18),GameBalance.ClassName(p.heroClass)+"  "+p.level,TouchFont(13),pale,true);
+            Text(TouchRect(22,17,68,18),GameBalance.ClassName(p.heroClass)+" "+p.level,TouchFont(12),pale,true);
             float hp=session.Player==null?0:session.Player.Health,max=session.Player==null?1:session.Player.MaxHealth;
+            Text(TouchRect(90,17,87,18),Mathf.CeilToInt(hp)+"/"+Mathf.CeilToInt(max),TouchFont(11),pale,true,false,TextAnchor.MiddleRight);
             Bar(TouchRect(22,39,155,8),hp/Mathf.Max(1,max),jade);
             Bar(TouchRect(22,52,155,5),session.Player==null?0:session.Player.Energy/Mathf.Max(1,session.Player.MaxEnergy),new Color(.35f,.63f,1));
             if(MobileIcon(l.Inventory,"inventory",jade))TogglePanel(Panel.Inventory);
@@ -112,6 +115,7 @@ namespace Emberfall
                 float cooldown=skill<0||session.Player==null?0:session.Player.SkillCooldownRemaining(skill);
                 if(cooldown>.01f)
                 {Fill(r,new Color(.01f,.02f,.04f,.7f));Text(r,cooldown.ToString(cooldown>=10?"0":"0.0"),TouchFont(17),pale,true,false,TextAnchor.MiddleCenter);}
+                DrawMobileSkillAvailability(r,skill);
                 if(mobileTap.Skill==skill&&mobileTap.Active)Border(r,gold,2*TouchRatio);
             }
         }

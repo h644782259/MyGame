@@ -127,6 +127,9 @@ namespace Emberfall
         public void Initialize(GameSession gameSession)
         {
             session = gameSession;
+            var targetFeedback=GetComponent<CombatTargetFeedback>();
+            if(targetFeedback==null)targetFeedback=gameObject.AddComponent<CombatTargetFeedback>();
+            targetFeedback.Initialize(session);
             session.Progression.Changed+=InvalidateAttention;
             font = Font.CreateDynamicFontFromOSFont(new[] { "Microsoft YaHei", "微软雅黑", "PingFang SC", "PingFangSC-Regular", "Heiti SC", "SimHei", "Arial" }, 18);
         }

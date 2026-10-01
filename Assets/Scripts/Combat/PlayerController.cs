@@ -583,7 +583,7 @@ namespace Emberfall
                 {
                     session.RecordCombatAction("剑卫反击");
                     session.RecordCombatAction("职业能力");
-                    session.SpawnFloatingText(transform.position + Vector3.up * 2.5f, "反击！", new Color(1f, .85f, .35f));
+                    session.SpawnMechanismText(transform.position + Vector3.up * 2.5f, "反击！", new Color(1f, .85f, .35f));
                 }
             }
             else
@@ -645,7 +645,7 @@ namespace Emberfall
                     else if (session.Progression.Profile.skillRanks[0] > 0) enemy.StatusEffects.FrostMark(PlayerUpgradeRules.BasicFrostMarkDuration);
                     else enemy.StatusEffects.Freeze(.35f);
                     CombatFx.Ring(position, 1f, new Color(.5f, .9f, 1f), .35f, .12f);
-                    session.SpawnFloatingText(position + Vector3.up * 2f, "霜触", new Color(.55f, .95f, 1f));
+                    session.SpawnMechanismText(position + Vector3.up * 2f, "霜触", new Color(.55f, .95f, 1f));
                     session.RecordCombatAction("职业能力");
                 }
             }
@@ -724,7 +724,7 @@ namespace Emberfall
                 else if (Specialization != ElementalistSpecialization.Burn && status.TryShatter(this, castId))
                 {
                     direct += uncriticalDamage * PlayerUpgradeRules.ShatterMultiplier(Specialization);
-                    session.SpawnFloatingText(enemy.transform.position + Vector3.up * 2f, "碎冰！", new Color(.55f, .95f, 1f));
+                    session.SpawnMechanismText(enemy.transform.position + Vector3.up * 2f, "碎冰！", new Color(.55f, .95f, 1f));
                     CombatFx.Ring(enemy.transform.position, 1.5f, new Color(.55f, .95f, 1f), .4f, .16f);
                     session.RecordCombatAction("碎冰连招");
                 }
@@ -737,7 +737,7 @@ namespace Emberfall
                 {
                     bool spread = HasMechanic(EquipmentMechanic.VenomSpread);
                     baseDamage += bonus * (spread ? .8f : 1f);
-                    session.SpawnFloatingText(enemy.transform.position + Vector3.up * 2f, "三毒引爆！", new Color(.6f, 1f, .3f));
+                    session.SpawnMechanismText(enemy.transform.position + Vector3.up * 2f, "三毒引爆！", new Color(.6f, 1f, .3f));
                     session.RecordCombatAction("毒层引爆");
                     session.RecordCombatAction("职业能力");
                     if (spread && venomSpreadProc.TryTrigger(2f))
@@ -812,7 +812,7 @@ namespace Emberfall
             if (HeroClass == HeroClass.Summoner) { SummonedCompanion.OnPerfectDodge(this); }
             float ward=masteryCore.PerfectDodge();if(ward>0){coreWardTime=ward;session.RecordCombatAction("守御核心");}
             string reward = HeroClass == HeroClass.Vanguard ? "反击" : HeroClass == HeroClass.Ranger ? "精准箭" : HeroClass == HeroClass.Summoner ? "护契·协同" : Specialization == ElementalistSpecialization.Burn ? "余烬" : "霜痕";
-            session.SpawnFloatingText(transform.position + Vector3.up * 2.5f, "完美闪避 +" + (Energy-previousEnergy).ToString("0.#") + "能量 · " + reward, new Color(.65f, .95f, 1f));
+            session.SpawnMechanismText(transform.position + Vector3.up * 2.5f, "完美闪避 +" + (Energy-previousEnergy).ToString("0.#") + "能量 · " + reward, new Color(.65f, .95f, 1f));
             session.RecordCombatAction("完美闪避");
         }
 
@@ -882,7 +882,7 @@ namespace Emberfall
                 if(rank==3) skillRuntime.RestoreEnergy(SkillDamageBudgets.BasicEnergyOnHit);
             }
             AdvancedSkillVfx.Rune(this,transform.position,radius,tint,passiveTime,rank,true);
-            session.SpawnFloatingText(transform.position+Vector3.up*2.7f,GameBalance.SkillName(HeroClass,8),tint);
+            session.SpawnMechanismText(transform.position+Vector3.up*2.7f,GameBalance.SkillName(HeroClass,8),tint);
         }
 
         internal void HitArea(Vector3 at, float radius, CombatDamage damage, float knockback = 0, float stun = 0, int castId = 0, ProjectileVolleyBudget<EnemyController> volley = null)
@@ -984,6 +984,7 @@ namespace Emberfall
         private void TraversalFailure()
         {
             if (skillFeedbackCooldown > 0) return;
+            session.ReportControlFailure("dodge","无落点");
             session.Notify("前方有障碍或没有安全落点，请走桥或调整方向。");
             skillFeedbackCooldown = .8f;
         }
@@ -1013,6 +1014,7 @@ namespace Emberfall
             else if(Energy<GameBalance.SkillEnergyCost(HeroClass,skill)) failure="能量不足：普攻命中回复 8 点，持续回复每秒 4 点。";
             else if(!CanUseMovementSkill(skill,rank)) failure="前方有障碍或没有安全落点，请走桥或调整方向。";
             if(failure==null) return true;
+            session.ReportControlFailure("skill"+skill,rank<=0?"未学":skillRuntime.Remaining(skill)>0?"冷却":Energy<GameBalance.SkillEnergyCost(HeroClass,skill)?"缺能":"无落点");
             if(skillFeedbackCooldown<=0) { session.Notify(failure); skillFeedbackCooldown=.8f; }
             return false;
         }

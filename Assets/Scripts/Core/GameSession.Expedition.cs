@@ -86,7 +86,7 @@ namespace Emberfall
         public bool TrySpendHealingCharge()
         {
             if (!InDungeon || !ChallengeRun) return true;
-            if (HealingCharges <= 0) { Notify("治疗充能已耗尽；击败守卫完成目标或推进波次可补充。"); return false; }
+            if (HealingCharges <= 0) { ReportControlFailure("skill6","限疗空"); Notify("治疗充能已耗尽；击败守卫完成目标或推进波次可补充。"); return false; }
             HealingCharges--; return true;
         }
 
