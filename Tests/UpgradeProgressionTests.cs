@@ -230,46 +230,48 @@ public static class UpgradeProgressionTests
         var service = Fresh();
         service.Profile.level = 50; service.Profile.skillRanks[9] = 2;
         ItemData item = service.Equipped(ItemSlot.Weapon);
-        item.upgradeLevel = 7; item.attack = 123; item.upgradeBaseInitialized = false;
+        item.upgradeLevel = 7; item.attack = 123; item.upgradeBaseInitialized = false; item.balanceRevision = 0;
         service.Profile.skillPoints = int.MaxValue;
         service.Profile.slotUpgradesInitialized = false;
         service.Save();
         string id = item.id;
         var restored = Reload(service);
         ItemData legacy = restored.Profile.inventory.Find(value => value.id == id);
-        Check(legacy.upgradeLevel == 7 && legacy.attack == 123, "legacy enhancement rank and visible stats are preserved exactly");
+        int migratedAttack = legacy.attack;
+        Check(legacy.upgradeLevel == 7 && legacy.balanceRevision == 1 && migratedAttack > 0 && migratedAttack < 123, "legacy paid rank preserved while compounded inflation is migrated once");
         Check(restored.Profile.skillRanks[9] == 2 && restored.Profile.skillPoints == 47, "learned legacy ultimate and true earned point balance survive new prerequisites");
         ItemData target = Plain(); restored.CollectLoot(target);
         Check(restored.Equip(target.id) && restored.Equip(id), "legacy anchored enhancement is reversibly transferable");
-        Check(legacy.upgradeLevel == 7 && legacy.attack == 123, "roundtrip restores exact legacy anchor without rounding loss");
-        Check(Reload(restored).Profile.inventory.Find(value => value.id == id).attack == 123, "legacy anchor persists again");
+        Check(legacy.upgradeLevel == 7 && legacy.attack == migratedAttack, "roundtrip restores exact legacy anchor without rounding loss");
+        Check(Reload(restored).Profile.inventory.Find(value => value.id == id).attack == migratedAttack, "legacy anchor persists again");
     }
 
     private static void MasteryUsesExactlyTheRemainingPointBudget()
     {
         var service = Fresh();
         Check(!service.LearnMastery(MasteryType.Offense), "low-level mastery unavailable");
-        service.Profile.level = 100; service.Save();
-        Check(!service.LearnMastery(MasteryType.Offense), "max level must finish skills before excess mastery");
+        service.Profile.level = 50; service.Save();
+        for (int i=0;i<10;i++) Check(service.LearnMastery(MasteryType.Offense), "mastery opens in midgame before every skill is learned");
+        Check(!service.LearnMastery(MasteryType.Offense), "level50 segment cap is10");
+        Check(service.ResetMastery(true), "midgame refund available");
+        service.Profile.level = 100;
         for (int skill = 0; skill < GameBalance.SkillCount; skill++) service.Profile.skillRanks[skill] = 3;
         service.Profile.skillPoints = int.MaxValue; service.Save();
-        Check(service.Profile.skillPoints == 69, "legacy arbitrary point field reconstructed to exact 69 excess");
+        Check(service.Profile.skillPoints == 69, "lifetime budget still69 after all skills");
         StatBlock baseline = service.GetStats();
-        foreach (MasteryType mastery in Enum.GetValues(typeof(MasteryType)))
-        {
-            for (int rank = 0; rank < ProgressionService.MaximumMasteryRank; rank++) Check(service.LearnMastery(mastery), "each bounded mastery rank costs one lifetime point");
-            Check(!service.LearnMastery(mastery), "mastery cannot exceed its track cap");
-        }
-        Check(service.Profile.skillPoints == 0 && service.Profile.masteryRanks[0] == 23 && service.Profile.masteryRanks[1] == 23 && service.Profile.masteryRanks[2] == 23, "all 99 level points are accounted for exactly");
-        StatBlock mastered = service.GetStats();
-        Check(Near(mastered.Damage, baseline.Damage * 1.115f) && Near(mastered.MaxHealth, baseline.MaxHealth * 1.1725f) && Near(mastered.Armor, baseline.Armor + 17.25f), "mastery grants useful bounded stat benefits");
-        service = Reload(service);
-        Check(service.Profile.skillPoints == 0 && service.Profile.masteryRanks[2] == 23, "spent mastery cannot refund itself on load");
-        service.GrantExperience(int.MaxValue);
-        Check(service.Profile.skillPoints == 0, "level cap cannot mint mastery points");
-        Check(!service.ResetMastery(false) && service.Profile.skillPoints == 0, "field reset refused without changing points");
-        Check(service.ResetMastery(true) && service.Profile.skillPoints == 69, "camp reset refunds exactly mastery investment");
-        Check(Near(service.GetStats().Damage, baseline.Damage) && Reload(service).Profile.skillPoints == 69, "reset stats and refunded budget persist");
+        for (int rank=0;rank<35;rank++) Check(service.LearnMastery(MasteryType.Offense), "offense consumes35 points");
+        Check(!service.LearnMastery(MasteryType.Offense), "track capped35");
+        for (int rank=0;rank<34;rank++) Check(service.LearnMastery(MasteryType.Vitality), "vitality competes for remaining34");
+        Check(!service.LearnMastery(MasteryType.Guard) && !service.LearnMastery(MasteryType.Technique), "four directions cannot all be filled");
+        Check(service.SelectMasteryCore(MasteryType.Offense,true)&&service.SelectMasteryCore(MasteryType.Vitality,true), "eligible cores can replace each other");
+        Check(!service.HasMasteryCore(MasteryType.Offense)&&service.HasMasteryCore(MasteryType.Vitality), "one active core only");
+        Check(!service.SelectMasteryCore(MasteryType.Guard,true)&&!service.SelectMasteryCore(MasteryType.Offense,false), "uninvested or out of camp core refused");
+        StatBlock mastered=service.GetStats();
+        Check(Near(mastered.Damage,baseline.Damage*1.105f)&&Near(mastered.MaxHealth,baseline.MaxHealth*1.17f), "bounded stat gains reflect investment");
+        service=Reload(service); Check(service.Profile.skillPoints==0&&service.Profile.masteryRanks[1]==34, "load does not mint or lose spent points");
+        service.GrantExperience(int.MaxValue); Check(service.Profile.skillPoints==0,"level cap cannot mint points");
+        Check(!service.ResetMastery(false)&&service.ResetMastery(true)&&service.Profile.skillPoints==69,"camp refund exactly69");
+        Check(service.Profile.masteryCore==-1&&Near(service.GetStats().Damage,baseline.Damage),"reset clears selected core and stats");
     }
 
     private static void CorruptNewFieldsAreBoundedAndRepaired()
@@ -288,7 +290,7 @@ public static class UpgradeProgressionTests
         File.WriteAllText(service.SaveFilePath, json.ToJsonString());
         Check(service.Load(), "malformed new fields repair without discarding valid legacy character");
         Check(service.Profile.specialization == ElementalistSpecialization.None && service.Profile.skillPoints == 0, "invalid spec and forged free points neutralized");
-        Check(service.Profile.masteryRanks.Length == 3 && Array.TrueForAll(service.Profile.masteryRanks, rank => rank == 0), "ineligible or corrupt mastery refunded into lawful budget only");
+        Check(service.Profile.masteryRanks.Length == 4 && Array.TrueForAll(service.Profile.masteryRanks, rank => rank == 0), "ineligible or corrupt mastery refunded into lawful budget only");
         Check(service.Profile.mechanicMaterials == 0 && service.Profile.materialRewardedClears == 0 && !service.Profile.pendingFirstClearReward, "negative materials and unearned first clear repaired");
         Check(service.Profile.pendingLoot.Count == 0 && service.Profile.discoveredMechanics.Count == 1, "null queue and duplicate/invalid codex entries sanitized");
     }
@@ -445,13 +447,13 @@ public static class UpgradeProgressionTests
         Check(service.Load() && service.Profile.slotUpgradesInitialized, "legacy item investments initialize permanent slots once");
         Check(service.SlotUpgradeRank(ItemSlot.Weapon) == 7 && service.SlotUpgradeRank(ItemSlot.Armor) == 9 && service.SlotUpgradeRank(ItemSlot.Relic) == 6, "migration takes independent maxima across bag, pending and recovery sources");
         ItemData weapon = service.Profile.inventory.Find(item => item.id == oldWeapon.id);
-        Check(weapon.upgradeLevel == 0 && weapon.locked && weapon.upgradeAnchorLevel == 7 && weapon.upgradeAnchorAttack == 123, "unequipped legacy cache resets but immutable anchor and protective lock survive");
-        Check(service.PreviewEquippedItem(weapon).attack == 123 && service.PreviewEquippedItem(weapon).upgradeLevel == 7, "candidate preview restores exact legacy stats at migrated slot rank");
-        Check(service.Equip(weapon.id) && weapon.attack == 123 && weapon.upgradeLevel == 7, "equipping migrated item restores original exact anchored strength");
+        Check(weapon.upgradeLevel == 0 && weapon.locked && weapon.balanceRevision == 1 && weapon.upgradeAnchorLevel == 0, "unequipped legacy cache resets but immutable anchor and protective lock survive");
+        Check(service.PreviewEquippedItem(weapon).attack == CombatBalance.UpgradeValue(weapon.baseAttack,7) && service.PreviewEquippedItem(weapon).upgradeLevel == 7, "candidate preview restores exact legacy stats at migrated slot rank");
+        Check(service.Equip(weapon.id) && weapon.attack == CombatBalance.UpgradeValue(weapon.baseAttack,7) && weapon.upgradeLevel == 7, "equipping migrated item restores original exact anchored strength");
         Check(service.ClaimPendingLoot(oldArmor.id) && service.Equip(oldArmor.id), "pending migration source can be claimed and automatically equipped");
-        Check(service.Equipped(ItemSlot.Armor).defense == 99 && service.Equipped(ItemSlot.Armor).health == 500 && service.Equipped(ItemSlot.Armor).upgradeLevel == 9, "pending item's own distinct armor baseline determines enhancement");
+        Check(service.Equipped(ItemSlot.Armor).defense == CombatBalance.UpgradeValue(service.Equipped(ItemSlot.Armor).baseDefense,9) && service.Equipped(ItemSlot.Armor).health == CombatBalance.UpgradeValue(service.Equipped(ItemSlot.Armor).baseHealth,9,2) && service.Equipped(ItemSlot.Armor).upgradeLevel == 9, "pending item's own distinct armor baseline determines enhancement");
         Check(service.ClaimRecoveryLoot(oldRelic.id) && service.Equip(oldRelic.id), "recovery migration source automatically inherits its slot after claim");
-        Check(service.Equipped(ItemSlot.Relic).attack == 30 && service.Equipped(ItemSlot.Relic).health == 150, "recovery item's exact anchor remains intact");
+        Check(service.Equipped(ItemSlot.Relic).attack == CombatBalance.UpgradeValue(service.Equipped(ItemSlot.Relic).baseAttack,6) && service.Equipped(ItemSlot.Relic).health == CombatBalance.UpgradeValue(service.Equipped(ItemSlot.Relic).baseHealth,6,2), "recovery item's exact anchor remains intact");
         for (int cycle = 0; cycle < 4; cycle++)
         {
             service.Save(); service = Reload(service);

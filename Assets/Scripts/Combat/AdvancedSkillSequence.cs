@@ -11,18 +11,20 @@ namespace Emberfall
         private GameSession session;
         private HeroClass heroClass;
         private int skill, rank, epoch, step, steps;
-        private float damage, range, interval, age, nextEvent;
+        private CombatDamage damage;
+        private float range, interval, age, nextEvent;
+        private int castId;
         private Vector3 target, forward, origin;
         private Color color;
         private EnemyController lockedTarget;
 
-        public static void Spawn(PlayerController hero, GameSession game, int index, int skillRank, Vector3 aim, Vector3 direction, float strength, Color tint)
+        public static void Spawn(PlayerController hero, GameSession game, int index, int skillRank, Vector3 aim, Vector3 direction, CombatDamage strength, Color tint)
         {
             GameObject obj = new GameObject("Skill Sequence " + index);
             AdvancedSkillSequence sequence = obj.AddComponent<AdvancedSkillSequence>();
             sequence.owner = hero; sequence.session = game; sequence.heroClass = hero.HeroClass;
             sequence.skill = index; sequence.rank = skillRank; sequence.epoch = hero.CombatEpoch;
-            sequence.damage = strength; sequence.range = GameBalance.SkillRangeMultiplier(skillRank);
+            sequence.damage = strength; sequence.castId = hero.NewCastId(); sequence.range = GameBalance.SkillRangeMultiplier(skillRank);
             sequence.target = aim; sequence.origin = hero.transform.position; sequence.forward = CombatFx.Flat(direction).normalized;
             sequence.color = tint;
             sequence.Configure();
@@ -162,17 +164,18 @@ namespace Emberfall
                     else Burst(target,5.3f*range,damage*(rank==3?6f:4f),new Color(.84f,.6f,1f),3);
                     break;
                 case 9:
-                    Color element = step%3==0?new Color(1f,.5f,.28f):step%3==1?new Color(.5f,.92f,1f):new Color(.77f,.48f,1f);
+                    Color element = owner.Specialization==ElementalistSpecialization.Burn?new Color(1f,.5f,.28f):owner.Specialization==ElementalistSpecialization.Shatter?new Color(.5f,.92f,1f):step%3==0?new Color(1f,.5f,.28f):step%3==1?new Color(.5f,.92f,1f):new Color(.77f,.48f,1f);
                     if(step<steps-1)
                     {
                         Vector3 axis = Circle(step*.65f,6f*range);
                         AdvancedSkillVfx.Beam(owner,target-axis+Vector3.up,target+axis+Vector3.up,element,.65f,.34f);
                         AdvancedSkillVfx.Beam(owner,target+Vector3.up*10f,target,element,.65f,.24f);
-                        owner.HitArea(target,5.5f*range,damage*2.2f,0,step%3==1?.8f:.1f);
+                        owner.ElementalAdvancedArea(target,5.5f*range,damage*2.2f,castId,false);
                     }
                     else
                     {
-                        Burst(target,6.5f*range,damage*9f,new Color(.92f,.83f,1f),3);
+                        AdvancedSkillVfx.Rune(owner,target,6.5f*range,new Color(.92f,.83f,1f),.8f,3);
+                        owner.ElementalAdvancedArea(target,6.5f*range,damage*9f,castId,true);
                         if(rank==3) CombatArea.Spawn(owner,session,target,5.5f*range,damage*1.1f,.3f,.6f,2.4f,.6f,color,false,false,3f);
                     }
                     break;
@@ -256,7 +259,8 @@ namespace Emberfall
                 Vector3 position=nearest.transform.position;
                 AdvancedSkillVfx.Beam(owner,previous+Vector3.up*1.1f,position+Vector3.up*1.1f,new Color(.7f,.85f,1f),.55f,.17f);
                 ElementalCombatVfx.Lightning(previous + Vector3.up * 1.15f, position + Vector3.up * 1.15f);
-                nearest.TakeDamage(damage*2.9f,forward,.05f,.35f+rank*.15f);
+                owner.ApplySpellDodgeBoon(nearest);
+                nearest.TakeDamage(damage.Amount*2.9f,forward,.05f,.35f+rank*.15f, critical:damage.IsCritical);
                 if(rank==3) owner.HitArea(position,1.8f*range,damage*.65f,0,.1f);
                 previous=search=position;
             }
@@ -293,17 +297,17 @@ namespace Emberfall
             }
         }
 
-        private void HitLine(Vector3 a,Vector3 b,float width,float amount,float knockback,float stun)
+        private void HitLine(Vector3 a,Vector3 b,float width,CombatDamage amount,float knockback,float stun)
         {
             for(int i=session.Enemies.Count-1;i>=0;i--)
             {
                 EnemyController enemy=session.Enemies[i];
                 if(enemy!=null && !enemy.IsDead && CombatFx.SegmentDistance(enemy.transform.position,a,b)<=width+(enemy.IsBoss?.8f:.4f))
-                    enemy.TakeDamage(amount,forward,knockback,stun);
+                    enemy.TakeDamage(amount.Amount,forward,knockback,stun, critical:amount.IsCritical);
             }
         }
 
-        private void Burst(Vector3 at,float radius,float amount,Color tint,int detail)
+        private void Burst(Vector3 at,float radius,CombatDamage amount,Color tint,int detail)
         {
             AdvancedSkillVfx.Rune(owner,at,radius,tint,.8f,detail);
             CombatFx.Ring(at,radius,tint,.6f,.25f);

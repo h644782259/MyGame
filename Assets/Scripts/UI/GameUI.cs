@@ -1125,17 +1125,18 @@ namespace Emberfall
             StatLine(left, w.y + 433, "攻击", Mathf.RoundToInt(stats.Damage).ToString(), gold);
             StatLine(left, w.y + 461, "防御", Mathf.RoundToInt(stats.Armor).ToString(), pale);
             StatLine(left, w.y + 489, "生命上限", Mathf.RoundToInt(stats.MaxHealth).ToString(), pale);
+            if(new Rect(left,w.y+459,232,27).Contains(Mouse))tooltip="当前护甲减伤 "+((1f-CombatBalance.ArmorDamageMultiplier(stats.Armor,p.level))*100f).ToString("0.0")+"% · 护甲上限70%\n等级越高，护甲换算尺度越高；含临时防御最多84%减伤，真正闪避无敌帧除外。";
             StatLine(left, w.y + 517, "暴击几率", Mathf.RoundToInt(stats.CritChance * 100) + "%", pale);
             if (new Rect(left, w.y + 514, 232, 29).Contains(Mouse))
             {
-                int baseCrit = p.heroClass == HeroClass.Ranger ? 14 : p.heroClass == HeroClass.Arcanist ? 10 : 8;
+                int baseCrit = p.heroClass == HeroClass.Ranger ? 14 : (p.heroClass == HeroClass.Arcanist || p.heroClass == HeroClass.Summoner) ? 10 : 8;
                 int totalCrit = Mathf.RoundToInt(stats.CritChance * 100);
                 int rank = p.skillRanks == null || p.skillRanks.Length <= 3 ? 0 : p.skillRanks[3];
                 int passiveCrit = p.heroClass == HeroClass.Ranger ? (rank <= 0 ? 0 : rank == 1 ? 4 : rank == 2 ? 7 : 12) : 0;
-                FashionData weaponFashion = progression.EquippedFashion(FashionSlot.Weapon);
+                FashionData weaponFashion = progression.StrongestFashion(FashionSlot.Weapon);
                 int fashionPercent = weaponFashion == null ? 0 : ProgressionService.WeaponFashionPercent(weaponFashion.rarity);
                 tooltip = "暴击几率来源\n" + GameBalance.ClassName(p.heroClass) + "基础：" + baseCrit + "%\n游侠被动：+" + passiveCrit + " 个百分点" +
-                    "\n武器时装：乘以 " + (100 + fashionPercent) + "%\n当前：" + totalCrit + "%\n暴击伤害为普通伤害的 1.65 倍。";
+                    "\n武器时装：乘以 " + (100 + fashionPercent) + "%\n当前：" + totalCrit + "%\n暴击伤害为普通伤害的 1.65 倍。\n" + BuildCatalog.DamageRules;
             }
 
             float middle = w.x + 272;
@@ -1223,7 +1224,7 @@ namespace Emberfall
         {
             ProgressionService progression = session.Progression;
             GameProfile profile = progression.Profile;
-            Rect w = Modal(940, 638, "时装收藏", "副本通关后三选一宝箱 · 时装所有等级可穿戴 · 百分比加成");
+            Rect w = Modal(940, 638, "时装收藏", "外观自由穿戴 · 属性使用每部位最高收藏品质 · 每次开箱积累星纹");
             if (Button(new Rect(w.xMax - 69, w.y + 20, 44, 32), "×", jade)) { panel = Panel.Inventory; return; }
             string[] slotNames = { "翅膀", "武器外观" };
             for (int slotIndex = 0; slotIndex < 2; slotIndex++)
@@ -1235,7 +1236,7 @@ namespace Emberfall
                 Fill(summary, card);
                 Border(summary, equipped == null ? muted : GameBalance.RarityColor(equipped.rarity));
                 Text(new Rect(x + 12, summary.y + 6, 200, 20), slotNames[slotIndex] + " · 穿戴中", 12, jade, true);
-                Text(new Rect(x + 12, summary.y + 29, 295, 23), equipped == null ? "未穿戴" : equipped.name + "  " + ProgressionService.FashionBonus(slot, equipped.rarity),
+                Text(new Rect(x + 12, summary.y + 29, 295, 23), equipped == null ? "未穿戴" : equipped.name + " · 收藏属性 " + (progression.StrongestFashion(slot)==null?"无":GameBalance.RarityName(progression.StrongestFashion(slot).rarity)),
                     13, equipped == null ? muted : pale, true);
                 if (equipped != null && Button(new Rect(x + 335, summary.y + 14, 90, 32), "卸下", muted))
                     Feedback(progression.UnequipFashion(slot), "已卸下" + slotNames[slotIndex]);
@@ -1257,7 +1258,10 @@ namespace Emberfall
                         Feedback(progression.EquipFashion(id), "已穿戴" + ProgressionService.FashionName(slot, rarity));
                 }
             }
-            Text(new Rect(w.x + 25, w.y + 571, 890, 21), "每次开箱概率：普通 22% · 稀有 12% · 史诗 5% · 传说 1% · 无时装 60%。重复时装转化金币。", 12, muted);
+            Text(new Rect(w.x + 25, w.y + 571, 890, 21), "每次开箱星纹+1；重复件额外+1/2/4/8。30星纹自选缺少的传说部位 · 当前 "+profile.fashionThreads, 12, muted);
+            for(int i=0;i<2;i++) { FashionSlot slot=(FashionSlot)i;
+                if(Button(new Rect(w.x+25+i*300,w.y+592,282,30),"30星纹自选传说"+(i==0?"翅膀":"兵装"),gold,session.IsInCamp&&profile.fashionThreads>=30&&!profile.fashions.Exists(x=>x.slot==slot&&x.rarity==Rarity.Legendary)))
+                    Feedback(progression.ChooseLegendaryFashion(slot,session.IsInCamp),"传说收藏已解锁"); }
             if (Button(new Rect(w.x + 726, w.y + 592, 188, 30), "返回行囊", jade)) panel = Panel.Inventory;
         }
 

@@ -150,6 +150,17 @@ def main():
             checks.append(("application-pause-state", [ROOT / "Assets/Scripts/Core/ApplicationPauseState.cs",
                           ROOT / "Tests/ApplicationPauseStateTests.cs"],
                           'using System; internal static class Program { static void Main() { Console.WriteLine(ApplicationPauseStateTests.Run()); } }'))
+        for name, test_file in [("combat-balance", "CombatBalanceTests"), ("rebalance-progression", "RebalanceProgressionTests"), ("companion-rules", "CompanionRulesTests")]:
+            if not (ROOT / ("Tests/" + test_file + ".cs")).exists():
+                continue
+            extra = [ROOT / "Assets/Scripts/Core/GameTypes.cs", ROOT / "Assets/Scripts/Core/ProgressionService.cs",
+                     ROOT / "Tests/ProgressionTests.cs", ROOT / ("Tests/" + test_file + ".cs")]
+            if name == "companion-rules": extra.append(ROOT / "Assets/Scripts/Combat/CompanionRules.cs")
+            entry = ('using System; internal static class Program { static void Main(string[] args) { Console.WriteLine(' + test_file + '.Run(' + ('args[0]' if name == 'rebalance-progression' else '') + ')); } }')
+            checks.append((name, extra, entry))
+        for _, sources, _ in checks:
+            if ROOT / "Assets/Scripts/Core/GameTypes.cs" in sources:
+                sources.append(ROOT / "Assets/Scripts/Core/CombatBalance.cs")
         for name, sources, program in checks:
             project = write_project(workspace / name, sources, program)
             commands = [[dotnet, "restore", str(project), "--configfile", str(config), "--verbosity", "quiet"],

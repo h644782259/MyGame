@@ -31,9 +31,13 @@ namespace Emberfall
             }
             var random = new Random(seed);
             var result = new List<RunBlessing>();
-            // Universal choices guarantee relevance even on an unlearned/legacy build.
-            RunBlessing guaranteed = compatible[random.Next(compatible.Count)];
-            result.Add(guaranteed); remaining.Remove(guaranteed);
+            // At least two immediately usable choices; select a third usable one
+            // whenever possible. One prior reward leaves at least two universals.
+            while (result.Count < 3 && compatible.Count > 0)
+            {
+                int index = random.Next(compatible.Count); RunBlessing chosen = compatible[index];
+                result.Add(chosen); compatible.RemoveAt(index); remaining.Remove(chosen);
+            }
             while (result.Count < 3 && remaining.Count > 0)
             {
                 int index = random.Next(remaining.Count); result.Add(remaining[index]); remaining.RemoveAt(index);

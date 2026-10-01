@@ -15,6 +15,7 @@ namespace Emberfall
             if (order.Count > 32) seen.Remove(order.Dequeue());
             return true;
         }
+        public bool TryEnterEligible(int castId, bool eligible) { return eligible && TryEnter(castId); }
         public void Clear() { seen.Clear(); order.Clear(); }
     }
 
@@ -40,7 +41,7 @@ namespace Emberfall
         public void Clear() { target = hits = 0; }
         public bool RecordHit(int targetId, bool livingTarget, bool novaLearned)
         {
-            if (targetId == 0 || !livingTarget || novaLearned) { Clear(); return false; }
+            if (targetId == 0 || !livingTarget) { Clear(); return false; }
             if (target != targetId) { target = targetId; hits = 0; }
             if (++hits < 3) return false;
             hits = 0;
@@ -84,6 +85,15 @@ namespace Emberfall
                 previous = candidate;
             }
             return landing >= .35f ? landing : 0;
+        }
+
+        public static float CounterAfterAttack(float previous, float newlyGranted, bool hit)
+        { return hit ? Math.Max(0, newlyGranted) : Math.Max(previous, newlyGranted); }
+
+        public static bool IsInsideArea(float dx, float dz, float radius, bool unobstructed)
+        {
+            return unobstructed && !float.IsNaN(dx) && !float.IsNaN(dz) && !float.IsInfinity(dx) && !float.IsInfinity(dz)
+                && !float.IsNaN(radius) && !float.IsInfinity(radius) && radius > 0 && dx*dx+dz*dz < radius*radius;
         }
 
         public static bool CanBufferDodge(float cooldown, float movementLock, float landingTime)

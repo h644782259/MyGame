@@ -46,6 +46,12 @@ namespace Emberfall
             Energy = Math.Min(MaximumEnergy, Energy + amount);
         }
 
+        public void ReduceCooldowns(float seconds)
+        {
+            if (seconds <= 0 || float.IsNaN(seconds) || float.IsInfinity(seconds)) return;
+            for (int i = 0; i < cooldowns.Length; i++) cooldowns[i] = Math.Max(0, cooldowns[i] - seconds);
+        }
+
         public void FillEnergy() { Energy = MaximumEnergy; }
     }
 }

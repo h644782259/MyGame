@@ -15,8 +15,8 @@ namespace Emberfall
             Text(new Rect(w.x+32,w.y+120,440,31), "第 " + session.SelectedDungeonTier + " 阶", 26, gold, true);
             if (Button(new Rect(w.x+478,w.y+116,76,43), "−", jade, session.SelectedDungeonTier > 1)) session.SelectedDungeonTier--;
             if (Button(new Rect(w.x+566,w.y+116,76,43), "+", jade, session.SelectedDungeonTier < session.MaximumDungeonTier)) session.SelectedDungeonTier++;
-            Text(new Rect(w.x+32,w.y+168,610,47), "怪物等级 " + Mathf.Clamp(session.Progression.Profile.level + session.SelectedDungeonTier - 1,2,100) +
-                " · 三波 + 首领\n通关 " + (120+session.SelectedDungeonTier*30) + " 金币 · " + (100+session.SelectedDungeonTier*20) + " 经验 · 3 碎片 · 自选宝箱", 15, pale, false, true);
+            Text(new Rect(w.x+32,w.y+168,610,47), "怪物等级 " + Mathf.Clamp(session.Progression.Profile.level,2,100) +
+                " · 阶数生命×" + CombatBalance.TierHealthMultiplier(session.SelectedDungeonTier).ToString("0.00") + " / 伤害×" + CombatBalance.TierDamageMultiplier(session.SelectedDungeonTier).ToString("0.00") + "\n通关 " + (120+session.SelectedDungeonTier*30) + " 金币 · " + (100+session.SelectedDungeonTier*20) + " 经验 · 3 碎片 · 自选宝箱", 15, pale, false, true);
             bool challenge = session.SelectedChallengeMode;
             if (Button(new Rect(w.x+32,w.y+233,610,45), challenge ? "限疗挑战  ✓" : "普通模式", challenge ? gold : jade)) session.SelectedChallengeMode = !challenge;
             Text(new Rect(w.x+32,w.y+289,610,59), challenge ? "共享治疗充能初始3次；药水不耗背包库存。治疗技能与药水消耗充能。波间、守卫目标和晶核补给可恢复，最多3次。" : "保留普通药水与技能治疗；每波后恢复25%生命。限疗挑战可选，不额外增加奖励。", 14, muted, false, true);
@@ -66,14 +66,23 @@ namespace Emberfall
                         if(Button(new Rect(c.x+16,c.y+96,398,36),BuildCatalog.SpecializationName(spec)+(p.Profile.specialization==spec?" ✓":""),gold,session.IsInCamp&&p.Profile.specialization!=spec))Feedback(p.SetSpecialization(spec,session.IsInCamp),"专精已切换");
                     }
                 }
-                else Text(new Rect(w.x+32,w.y+268,884,112),"招牌能力从第一场战斗可用。将职业机制与图鉴装备、波间祝福组合，尝试不同打法。\n\n营地星核随已通关阶数点亮。",17,muted,false,true);
-                for(int i=0;i<3;i++)
+                else if(p.Profile.heroClass==HeroClass.Summoner)
                 {
-                    MasteryType mastery=(MasteryType)i;Rect c=new Rect(w.x+32+i*306,w.y+450,284,115);
-                    Text(new Rect(c.x,c.y,c.width,25),BuildCatalog.MasteryName(mastery)+"  "+p.Profile.masteryRanks[i]+"/23",17,pale,true);
+                    Text(new Rect(w.x+32,w.y+268,884,45),"双契：常驻狼与星灵，按契约键指挥；群契：基础狼陪伴，契约增援限时兽群。",16,pale,false,true);
+                    for(int i=0;i<2;i++) { SummonerRoute route=(SummonerRoute)i;
+                        if(Button(new Rect(w.x+32+i*458,w.y+337,430,46),(i==0?"双契协同":"群契围攻")+(p.Profile.summonerRoute==route?" ✓":""),gold,session.IsInCamp&&p.Profile.summonerRoute!=route))
+                            Feedback(p.SetSummonerRoute(route,session.IsInCamp),"伙伴路线已切换；现有伙伴在下次契约或出发时调整"); }
+                }
+                else Text(new Rect(w.x+32,w.y+268,884,112),"招牌能力从第一场战斗可用。将职业机制与图鉴装备、波间祝福组合，尝试不同打法。\n\n营地星核随已通关阶数点亮。",17,muted,false,true);
+                for(int i=0;i<4;i++)
+                {
+                    MasteryType mastery=(MasteryType)i;Rect c=new Rect(w.x+32+i*229,w.y+435,214,134);
+                    Text(new Rect(c.x,c.y,c.width,25),BuildCatalog.MasteryName(mastery)+"  "+p.Profile.masteryRanks[i]+"/"+ProgressionService.MasteryCap(p.Profile.level),17,pale,true);
                     string reason=p.MasteryLockReason(mastery);
                     if(Button(new Rect(c.x,c.y+39,c.width,35),"投入 1 点",jade,string.IsNullOrEmpty(reason),string.IsNullOrEmpty(reason)?BuildCatalog.MasteryDescription(mastery):reason))Feedback(p.LearnMastery(mastery),"精通已提高");
+                    if(Button(new Rect(c.x,c.y+82,c.width,32),p.HasMasteryCore(mastery)?"核心已启用":"启用核心 · 20点",gold,session.IsInCamp&&p.Profile.masteryRanks[i]>=20&&!p.HasMasteryCore(mastery),BuildCatalog.MasteryDescription(mastery)))Feedback(p.SelectMasteryCore(mastery,session.IsInCamp),"已切换唯一精通核心");
                 }
+                Text(new Rect(w.x+32,w.y+579,640,26),"可用点数 "+p.Profile.skillPoints+" · 50/65/80/95级分段开放 · 四方向共享技能点",13,muted);
                 if(Button(new Rect(w.x+700,w.y+579,246,26),"营地免费重置精通",muted,session.IsInCamp))Feedback(p.ResetMastery(session.IsInCamp),"精通点已返还");
             }
             else if(campTab==1)
@@ -88,9 +97,15 @@ namespace Emberfall
                     bool first=p.Profile.pendingFirstClearReward;
                     if(Button(new Rect(c.x+660,c.y+55,205,40),first?"首通选取":"兑换 · 12 碎片",gold,session.IsInCamp&&(first||p.Profile.mechanicMaterials>=12),BuildCatalog.MechanicSource(mechanic),true))
                         Feedback(first?p.ClaimFirstClearReward(mechanic):p.ExchangeMechanic(mechanic),"机制装备已领取");
+                    ItemData equipped=p.Equipped(BuildCatalog.MechanicSlot(mechanic));
+                    if(equipped!=null&&equipped.mechanic==mechanic)
+                    {
+                        if(Button(new Rect(c.x+660,c.y+101,99,30),"重铸 · 6",jade,session.IsInCamp&&equipped.level<p.Profile.level&&p.Profile.mechanicMaterials>=6,"保持装备身份、机制与部位强化，更新至角色等级"))Feedback(p.ReforgeMechanic(equipped.id,session.IsInCamp),"核心装备已成长");
+                        if(p.Profile.heroClass==HeroClass.Arcanist&&Button(new Rect(c.x+766,c.y+101,99,30),equipped.mechanicVariantUnlocked?(equipped.mechanicVariant==0?"变体 A":"变体 B"):"变体 · 4",jade,session.IsInCamp&&(equipped.mechanicVariantUnlocked||p.Profile.mechanicMaterials>=4),"首次解锁4碎片，之后免费切换互斥效果"))Feedback(p.ToggleMechanicVariant(equipped.id,session.IsInCamp),"装备变体已切换");
+                    }
                     if(c.Contains(Mouse))tooltip=BuildCatalog.MechanicSource(mechanic);
                 }
-                Text(new Rect(w.x+32,w.y+566,884,30),"来源：首通自选 · 首领掉落 · 星烬兑换",14,jade);
+                Text(new Rect(w.x+32,w.y+566,884,30),"首次获得登记配方 · 穿戴后6碎片重铸到当前等级 · 元素变体首次4碎片",14,jade);
             }
             else if(campTab==2)
             {

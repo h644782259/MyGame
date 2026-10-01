@@ -31,12 +31,24 @@ namespace Emberfall
             return Move.Fan;
         }
 
+        public static Move Select(float distance, Move previous, int repeated)
+        {
+            Move preferred = Select(distance);
+            if (repeated < 1 || preferred != previous) return preferred;
+            if (preferred == Move.Slam) return distance > 2f ? Move.Charge : Move.Fan;
+            if (preferred == Move.Charge) return Move.Fan;
+            // A far boss advances after a fan; it never announces a charge that cannot reach.
+            return distance <= ChargeRange + 1f ? Move.Charge : Move.Fan;
+        }
+        public static bool ShouldAdvance(float distance, Move previous, int repeated)
+        { return distance > ChargeRange && previous == Move.Fan && repeated > 0; }
+
         public static Move FollowUp(Move previous, float distance)
         {
             // Ground closes after a charge; a slam opens into a ranged fan.
             // If the player has already moved away, do not start an unreachable slam.
             if (previous == Move.Slam) return Move.Fan;
-            return Select(distance);
+            return Select(distance, previous, 1);
         }
 
         public static float Windup(Move move, bool followUp)

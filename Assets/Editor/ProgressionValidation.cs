@@ -721,7 +721,7 @@ namespace Emberfall.Editor
                 {
                     string itemJson = JsonUtility.ToJson(item, true);
                     ItemData preview = seed.PreviewUpgrade(item, item.upgradeLevel);
-                    Check(preview != null && preview.upgradeBaseInitialized && SameEquipment(preview, item) && !item.upgradeBaseInitialized && JsonUtility.ToJson(item, true) == itemJson, name + ": legacy preview initializes only its independent copy");
+                    Check(preview != null && preview.upgradeBaseInitialized && preview.upgradeLevel == item.upgradeLevel && preview.balanceRevision == 1 && BoundedEquipment(preview) && !item.upgradeBaseInitialized && JsonUtility.ToJson(item, true) == itemJson, name + ": legacy preview initializes only its independent copy");
                 }
                 Check(File.ReadAllText(SavePath(name)) == untouched, name + ": legacy preview never rewrites the saved file");
                 var restored = new ProgressionService(CaseDirectory(name));
@@ -730,7 +730,8 @@ namespace Emberfall.Editor
                 for (int i = 0; i < sources.Count; i++)
                 {
                     ItemData item = restored.Profile.inventory.Find(entry => entry.id == sources[i]);
-                    Check(SameEquipment(item, expected[item.id]) && item.upgradeBaseInitialized && item.upgradeAnchorLevel == expected[item.id].upgradeLevel, name + ": migration preserves visible rank and all attributes exactly");
+                    Check(item.upgradeLevel == expected[item.id].upgradeLevel && item.upgradeBaseInitialized && item.balanceRevision == 1 && BoundedEquipment(item), name + ": migration preserves paid rank and applies bounded linear stats");
+                    expected[item.id] = JsonUtility.FromJson<ItemData>(JsonUtility.ToJson(item));
                     metadata[item.id] = JsonUtility.ToJson(item, true);
                 }
                 for (int cycle = 0; cycle < 2; cycle++)

@@ -4,6 +4,8 @@ This source update is not a new Windows installer or iPhone build. Shared runtim
 changes are synchronized between the two repositories. Existing platform-specific
 export/build tools and project settings remain separate.
 
+Current second-round changes and save migration: [Combat-Progression-V2.md](Combat-Progression-V2.md). Numerical budgets: [Combat-Budget.md](Combat-Budget.md).
+
 ## Playable changes
 
 - Distance-aware Boss slam/charge/fan, half-health combinations, readable stable
@@ -16,12 +18,12 @@ export/build tools and project settings remain separate.
 - Two dungeon layouts, four seeded encounter styles, environment-dependent
   wilderness populations, tier/wave-scaled groups and bounded reinforcements
 - Three waves, explicit three-card blessing choices after waves one/two, six
-  possible blessings with at least one useful to the current loadout
+  possible blessings with at least two useful to the current loadout
 - Tier selection including cleared tiers; optional limited-healing challenge
   (three shared charges; normal mode keeps its existing healing rules)
 - Optional crystal event with extra enemies, material and recovery reward
-- Level-100 mastery spends the remaining 69 points across three capped tracks;
-  existing skills remain valid
+- Mastery opens at levels50/65/80/95 across four competing tracks, with one active
+  core; old three-track mastery is refunded once and existing skills remain valid
 - Locked items, configurable common/rare auto-sale, protected bulk sale, pending
   valuable loot and a durable recovery mailbox for full-bag exits
 - Permanent weapon/armor/relic slot reinforcement, up to +10 per slot. Replacing

@@ -93,6 +93,7 @@ namespace Emberfall
         private GameSession session;
         private PlayerController owner;
         private PlayerController playerGeneration;
+        private SummonedCompanion companionSource;
         private Vector3 direction;
         private float speed, radius, age, lifetime, explosionRadius;
         private CombatDamage damage, explosionDamage;
@@ -106,7 +107,7 @@ namespace Emberfall
         private Material bodyMaterial, trailMaterial;
         private Color color;
 
-        public static void Friendly(PlayerController player, GameSession game, Vector3 at, Vector3 forward, CombatDamage amount, Color tint, bool piercing = false, bool arrow = false, bool basic = false, float size = 1f, float velocity = 0f, EnemyController tracking = null, CombatDamage blastDamage = default(CombatDamage), float blastRadius = 0f, int skillIndex = -1, int castId = 0)
+        public static void Friendly(PlayerController player, GameSession game, Vector3 at, Vector3 forward, CombatDamage amount, Color tint, bool piercing = false, bool arrow = false, bool basic = false, float size = 1f, float velocity = 0f, EnemyController tracking = null, CombatDamage blastDamage = default(CombatDamage), float blastRadius = 0f, int skillIndex = -1, int castId = 0, SummonedCompanion companionSource = null)
         {
             CombatProjectile projectile = Make(at, forward, tint, arrow);
             projectile.owner = player;
@@ -119,7 +120,7 @@ namespace Emberfall
             projectile.radius = piercing ? .38f : .22f;
             projectile.pierce = piercing;
             projectile.basicAttack = basic;
-            projectile.homingTarget = tracking;
+            projectile.homingTarget = tracking; projectile.companionSource = companionSource;
             projectile.arrowShape = arrow;
             projectile.explosionDamage = blastDamage;
             projectile.explosionRadius = blastRadius;
@@ -297,7 +298,8 @@ namespace Emberfall
                     if (!WorldTraversal.HasLineOfSight(previous, enemy.transform.position)) continue;
                     hitTargets.Add(enemy);
                     Vector3 hitPosition = enemy.transform.position;
-                    enemy.TakeDamage(owner.ResolveSkillImpact(enemy, skillIndex, castId, damage.Amount), direction, .18f, critical:damage.IsCritical);
+                    enemy.TakeDamage(owner.ResolveSkillImpact(enemy, skillIndex, castId, damage.Amount, damage.IsCritical), direction, .18f, critical:damage.IsCritical);
+                    if (companionSource != null) companionSource.OnConfirmedHit(enemy);
                     CombatFx.Ring(hitPosition, .7f, color, .2f);
                     if (basicAttack && !energyAwarded)
                     {
@@ -354,7 +356,7 @@ namespace Emberfall
             obj.transform.position = new Vector3(at.x,0,at.z);
             CombatArea area = obj.AddComponent<CombatArea>();
             area.owner = player; area.session = game; area.epoch = player.CombatEpoch;
-            area.radius = size; area.damage = amount; area.stun = disable;
+            area.radius = size; area.damage = activeTime > 0 ? amount.WithoutCritical() : amount; area.stun = disable;
             area.delay = startup; area.duration = activeTime; area.interval = Mathf.Max(.1f,tickInterval);
             area.color = tint; area.follow = followPlayer; area.meteor = fallingMeteor;
             area.pullStrength = pulling; area.finalDamage = finisher;
@@ -439,7 +441,7 @@ namespace Emberfall
                             ElementalCombatVfx.OnEnemy(enemy, ElementalCombatVfx.Element.Fire, 2.5f);
                         if (poisonVisual)
                             ElementalCombatVfx.OnEnemy(enemy, ElementalCombatVfx.Element.Poison, 2f);
-                        enemy.TakeDamage(owner.ResolveSkillImpact(enemy, statusSkill, castId, damage.Amount),delta.normalized,.3f,stun,critical:damage.IsCritical);
+                        enemy.TakeDamage(owner.ResolveSkillImpact(enemy, statusSkill, castId, damage.Amount, damage.IsCritical),delta.normalized,.3f,stun,critical:damage.IsCritical);
                         if (lightningVisual)
                             ElementalCombatVfx.Lightning(transform.position + Vector3.up * 2f,
                                 enemy.transform.position + Vector3.up * (enemy.IsBoss ? 2f : 1f));

@@ -25,7 +25,8 @@ Generated projects restore without external package feeds.
 
 When present, `UpgradeProgressionTests.cs`, `BossAttackPolicyTests.cs`,
 `PlayerUpgradeTests.cs`, `EncounterPlanTests.cs`, `RunChoicesTests.cs`, and
-`ApplicationPauseStateTests.cs` are run separately against their production logic.
+`ApplicationPauseStateTests.cs`, `CombatBalanceTests.cs`, `CompanionRulesTests.cs`, and
+`RebalanceProgressionTests.cs` are run separately against their production logic.
 The progression suites cover permanent slot reinforcement, highest-rank legacy
 migration, automatic equip/preview equality, failed-write rollback, and repeated
 swap/sale/save/load stability. UI and real Unity JsonUtility acceptance remain

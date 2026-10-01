@@ -60,6 +60,10 @@ public static class BossAttackPolicyTests
         Check(!BossAttackPolicy.IsPerfectDodgeTiming(.1f, 0), "empty window cannot award");
         Check(!BossAttackPolicy.IsPerfectDodgeTiming(float.NaN, .22f) && !BossAttackPolicy.IsPerfectDodgeTiming(float.PositiveInfinity, .22f), "invalid impact time cannot award");
         Check(!BossAttackPolicy.IsPerfectDodgeTiming(.1f, float.NaN) && !BossAttackPolicy.IsPerfectDodgeTiming(.1f, float.PositiveInfinity), "invalid configured window cannot award");
+        Check(BossAttackPolicy.Select(3, BossAttackPolicy.Move.Slam, 1)==BossAttackPolicy.Move.Charge, "recent slam avoids distance-locked repeat");
+        Check(BossAttackPolicy.Select(6, BossAttackPolicy.Move.Charge, 1)==BossAttackPolicy.Move.Fan, "midrange charge varies next attack");
+        Check(BossAttackPolicy.ShouldAdvance(12, BossAttackPolicy.Move.Fan, 1), "far fan prompts real repositioning");
+        Check(!BossAttackPolicy.ShouldAdvance(6, BossAttackPolicy.Move.Fan, 1), "close enough can attack instead of forced advance");
         for (int i = 0; i <= 160; i++)
         {
             float distance = i / 10f;

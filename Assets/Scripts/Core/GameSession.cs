@@ -309,7 +309,7 @@ namespace Emberfall
 
         private void SpawnDungeonWave()
         {
-            int level = Mathf.Clamp(Progression.Profile.level + DungeonTier - 1, 2, 100);
+            int level = Mathf.Clamp(Progression.Profile.level, 2, 100);
             List<EncounterSpawn> plan=EncounterPlan.Create(DungeonTier,DungeonWave,DungeonLayout,runSeed);
             wavePopulation=plan.Count;
             int initial=0;
