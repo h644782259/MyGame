@@ -37,7 +37,7 @@ check('executingChargedSkill ? charge.TargetEnemy : AimTarget, executingChargedS
 check('preserveTargetPoint ? CombatSight.GroundPoint' in spell and 'preserveTargetPoint ? commandTarget' in spell,'charged spirit/tree use captured location and target')
 check('living.RefreshContractPower(rank)' in pet and 'RefreshPackLifetime(living.RemainingLifetime,rank)' in pet,'full existing pack refreshes even without spawn slots')
 check('PreserveRecastHealth(healthBefore,MaxHealth)' in pet,'recast preserves absolute health rather than full heal')
-dodge=pet[pet.index('public static void OnPerfectDodge'):pet.index('public static void RecallAll')]
+dodge=pet[pet.index('public static void OnPerfectDodge'):pet.index('public static float CommandOpportunityRemaining')]
 check('Commands.Grant(Time.time)' in dodge and 'recallTime =' not in dodge and 'commandedTarget =' not in dodge,'perfect dodge protection/token cannot disrupt current pet command')
 check('SummonedCompanion.OnPerfectDodge(this)' in player and 'SummonedCompanion.RecallAll(this)' not in player,'perfect dodge no longer forces recall')
 check('owner.RegisterSkillHit(castId);' in area and 'player.RegisterSkillHit(propCast);' in spell and 'owner.RegisterSkillHit(castId);' in spell,'confirmed spell enemy hits pass real cast identity')
