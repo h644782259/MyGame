@@ -34,9 +34,11 @@ The clock runs only during an active, eligible combat phase. It does not run whi
 
 `Reward` is a proposal with Gold, Experience and Materials. It is not a grant. Current budgets:
 
-- Hold point: 110 + 20 × tier gold; 90 + 20 × tier experience; 1 fragment
-- Breakthrough: 100 + 25 × tier gold; 100 + 20 × tier experience; 2 fragments
-- Gauntlet: 180 + 40 × tier gold; 140 + 30 × tier experience; 3 fragments
+- Hold point: 110 + 20 × tier gold; 90 + 20 × tier experience; 1 base fragment + tier bonus
+- Breakthrough: 100 + 25 × tier gold; 100 + 20 × tier experience; 2 base fragments + tier bonus
+- Gauntlet: 180 + 40 × tier gold; 140 + 30 × tier experience; 3 base fragments + tier bonus
+
+The shared `TierRewardBand` adds 0 / 1 / 2 / 3 / 4 fragments at tiers 1–4 / 5–9 / 10–19 / 20–39 / 40–100. For example, a tier-10 gauntlet grants 3 + 2 = 5 fragments. These are successful-clear materials, not per-phase grants. The entry screen previews the total. See [progression and ascension](Progression-Growth.md).
 
 After Won, `TryReserveReward(out ticket)` allows one pending attempt. The host atomically grants and persists the proposal with its durable run-ID receipt. Call `CompleteReward(ticket, true)` only after that succeeds. A confirmed failed transaction can use `CompleteReward(ticket, false)` and then reserve a new ticket. An uncertain persistence outcome must stay reserved until reconciled; never blindly release/retry it. Stale, duplicate, foreign and disposed tickets are rejected.
 
