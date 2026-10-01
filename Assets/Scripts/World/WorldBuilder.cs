@@ -82,6 +82,7 @@ namespace Emberfall
             Ribbon(lowland, r, "Pebble stream banks", stream, 3.4f, .032f, r.Material(new Color(.40f,.46f,.41f)));
             Ribbon(lowland, r, "Deep flowing water", stream, 2.4f, .038f, r.Material(new Color(.055f,.25f,.33f)));
             Ribbon(lowland, r, "Brook reflected current", stream, .22f, .041f, r.Material(new Color(.32f,.64f,.62f)));
+            BuildWaterBankDetail(lowland,r,stream);
             // The deck is the only ground crossing. Both banks remain reachable
             // by the shared creature route planner; leaps may clear the water.
             Material timber = r.Material(new Color(.43f,.32f,.215f));
