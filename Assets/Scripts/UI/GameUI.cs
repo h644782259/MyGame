@@ -165,6 +165,7 @@ namespace Emberfall
         {
             RefreshLayout();
             ReconcileMobileScroll();
+            ReconcileCollectionPreview();
             if (session == null || session.BackgroundPaused) return;
             ReconcileBuildPlanSurface();
             ReconcileProgressionGoalSurface();
@@ -230,6 +231,7 @@ namespace Emberfall
             if(session!=null&&session.Progression!=null)session.Progression.Changed-=InvalidateAttention;
             if(attentionDot!=null)Destroy(attentionDot);
             ReleaseChestTextures();
+            ReleaseCollectionPreview();
             if(terrainMap!=null)Destroy(terrainMap);
             if (thumbTexture != null) Destroy(thumbTexture);
             if (trackTexture != null) Destroy(trackTexture);
@@ -1289,47 +1291,7 @@ namespace Emberfall
         private void DrawFashion()
         {
             if(MobileControls.Active){DrawMobileFashion();return;}
-            ProgressionService progression = session.Progression;
-            GameProfile profile = progression.Profile;
-            Rect w = Modal(940, 638, "时装收藏", "外观自由穿戴 · 属性使用每部位最高收藏品质 · 每次开箱积累星纹");
-            if (Button(new Rect(w.xMax - 69, w.y + 20, 44, 32), "×", jade)) { panel = Panel.Inventory; return; }
-            string[] slotNames = { "翅膀", "武器外观" };
-            for (int slotIndex = 0; slotIndex < 2; slotIndex++)
-            {
-                FashionSlot slot = (FashionSlot)slotIndex;
-                float x = w.x + 24 + slotIndex * 451;
-                FashionData equipped = progression.EquippedFashion(slot);
-                Rect summary = new Rect(x, w.y + 110, 439, 60);
-                Fill(summary, card);
-                Border(summary, equipped == null ? muted : GameBalance.RarityColor(equipped.rarity));
-                Text(new Rect(x + 12, summary.y + 6, 200, 20), slotNames[slotIndex] + " · 穿戴中", 12, jade, true);
-                Text(new Rect(x + 12, summary.y + 29, 295, 23), equipped == null ? "未穿戴" : equipped.name + " · 收藏属性 " + (progression.StrongestFashion(slot)==null?"无":GameBalance.RarityName(progression.StrongestFashion(slot).rarity)),
-                    13, equipped == null ? muted : pale, true);
-                if (equipped != null && Button(new Rect(x + 335, summary.y + 14, 90, 32), "卸下", muted))
-                    Feedback(progression.UnequipFashion(slot), "已卸下" + slotNames[slotIndex]);
-                for (int rank = 0; rank < 4; rank++)
-                {
-                    Rarity rarity = (Rarity)rank;
-                    string id = "fashion-" + slotIndex + "-" + rank;
-                    FashionData owned = profile.fashions.Find(value => value != null && value.id == id);
-                    bool worn = equipped != null && equipped.id == id;
-                    Rect cardRect = new Rect(x, w.y + 181 + rank * 94, 439, 84);
-                    Fill(cardRect, card);
-                    Color accent = GameBalance.RarityColor(rarity);
-                    Fill(new Rect(cardRect.x, cardRect.y, 4, cardRect.height), accent);
-                    Text(new Rect(x + 15, cardRect.y + 9, 260, 23), ProgressionService.FashionName(slot, rarity), 16, accent, true);
-                    Text(new Rect(x + 15, cardRect.y + 34, 310, 20), GameBalance.RarityName(rarity) + " · " + ProgressionService.FashionBonus(slot, rarity), 12, pale);
-                    Text(new Rect(x + 15, cardRect.y + 57, 310, 17), owned == null ? "未获得 · 通关宝箱随机掉落" : "已收藏 · 无等级要求", 11, owned == null ? muted : jade);
-                    if (Button(new Rect(x + 333, cardRect.y + 23, 92, 36), worn ? "穿戴中" : owned == null ? "未解锁" : "穿戴",
-                        owned == null ? muted : accent, owned != null && !worn))
-                        Feedback(progression.EquipFashion(id), "已穿戴" + ProgressionService.FashionName(slot, rarity));
-                }
-            }
-            Text(new Rect(w.x + 25, w.y + 571, 890, 21), "每次开箱星纹+1；重复件额外+1/2/4/8。30星纹自选缺少的传说部位 · 当前 "+profile.fashionThreads, 12, muted);
-            for(int i=0;i<2;i++) { FashionSlot slot=(FashionSlot)i;
-                if(Button(new Rect(w.x+25+i*300,w.y+592,282,30),"30星纹自选传说"+(i==0?"翅膀":"兵装"),gold,session.IsInCamp&&profile.fashionThreads>=30&&!profile.fashions.Exists(x=>x.slot==slot&&x.rarity==Rarity.Legendary)))
-                    Feedback(progression.ChooseLegendaryFashion(slot,session.IsInCamp),"传说收藏已解锁"); }
-            if (Button(new Rect(w.x + 726, w.y + 592, 188, 30), "返回行囊", jade)) panel = Panel.Inventory;
+            DrawDesktopCollection();
         }
 
         private void DrawPotionAssignment()
@@ -1438,24 +1400,25 @@ namespace Emberfall
             Text(new Rect(r.x+18,r.y+45,r.width-36,31),ItemTitle(preview),22,levelLocked?muted*.65f:pale,true);
             ItemData equipped=progression.Equipped(item.slot);
             DrawEquipmentComparison(new Rect(r.x+18,r.y+88,r.width-36,61),equipped,item);
-            Text(new Rect(r.x+18,r.y+157,205,22),(levelLocked?"锁 · 需要 "+item.level+"级":"Lv."+item.level)+" · 部位强化 +"+slotRank,14,levelLocked?gold:muted);
-            Text(new Rect(r.x+230,r.y+157,175,22),isEquipped?"当前属性":"当前 → 换装后",14,muted,false,false,TextAnchor.MiddleRight);
-            ItemStat(r.x+18,r.y+186,"攻击",preview.attack,equipped==null?0:equipped.attack,isEquipped);
-            ItemStat(r.x+18,r.y+215,"防御",preview.defense,equipped==null?0:equipped.defense,isEquipped);
-            ItemStat(r.x+18,r.y+244,"生命",preview.health,equipped==null?0:equipped.health,isEquipped);
-            string mechanic=item.mechanic==EquipmentMechanic.None?"无特殊机制":BuildCatalog.MechanicName(item.mechanic)+" · "+BuildCatalog.MechanicDescription(item.mechanic);
-            Rect mechanism=new Rect(r.x+18,r.y+277,r.width-36,45);
-            Text(mechanism,mechanic,12,item.mechanic==EquipmentMechanic.None?muted:gold,false,true);
-            if(mechanism.Contains(Mouse))tooltip=(equipped==null?"当前：空槽":"当前："+BuildCatalog.MechanicDescription(equipped.mechanic))+"\n待更换："+BuildCatalog.MechanicDescription(item.mechanic)+"\n评分仅比较攻击、防御、生命；不包含机制价值。";
+            Text(new Rect(r.x+18,r.y+155,205,22),(levelLocked?"锁 · 需要 "+item.level+"级":"Lv."+item.level)+" · 部位强化 +"+slotRank,14,levelLocked?gold:muted);
+            Text(new Rect(r.x+230,r.y+155,175,22),isEquipped?"当前属性":"当前 → 换装后",14,muted,false,false,TextAnchor.MiddleRight);
+            ItemStat(r.x+18,r.y+180,"攻击",preview.attack,equipped==null?0:equipped.attack,isEquipped);
+            ItemStat(r.x+18,r.y+209,"防御",preview.defense,equipped==null?0:equipped.defense,isEquipped);
+            ItemStat(r.x+18,r.y+238,"生命",preview.health,equipped==null?0:equipped.health,isEquipped);
+            string mechanic=EquipmentComparisonPresentation.Changes(equipped,item,progression.Profile.heroClass);
+            Rect mechanism=new Rect(r.x+18,r.y+270,r.width-36,42);
+            Text(mechanism,mechanic,13,gold,false,true);
+            DrawPersistentMechanismDetail(new Rect(r.x+18,r.y+316,r.width-36,39),equipped,item);
             if(Button(new Rect(r.x+292,r.y+17,114,25),item.locked?"已锁定":"锁定",item.locked?gold:muted,true,"锁定后不可出售，仍可穿戴。")){bool locked=!item.locked;Feedback(progression.SetItemLocked(item.id,locked),locked?"已锁定":"已解锁");}
             bool canEquip = item.level <= progression.Profile.level && !isEquipped;
             string equipCaption = isEquipped ? "已装备" : !canEquip ? "需要 Lv." + item.level : "装备此物品";
-            if (Button(new Rect(r.x + 18, r.y + 338, 187, 40), equipCaption, jade, canEquip, null, true)) Feedback(progression.Equip(item.id), "已装备 " + item.name);
+            if (Button(new Rect(r.x + 18, r.y + 365, 187, 40), equipCaption, jade, canEquip, null, true)) Feedback(progression.Equip(item.id), "已装备 " + item.name);
             bool maxUpgrade = slotRank >= ProgressionService.MaximumUpgrade;
             int upgradeCost = progression.UpgradeCost(item);
-            if (Button(new Rect(r.x + 219, r.y + 338, 187, 40), maxUpgrade ? "部位已达 +" + ProgressionService.MaximumUpgrade : "强化部位 · " + upgradeCost + " 金", gold, !maxUpgrade && progression.Profile.gold >= upgradeCost, maxUpgrade ? "此部位已达到强化上限，换装仍会自动继承。" : "消耗 " + upgradeCost + " 金币，将" + GameBalance.SlotName(item.slot) + "部位提升至 +" + (slotRank + 1) + "；当前与以后换上的装备均生效，无需穿戴所选装备。"))
+            if (Button(new Rect(r.x + 219, r.y + 365, 187, 40), maxUpgrade ? "部位已达 +" + ProgressionService.MaximumUpgrade : "强化部位 · " + upgradeCost + " 金", gold, !maxUpgrade && progression.Profile.gold >= upgradeCost, maxUpgrade ? "此部位已达到强化上限，换装仍会自动继承。" : "消耗 " + upgradeCost + " 金币，将" + GameBalance.SlotName(item.slot) + "部位提升至 +" + (slotRank + 1) + "；当前与以后换上的装备均生效，无需穿戴所选装备。"))
                 Feedback(progression.Upgrade(item.id), GameBalance.SlotName(item.slot) + "部位强化 +" + (slotRank + 1) + " · -" + upgradeCost + " 金币");
-            Text(new Rect(r.x + 18, r.y + 386, r.width - 36, 38), "强化跟随部位，换装自动继承，无需转移。\n同一强化等级，按每件装备自身基础属性计算加成。", 12, jade, false, true);
+            Text(new Rect(r.x + 18, r.y + 409, r.width - 36, 18), "属性已含部位强化 · 机制不计入评分", 11, jade);
+
         }
 
         private void ReturnToInventory()

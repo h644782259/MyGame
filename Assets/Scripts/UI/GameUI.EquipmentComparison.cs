@@ -4,6 +4,9 @@ namespace Emberfall
 {
     public sealed partial class GameUI
     {
+        private Vector2 equipmentMechanismScroll;
+        private string equipmentMechanismItem;
+
         // All inventory comparisons use the attributes the item will have after
         // equipping. A stored per-item rank is not the persistent slot rank.
         private ItemData EquipmentPreview(ItemData item)
@@ -14,6 +17,18 @@ namespace Emberfall
         private float EquipmentPreviewScore(ItemData item)
         {
             return ProgressionService.EquipmentScore(EquipmentPreview(item));
+        }
+
+        private void DrawPersistentMechanismDetail(Rect area,ItemData current,ItemData candidate)
+        {
+            if(equipmentMechanismItem!=candidate.id){equipmentMechanismItem=candidate.id;equipmentMechanismScroll=Vector2.zero;}
+            var hero=session.Progression.Profile.heroClass;
+            string text="换装后 · "+EquipmentComparisonPresentation.Description(candidate,hero);
+            if(!EquipmentComparisonPresentation.SameMechanism(current,candidate,hero))text+="\n原机制 · "+EquipmentComparisonPresentation.Description(current,hero);
+            float contentWidth=area.width-16;
+            float h=Style(12,false,true,TextAnchor.UpperLeft).CalcHeight(new GUIContent(text),contentWidth);
+            equipmentMechanismScroll=BeginTouchScroll("equipment-mechanism-detail",area,equipmentMechanismScroll,new Rect(0,0,contentWidth,Mathf.Max(area.height,h+4)));
+            Text(new Rect(0,0,contentWidth,h),text,12,muted,false,true);EndTouchScroll();
         }
 
         private void DrawEquipmentComparison(Rect r, ItemData equipped, ItemData candidate)
