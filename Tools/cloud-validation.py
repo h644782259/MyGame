@@ -236,9 +236,20 @@ def main():
                 'using System; internal static class Program { static void Main() { Console.WriteLine('+test+'.Run()); } }'))
         checks.append(("skill-visual-recipe",[ROOT/"Assets/Scripts/Core/GameTypes.cs",ROOT/"Assets/Scripts/Core/SkillRuntime.cs",ROOT/"Assets/Scripts/Core/FilledVfxRecipes.cs",ROOT/"Assets/Scripts/Core/SkillVisualRecipe.cs",ROOT/"Tests/SkillRuntimeTests.cs",ROOT/"Tests/SkillVisualRecipeTests.cs"],
             'using System; internal static class Program { static void Main() { Console.WriteLine(SkillVisualRecipeTests.Run()); } }'))
+        checks.append(("hold-point-state",[ROOT/"Assets/Scripts/Core/ExpeditionModeState.cs",ROOT/"Assets/Scripts/Core/TierRewardBand.cs",ROOT/"Tests/HoldPointStateTests.cs"],
+            'using System; internal static class Program { static void Main() { Console.WriteLine(HoldPointStateTests.Run()); } }'))
+        checks.append(("room-blessing-routes",[ROOT/"Assets/Scripts/Core/GameTypes.cs",ROOT/"Assets/Scripts/Core/RunChoices.cs",ROOT/"Assets/Scripts/Core/CampRouteCards.cs",ROOT/"Assets/Scripts/Core/SkillRuntime.cs",ROOT/"Tests/SkillRuntimeTests.cs",ROOT/"Tests/RoomBlessingRouteTests.cs"],
+            'using System; internal static class Program { static void Main() { Console.WriteLine(RoomBlessingRouteTests.Run()); } }'))
+        checks.append(("combat-review-events",[ROOT/"Assets/Scripts/Core/GameTypes.cs",ROOT/"Assets/Scripts/Core/CombatReviewEvents.cs",ROOT/"Assets/Scripts/Core/CombatReviewConfigurations.cs",ROOT/"Assets/Scripts/Core/SkillRuntime.cs",ROOT/"Tests/SkillRuntimeTests.cs",ROOT/"Tests/CombatReviewEventsTests.cs"],
+            'using System; internal static class Program { static void Main() { Console.WriteLine(CombatReviewEventsTests.Run()); } }'))
+        checks.append(("combat-review-rules",[ROOT/"Assets/Scripts/Core/GameTypes.cs",ROOT/"Assets/Scripts/Core/SkillRuntime.cs",ROOT/"Assets/Scripts/Core/SkillDamageBudgets.cs",ROOT/"Assets/Scripts/Core/AudioVoicePolicy.cs",ROOT/"Assets/Scripts/Core/LockedImpactMarkPolicy.cs",ROOT/"Assets/Scripts/Core/BasicActionTimeline.cs",ROOT/"Assets/Scripts/Combat/BossAttackPolicy.cs",ROOT/"Tests/SkillRuntimeTests.cs",ROOT/"Tests/CombatReviewRulesTests.cs"],
+            'using System; internal static class Program { static void Main() { Console.WriteLine(CombatReviewRulesTests.Run()); } }'))
         for _, sources, _ in checks:
             if ROOT / "Assets/Scripts/Core/RoomChainState.cs" in sources:
                 sources.append(ROOT / "Assets/Scripts/Core/RoomTactics.cs")
+        for _, sources, _ in checks:
+            if ROOT / "Assets/Scripts/Core/RunChoices.cs" in sources:
+                sources.append(ROOT / "Assets/Scripts/Core/RunChoices.Rooms.cs")
         for _, sources, _ in checks:
             if ROOT / "Assets/Scripts/Core/GameTypes.cs" in sources:
                 sources.append(ROOT / "Assets/Scripts/Core/CombatBalance.cs")
