@@ -26,4 +26,6 @@ check('DescribeRoster(hero,out count,out lifetime)' in ui and 'Snapshot(' not in
 roster=pet[pet.index('public static void DescribeRoster'):pet.index('public static SummonedCompanion[] Snapshot')]
 check('pet.IsAlive&&pet.Owner==owner' in roster and '!pet.IsPermanent' in roster and 'new ' not in roster,'Roster reads living owned contracts without allocation')
 check('SummonedCompanion.ExplicitFocus(hero)' in marks and 'charge.TargetPoint' in marks,'World marks display authoritative free focus and locked charge point')
+check('hero.IsJumping||charge!=null&&(charge.IsCharging||charge.ConsumedThisFrame)' in ui, 'Any ongoing or frame-consumed charge and airborne state suppress meteor opportunity')
+check('hero.SkillCooldownRemaining(1),hero.Energy,GameBalance.SkillEnergyCost(hero.HeroClass,1),castBlocked' in ui and 'hero.Specialization==ElementalistSpecialization.Burn,ready' in ui, 'Meteor opportunity reads actual cooldown/energy and explicit specialization')
 print('PASS:',checks,'combat opportunity/free-command source contracts')

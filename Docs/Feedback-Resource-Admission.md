@@ -81,8 +81,10 @@ The HUD now uses at most one class opportunity line. It reads the living current
 scene target, counter timer or live companion roster; dead, paused and changed
 combat epochs suppress prior state. Frost/burning, three poison stacks and
 vulnerability are actual status flags. The frost message claims shatter readiness
-only when the non-burn route's meteor is learned and presently usable. No
-reignition mechanic is invented from the target's color or the presence of fire.
+only when the non-burn route's meteor is learned and presently usable. The Burn route instead offers "灼烧 · 陨星续燃" only for a currently burning
+target when meteor is learned and its actual cooldown, energy, airborne and
+charge/frame-lock gates are clear. This describes refreshing the existing burn,
+not an extra damage bonus; unrelated frost does not mask the Burn route's message.
 The current charging skill is explicitly marked, while unlocked ready skills
 retain a small ready indicator.
 

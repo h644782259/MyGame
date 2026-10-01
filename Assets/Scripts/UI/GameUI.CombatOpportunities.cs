@@ -53,8 +53,15 @@ namespace Emberfall
             var target=hero.CurrentOpportunityTarget;
             if(target==null||!session.Enemies.Contains(target)||!target.gameObject.activeInHierarchy)return "";
             var status=target.StatusEffects;if(status==null)return "";
-            if(hero.HeroClass==HeroClass.Arcanist)return CombatOpportunityPresentation.Arcanist(status.HasFrostMark,status.IsBurning,
-                hero.Specialization!=ElementalistSpecialization.Burn&&session.Progression.Profile.skillRanks[1]>0&&MobileSkillState(1).Length==0);
+            if(hero.HeroClass==HeroClass.Arcanist)
+            {
+                var charge=hero.GetComponent<SkillChargeController>();
+                bool castBlocked=hero.IsJumping||charge!=null&&(charge.IsCharging||charge.ConsumedThisFrame);
+                bool ready=CombatOpportunityPresentation.MeteorReady(session.Progression.Profile.skillRanks[1]>0,
+                    hero.SkillCooldownRemaining(1),hero.Energy,GameBalance.SkillEnergyCost(hero.HeroClass,1),castBlocked);
+                return CombatOpportunityPresentation.Arcanist(status.HasFrostMark,status.IsBurning,
+                    hero.Specialization==ElementalistSpecialization.Burn,ready);
+            }
             return CombatOpportunityPresentation.Ranger(status.PoisonStacks,status.IsMarked);
         }
     }
