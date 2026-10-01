@@ -3,6 +3,7 @@ using System.Collections.ObjectModel;
 
 namespace Emberfall
 {
+    public enum HoldPointState { Inactive, Outside, Contested, Capturing, Secured }
     public enum ExpeditionModeKind { HoldPoint, TimedBreakthrough, BossGauntlet }
     public enum ExpeditionModeStatus { AwaitingSpawn, Active, Won, Failed, Disposed }
     public enum ExpeditionModeFailure { None, PlayerDefeated, TimeExpired, SpawnBlocked, Abandoned }
@@ -49,6 +50,30 @@ namespace Emberfall
     public sealed class ExpeditionModeState : IDisposable
     {
         public const int PhaseCount=3;
+        public const float HoldPointRadius=3.2f;
+        private bool holdInside;
+        private int holdPressure;
+        // Combat-active time after all required kills while capture remains incomplete.
+        // Per-run telemetry only; never serialized into character saves.
+        public double HoldIdleWaitSeconds {get;private set;}
+        public HoldPointState HoldState
+        {get{
+            if(Mode!=ExpeditionModeKind.HoldPoint)return HoldPointState.Inactive;
+            if(Status==ExpeditionModeStatus.Won)return HoldPointState.Secured;
+            if(Status!=ExpeditionModeStatus.Active||CurrentPhase==null)return HoldPointState.Inactive;
+            if(ObjectiveProgressSeconds>=CurrentPhase.HoldSeconds)return HoldPointState.Secured;
+            if(!holdInside)return HoldPointState.Outside;
+            return holdPressure>0?HoldPointState.Contested:HoldPointState.Capturing;
+        }}
+        public string HoldStateLabel
+        {get{switch(HoldState){case HoldPointState.Outside:return "进入圈内";case HoldPointState.Contested:return "争夺中 · 进度保留";
+            case HoldPointState.Capturing:return "占领中";case HoldPointState.Secured:return "占领完成 · 清理敌人";default:return "等待下一阶段";}}}
+        public static bool InsideHoldPoint(float distanceSquared)
+        {return !float.IsNaN(distanceSquared)&&!float.IsInfinity(distanceSquared)&&distanceSquared>=0&&distanceSquared<=HoldPointRadius*HoldPointRadius;}
+        public static bool ContestsHoldPoint(float distanceSquared,float enemyFootprint)
+        {return !float.IsNaN(distanceSquared)&&!float.IsInfinity(distanceSquared)&&!float.IsNaN(enemyFootprint)&&!float.IsInfinity(enemyFootprint)&&
+            distanceSquared>=0&&enemyFootprint>=0&&distanceSquared<=(HoldPointRadius+enemyFootprint)*(HoldPointRadius+enemyFootprint);}
+
         public readonly ExpeditionModeKind Mode;
         public readonly int Tier, Seed;
         public readonly float TimeLimitSeconds;
@@ -113,6 +138,7 @@ namespace Emberfall
             CurrentPhase=CreatePlan(PhaseIndex);plan=CurrentPhase;
             spawned=new bool[plan.EnemyCount];defeated=new bool[plan.EnemyCount];
             spawnedCount=0;AliveEnemies=0;DefeatedEnemies=0;ObjectiveProgressSeconds=0;
+            holdInside=false;holdPressure=0;
             Status=ExpeditionModeStatus.Active;
             return true;
         }
@@ -146,14 +172,20 @@ namespace Emberfall
             if(IsTerminal)return;
             if(!playerAlive){Fail(ExpeditionModeFailure.PlayerDefeated);return;}
             if(Status!=ExpeditionModeStatus.Active||!combatActive||deltaSeconds<=0||float.IsNaN(deltaSeconds)||float.IsInfinity(deltaSeconds))return;
+            holdInside=playerInsidePoint;holdPressure=pressureEnemies<0?1:pressureEnemies;
             // Use a double accumulator, then stop at the deadline; even a huge finite
             // delta cannot overflow, skip a phase, or accrue progress after time expires.
             double step=Math.Min((double)deltaSeconds,Math.Max(0,TimeLimitSeconds-ElapsedCombatSeconds));
             ElapsedCombatSeconds=Math.Min(TimeLimitSeconds,ElapsedCombatSeconds+step);
             if(ElapsedCombatSeconds>=TimeLimitSeconds)
             { Fail(ExpeditionModeFailure.TimeExpired);return; }
-            if(Mode==ExpeditionModeKind.HoldPoint&&playerInsidePoint&&pressureEnemies==0)
-                ObjectiveProgressSeconds=Math.Min(CurrentPhase.HoldSeconds,ObjectiveProgressSeconds+(float)step);
+            if(Mode==ExpeditionModeKind.HoldPoint)
+            {
+                if(DefeatedEnemies==CurrentPhase.EnemyCount&&ObjectiveProgressSeconds<CurrentPhase.HoldSeconds)
+                    HoldIdleWaitSeconds+=holdInside&&holdPressure==0?Math.Min(step,CurrentPhase.HoldSeconds-ObjectiveProgressSeconds):step;
+                if(holdInside&&holdPressure==0)
+                    ObjectiveProgressSeconds=Math.Min(CurrentPhase.HoldSeconds,ObjectiveProgressSeconds+(float)step);
+            }
             EvaluatePhase();
         }
 

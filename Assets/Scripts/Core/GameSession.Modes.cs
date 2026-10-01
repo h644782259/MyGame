@@ -15,7 +15,7 @@ namespace Emberfall
   public string ModeObjectiveStatus
   {get{if(RoomChainRun!=null)return RoomObjectiveStatus;if(ModeRun==null)return "";if(ModeRun.Status==ExpeditionModeStatus.Won)return ModeRewardPending?"挑战完成 · 奖励待保存":"挑战完成 · 奖励已保存";
    if(ModeRun.Status==ExpeditionModeStatus.Failed)return ModeRun.Failure==ExpeditionModeFailure.TimeExpired?"时限已到 · 返回营地再试":"挑战结束 · 返回营地";
-   return "阶段 "+(ModeRun.PhaseIndex+1)+" / 3  ·  "+Mathf.CeilToInt(ModeRun.RemainingSeconds)+"秒"+(ModeRun.Mode==ExpeditionModeKind.HoldPoint?"  ·  守点 "+Mathf.RoundToInt(ModeRun.ObjectiveProgress*100)+"%":"");}}
+   return "阶段 "+(ModeRun.PhaseIndex+1)+" / 3  ·  "+Mathf.CeilToInt(ModeRun.RemainingSeconds)+"秒"+(ModeRun.Mode==ExpeditionModeKind.HoldPoint?"  ·  "+ModeRun.HoldStateLabel+" "+Mathf.RoundToInt(ModeRun.ObjectiveProgress*100)+"%":"");}}
   private sealed class ArenaEnemyReceipt {public ExpeditionPhasePlan Plan;public int Index;}
   private readonly Dictionary<EnemyController,ArenaEnemyReceipt> arenaEnemies=new Dictionary<EnemyController,ArenaEnemyReceipt>();
   private string modeReceipt;
@@ -78,8 +78,8 @@ namespace Emberfall
    if(ModeRun==null)return;
    if(ModeRun.Status==ExpeditionModeStatus.Active)
    {
-    int pressure=0;foreach(var enemy in Enemies)if(enemy!=null&&!enemy.IsDead&&CombatFx.Flat(enemy.transform.position).sqrMagnitude<36)pressure++;
-    ModeRun.Advance(Time.deltaTime,!InputBlocked,Player!=null&&CombatFx.Flat(Player.transform.position).sqrMagnitude<=10.24f,pressure,!IsDead);
+    int pressure=0;foreach(var enemy in Enemies)if(enemy!=null&&!enemy.IsDead&&enemy.gameObject.activeInHierarchy&&ExpeditionModeState.ContestsHoldPoint(CombatFx.Flat(enemy.transform.position).sqrMagnitude,enemy.NavigationRadius))pressure++;
+    ModeRun.Advance(Time.deltaTime,!InputBlocked,Player!=null&&ExpeditionModeState.InsideHoldPoint(CombatFx.Flat(Player.transform.position).sqrMagnitude),pressure,!IsDead);
     if(arenaHazards!=null&&!ModeRun.IsTerminal)arenaHazards.Advance(Time.deltaTime);
     arenaSpawnDelay-=Time.deltaTime;
     if(arenaSpawnDelay<=0){arenaSpawnDelay=1.4f;SpawnArenaEnemies();}

@@ -46,6 +46,8 @@ namespace Emberfall
    }
    Text(new Rect(r.x+6*u,r.y+5*u,r.width-12*u,20*u),session.ModeName,TouchFont(14),gold,true,false,TextAnchor.MiddleCenter);
    Text(new Rect(r.x+6*u,r.y+27*u,r.width-12*u,20*u),"阶段 "+session.DungeonWave+" / 3  ·  "+Mathf.CeilToInt(session.ModeRun.RemainingSeconds)+"秒",TouchFont(11),pale,false,false,TextAnchor.MiddleCenter);
+   if(session.ModeRun.Mode==ExpeditionModeKind.HoldPoint)
+    Text(new Rect(r.x+6*u,r.y+49*u,r.width-12*u,15*u),session.ModeRun.HoldStateLabel+" "+Mathf.RoundToInt(session.ModeRun.ObjectiveProgress*100)+"%",TouchFont(10),session.ModeRun.HoldState==HoldPointState.Contested?gold:jade,false,false,TextAnchor.MiddleCenter);
    Bar(new Rect(r.x+8*u,r.yMax-7*u,r.width-16*u,3*u),session.ModeRun.ObjectiveProgress,jade);
   }
  }

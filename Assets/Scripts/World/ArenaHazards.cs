@@ -17,13 +17,19 @@ namespace Emberfall
     var go=new GameObject(i==2?"Hold objective boundary":"Arena hazard warning");go.transform.SetParent(transform,false);
     var line=go.AddComponent<LineRenderer>();rings[i]=line;line.useWorldSpace=true;line.loop=true;line.positionCount=48;line.widthMultiplier=i==2?.07f:.10f;
     line.sharedMaterial=material;line.shadowCastingMode=UnityEngine.Rendering.ShadowCastingMode.Off;line.sortingOrder=35;
-    float radius=i==2?3.2f:2.1f;for(int p=0;p<48;p++){float a=p*Mathf.PI*2/48;line.SetPosition(p,centers[i]+new Vector3(Mathf.Cos(a)*radius,.08f,Mathf.Sin(a)*radius));}
+    float radius=i==2?ExpeditionModeState.HoldPointRadius:2.1f;for(int p=0;p<48;p++){float a=p*Mathf.PI*2/48;line.SetPosition(p,centers[i]+new Vector3(Mathf.Cos(a)*radius,.08f,Mathf.Sin(a)*radius));}
     line.enabled=i==2&&mode==0;line.startColor=line.endColor=new Color(.3f,1,.62f,.6f);
    }
   }
   public void Advance(float dt)
   {
    if(session==null||session.Player==null||session.InputBlocked||dt<=0)return;age+=dt;
+   if(mode==0&&session.ModeRun!=null)
+   {
+    HoldPointState state=session.ModeRun.HoldState;
+    Color objective=state==HoldPointState.Contested?new Color(1,.65f,.15f,.9f):state==HoldPointState.Capturing?new Color(.2f,1,.82f,.85f):new Color(.3f,1,.62f,.6f);
+    rings[2].startColor=rings[2].endColor=objective;
+   }
    for(int i=0;i<2;i++)
    {
     float clock=age+i*2.7f;int cycle=Mathf.FloorToInt(clock/6.5f);float phase=clock-cycle*6.5f;
