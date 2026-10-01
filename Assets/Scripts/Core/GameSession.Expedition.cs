@@ -8,7 +8,7 @@ namespace Emberfall
         public RunChoices RunChoices { get; private set; } = new RunChoices();
         public bool DungeonSelectionOpen { get; private set; }
         public int SelectedDungeonTier { get; set; } = 1;
-        public int MaximumDungeonTier { get { return Mathf.Clamp(Progression.Profile.bestFloor + 1, 1, 100); } }
+        public int MaximumDungeonTier { get { return Progression.HighestUnlockedAdventureTier; } }
         public bool SelectedChallengeMode { get; set; }
         public bool ChallengeRun { get; private set; }
         public int HealingCharges { get; private set; }
@@ -93,9 +93,15 @@ namespace Emberfall
         public void RecordCombatAction(string key)
         {
             if (string.IsNullOrEmpty(key)) return;
-            int tutorialBit=key=="普攻回能"?1:key=="完美闪避"?2:key=="职业能力"?4:key=="换装"?8:0;
-            if(tutorialBit!=0&&(Progression.Profile.tutorialMask&tutorialBit)==0) { Progression.Profile.tutorialMask|=tutorialBit; Progression.Save(); LogSystem("实战试炼完成一项 · "+key); }
+            int tutorialBit=key=="普攻回能"?1:key=="完美闪避"?2:key=="换装"?8:0;
+            if(tutorialBit!=0&&(Progression.Profile.tutorialMask&tutorialBit)==0) { if(Progression.RecordTutorialEvidence(tutorialBit))LogSystem("实战试炼完成一项 · "+key); }
             int count; combatActions.TryGetValue(key, out count); combatActions[key] = Mathf.Min(9999, count + 1);
+        }
+        public bool ClassTutorialVisible {get{return Progression.Profile.classTutorialCompleted || (Progression.Profile.heroClass==HeroClass.Summoner ? Player!=null && (SummonedCompanion.Count(Player)>0 || SummonedCompanion.Count(Player,true)>0) : Progression.ClassTutorialUsable);}}
+        public void RecordClassTutorial(HeroClass hero)
+        {
+            if(!HasStarted || Player==null || IsDead || Progression.Profile.classTutorialCompleted)return;
+            if(Progression.RecordClassTutorialEvidence(hero))LogSystem("实战试炼 · "+Progression.ClassTutorialText);
         }
         public void RecordIncomingDamage(string source, float amount)
         {

@@ -80,7 +80,7 @@ namespace Emberfall
    if(RoomChainRun==null||!RoomChainRun.Finished||RoomChainRun.Failed||RoomChainRun.RewardClaimed)return true;
    int beforeGold=Progression.Profile.gold,beforeMaterials=Progression.Profile.mechanicMaterials;long xp=TotalEarnedExperience(Progression.Profile);
    int reward=200+DungeonTier*35;if(HasBlessing(RunBlessing.RiskContract))reward=Mathf.RoundToInt(reward*1.3f);
-   bool saved=Progression.TryGrantModeReward(modeReceipt,reward,160+DungeonTier*25,TierRewardBand.Materials(4,DungeonTier));
+   bool saved=Progression.TryGrantModeReward(modeReceipt,reward,160+DungeonTier*25,TierRewardBand.Materials(4,DungeonTier),DungeonTier);
    if(!saved){Notify(Progression.LastError);return false;}
    RoomChainRun.ClaimReward(true);modeGoldReward=Progression.Profile.gold-beforeGold;modeMaterialReward=Progression.Profile.mechanicMaterials-beforeMaterials;modeXpReward=(int)System.Math.Max(0,TotalEarnedExperience(Progression.Profile)-xp);
    LastRunSummary=BuildRunSummary(true);return true;

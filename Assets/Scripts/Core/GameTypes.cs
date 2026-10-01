@@ -192,7 +192,11 @@ namespace Emberfall
         public int[] hotbarKeys;
         public int hotbarPage;
         public string weaponId, armorId, relicId;
+        // Null in legacy presets: preserve current item variants. -1 means no unlocked variant captured.
+        public int[] equipmentVariants;
     }
+
+    public enum ProgressionGoalKind { None, Core, Variant, Ascension, SecondPreset, Tier }
 
     [Serializable]
     public class GameProfile
@@ -205,6 +209,11 @@ namespace Emberfall
         public int potions = 5;
         public int skillPoints;
         public int tutorialMask;
+        public bool classTutorialCompleted;
+        public ProgressionGoalKind progressionGoal;
+        public string progressionGoalItemId;
+        public int progressionGoalTier;
+        public int highestAdventureTier;
         public ElementalistSpecialization specialization;
         public int[] masteryRanks = new int[4];
         public int masteryCore = -1;

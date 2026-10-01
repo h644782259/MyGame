@@ -115,7 +115,7 @@ namespace Emberfall
    ExpeditionRewardTicket ticket;if(!ModeRun.TryReserveReward(out ticket))return false;
    int beforeGold=Progression.Profile.gold,beforeMaterials=Progression.Profile.mechanicMaterials;long beforeXp=TotalEarnedExperience(Progression.Profile);
    int goldReward=HasBlessing(RunBlessing.RiskContract)?Mathf.RoundToInt(ticket.Reward.Gold*1.3f):ticket.Reward.Gold;
-   bool saved=Progression.TryGrantModeReward(modeReceipt,goldReward,ticket.Reward.Experience,ticket.Reward.Materials);
+   bool saved=Progression.TryGrantModeReward(modeReceipt,goldReward,ticket.Reward.Experience,ticket.Reward.Materials,DungeonTier);
    ModeRun.CompleteReward(ticket,saved);
    if(saved){modeGoldReward=Mathf.Max(0,Progression.Profile.gold-beforeGold);modeXpReward=(int)Math.Max(0,TotalEarnedExperience(Progression.Profile)-beforeXp);modeMaterialReward=Mathf.Max(0,Progression.Profile.mechanicMaterials-beforeMaterials);LogSystem("挑战结算 · +"+modeGoldReward+"金币 · +"+modeXpReward+"经验 · +"+modeMaterialReward+"碎片");LastRunSummary=BuildRunSummary(true);}
    else Notify(Progression.LastError);

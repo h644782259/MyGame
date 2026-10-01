@@ -1030,9 +1030,18 @@ namespace Emberfall
                 skillRanks = (int[])Profile.skillRanks.Clone(), masteryRanks = (int[])Profile.masteryRanks.Clone(),
                 masteryCore = Profile.masteryCore, specialization = Profile.specialization, summonerRoute = Profile.summonerRoute,
                 equippedSkills = (int[])Profile.equippedSkills.Clone(), hotbarKeys = (int[])Profile.hotbarKeys.Clone(), hotbarPage = Profile.hotbarPage,
-                weaponId = Profile.weaponId, armorId = Profile.armorId, relicId = Profile.relicId
+                weaponId = Profile.weaponId, armorId = Profile.armorId, relicId = Profile.relicId,
+                equipmentVariants = new[] { CapturedVariant(Profile.weaponId), CapturedVariant(Profile.armorId), CapturedVariant(Profile.relicId) }
             };
         }
+
+        private int CapturedVariant(string id)
+        {
+            ItemData item=FindItem(id);
+            return item!=null && item.mechanicVariantUnlocked && HasElementVariant(item) ? item.mechanicVariant : -1;
+        }
+        private static bool HasElementVariant(ItemData item)
+        {return item!=null && (item.mechanic==EquipmentMechanic.FrostEcho || item.mechanic==EquipmentMechanic.CinderTrail);}
 
         public string CurrentBuildSummary() { return DescribeBuild(CaptureBuild()); }
         public string BuildPresetSummary(int slot)
@@ -1062,7 +1071,9 @@ namespace Emberfall
             foreach (string id in new[] { preset.weaponId, preset.armorId, preset.relicId })
             {
                 ItemData item = Profile.inventory.Find(value => value != null && value.id == id);
-                equipment.Add(item == null ? "装备缺失" : item.name);
+                int slot=equipment.Count;
+                string variant=preset.equipmentVariants!=null&&preset.equipmentVariants.Length==3&&preset.equipmentVariants[slot]>=0?" · 变体 "+(preset.equipmentVariants[slot]==0?"A":"B"):"";
+                equipment.Add(item == null ? "装备缺失" : item.name+variant);
             }
             return GameBalance.ClassName(preset.heroClass) + classChoice + " · 技能 " + skills + " 点 · 精通 " + mastery + " 点 · " + core +
                 "\n技能：" + (learned.Count == 0 ? "尚未学习" : string.Join("、", learned.ToArray())) +
@@ -1106,6 +1117,12 @@ namespace Emberfall
             candidate.equippedSkills = (int[])preset.equippedSkills.Clone(); candidate.hotbarKeys = (int[])preset.hotbarKeys.Clone();
             candidate.hotbarPage = preset.hotbarPage;
             candidate.weaponId = preset.weaponId; candidate.armorId = preset.armorId; candidate.relicId = preset.relicId;
+            if(preset.equipmentVariants!=null)
+            {
+                string[] ids={preset.weaponId,preset.armorId,preset.relicId};
+                for(int i=0;i<3;i++)if(preset.equipmentVariants[i]>=0)
+                    candidate.inventory.Find(item=>item.id==ids[i]).mechanicVariant=preset.equipmentVariants[i];
+            }
             return CommitCandidate(candidate);
         }
 
@@ -1158,6 +1175,7 @@ namespace Emberfall
             var keys = new HashSet<int>();
             foreach (int key in preset.hotbarKeys)
                 if (!GameBalance.IsBindableKey(key) || !keys.Add(key)) return "方案快捷键无效或重复。";
+            if(preset.equipmentVariants!=null && preset.equipmentVariants.Length!=3)return "方案变体数据无效。";
             string[] ids = { preset.weaponId, preset.armorId, preset.relicId };
             for (int slot = 0; slot < ids.Length; slot++)
             {
@@ -1165,6 +1183,12 @@ namespace Emberfall
                 ItemData item = Profile.inventory.Find(value => value != null && value.id == ids[slot]);
                 if (item == null || item.slot != (ItemSlot)slot || item.level > Profile.level)
                     return "方案装备已不在背包、部位不符或等级不足；请找回装备或重新保存方案。";
+                if(preset.equipmentVariants!=null)
+                {
+                    int variant=preset.equipmentVariants[slot];
+                    if(variant < -1 || variant>1 || variant>=0 && (!HasElementVariant(item)||!item.mechanicVariantUnlocked))
+                        return "方案引用了未解锁或无效的装备变体；不会消耗材料或自动解锁。";
+                }
             }
             return string.Empty;
         }
@@ -1244,7 +1268,7 @@ namespace Emberfall
             if (item == null || item.mechanic == EquipmentMechanic.None || !HasDiscoveredMechanic(item.mechanic) ||
                 BuildCatalog.MechanicClass(item.mechanic) != Profile.heroClass) return "请选择本职业已发现配方的机制装备。";
             if (item.rarity != Rarity.Epic) return item.rarity == Rarity.Legendary ? "已是传说品质，不会重复升华。" : "升华需要史诗品质机制装备。";
-            if (Profile.bestFloor < AscensionMilestone) return "通关沉星遗迹第5阶后开放传说升华。";
+            if (HighestAdventureTier < AscensionMilestone) return "任一冒险通关第5阶后开放传说升华。";
             if (Profile.mechanicMaterials < AscensionCost) return "升华需要24枚星烬碎片。";
             return string.Empty;
         }
@@ -1373,6 +1397,84 @@ namespace Emberfall
             GameProfile candidate=Snapshot();candidate.currentHub=hub;candidate.unlockedHubMask=mask;return CommitCandidate(candidate);
         }
 
+        public int HighestAdventureTier {get{return Clamp(Math.Max(Profile.highestAdventureTier,Profile.bestFloor),0,100);}}
+        public int HighestUnlockedAdventureTier {get{return Math.Min(100,HighestAdventureTier+1);}}
+        public bool RecordTutorialEvidence(int bit)
+        {
+            if(bit!=1 && bit!=2 && bit!=8)return Fail("无效的实战事件。");
+            if((Profile.tutorialMask&bit)!=0){LastError=string.Empty;return true;}
+            GameProfile candidate=Snapshot();candidate.tutorialMask|=bit;return CommitCandidate(candidate);
+        }
+        public bool RecordClassTutorialEvidence(HeroClass hero)
+        {
+            if(hero!=Profile.heroClass)return Fail("职业事件不匹配。");
+            if(Profile.classTutorialCompleted){LastError=string.Empty;return true;}
+            GameProfile candidate=Snapshot();candidate.classTutorialCompleted=true;return CommitCandidate(candidate);
+        }
+        public bool ClassTutorialUsable
+        {
+            get
+            {
+                if(Profile.classTutorialCompleted)return true;
+                // Counterattack follows the innate perfect dodge; other lessons need their actual skill.
+                int skill=Profile.heroClass==HeroClass.Arcanist?1:Profile.heroClass==HeroClass.Summoner?2:0;
+                return Profile.heroClass==HeroClass.Vanguard || Profile.skillRanks[skill]>0;
+            }
+        }
+        public string ClassTutorialText
+        {
+            get
+            {
+                switch(Profile.heroClass)
+                {
+                    case HeroClass.Vanguard:return "完美闪避后，反击命中";
+                    case HeroClass.Arcanist:return "碎冰命中，或有效刷新灼烧";
+                    case HeroClass.Ranger:return "引爆敌人的三层毒";
+                    default:return "指挥伙伴后，让伙伴命中目标";
+                }
+            }
+        }
+        public bool SelectProgressionGoal(ProgressionGoalKind goal,string itemId=null,int tier=0)
+        {
+            if(!Enum.IsDefined(typeof(ProgressionGoalKind),goal))return Fail("无效目标。");
+            if(goal==ProgressionGoalKind.Variant || goal==ProgressionGoalKind.Ascension)
+            {
+                ItemData item=FindItem(itemId);
+                if(item==null || item.mechanic==EquipmentMechanic.None || BuildCatalog.MechanicClass(item.mechanic)!=Profile.heroClass ||
+                    goal==ProgressionGoalKind.Variant && !HasElementVariant(item))return Fail("请选择背包中的本职业机制装备。");
+            }
+            if(goal==ProgressionGoalKind.Tier && (tier<1||tier>100))return Fail("目标阶数无效。");
+            GameProfile candidate=Snapshot();candidate.progressionGoal=goal;
+            candidate.progressionGoalItemId=goal==ProgressionGoalKind.Variant||goal==ProgressionGoalKind.Ascension?itemId:null;
+            candidate.progressionGoalTier=goal==ProgressionGoalKind.Tier?tier:1;return CommitCandidate(candidate);
+        }
+        public string ProgressionGoalStatus(int runMaterials=0)
+        {
+            ItemData item=FindItem(Profile.progressionGoalItemId);
+            string title,requirement;int cost=0;bool done=false;
+            switch(Profile.progressionGoal)
+            {
+                case ProgressionGoalKind.Core:
+                    title="首件机制装备";cost=Profile.pendingFirstClearReward||Profile.firstClearRewardClaimed?0:MechanicExchangeCost;
+                    done=Profile.firstClearRewardClaimed||Profile.discoveredMechanics.Count>0;
+                    requirement=Profile.pendingFirstClearReward?"首通自选可领取":"首通任一冒险，或收集12碎片";break;
+                case ProgressionGoalKind.Variant:
+                    title="解锁装备变体";cost=VariantCost;done=item!=null&&item.mechanicVariantUnlocked;
+                    requirement=item==null?"目标装备不在背包":item.name+" · 营地解锁";break;
+                case ProgressionGoalKind.Ascension:
+                    title="装备升华";cost=AscensionCost;done=item!=null&&item.rarity==Rarity.Legendary;
+                    requirement=item==null?"目标装备不在背包":"冒险5阶 "+Math.Min(5,HighestAdventureTier)+"/5 · "+item.name;break;
+                case ProgressionGoalKind.SecondPreset:
+                    title="第二套配装";done=HasBuildPreset(1);requirement="营地保存方案 B";break;
+                case ProgressionGoalKind.Tier:
+                    title="通关第 "+Profile.progressionGoalTier+" 阶";done=HighestAdventureTier>=Profile.progressionGoalTier;
+                    requirement="任一冒险 · 最高 "+HighestAdventureTier+" 阶";break;
+                default:return "选择一个成长目标"+(runMaterials>0?" · 本局 +"+runMaterials+"碎片":"");
+            }
+            return title+(done?" ✓ 已完成":"")+" · 碎片 "+Profile.mechanicMaterials+(cost>0?"/"+cost:"")+" · "+requirement+
+                (runMaterials>0?" · 本局 +"+runMaterials+"碎片":"");
+        }
+
         public bool TryCompleteDungeonRun(string rewardId, int tier, int gold, int experience)
         {
             Guid receipt;
@@ -1385,6 +1487,7 @@ namespace Emberfall
             int oldLevel = candidate.level;
             candidate.clearedRuns = Math.Min(999999, candidate.clearedRuns + 1);
             candidate.bestFloor = Math.Max(candidate.bestFloor, tier);
+            candidate.highestAdventureTier = Math.Max(candidate.highestAdventureTier,tier);
             candidate.gold = (int)Math.Min(MaximumGold, (long)candidate.gold + gold);
             long xp = (long)candidate.xp + experience;
             while (candidate.level < MaximumLevel && xp >= GameBalance.XpToNext(candidate.level))
@@ -1400,9 +1503,9 @@ namespace Emberfall
             return true;
         }
 
-        public bool TryGrantModeReward(string receipt,int gold,int experience,int materials)
+        public bool TryGrantModeReward(string receipt,int gold,int experience,int materials,int completedTier=0)
         {
-            Guid id;if(receipt==null||!Guid.TryParseExact(receipt,"N",out id)||gold<0||gold>10000||experience<0||experience>10000||materials<0||materials>10)return Fail("挑战奖励无效。");
+            Guid id;if(completedTier<0||completedTier>100||receipt==null||!Guid.TryParseExact(receipt,"N",out id)||gold<0||gold>10000||experience<0||experience>10000||materials<0||materials>10)return Fail("挑战奖励无效。");
             receipt=id.ToString("N");
             if(Profile.lastModeRewardId==receipt){LastError=string.Empty;return true;}
             GameProfile candidate=Snapshot();int oldLevel=candidate.level;
@@ -1411,6 +1514,11 @@ namespace Emberfall
             long xp=(long)candidate.xp+experience;
             while(candidate.level<MaximumLevel&&xp>=GameBalance.XpToNext(candidate.level)){xp-=GameBalance.XpToNext(candidate.level);candidate.level++;candidate.skillPoints++;}
             candidate.xp=candidate.level>=MaximumLevel?0:(int)xp;candidate.lastModeRewardId=receipt;
+            if(completedTier>0)
+            {
+                candidate.highestAdventureTier=Math.Max(candidate.highestAdventureTier,completedTier);
+                candidate.pendingFirstClearReward=!candidate.firstClearRewardClaimed;
+            }
             if(!CommitCandidate(candidate))return false;
             for(int level=oldLevel+1;level<=candidate.level;level++)if(LeveledUp!=null)LeveledUp(level);
             return true;
@@ -2083,6 +2191,10 @@ namespace Emberfall
             profile.kills = Clamp(profile.kills, 0, int.MaxValue);
             profile.clearedRuns = Clamp(profile.clearedRuns, 0, 999999);
             profile.bestFloor = Clamp(profile.bestFloor, 0, 999999);
+            profile.highestAdventureTier=Clamp(Math.Max(profile.highestAdventureTier,profile.bestFloor),0,100);
+            if(!Enum.IsDefined(typeof(ProgressionGoalKind),profile.progressionGoal))profile.progressionGoal=ProgressionGoalKind.None;
+            if(profile.progressionGoalItemId!=null && profile.progressionGoalItemId.Length>80)profile.progressionGoalItemId=null;
+            profile.progressionGoalTier=Clamp(profile.progressionGoalTier,1,100);
             profile.unlockedHubMask=HubTravelRules.UnlockedMask(profile.unlockedHubMask,profile.level,profile.clearedRuns);
             profile.currentHub=HubTravelRules.SafeCurrent(profile.currentHub,profile.unlockedHubMask);
             Guid modeReceipt;profile.lastModeRewardId=Guid.TryParseExact(profile.lastModeRewardId,"N",out modeReceipt)?modeReceipt.ToString("N"):null;
@@ -2092,7 +2204,7 @@ namespace Emberfall
                 profile.specialization = ElementalistSpecialization.None;
             profile.mechanicMaterials = Clamp(profile.mechanicMaterials, 0, 999999);
             profile.materialRewardedClears = Clamp(profile.materialRewardedClears, 0, profile.clearedRuns);
-            profile.pendingFirstClearReward = profile.clearedRuns > 0 && !profile.firstClearRewardClaimed;
+            profile.pendingFirstClearReward = (profile.clearedRuns > 0 || profile.highestAdventureTier>0) && !profile.firstClearRewardClaimed;
             profile.pendingChestTier = TierRewardRules.ClampTier(profile.pendingChestTier);
             ChestReward receipt = profile.lastChestReward;
             if (receipt == null || string.IsNullOrWhiteSpace(receipt.id) || receipt.id.Length > 80 ||
