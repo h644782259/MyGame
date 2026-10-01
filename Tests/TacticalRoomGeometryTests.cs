@@ -39,6 +39,15 @@ public static class TacticalRoomGeometryTests
                     Check(TacticalRoomGeometry.TrySpawn(seed,room,index,occupied,out at),"all six planned enemies have reachable safe spawns");
                     Check(TacticalRoomGeometry.TrySpawn(seed,room,index,occupied,out again)&&Vector3.Distance(at,again)<.0001f,"spawn deterministic");
                     Check(Vector3.Distance(at,entrance)>=5.5f&&WorldTraversal.CanReach(entrance,at,.65f),"safe reachable spawn");
+                    Check(WorldTraversal.CanReach(entrance,at,.45f),"all player classes can walk to every enemy without blink or ranged attacks");
+                    bool companionApproach=false;
+                    for(int stance=0;stance<8;stance++)
+                    {
+                        float a=stance*Mathf.PI/4;
+                        var near=at+new Vector3(Mathf.Cos(a)*1.4f,0,Mathf.Sin(a)*1.4f);
+                        if(WorldTraversal.CanReach(entrance,near,.7f)&&WorldTraversal.HasGroundPath(near,at,.12f)){companionApproach=true;break;}
+                    }
+                    Check(companionApproach,"largest melee companion has a walkable attack stance within 1.8m");
                     foreach(var other in occupied)Check(Vector3.Distance(at,other)>=2.4f,"spawns cannot stack");
                     occupied.Add(at);
                 }

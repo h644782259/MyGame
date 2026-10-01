@@ -78,6 +78,7 @@ public static class RoomChainStateTests
         for(int i=0;i<12;i++)capture.Advance(.25f,true,true,false);
         Check(capture.DoorUnlocked,"capture can bypass living guards");
         Check(capture.Next(true,false)&&capture.Progress==0&&capture.Seals==0,"room transition clears capture state");
+        Check(!capture.Next(true,false),"duplicate entry cannot skip the newly locked room");
         var hunt=new RoomChainState(1);
         for(int i=0;i<hunt.Room.EnemyCount;i++)hunt.Register(hunt.Room,i);
         for(int i=1;i<hunt.Room.EnemyCount;i++)hunt.Defeat(hunt.Room,i);
@@ -90,6 +91,12 @@ public static class RoomChainStateTests
         escape.Register(escape.Room,5);
         for(int i=0;i<16;i++)escape.Advance(.25f,true,true,false);
         Check(escape.DoorUnlocked,"escape opens with all six guards alive");
+        escape.Fail();escape.Advance(.25f,true,true,false);
+        Check(!escape.DoorUnlocked&&!escape.Next(true,false)&&!escape.ClaimReward(true),"death after open gate cancels escape and reward");
+        var abandoned=new RoomChainState(1);var old=abandoned.Room;
+        for(int i=0;i<old.EnemyCount;i++)abandoned.Register(old,i);
+        abandoned.Dispose();abandoned.Dispose();
+        Check(!abandoned.Defeat(old,0)&&!abandoned.Next(true,false)&&!abandoned.ClaimReward(true),"repeated abandonment rejects late deaths and payout");
         Check(RoomTactics.NextSeed(int.MinValue,-1)>=0,"negative seed safe");
         var failed=new RoomChainState();failed.Fail();failed.Advance(1,true,true,false);
         Check(failed.Failed&&failed.Finished&&!failed.Next(true,false)&&!failed.ClaimReward(true),"failed cannot pay/advance");

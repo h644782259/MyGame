@@ -361,7 +361,7 @@ namespace Emberfall
             DungeonTier = Mathf.Clamp(SelectedDungeonTier, 1, MaximumDungeonTier);
             ResetExpedition(dungeon);
             world = WorldBuilder.Build(dungeon ? ZoneKind.Dungeon : ZoneKind.Wilderness, DungeonLayout, Progression.Profile.bestFloor,CurrentHub);
-            Player.Teleport(new Vector3(0, 0, dungeon ? -9 : -10));
+            Player.Teleport(new Vector3(0, 0, dungeon ? (RoomChainRun!=null ? -12 : -9) : -10));
             Player.RefreshStats(true);
             if(dungeon)Player.ResetCooldownsForDungeonEntry();
             Camera.main.GetComponent<AdventureCamera>().Snap();

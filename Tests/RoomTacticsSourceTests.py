@@ -21,3 +21,5 @@ assert 'TacticalRoomGeometry.Register(layout)' in w and 'TacticalRoomGeometry.Wa
 assert 'MakeRoomObjective(first)' in t and '2.4f,.09f' in w
 assert 'TickRoomTactics();' in read('Assets/Scripts/Core/GameSession.cs')
 print('PASS: room tactics pause, route, support, marker and transition wiring (source contracts only)')
+
+assert "dungeon ? (RoomChainRun!=null ? -12 : -9) : -10" in read("Assets/Scripts/Core/GameSession.cs")
