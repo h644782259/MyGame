@@ -49,7 +49,6 @@ namespace Emberfall
                 element == Element.Poison ? new Color(.48f, 1f, .22f, .7f) : new Color(.56f, .88f, 1f, .9f);
             var emission = particles.emission;
             emission.rateOverTime = rate * EffectPreferences.EffectsScale;
-            if(particles==null)return;
             var shape = particles.shape;
             shape.shapeType = ParticleSystemShapeType.Sphere;
             shape.radius = radius;
