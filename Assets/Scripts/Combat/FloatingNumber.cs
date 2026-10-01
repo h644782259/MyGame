@@ -47,7 +47,7 @@ namespace Emberfall
         }
         private static void FontReady(string value)
         {
-            if(sharedFont==null)sharedFont=Font.CreateDynamicFontFromOSFont(new[]{"Microsoft YaHei","微软雅黑","PingFang SC","PingFangSC-Regular","Heiti SC","SimHei","Arial"},64);
+            if(sharedFont==null)sharedFont=GameFont.Shared;
             if(sharedFont!=null)sharedFont.RequestCharactersInTexture(value,64,FontStyle.Bold);
         }
         private static Vector2 Measure(string value,bool critical)

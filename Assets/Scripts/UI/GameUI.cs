@@ -131,7 +131,7 @@ namespace Emberfall
             if(targetFeedback==null)targetFeedback=gameObject.AddComponent<CombatTargetFeedback>();
             targetFeedback.Initialize(session);
             session.Progression.Changed+=InvalidateAttention;
-            font = Font.CreateDynamicFontFromOSFont(new[] { "Microsoft YaHei", "微软雅黑", "PingFang SC", "PingFangSC-Regular", "Heiti SC", "SimHei", "Arial" }, 18);
+            font = GameFont.Shared;
         }
 
         // Input and rendering share geometry, including before the first repaint
@@ -237,14 +237,14 @@ namespace Emberfall
             if (trackTexture != null) Destroy(trackTexture);
             for (int i = 0; i < crestTextures.Length; i++) if (crestTextures[i] != null) Destroy(crestTextures[i]);
             UIIconAtlas.Clear();
-            if (font != null) Destroy(font);
+            GameFont.Release(ref font);
         }
 
         private void OnGUI()
         {
             if (session == null || session.Progression == null) return;
             RefreshLayout();
-            if (font == null) font = Font.CreateDynamicFontFromOSFont(new[] { "Microsoft YaHei", "PingFang SC", "Heiti SC", "Arial" }, 18);
+            if (font == null) font = GameFont.Shared;
             if (invisibleButton == null) BuildStyles();
             Matrix4x4 oldMatrix = GUI.matrix;
             Color oldColor = GUI.color;
