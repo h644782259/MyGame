@@ -1,0 +1,36 @@
+[Ll]ibrary/
+[Tt]emp/
+[Oo]bj/
+[Ll]ogs/
+[Uu]ser[Ss]ettings/
+[Bb]uild/
+[Bb]uilds/
+.vs/
+.idea/
+*.csproj
+*.sln
+*.user
+*.pidb
+*.opendb
+*.VC.db
+Tools/ReferenceAssemblies/
+Tests/TestResults/
+
+# Personal saves and local credentials must never be published.
+emberfall-save.json*
+.env
+.env.*
+!.env.example
+.codex/
+.agents/
+.aws/
+*.pfx
+*.p12
+*.keystore
+
+# Editor and operating-system artifacts.
+.DS_Store
+Thumbs.db
+*.suo
+*.tmp
+*.unitypackage

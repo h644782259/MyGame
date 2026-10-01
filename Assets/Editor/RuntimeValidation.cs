@@ -1,0 +1,532 @@
+using System;
+using System.Collections;
+using System.IO;
+using System.Reflection;
+using System.Text;
+using UnityEditor;
+using UnityEditor.SceneManagement;
+using UnityEngine;
+
+namespace Emberfall.Editor
+{
+    /// <summary>Runs real play-mode smoke tests without touching a player's save directory.</summary>
+    [InitializeOnLoad]
+    public static class RuntimeValidation
+    {
+        private const string Prefix = "Emberfall.RuntimeValidation.";
+        private const string SaveOverride = "Emberfall.ValidationSaveDirectory";
+        private const BindingFlags PrivateInstance = BindingFlags.Instance | BindingFlags.NonPublic;
+        private static IEnumerator routine;
+        private static Delay waiting;
+        private static bool finishing;
+        private static bool validatingPause;
+
+        private sealed class Delay
+        {
+            private readonly double until;
+            private readonly bool scaled;
+            public Delay(float seconds, bool useGameTime = true)
+            {
+                scaled = useGameTime;
+                until = (scaled ? Time.timeAsDouble : EditorApplication.timeSinceStartup) + seconds;
+            }
+            public bool Ready { get { return (scaled ? Time.timeAsDouble : EditorApplication.timeSinceStartup) >= until; } }
+        }
+
+        [Serializable]
+        private sealed class EditorInfrastructureError
+        {
+            public string signature;
+            public string unityVersion;
+            public string message;
+            public string stackTrace;
+        }
+
+        [Serializable]
+        private sealed class Result
+        {
+            public bool passed;
+            public bool runtimePassed;
+            public string unityVersion;
+            public string resultsDirectory;
+            public string isolatedSaveDirectory;
+            public int assertions;
+            public int consoleErrors;
+            public int runtimeErrors;
+            public int totalObservedConsoleErrors;
+            public int editorInfrastructureErrorCount;
+            public EditorInfrastructureError[] editorInfrastructureErrors;
+            public int screenshots;
+            public float elapsedSeconds;
+            public string failure;
+            public string captureScope = "Authentic Camera.Render images of the runtime 3D world; OnGUI is exercised but is not included in camera captures.";
+        }
+
+        static RuntimeValidation()
+        {
+            EditorApplication.update += Update;
+            Application.logMessageReceived += OnLog;
+        }
+
+        /// <summary>CLI: Unity -batchmode -projectPath ... -executeMethod Emberfall.Editor.RuntimeValidation.Run (no -quit / -nographics).</summary>
+        [MenuItem("Emberfall/验证真实运行时 Runtime smoke test", false, 40)]
+        public static void Run()
+        {
+            if (SessionState.GetBool(Prefix + "Active", false)) throw new InvalidOperationException("Runtime validation is already running.");
+            if (EditorApplication.isPlayingOrWillChangePlaymode) throw new InvalidOperationException("Stop the current play session before running isolated validation.");
+            if (!Application.isBatchMode && UnityEngine.SceneManagement.SceneManager.GetActiveScene().isDirty)
+                throw new InvalidOperationException("Save the edited scene before running runtime validation.");
+
+            string workspace = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
+            string results = Path.Combine(workspace, "Tests", "TestResults", "PlayMode-" + Guid.NewGuid().ToString("N"));
+            string saves = Path.Combine(results, "IsolatedSave");
+            Directory.CreateDirectory(saves);
+            SessionState.SetString(Prefix + "Results", results);
+            SessionState.SetString(Prefix + "Save", saves);
+            SessionState.SetString(Prefix + "PreviousOverride", SessionState.GetString(SaveOverride, ""));
+            SessionState.SetString(SaveOverride, saves);
+            SessionState.SetInt(Prefix + "Assertions", 0);
+            SessionState.SetInt(Prefix + "Errors", 0);
+            SessionState.SetInt(Prefix + "InfrastructureErrors", 0);
+            SessionState.SetInt(Prefix + "Screenshots", 0);
+            SessionState.SetFloat(Prefix + "Started", (float)EditorApplication.timeSinceStartup);
+            SessionState.SetBool(Prefix + "Active", true);
+            finishing = false;
+            routine = null;
+            waiting = null;
+            Append("START Unity " + Application.unityVersion + " | isolated saves: " + saves);
+            EditorSceneManager.OpenScene("Assets/Scenes/Main.unity", OpenSceneMode.Single);
+#if UNITY_6000_0_OR_NEWER
+            // Unity 6 only creates its missing default Search index while in edit mode.
+            // Fully enumerate this public, lazy API before requesting Play; otherwise
+            // deferred startup indexing can read an empty database list after Play starts.
+            try
+            {
+                int databaseCount = 0;
+                foreach (var database in UnityEditor.Search.SearchService.EnumerateDatabases())
+                    databaseCount++;
+                Append("EDITOR Search initialized before Play: " + databaseCount + " database(s).");
+            }
+            catch (Exception exception)
+            {
+                Finish(false, "Editor Search initialization before Play failed: " + exception);
+                return;
+            }
+#endif
+            EditorApplication.isPlaying = true;
+        }
+
+        private static void Update()
+        {
+            if (finishing || !SessionState.GetBool(Prefix + "Active", false)) return;
+            try
+            {
+                double elapsed = EditorApplication.timeSinceStartup - SessionState.GetFloat(Prefix + "Started", 0);
+                if (elapsed > 150) throw new TimeoutException("Runtime validation exceeded 150 seconds including play-mode startup.");
+                if (EditorApplication.isCompiling || !EditorApplication.isPlaying) return;
+                EditorApplication.QueuePlayerLoopUpdate();
+                if (GameSession.Instance == null) return;
+                if (GameSession.Instance.Paused && !validatingPause) GameSession.Instance.SetPaused(false);
+                if (routine == null)
+                {
+                    Append("Play mode entered; InitializeOnLoad restored the validation runner after domain reload.");
+                    Application.runInBackground = true;
+                    routine = Smoke();
+                }
+                if (waiting != null && !waiting.Ready) return;
+                waiting = null;
+                if (!routine.MoveNext())
+                {
+                    Check(SessionState.GetInt(Prefix + "Errors", 0) == 0, "No game/runtime errors or other unclassified console exceptions");
+                    Finish(true, null);
+                    return;
+                }
+                waiting = routine.Current as Delay;
+            }
+            catch (Exception exception)
+            {
+                Exception failure = exception is TargetInvocationException && exception.InnerException != null ? exception.InnerException : exception;
+                Finish(false, failure.ToString());
+            }
+        }
+
+        private static IEnumerator Smoke()
+        {
+            GameSession game = GameSession.Instance;
+            string savePath = (string)Field(typeof(ProgressionService), "savePath").GetValue(game.Progression);
+            string isolated = Path.GetFullPath(SessionState.GetString(Prefix + "Save", "")) + Path.DirectorySeparatorChar;
+            Check(Path.GetFullPath(savePath).StartsWith(isolated, StringComparison.OrdinalIgnoreCase), "Save isolation verified before the first write");
+            Check(!game.HasStarted && game.Player == null, "Runtime bootstrap creates a title session");
+            Check(game.GetComponent<GameUI>() != null && Camera.main != null, "Runtime UI and camera bootstrap");
+            GameAudio.Muted = true;
+            yield return new Delay(.25f, false);
+
+            for (int heroIndex = 0; heroIndex < 3; heroIndex++)
+            {
+                HeroClass hero = (HeroClass)heroIndex;
+                Append("HERO " + hero + " — learning, passives, all eight active skills, camera capture");
+                game.StartNew(hero);
+                game.SetPaused(false);
+                Check(game.Player != null && game.Player.HeroClass == hero && game.HasStarted, hero + " initializes correctly");
+                FreezeEnemies(game);
+                yield return new Delay(.5f);
+                CaptureWorld(hero + "-world.png", false);
+
+                game.Progression.GrantExperience(1000000);
+                Check(game.Progression.Profile.level == 100, hero + " reaches level 100 through XP progression");
+                StatBlock beforePassive = game.Progression.GetStats();
+                for (int skill = 0; skill < GameBalance.SkillCount; skill++)
+                    for (int rank = 1; rank <= 3; rank++)
+                        Check(game.Progression.LearnSkill(skill), hero + " learns " + skill + " stage " + rank);
+                StatBlock afterPassive = game.Progression.GetStats();
+                Check(hero == HeroClass.Ranger ? afterPassive.CritChance > beforePassive.CritChance && afterPassive.MoveSpeed > beforePassive.MoveSpeed : afterPassive.Damage > beforePassive.Damage,
+                    hero + " learned offensive passive changes actual stats");
+                Check(!game.AssignSkill(0, 3) && !game.AssignSkill(0, 8), hero + " passives cannot enter the hotbar");
+                foreach (int skill in game.Progression.Profile.equippedSkills)
+                    Check(skill < 0 || !GameBalance.IsPassive(skill), hero + " loadout contains active skills only");
+                float energyBeforePassive = game.Player.Energy;
+                Cast(game.Player, 3);
+                Cast(game.Player, 8);
+                Check(Mathf.Approximately(game.Player.Energy, energyBeforePassive) && game.Player.SkillCooldownRemaining(3) == 0 && game.Player.SkillCooldownRemaining(8) == 0,
+                    hero + " passive cast attempts consume no energy and create no cooldown");
+
+                GameUI ui = game.GetComponent<GameUI>();
+                OpenPanel(ui, "Inventory");
+                Check(game.InputBlocked && Mathf.Approximately(Time.timeScale, 0), hero + " inventory pauses combat");
+                yield return new Delay(.2f, false);
+                Call(ui, "ClosePanel");
+                OpenPanel(ui, "Skills");
+                Field(typeof(GameUI), "selectedSkill").SetValue(ui, 3);
+                Check(game.InputBlocked && Mathf.Approximately(Time.timeScale, 0), hero + " skill panel pauses combat");
+                yield return new Delay(.2f, false);
+                Field(typeof(GameUI), "selectedSkill").SetValue(ui, 9);
+                yield return new Delay(.2f, false);
+                Call(ui, "OpenBindings");
+                yield return new Delay(.2f, false);
+                Call(ui, "ClosePanel");
+                Call(ui, "ClosePanel");
+                Check(!game.InputBlocked && Mathf.Approximately(Time.timeScale, 1), hero + " modal close restores gameplay");
+
+                if (heroIndex == 0)
+                {
+                    int oldSecondKey = game.Progression.Profile.hotbarKeys[1];
+                    int oldFirstKey = game.Progression.Profile.hotbarKeys[0];
+                    Check(game.Progression.SetHotbarKey(0, oldSecondKey), "Custom key assignment accepted");
+                    Check(game.Progression.Profile.hotbarKeys[1] == oldFirstKey, "Conflicting custom keys swap slots");
+                    Check(!game.Progression.SetHotbarKey(0, (int)KeyCode.W), "Movement key binding rejected");
+                    for (int slot = 0; slot < GameBalance.HotbarSize; slot++) game.Progression.SetHotbarKey(slot, GameBalance.DefaultHotbarKeys[slot]);
+                }
+
+                for (int skill = 0; skill < GameBalance.SkillCount; skill++)
+                {
+                    if (GameBalance.IsPassive(skill)) continue;
+                    PrepareCastFixture(game);
+                    SkillRuntime runtime = Runtime(game.Player);
+                    runtime.Advance(200f); // Fixture reset between independent casts; never used for the paging assertion.
+                    runtime.FillEnergy();
+                    SetField(game.Player, "aimPoint", game.Player.transform.position + Vector3.forward * 3);
+                    game.Player.transform.rotation = Quaternion.identity;
+                    SkillCategory category = GameBalance.GetSkillCategory(hero, skill);
+                    if (category == SkillCategory.Healing)
+                    {
+                        SetField(game.Player, "invulnerability", 0f);
+                        game.Player.TakeDamage(game.Player.MaxHealth);
+                        Check(game.Player.Health < game.Player.MaxHealth && !game.IsDead, hero + " healing fixture is injured and alive");
+                    }
+                    float healthBefore = game.Player.Health;
+                    float enemiesBefore = EnemyHealth(game);
+                    Vector3 positionBefore = game.Player.transform.position;
+                    float energyBefore = game.Player.Energy;
+                    Cast(game.Player, skill);
+                    Check(Mathf.Abs(game.Player.Energy - (energyBefore - GameBalance.SkillEnergyCosts[skill])) < .02f, hero + " skill " + skill + " spends its configured resource cost");
+                    Check(Mathf.Abs(game.Player.SkillCooldownRemaining(skill) - GameBalance.EffectiveCooldown(skill, 3)) < .02f, hero + " skill " + skill + " uses the awakened cooldown");
+
+                    if (skill == 0)
+                    {
+                        float cooldown = game.Player.SkillCooldownRemaining(skill);
+                        game.SetHotbarPage(1);
+                        Check(game.AssignSkill(0, skill), hero + " skill can be configured on page two");
+                        Check(Mathf.Abs(game.Player.CooldownRemaining(0) - cooldown) < .02f, hero + " page two preserves the existing skill cooldown");
+                        game.SetHotbarPage(2);
+                        Check(game.AssignSkill(7, skill), hero + " skill can be configured on page three");
+                        float beforeRejectedCast = game.Player.Energy;
+                        Cast(game.Player, skill);
+                        Check(Mathf.Approximately(beforeRejectedCast, game.Player.Energy) && Mathf.Abs(game.Player.CooldownRemaining(7) - cooldown) < .02f,
+                            hero + " paging cannot bypass cooldown or double-spend resources");
+                        Call(game.Player, "OnBasicAttackHit", game.Player.transform.position);
+                        Check(Mathf.Abs(game.Player.Energy - Mathf.Min(game.Player.MaxEnergy, beforeRejectedCast + 8)) < .02f, hero + " a basic attack hit restores eight resource points");
+                        game.SetHotbarPage(0);
+                        float pausedCooldown = game.Player.SkillCooldownRemaining(skill);
+                        validatingPause = true;
+                        game.SetPaused(true);
+                        yield return new Delay(.25f, false);
+                        Check(Mathf.Abs(game.Player.SkillCooldownRemaining(skill) - pausedCooldown) < .02f, hero + " pause freezes active cooldowns");
+                        game.SetPaused(false);
+                        validatingPause = false;
+                    }
+
+                    if (category == SkillCategory.Defense)
+                    {
+                        SetField(game.Player, "invulnerability", 0f);
+                        float unprotected = 100f * (100f / (100f + game.Progression.GetStats().Armor * 4f));
+                        float before = game.Player.Health;
+                        game.Player.TakeDamage(100f);
+                        Check(before - game.Player.Health < unprotected * .8f, hero + " defense ability reduces actual incoming damage");
+                    }
+                    float settle = skill == 9 ? 3.9f : category == SkillCategory.Healing ? 1.25f : skill == 2 ? 1.15f : 1f;
+                    yield return new Delay(settle);
+                    Check(!game.IsDead, hero + " remains alive after skill " + skill);
+                    Check(game.Player.SkillCooldownRemaining(skill) < GameBalance.EffectiveCooldown(skill, 3), hero + " skill " + skill + " cooldown advances in live frames");
+                    if (category == SkillCategory.Healing) Check(game.Player.Health > healthBefore, hero + " healing skill restores real health over time");
+                    if (category == SkillCategory.Damage || category == SkillCategory.Control)
+                        Check(EnemyHealth(game) < enemiesBefore, hero + " skill " + skill + " damages runtime enemies");
+                    if (category == SkillCategory.Mobility) Check(Vector3.Distance(game.Player.transform.position, positionBefore) > 1f, hero + " mobility skill moves the actual character");
+                    if (skill == 9) CaptureWorld(hero + "-awakened-ultimate.png", false);
+                }
+            }
+
+            Append("DUNGEON — portal, three real waves, boss, loot, death, respawn and persisted reload");
+            game.Player.Teleport(new Vector3(0, 0, 11));
+            game.EnterDungeon();
+            Check(game.InDungeon && game.DungeonWave == 1 && game.Enemies.Count > 0, "Portal creates dungeon wave one");
+            CaptureWorld("Dungeon-wave-one.png", true);
+            int originalClears = game.Progression.Profile.clearedRuns;
+            int originalItems = game.Progression.Profile.inventory.Count;
+            int lastWave = 0;
+            while (!game.DungeonCleared)
+            {
+                game.SetPaused(false);
+                if (game.Enemies.Count > 0)
+                {
+                    Check(game.DungeonWave > lastWave, "Dungeon advances to distinct wave " + game.DungeonWave);
+                    lastWave = game.DungeonWave;
+                    FreezeEnemies(game);
+                    if (lastWave == game.TotalWaves)
+                    {
+                        bool bossPresent = game.Enemies.Exists(enemy => enemy != null && enemy.IsBoss);
+                        Check(bossPresent, "Final wave contains the guardian boss");
+                        CaptureWorld("Dungeon-boss.png", true);
+                    }
+                    EnemyController[] victims = game.Enemies.ToArray();
+                    foreach (EnemyController enemy in victims) enemy.TakeDamage(100000000f, Vector3.forward);
+                }
+                yield return new Delay(.15f);
+            }
+            Check(lastWave == 3 && game.Progression.Profile.clearedRuns == originalClears + 1, "All three dungeon waves award exactly one clear");
+            Check(game.Progression.Profile.inventory.Count > originalItems, "Dungeon completion retains equipment loot");
+            game.ReturnToCamp();
+            Check(!game.InDungeon && game.Player.Health == game.Player.MaxHealth, "Dungeon exit returns to camp and heals");
+            int inventoryBeforeDeath = game.Progression.Profile.inventory.Count;
+            int goldBeforeDeath = game.Progression.Profile.gold;
+            SetField(game.Player, "invulnerability", 0f);
+            game.Player.TakeDamage(100000000f);
+            Check(game.IsDead && game.Player.IsDead && Time.timeScale == 0, "Lethal damage opens death state and stops combat");
+            Check(game.Progression.Profile.gold == goldBeforeDeath - Mathf.FloorToInt(goldBeforeDeath * .1f), "Death deducts the configured ten percent gold");
+            yield return new Delay(.25f, false);
+            game.Respawn();
+            Check(!game.IsDead && !game.Player.IsDead && game.Player.Health == game.Player.MaxHealth && game.Progression.Profile.inventory.Count == inventoryBeforeDeath,
+                "Respawn restores health and preserves equipment");
+            game.Progression.Save();
+            Check(string.IsNullOrEmpty(game.Progression.LastError) && File.Exists(savePath), "Isolated progress is saved successfully");
+            game.QuitToTitle();
+            Check(!game.HasStarted && Time.timeScale == 0, "Save-and-title ends active combat");
+            yield return new Delay(.2f, false);
+            game.ContinueGame();
+            Check(game.HasStarted && game.Progression.Profile.level == 100 && game.Progression.Profile.clearedRuns == originalClears + 1,
+                "Continue reloads isolated level and dungeon progress");
+            for (int skill = 0; skill < GameBalance.SkillCount; skill++) Check(game.Progression.Profile.skillRanks[skill] == 3, "Persisted evolution restored for skill " + skill);
+            yield return new Delay(.25f);
+            Append("COMPLETE: all three heroes and 24 active casts exercised in the Unity player loop.");
+        }
+
+        private static void PrepareCastFixture(GameSession game)
+        {
+            EnemyController[] old = game.Enemies.ToArray();
+            game.Enemies.Clear();
+            foreach (EnemyController enemy in old)
+            {
+                if (enemy == null) continue;
+                enemy.gameObject.SetActive(false);
+                UnityEngine.Object.Destroy(enemy.gameObject);
+            }
+            game.Player.Teleport(new Vector3(0, 0, -5));
+            game.Player.RefreshStats(true);
+            for (int i = 0; i < 3; i++) Call(game, "SpawnEnemy", EnemyKind.Guardian, 100, new Vector3(0, 0, -3 + i * 3), false);
+            FreezeEnemies(game);
+            game.SetPaused(false);
+        }
+
+        private static void FreezeEnemies(GameSession game)
+        {
+            foreach (EnemyController enemy in game.Enemies) if (enemy != null) enemy.enabled = false;
+        }
+
+        private static float EnemyHealth(GameSession game)
+        {
+            float health = 0;
+            foreach (EnemyController enemy in game.Enemies) if (enemy != null) health += enemy.Health;
+            return health;
+        }
+
+        private static SkillRuntime Runtime(PlayerController player) { return (SkillRuntime)Field(typeof(PlayerController), "skillRuntime").GetValue(player); }
+        private static void Cast(PlayerController player, int skill) { Call(player, "CastSkill", skill); }
+        private static FieldInfo Field(Type type, string name)
+        {
+            FieldInfo result = type.GetField(name, PrivateInstance);
+            if (result == null) throw new MissingFieldException(type.FullName, name);
+            return result;
+        }
+        private static void SetField(object target, string name, object value) { Field(target.GetType(), name).SetValue(target, value); }
+        private static object Call(object target, string name, params object[] arguments)
+        {
+            MethodInfo method = target.GetType().GetMethod(name, PrivateInstance);
+            if (method == null) throw new MissingMethodException(target.GetType().FullName, name);
+            return method.Invoke(target, arguments);
+        }
+        private static void OpenPanel(GameUI ui, string name)
+        {
+            Type type = typeof(GameUI).GetNestedType("Panel", BindingFlags.NonPublic);
+            Call(ui, "TogglePanel", Enum.Parse(type, name));
+        }
+
+        private static void CaptureWorld(string filename, bool overview)
+        {
+            Camera camera = Camera.main;
+            Check(camera != null, "Camera exists for " + filename);
+            if (SystemInfo.graphicsDeviceType == UnityEngine.Rendering.GraphicsDeviceType.Null)
+                throw new InvalidOperationException("Graphics device is null. Run validation without -nographics to verify actual rendering.");
+            RenderTexture oldTarget = camera.targetTexture;
+            RenderTexture oldActive = RenderTexture.active;
+            Vector3 oldPosition = camera.transform.position;
+            Quaternion oldRotation = camera.transform.rotation;
+            float oldAspect = camera.aspect;
+            var render = new RenderTexture(1600, 900, 24, RenderTextureFormat.ARGB32) { antiAliasing = 2 };
+            var image = new Texture2D(1600, 900, TextureFormat.RGB24, false);
+            try
+            {
+                if (overview)
+                {
+                    camera.transform.position = new Vector3(0, 26, -29);
+                    camera.transform.LookAt(new Vector3(0, 0, 1));
+                }
+                camera.aspect = 1600f / 900;
+                camera.targetTexture = render;
+                camera.Render();
+                RenderTexture.active = render;
+                image.ReadPixels(new Rect(0, 0, 1600, 900), 0, 0);
+                image.Apply();
+                byte[] png = image.EncodeToPNG();
+                Check(png != null && png.Length > 16000, "3D render produced image data: " + filename);
+                File.WriteAllBytes(Path.Combine(SessionState.GetString(Prefix + "Results", ""), filename), png);
+                SessionState.SetInt(Prefix + "Screenshots", SessionState.GetInt(Prefix + "Screenshots", 0) + 1);
+                Append("CAPTURE " + filename + " — actual runtime Camera.Render, 1600 × 900 (world only)");
+            }
+            finally
+            {
+                camera.targetTexture = oldTarget;
+                camera.aspect = oldAspect;
+                camera.transform.SetPositionAndRotation(oldPosition, oldRotation);
+                RenderTexture.active = oldActive;
+                render.Release();
+                UnityEngine.Object.DestroyImmediate(render);
+                UnityEngine.Object.DestroyImmediate(image);
+            }
+        }
+
+        private static void Check(bool condition, string label)
+        {
+            if (!condition) throw new InvalidOperationException("FAIL: " + label);
+            SessionState.SetInt(Prefix + "Assertions", SessionState.GetInt(Prefix + "Assertions", 0) + 1);
+            Append("PASS " + label);
+        }
+
+        private static void OnLog(string condition, string stackTrace, LogType type)
+        {
+            if (!SessionState.GetBool(Prefix + "Active", false) || (type != LogType.Error && type != LogType.Assert && type != LogType.Exception)) return;
+            // Unity 6000.6.3f1 can schedule its first Search index initialization after
+            // Play mode starts. The editor then declines to create the default index,
+            // but EnumerateAll reads element zero of the empty database list anyway.
+            // Classify only the exact observed editor-only startup stack; preserve it
+            // in both reports. All project frames and all other errors remain fatal.
+            if (IsObservedSearchStartupException(condition, stackTrace, type))
+            {
+                int index = SessionState.GetInt(Prefix + "InfrastructureErrors", 0);
+                var diagnostic = new EditorInfrastructureError
+                {
+                    signature = "Unity6000.6.3f1.SearchStartup.EmptyDefaultDatabase",
+                    unityVersion = Application.unityVersion,
+                    message = condition,
+                    stackTrace = stackTrace
+                };
+                SessionState.SetString(Prefix + "InfrastructureError." + index, JsonUtility.ToJson(diagnostic));
+                SessionState.SetInt(Prefix + "InfrastructureErrors", index + 1);
+                Append("EDITOR_INFRASTRUCTURE_EXCEPTION " + diagnostic.signature + ": " + condition + "\n" + stackTrace);
+                return;
+            }
+            SessionState.SetInt(Prefix + "Errors", SessionState.GetInt(Prefix + "Errors", 0) + 1);
+            Append("CONSOLE " + type + ": " + condition + "\n" + stackTrace);
+        }
+
+        private static bool IsObservedSearchStartupException(string condition, string stackTrace, LogType type)
+        {
+            if (type != LogType.Exception || Application.unityVersion != "6000.6.3f1" || string.IsNullOrEmpty(condition) || string.IsNullOrEmpty(stackTrace)) return false;
+            return condition.StartsWith("ArgumentOutOfRangeException: Index was out of range.", StringComparison.Ordinal)
+                && condition.IndexOf("Parameter name: index", StringComparison.Ordinal) >= 0
+                && stackTrace.IndexOf("UnityEditor.Search.SearchDatabase+<EnumerateAll>", StringComparison.Ordinal) >= 0
+                && stackTrace.IndexOf("UnityEditor.Search.SearchDatabase.GetDefaultSearchDatabase", StringComparison.Ordinal) >= 0
+                && stackTrace.IndexOf("UnityEditor.Search.SearchInit.IndexationOnStartup", StringComparison.Ordinal) >= 0
+                && stackTrace.IndexOf("UnityEditor.EditorApplication.Internal_CallDelayFunctions", StringComparison.Ordinal) >= 0
+                && stackTrace.IndexOf("Emberfall", StringComparison.OrdinalIgnoreCase) < 0
+                && condition.IndexOf("Emberfall", StringComparison.OrdinalIgnoreCase) < 0;
+        }
+
+        private static void Append(string message)
+        {
+            string directory = SessionState.GetString(Prefix + "Results", "");
+            if (string.IsNullOrEmpty(directory)) return;
+            File.AppendAllText(Path.Combine(directory, "runtime-validation.txt"), DateTime.UtcNow.ToString("O") + " " + message + Environment.NewLine, new UTF8Encoding(false));
+        }
+
+        private static void Finish(bool passed, string failure)
+        {
+            if (finishing) return;
+            finishing = true;
+            string results = SessionState.GetString(Prefix + "Results", "");
+            int infrastructureCount = SessionState.GetInt(Prefix + "InfrastructureErrors", 0);
+            var infrastructure = new EditorInfrastructureError[infrastructureCount];
+            for (int i = 0; i < infrastructureCount; i++)
+                infrastructure[i] = JsonUtility.FromJson<EditorInfrastructureError>(SessionState.GetString(Prefix + "InfrastructureError." + i, "{}"));
+            var result = new Result
+            {
+                passed = passed,
+                runtimePassed = passed,
+                unityVersion = Application.unityVersion,
+                resultsDirectory = results,
+                isolatedSaveDirectory = SessionState.GetString(Prefix + "Save", ""),
+                assertions = SessionState.GetInt(Prefix + "Assertions", 0),
+                consoleErrors = SessionState.GetInt(Prefix + "Errors", 0),
+                runtimeErrors = SessionState.GetInt(Prefix + "Errors", 0),
+                totalObservedConsoleErrors = SessionState.GetInt(Prefix + "Errors", 0) + infrastructureCount,
+                editorInfrastructureErrorCount = infrastructureCount,
+                editorInfrastructureErrors = infrastructure,
+                screenshots = SessionState.GetInt(Prefix + "Screenshots", 0),
+                elapsedSeconds = (float)EditorApplication.timeSinceStartup - SessionState.GetFloat(Prefix + "Started", 0),
+                failure = failure
+            };
+            Append((passed ? "RUNTIME SUCCESS" : "RUNTIME FAILED") + " | " + result.assertions + " assertions | " + result.screenshots + " captures | " + result.runtimeErrors + " runtime errors | " + infrastructureCount + " editor infrastructure exceptions (full stacks retained) | " + result.elapsedSeconds.ToString("0.0") + " sec\n" + failure);
+            File.WriteAllText(Path.Combine(results, "runtime-validation.json"), JsonUtility.ToJson(result, true), new UTF8Encoding(false));
+            SessionState.SetBool(Prefix + "Active", false);
+            string previous = SessionState.GetString(Prefix + "PreviousOverride", "");
+            if (string.IsNullOrEmpty(previous)) SessionState.EraseString(SaveOverride);
+            else SessionState.SetString(SaveOverride, previous);
+            SessionState.SetString(Prefix + "LastResults", results);
+            routine = null;
+            waiting = null;
+            if (passed) Debug.Log("Emberfall real play-mode validation PASS: " + results);
+            else Debug.LogError("Emberfall real play-mode validation FAILED: " + failure + "\nResults: " + results);
+            if (infrastructureCount > 0) Debug.LogWarning("Runtime validation separately recorded " + infrastructureCount + " exact Unity 6000.6.3f1 Search startup exceptions. See editorInfrastructureErrors in the JSON report; these have not been erased or repaired.");
+            if (Application.isBatchMode) EditorApplication.Exit(passed ? 0 : 1);
+            else EditorApplication.isPlaying = false;
+        }
+    }
+}
