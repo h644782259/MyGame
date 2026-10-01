@@ -378,7 +378,10 @@ namespace Emberfall
 
         public void OnConfirmedHit(EnemyController enemy)
         {
-            if (!IsAlive || !ValidTarget(enemy)) return;
+            if (!IsAlive || enemy == null) return;
+            if (commandedTarget == enemy || ExplicitFocus(Owner) == enemy)
+                session.RecordClassTutorial(HeroClass.Summoner);
+            if (!ValidTarget(enemy)) return;
             if (!Owner.HasMechanic(EquipmentMechanic.TwinSummonResonance)) return;
             bool commandedFocus = false;
             foreach (SummonedCompanion partner in active)

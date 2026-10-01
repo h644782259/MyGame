@@ -216,6 +216,8 @@ def main():
             'using System; internal static class Program { static void Main(string[] args) { Console.WriteLine(WorldLootReceiptTests.Run(args[0])); } }'))
         checks.append(("build-presets", [ROOT/"Assets/Scripts/Core/GameTypes.cs", ROOT/"Assets/Scripts/Core/ProgressionService.cs", ROOT/"Tests/ProgressionTests.cs", ROOT/"Tests/BuildPresetTests.cs"],
             'using System; internal static class Program { static void Main(string[] args) { Console.WriteLine(BuildPresetTests.Run(args[0])); } }'))
+        checks.append(("adventure-progression", [ROOT/"Assets/Scripts/Core/GameTypes.cs", ROOT/"Assets/Scripts/Core/ProgressionService.cs", ROOT/"Tests/ProgressionTests.cs", ROOT/"Tests/AdventureProgressionTests.cs"],
+            'using System; internal static class Program { static void Main(string[] args) { Console.WriteLine(AdventureProgressionTests.Run(args[0])); } }'))
         checks.append(("build-size-policy", [ROOT/"Assets/Editor/BuildSizePolicy.cs", ROOT/"Tests/BuildSizePolicyTests.cs"],
             'using System; internal static class Program { static void Main() { Console.WriteLine(BuildSizePolicyTests.Run()); } }'))
         checks.append(("mobile-room-objective",[ROOT/"Assets/Scripts/Core/RoomChainState.cs",ROOT/"Assets/Scripts/UI/RoomObjectivePresentation.cs",ROOT/"Assets/Scripts/UI/MobileControlLayout.cs",ROOT/"Tests/RoomObjectivePresentationTests.cs"],
