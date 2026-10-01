@@ -40,10 +40,11 @@ namespace Emberfall
         private bool hasJoystickOrigin;
         private static MobileControlLayout cachedLayout;
         private static Vector3 cachedLayoutInputs;
+        private static int cachedPosition;
         public static MobileControlLayout Layout
         {
             get { Rect safe=SafeArea;Vector3 input=new Vector3(safe.width,safe.height,Screen.dpi);
-                if(cachedLayout==null||input!=cachedLayoutInputs){cachedLayout=new MobileControlLayout(input.x,input.y,input.z);cachedLayoutInputs=input;}
+                if(cachedLayout==null||input!=cachedLayoutInputs||cachedPosition!=EffectPreferences.TouchPosition){cachedLayout=new MobileControlLayout(input.x,input.y,input.z,EffectPreferences.TouchPosition);cachedLayoutInputs=input;cachedPosition=EffectPreferences.TouchPosition;}
                 return cachedLayout; }
         }
         private float Scale { get { return Layout.Scale; } }
@@ -196,9 +197,9 @@ namespace Emberfall
             GUI.matrix = Matrix4x4.TRS(Offset, Quaternion.identity, new Vector3(Scale, Scale, 1));
             Vector2 origin=hasJoystickOrigin?joystickOrigin:Joystick.center;
             Rect baseRect=new Rect(origin.x-64,origin.y-64,128,128);
-            Circle(baseRect, new Color(.10f, .19f, .23f, .55f), "");
+            Circle(baseRect, new Color(.10f, .19f, .23f, .55f), "",false);
             Rect thumb = new Rect(origin.x - 25 + Move.x * 45, origin.y - 25 - Move.y * 45, 50, 50);
-            Circle(thumb, new Color(.38f, .78f, .71f, .82f), "");
+            Circle(thumb, new Color(.38f, .78f, .71f, .82f), "",false);
             SkillTargetingController targeting = session.Player.GetComponent<SkillTargetingController>();
             SkillChargeController charge = session.Player.GetComponent<SkillChargeController>();
             Circle(Attack, AttackHeld ? new Color(.76f, .54f, .20f, .95f) : new Color(.43f, .31f, .15f, .9f), targeting != null && targeting.IsTargeting ? "confirm" : "attack");
@@ -209,8 +210,9 @@ namespace Emberfall
             DrawAvailability();
             GUI.matrix = oldMatrix; GUI.color = oldColor;
         }
-        private void Circle(Rect rect, Color color, string icon)
+        private void Circle(Rect rect, Color color, string icon,bool button=true)
         {
+            if(button){rect=VisualRect(rect);color.a*=EffectPreferences.TouchOpacity;}
             GUI.color = color;
             GUI.DrawTexture(rect, disc);
             GUI.color = Color.white;
@@ -219,6 +221,7 @@ namespace Emberfall
             Rect centered = new Rect(rect.center.x - size * .5f, rect.center.y - size * .5f, size, size);
             // Texture glyphs cannot inherit a temporary GUIContent string from
             // another MonoBehaviour's OnGUI (for example the notification toast).
+            GUI.color=new Color(1,1,1,EffectPreferences.TouchOpacity);
             GUI.DrawTexture(centered, UIIconAtlas.Utility(icon), ScaleMode.ScaleToFit, true);
         }
         private void OnApplicationFocus(bool focus) { if (!focus) ResetInput(); }

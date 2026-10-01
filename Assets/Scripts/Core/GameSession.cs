@@ -798,7 +798,7 @@ namespace Emberfall
     }
 
     [DefaultExecutionOrder(-100)]
-    public sealed class AdventureCamera : MonoBehaviour
+    public sealed partial class AdventureCamera : MonoBehaviour
     {
         public const float MinimumPitch = -18f;
         public const float MaximumPitch = 75f;
@@ -870,7 +870,8 @@ namespace Emberfall
             lookTarget = snap ? desired : Vector3.Lerp(lookTarget, desired, follow);
             smoothYaw = snap ? yaw : Mathf.LerpAngle(smoothYaw, yaw, orbit);
             smoothPitch = snap ? pitch : Mathf.Lerp(smoothPitch, pitch, orbit);
-            smoothDistance = snap ? distance : Mathf.Lerp(smoothDistance, distance, orbit);
+            float visibleDistance=CameraVisibilityRules.Zoom(distance,CameraOcclusionSurface.Nearest(desired));
+            smoothDistance = snap ? visibleDistance : Mathf.Lerp(smoothDistance, visibleDistance, orbit);
             Vector3 position = lookTarget + Quaternion.Euler(smoothPitch, smoothYaw, 0) * Vector3.back * (smoothDistance * DistanceScale);
             // Near the horizon the camera approaches the ground; look slightly
             // above the hero so dragging farther can produce a real upward view.
@@ -878,12 +879,13 @@ namespace Emberfall
             transform.position = position;
             transform.LookAt(lookTarget + Vector3.up * (Mathf.Clamp01(-smoothPitch / 18f) * 2.4f));
             transform.position += HitFeedback.CameraOffset;
+            UpdateVisibility();
         }
 
         private void ResetOrbitInput() { orbitInput.Reset(); inputFrame = -1; }
         private void OnApplicationFocus(bool focused) { if (!focused) ResetOrbitInput(); }
-        private void OnDisable() { ResetOrbitInput(); }
-        private void OnDestroy() { if (active == this) active = null; }
+        private void OnDisable() { ResetOrbitInput();RestoreVisibility(); }
+        private void OnDestroy() { RestoreVisibility();if (active == this) active = null; }
     }
 
 }

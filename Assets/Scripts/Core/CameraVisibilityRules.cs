@@ -12,7 +12,7 @@ namespace Emberfall
             return Math.Max(.2f,Math.Min(1,current+(target-current)*blend));
         }
         public static float Zoom(float normal,float nearestBuilding)
-        {return Math.Max(13,normal*(nearestBuilding<4?.84f:1));}
+        {float proximity=1-Math.Max(0,Math.Min(1,nearestBuilding/4));return Math.Max(13,normal*(1-.16f*proximity));}
         public static float Projection(float normalizedAnchor)
         {return 1-2*Math.Max(.25f,Math.Min(.75f,normalizedAnchor));}
     }

@@ -19,7 +19,8 @@ spec.loader.exec_module(helper)
 checks = [('MobileCombatFeedbackTests', ['Assets/Scripts/UI/MobileCombatPresentation.cs']),
           ('CombatTextLayoutTests', ['Assets/Scripts/Combat/CombatTextLayout.cs']),
           ('CombatOpportunityTests', ['Assets/Scripts/UI/CombatOpportunityPresentation.cs']),
-          ('MobileControlLayoutTests', ['Assets/Scripts/UI/MobileControlLayout.cs'])]
+          ('MobileControlLayoutTests', ['Assets/Scripts/UI/MobileControlLayout.cs']),
+          ('CameraVisibilityTests', ['Assets/Scripts/Core/CameraVisibilityRules.cs'])]
 report = {'scope': 'Pure production state/geometry; no Unity execution or rendered validation', 'checks': []}
 with tempfile.TemporaryDirectory(prefix='EmberfallFeedback-') as temporary:
     scratch = Path(temporary)

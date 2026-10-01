@@ -9,9 +9,9 @@ public static class MobileControlLayoutTests
     {
         checks=0;
         float[][] devices={new[]{568f,320f,163f},new[]{1334f,750f,326f},new[]{2208f,1080f,401f},new[]{2250f,1125f,458f},new[]{2340f,1080f,460f},new[]{2048f,1536f,264f},new[]{2388f,1668f,264f},new[]{2732f,2048f,264f},new[]{1280f,720f,0f}};
-        foreach(var d in devices)
+        foreach(var preset in new[]{-1,0,1})foreach(var d in devices)
         {
-            var l=new MobileControlLayout(d[0],d[1],d[2]);
+            var l=new MobileControlLayout(d[0],d[1],d[2],preset);
             var targets=new List<MobileControlLayout.Area>{l.Joystick,l.Attack,l.Dodge,l.Potion,l.Jump,l.Menu,l.Inventory,l.SkillsMenu,l.Interact,l.FocusCommand,l.RecallCommand};targets.AddRange(l.Skills);
             foreach(var r in targets)
             {
@@ -19,6 +19,10 @@ public static class MobileControlLayoutTests
                 Check(r.X>=0&&r.Y>=0&&r.X+r.Width<=l.Width+.01f&&r.Y+r.Height<=l.Height+.01f,"safe-area contained controls");
             }
             for(int i=0;i<targets.Count;i++)for(int j=i+1;j<targets.Count;j++)Check(!targets[i].Overlaps(targets[j]),"non-overlapping touch hitboxes "+i+"/"+j+" at "+d[0]);
+            Check(l.CombatView.Width>=96&&l.CombatView.Height>=64,"Explicit hero/melee feedback clear window");
+            foreach(var target in targets)Check(!l.CombatView.Overlaps(target),"Clear window cannot cover any action hitbox");
+            foreach(var overlay in new[]{l.MoveZone,l.Notice,l.AdventureStatus,l.BossHealth,l.EncounterText,new MobileControlLayout.Area(12,12,175,58)})Check(!l.CombatView.Overlaps(overlay),"Clear window avoids HUD and joystick zone");
+            Check((l.CombatView.X+48)/l.Width>=.25f&&(l.CombatView.X+48)/l.Width<=.75f&&(l.CombatView.Y+32)/l.Height>=.25f&&(l.CombatView.Y+32)/l.Height<=.75f,"Anchor remains central without blind pan");
             Check(l.Attack.X>l.Width/2&&l.Joystick.X<l.Width/2,"separate thumb zones");
             Check(l.Cancel.X==l.Jump.X&&l.Cancel.Y==l.Jump.Y,"cancel replaces jump without additional overlap");
             foreach(var feedback in new[]{l.EncounterText,l.BossHealth,l.Notice,l.AdventureStatus})

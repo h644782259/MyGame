@@ -21,11 +21,12 @@ namespace Emberfall
         private void DrawCompanionCommands()
         {
             if(!CompanionCommandsVisible)return;
+            float previousOpacity=controlOpacity;if(MobileControls.Active)controlOpacity=EffectPreferences.TouchOpacity;
             for(int i=0;i<2;i++)
             {
                 bool recall=i==1;
                 Rect r=MobileControls.Active?TouchRect(recall?MobileControls.Layout.RecallCommand:MobileControls.Layout.FocusCommand):new Rect(hotbarBounds.x-76,hotbarBounds.y+27+i*50,66,46);
-                blockedRects.Add(r);
+                blockedRects.Add(r);if(MobileControls.Active)r=MobileVisualRect(r);
                 string caption=recall?"召回":"集火";
                 if(!session.InputBlocked&&commandEpoch==session.Player.CombatEpoch&&Time.unscaledTime<commandStatusUntil&&commandRecall==recall)caption=commandStatus;
                 Box(r,jade,false);
@@ -35,6 +36,7 @@ namespace Emberfall
                 // presentation-only on touch devices, preventing duplicate orders.
                 if(!MobileControls.Active&&GUI.Button(r,GUIContent.none,invisibleButton))ActivateFreeCommand(recall);
             }
+            controlOpacity=previousOpacity;
         }
         private string CurrentCombatOpportunity()
         {

@@ -33,10 +33,13 @@ namespace Emberfall
             else if(potionState=="满血")LabelControl(Potion,potionState,true);
             failure=session.ControlFailure("dodge");if(!string.IsNullOrEmpty(failure))LabelControl(Dodge,failure,true);
         }
+        private static Rect VisualRect(Rect hit)
+        {float ratio=EffectPreferences.TouchVisualScale;return new Rect(hit.center.x-hit.width*ratio*.5f,hit.center.y-hit.height*ratio*.5f,hit.width*ratio,hit.height*ratio);}
         private void LabelControl(Rect area,string text,bool center)
         {
+            area=VisualRect(area);
             Rect r=center?new Rect(area.x,area.center.y-9,area.width,18):new Rect(area.x,area.yMax-18,area.width,16);
-            GUI.color=new Color(.015f,.025f,.04f,.9f);GUI.DrawTexture(r,Texture2D.whiteTexture);GUI.color=Color.white;GUI.Label(r,text,controlLabel);
+            GUI.color=new Color(.015f,.025f,.04f,.9f*EffectPreferences.TouchOpacity);GUI.DrawTexture(r,Texture2D.whiteTexture);GUI.color=Color.white;GUI.Label(r,text,controlLabel);
         }
     }
 }
