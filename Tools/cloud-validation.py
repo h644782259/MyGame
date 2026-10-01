@@ -236,6 +236,8 @@ def main():
         ]:
             checks.append((name,[ROOT/("Assets/Scripts/"+helper+".cs") for helper in helpers]+[ROOT/("Tests/"+test+".cs")],
                 'using System; internal static class Program { static void Main() { Console.WriteLine('+test+'.Run()); } }'))
+        checks.append(("costume-recipes",[ROOT/"Assets/Scripts/Core/GameTypes.cs",ROOT/"Assets/Scripts/Core/SkillRuntime.cs",ROOT/"Assets/Scripts/Core/CostumeRecipes.cs",ROOT/"Tests/SkillRuntimeTests.cs",ROOT/"Tests/CostumeRecipeTests.cs"],
+            'using System; internal static class Program { static void Main() { Console.WriteLine(CostumeRecipeTests.Run()); } }'))
         checks.append(("skill-visual-recipe",[ROOT/"Assets/Scripts/Core/GameTypes.cs",ROOT/"Assets/Scripts/Core/SkillRuntime.cs",ROOT/"Assets/Scripts/Core/FilledVfxRecipes.cs",ROOT/"Assets/Scripts/Core/SkillVisualRecipe.cs",ROOT/"Tests/SkillRuntimeTests.cs",ROOT/"Tests/SkillVisualRecipeTests.cs"],
             'using System; internal static class Program { static void Main() { Console.WriteLine(SkillVisualRecipeTests.Run()); } }'))
         checks.append(("hold-point-state",[ROOT/"Assets/Scripts/Core/ExpeditionModeState.cs",ROOT/"Assets/Scripts/Core/TierRewardBand.cs",ROOT/"Tests/HoldPointStateTests.cs"],
