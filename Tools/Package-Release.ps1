@@ -50,7 +50,7 @@ while ($pendingDirectories.Count -gt 0) {
     $directory = $pendingDirectories.Dequeue()
     foreach ($item in Get-ChildItem -LiteralPath $directory -Force) {
         if (($item.Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0) { throw "Reparse points are not allowed in a release build: $($item.FullName)" }
-        if ($item.Name.StartsWith('emberfall-save.json', [StringComparison]::OrdinalIgnoreCase)) { throw "A personal save was found in the build folder; it must not be distributed: $($item.FullName)" }
+        if ($item.Name.StartsWith('emberfall-save', [StringComparison]::OrdinalIgnoreCase)) { throw "A personal save was found in the build folder; it must not be distributed: $($item.FullName)" }
         if ($item.PSIsContainer) { $pendingDirectories.Enqueue($item.FullName) }
         else { $filesToPackage.Add($item) }
     }

@@ -10,6 +10,10 @@ namespace Emberfall
         public bool IsDead { get { return Health <= 0; } }
         public HeroClass HeroClass { get; private set; }
         public float DodgeCooldown { get { return dodgeCooldown; } }
+        public float BlinkCooldown { get { return dodgeCooldown; } }
+        public bool IsJumping { get { return jumping; } }
+        public float JumpCooldown { get { return jumpCooldown; } }
+        public bool TraversalStartedThisFrame { get { return traversalFrame == Time.frameCount; } }
         public float Energy { get { return skillRuntime != null ? skillRuntime.Energy : SkillRuntime.MaximumEnergy; } }
         public float MaxEnergy { get { return SkillRuntime.MaximumEnergy; } }
         public EnemyController AimTarget { get; private set; }
@@ -26,14 +30,17 @@ namespace Emberfall
         private readonly Dictionary<EnemyController,Renderer[]> aimGeometry = new Dictionary<EnemyController,Renderer[]>();
         private readonly List<EnemyController> staleAimGeometry = new List<EnemyController>();
         private SkillRuntime skillRuntime;
-        private float attackCooldown, attackAnimation, hurtTimer, dodgeCooldown, dodgeTime, invulnerability, skillFeedbackCooldown;
+        private float attackCooldown, attackAnimation, hurtTimer, dodgeCooldown, invulnerability, skillFeedbackCooldown;
         private float guardTime, guardPower, guardReduction, guardRadius, guardPulseTimer;
         private int guardRank, mobilityRank;
         private float healingProtectionTime, healingReduction, mobilityTime;
         private float slowTime, slowStrength;
+        private bool jumping;
+        private float jumpAge, jumpCooldown, movementSkillLock;
+        private Vector3 jumpOrigin, jumpDestination;
+        private int traversalFrame = -1;
         private float passiveCooldown, passiveTime, passiveReduction, passiveSpeed;
-        private Vector3 dodgeDirection, aimPoint;
-        private GameObject dodgeHalo;
+        private Vector3 aimPoint;
 
         public void Initialize(GameSession game, HeroClass heroClass)
         {
@@ -87,16 +94,16 @@ namespace Emberfall
             if (charge != null) charge.Cancel();
             AimTarget = null;
             aimGeometry.Clear();
-            position.y = 0;
+            position = WorldTraversal.NearestWalkable(position, .45f);
             transform.position = position;
+            jumping = false;
+            jumpAge = movementSkillLock = 0;
             aimPoint = position+transform.forward*5f;
-            dodgeTime = 0;
             guardTime = healingProtectionTime = mobilityTime = passiveTime = 0;
             slowTime = slowStrength = 0;
             attackAnimation = 0;
             attackCooldown = .15f;
             invulnerability = .65f;
-            if (dodgeHalo != null) Destroy(dodgeHalo);
         }
 
         public void TakeDamage(float amount)
@@ -126,8 +133,9 @@ namespace Emberfall
                 CombatEpoch++;
                 if (targeting != null) targeting.Cancel();
                 if (charge != null) charge.Cancel();
+                if (jumping) transform.position = WorldTraversal.NearestWalkable(transform.position, .45f);
+                jumping = false;
                 AimTarget = null;
-                dodgeTime = 0;
                 model.transform.localRotation = Quaternion.Euler(0,0,75f);
                 session.OnPlayerDied();
             }
@@ -147,7 +155,7 @@ namespace Emberfall
         private void Update()
         {
             if (session == null || model == null) return;
-            if (charge != null && charge.IsCharging && (Input.GetKeyDown(KeyCode.Escape) || (!MobileControls.Active && Input.GetMouseButtonDown(1)))) charge.Cancel();
+            if (charge != null && charge.IsCharging && (Input.GetKeyDown(KeyCode.Escape) || AdventureCamera.CancelSkillRequested)) charge.Cancel();
             if (session.InputBlocked && targeting != null) targeting.Cancel();
             float dt = Time.deltaTime;
             if (dt <= 0) return;
@@ -155,6 +163,8 @@ namespace Emberfall
             attackAnimation = Mathf.Max(0,attackAnimation - dt * 4f);
             hurtTimer = Mathf.Max(0,hurtTimer - dt);
             dodgeCooldown = Mathf.Max(0,dodgeCooldown - dt);
+            jumpCooldown = Mathf.Max(0, jumpCooldown - dt);
+            movementSkillLock = Mathf.Max(0, movementSkillLock - dt);
             invulnerability = Mathf.Max(0,invulnerability - dt);
             skillFeedbackCooldown = Mathf.Max(0,skillFeedbackCooldown - dt);
             if (IsDead) return;
@@ -179,40 +189,35 @@ namespace Emberfall
             model.transform.localRotation = Quaternion.identity;
             if (session.InputBlocked)
             {
-                dodgeTime = Mathf.Max(0,dodgeTime - dt);
                 model.Animate(0,attackAnimation,hurtTimer > 0);
                 return;
             }
             bool mobile = MobileControls.Active;
             Vector2 moveInput = mobile ? MobileControls.Move : new Vector2(Input.GetAxisRaw("Horizontal"), Input.GetAxisRaw("Vertical"));
-            Vector3 movement = new Vector3(moveInput.x, 0, moveInput.y);
+            Vector3 movement = mobile ? new Vector3(moveInput.x, 0, moveInput.y) :
+                AdventureCamera.CameraRelativeMovement(moveInput, Camera.main == null ? null : Camera.main.transform);
             movement = Vector3.ClampMagnitude(movement,1);
-            bool wantsDodge = mobile ? MobileControls.ConsumeDodge() : Input.GetKeyDown(KeyCode.Space);
-            if (wantsDodge && dodgeCooldown <= 0)
+            bool wantsJump = mobile ? MobileControls.ConsumeJump() : Input.GetKeyDown(KeyCode.Space);
+            if (wantsJump) TryJump(movement);
+            bool wantsBlink = mobile ? MobileControls.ConsumeDodge() : Input.GetKeyDown(KeyCode.LeftShift) || Input.GetKeyDown(KeyCode.RightShift);
+            if (wantsBlink) TryBlink(movement);
+            if (jumping)
             {
-                if (charge != null) charge.Cancel();
-                dodgeDirection = movement.sqrMagnitude > .01f ? movement.normalized : transform.forward;
-                GameAudio.Play(SoundCue.Dodge);
-                dodgeTime = .27f;
-                dodgeCooldown = 2.1f;
-                invulnerability = .38f;
-                dodgeHalo = CombatFx.Ring(transform.position,1.1f,GameBalance.ClassColor(HeroClass),.36f,.13f);
+                AdvanceJump(dt);
             }
-            if (dodgeTime > 0)
-            {
-                dodgeTime -= dt;
-                transform.position += dodgeDirection * 15f * dt;
-            }
-            else
+            else if (!TraversalStartedThisFrame)
             {
                 float movementBonus = passiveTime>0?passiveSpeed:0;
                 if (mobilityTime>0) movementBonus += .1f+mobilityRank*.05f;
-                transform.position += movement * stats.MoveSpeed * (1f+movementBonus) * MovementMultiplier * dt;
+                transform.position = WorldTraversal.Move(transform.position, movement * stats.MoveSpeed * (1f+movementBonus) * MovementMultiplier * dt, .45f);
             }
             Vector3 bounded = transform.position;
             float bound = Mathf.Max(1,session.ArenaRadius - .65f);
+            float airborneHeight = jumping ? bounded.y : 0;
             bounded.y = 0;
-            transform.position = Vector3.ClampMagnitude(bounded,bound);
+            bounded = Vector3.ClampMagnitude(bounded,bound);
+            bounded.y = airborneHeight;
+            transform.position = bounded;
             // Mouse selection uses this frame's final position. Walking only turns
             // the model; it never overwrites the independent mouse aim point.
             if ((charge == null || !charge.IsCharging) && (mobile || !session.PointerOverUI))
@@ -220,23 +225,24 @@ namespace Emberfall
             bool wantsBasic = mobile ? MobileControls.AttackHeld : !session.PointerOverUI && (Input.GetMouseButton(0) || Input.GetKey(KeyCode.J));
             if (movement.sqrMagnitude > .01f && !wantsBasic && (charge == null || !charge.IsCharging))
                 transform.rotation = Quaternion.RotateTowards(transform.rotation,Quaternion.LookRotation(movement),720f*dt);
-            if (dodgeTime <= 0 && !mobile && !session.PointerOverUI)
+            if (!TraversalStartedThisFrame && !mobile && !session.PointerOverUI)
             {
                 GameProfile profile = session.Progression.Profile;
                 for (int slot=0;slot<GameBalance.HotbarSize;slot++)
                     if (profile.hotbarKeys != null && slot < profile.hotbarKeys.Length && Input.GetKeyDown((KeyCode)profile.hotbarKeys[slot]))
                     {
                         int skill = HotbarSkill(slot);
+                        if (skill == GameBalance.HotbarPotion) { session.UseHotbarConsumable(); break; }
                         if (skill >= 0 && skill < GameBalance.SkillCount && targeting != null) targeting.Begin(skill);
                     }
             }
             bool suppressBasic = targeting != null && targeting.TickInput();
-            if (dodgeTime <= 0 && wantsBasic && !suppressBasic && (charge == null || (!charge.IsCharging && !charge.ConsumedThisFrame)))
+            if (wantsBasic && !suppressBasic && (charge == null || (!charge.IsCharging && !charge.ConsumedThisFrame)))
             {
                 FaceAim();
                 if (attackCooldown <= 0) BasicAttack();
             }
-            model.Animate(dodgeTime > 0 ? 1 : movement.magnitude,attackAnimation,hurtTimer > 0);
+            model.Animate(movement.magnitude,attackAnimation,hurtTimer > 0);
             if (charge != null && charge.IsCharging) model.AnimateCharge(charge.Progress);
         }
 
@@ -419,7 +425,9 @@ namespace Emberfall
                 EnemyController enemy = session.Enemies[i];
                 if (enemy == null || enemy.IsDead) continue;
                 Vector3 delta = CombatFx.Flat(enemy.transform.position-transform.position);
-                if (delta.magnitude <= range + (enemy.IsBoss ? .5f : 0) && (delta.sqrMagnitude < .36f || Vector3.Angle(transform.forward,delta) <= arc*.5f))
+                if (delta.magnitude <= range + (enemy.IsBoss ? .5f : 0) &&
+                    (delta.sqrMagnitude < .36f || Vector3.Angle(transform.forward,delta) <= arc*.5f) &&
+                    WorldTraversal.HasGroundPath(transform.position, enemy.transform.position, .15f))
                 {
                     hit = true;
                     enemy.TakeDamage(damage,delta.normalized,knockback,stun);
@@ -500,22 +508,101 @@ namespace Emberfall
 
         internal void SkillDash(Vector3 direction, float distance, float protection)
         {
+            if (jumping) return;
             Vector3 flat = CombatFx.Flat(direction).normalized;
             Vector3 previous = transform.position;
-            transform.position = Vector3.ClampMagnitude(previous + flat * distance,session.ArenaRadius-.65f);
+            Vector3 destination = Vector3.ClampMagnitude(CombatFx.Flat(previous) + flat * distance,session.ArenaRadius-.65f);
+            if (!WorldTraversal.CanLeap(previous, destination, .45f)) { TraversalFailure(); return; }
+            transform.position = destination;
             invulnerability = Mathf.Max(invulnerability,protection);
             AdvancedSkillVfx.Beam(this,previous+Vector3.up,transform.position+Vector3.up,GameBalance.ClassColor(HeroClass),.55f,.35f);
         }
 
+        internal bool TryJump(Vector3 direction)
+        {
+            if (session == null || IsDead || !session.HasStarted || session.InputBlocked || jumping || jumpCooldown > 0 || TraversalStartedThisFrame || movementSkillLock > 0 || (charge != null && charge.IsCharging)) return false;
+            Vector3 forward = CombatFx.Flat(direction);
+            if (forward.sqrMagnitude < .01f) forward = transform.forward;
+            Vector3 origin = CombatFx.Flat(transform.position);
+            Vector3 destination = origin + forward.normalized * 4.8f;
+            float bound = session.ArenaRadius - .65f;
+            if (destination.sqrMagnitude > bound * bound || !WorldTraversal.CanLeap(origin, destination, .45f)) { TraversalFailure(); return false; }
+            jumpOrigin = origin;
+            jumpDestination = destination;
+            jumpAge = 0;
+            jumpCooldown = 1.2f;
+            jumping = true;
+            traversalFrame = Time.frameCount;
+            GameAudio.Play(SoundCue.Dodge);
+            return true;
+        }
+
+        internal bool TryBlink(Vector3 direction)
+        {
+            if (session == null || IsDead || !session.HasStarted || session.InputBlocked || jumping || dodgeCooldown > 0 || TraversalStartedThisFrame || movementSkillLock > 0) return false;
+            Vector3 forward = CombatFx.Flat(direction);
+            if (forward.sqrMagnitude < .01f) forward = transform.forward;
+            Vector3 origin = CombatFx.Flat(transform.position);
+            Vector3 destination = origin + forward.normalized * 4.8f;
+            float bound = session.ArenaRadius - .65f;
+            if (destination.sqrMagnitude > bound * bound || !WorldTraversal.CanLeap(origin, destination, .45f)) { TraversalFailure(); return false; }
+            if (charge != null) charge.Cancel();
+            transform.position = destination;
+            dodgeCooldown = 2.1f;
+            invulnerability = Mathf.Max(invulnerability, .38f);
+            traversalFrame = Time.frameCount;
+            Color color = GameBalance.ClassColor(HeroClass);
+            AdvancedSkillVfx.Rune(this, origin, .9f, color, .3f, 1);
+            AdvancedSkillVfx.Rune(this, destination, 1.1f, color, .38f, 1);
+            AdvancedSkillVfx.Beam(this, origin + Vector3.up, destination + Vector3.up, color, .28f, .14f);
+            GameAudio.Play(SoundCue.Dodge);
+            return true;
+        }
+
+        private void AdvanceJump(float deltaTime)
+        {
+            if (!jumping || deltaTime <= 0 || float.IsNaN(deltaTime) || float.IsInfinity(deltaTime)) return;
+            jumpAge += deltaTime;
+            float progress = Mathf.Clamp01(jumpAge / .55f);
+            transform.position = Vector3.Lerp(jumpOrigin, jumpDestination, progress) + Vector3.up * (Mathf.Sin(progress * Mathf.PI) * 1.65f);
+            if (progress >= 1f)
+            {
+                jumping = false;
+                transform.position = WorldTraversal.NearestWalkable(jumpDestination, .45f);
+            }
+        }
+
+        private void TraversalFailure()
+        {
+            if (skillFeedbackCooldown > 0) return;
+            session.Notify("前方有障碍或没有安全落点，请走桥或调整方向。");
+            skillFeedbackCooldown = .8f;
+        }
+
+        private bool CanUseMovementSkill(int skill, int rank)
+        {
+            bool forwardDash = HeroClass == HeroClass.Vanguard && skill == 5;
+            bool retreat = HeroClass == HeroClass.Ranger && skill == 4;
+            if (!forwardDash && !retreat) return true;
+            Vector3 direction = CombatFx.Flat((ValidAimTarget(AimTarget) ? AimTarget.transform.position : aimPoint) - transform.position);
+            if (direction.sqrMagnitude < .0001f) direction = transform.forward;
+            direction.Normalize();
+            if (retreat) direction = -direction;
+            float distance = (forwardDash ? 7f : 5f) * GameBalance.SkillRangeMultiplier(rank);
+            Vector3 end = Vector3.ClampMagnitude(CombatFx.Flat(transform.position) + direction * distance, session.ArenaRadius - .65f);
+            return WorldTraversal.CanLeap(transform.position, end, .45f);
+        }
+
         internal bool CanBeginSkillTargeting(int skill)
         {
-            if(session==null || IsDead || !session.HasStarted || session.InputBlocked || skill<0 || skill>=GameBalance.SkillCount || GameBalance.IsPassive(skill)) return false;
+            if(session==null || IsDead || jumping || !session.HasStarted || session.InputBlocked || skill<0 || skill>=GameBalance.SkillCount || GameBalance.IsPassive(skill)) return false;
             if(charge != null && (charge.IsCharging || charge.ConsumedThisFrame)) return false;
             int rank=session.Progression.Profile.skillRanks[skill];
             string failure=null;
             if(rank<=0) failure="按 K 学习这个技能后再施放。";
             else if(skillRuntime.Remaining(skill)>0) failure=GameBalance.SkillName(HeroClass,skill)+" 冷却中（"+skillRuntime.Remaining(skill).ToString("0.0")+" 秒）";
             else if(Energy<GameBalance.SkillEnergyCost(HeroClass,skill)) failure="能量不足：普攻命中回复 8 点，持续回复每秒 4 点。";
+            else if(!CanUseMovementSkill(skill,rank)) failure="前方有障碍或没有安全落点，请走桥或调整方向。";
             if(failure==null) return true;
             if(skillFeedbackCooldown<=0) { session.Notify(failure); skillFeedbackCooldown=.8f; }
             return false;
@@ -576,6 +663,7 @@ namespace Emberfall
                 }
                 return;
             }
+            if (!CanUseMovementSkill(slot, rank)) { TraversalFailure(); return; }
             if (!skillRuntime.TryConsume(slot, rank))
             {
                 if (skillFeedbackCooldown <= 0)
@@ -587,6 +675,7 @@ namespace Emberfall
                 return;
             }
             GameAudio.Play(SoundCue.Cast);
+            if ((HeroClass == HeroClass.Vanguard && slot == 5) || (HeroClass == HeroClass.Ranger && slot == 4)) movementSkillLock = .15f;
             if (executingChargedSkill) model.ReleaseCharge(slot);
             else model.PlayAction(slot,false);
             attackAnimation = 1;
@@ -685,9 +774,5 @@ namespace Emberfall
             }
         }
 
-        private void OnDestroy()
-        {
-            if (dodgeHalo != null) Destroy(dodgeHalo);
-        }
     }
 }

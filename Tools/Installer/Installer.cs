@@ -139,7 +139,7 @@ namespace EmberfallInstaller
                 if (!DirectoryEntry(entry) && string.Equals(key, Program.Executable, StringComparison.OrdinalIgnoreCase)) game = entry.Length > 0;
                 if (!DirectoryEntry(entry) && string.Equals(key, "UnityPlayer.dll", StringComparison.OrdinalIgnoreCase)) engine = entry.Length > 0;
                 if (!DirectoryEntry(entry) && key.StartsWith("Emberfall_Data" + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase)) data = true;
-                if (Path.GetFileName(key).StartsWith("emberfall-save.json", StringComparison.OrdinalIgnoreCase)) throw new InvalidDataException("发行包不应包含个人存档。");
+                if (Path.GetFileName(key).StartsWith("emberfall-save", StringComparison.OrdinalIgnoreCase)) throw new InvalidDataException("发行包不应包含个人存档。");
                 entries.Add(entry);
             }
             if (!game || !engine || !data) throw new InvalidDataException("安装包不完整：缺少 Emberfall.exe、UnityPlayer.dll 或 Emberfall_Data。");

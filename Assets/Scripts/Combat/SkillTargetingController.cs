@@ -31,7 +31,7 @@ namespace Emberfall
             string mode = CurrentPreview.shape == Shape.Self ? "以自身为中心" :
                 CurrentPreview.shape == Shape.Ground ? "鼠标选点 · 最远 " + CurrentPreview.distance.ToString("0.0") + " 米" :
                 CurrentPreview.shape == Shape.Retreat ? "鼠标调整朝向 · 向后撤步" : "鼠标调整攻击方向";
-            return mode + "   /   左键确认 · 右键或 Esc 取消";
+            return mode + "   /   左键确认 · 右键单击或 Esc 取消 · 右键拖动镜头";
         } }
 
         private PlayerController owner;
@@ -122,7 +122,7 @@ namespace Emberfall
             // Mobile controls own world-touch selection and explicit confirmation;
             // a joystick finger must never act as a simulated mouse confirmation.
             if (MobileControls.Active) return true;
-            if (Input.GetMouseButtonDown(1) || Input.GetKeyDown(KeyCode.Escape)) { Cancel(); return true; }
+            if (AdventureCamera.CancelSkillRequested || Input.GetKeyDown(KeyCode.Escape)) { Cancel(); return true; }
             if (!session.PointerOverUI)
             {
                 Camera camera = Camera.main;

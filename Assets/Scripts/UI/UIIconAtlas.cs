@@ -97,7 +97,8 @@ namespace Emberfall
         {
             if (name == "inventory") name = "bag";
             if (name == "camp") name = "home";
-            string[] names = { "bag", "skills", "home", "portal", "attack", "dodge", "potion", "pause", "help", "confirm", "cancel" };
+            if (name == "blink") name = "dodge";
+            string[] names = { "bag", "skills", "home", "portal", "attack", "dodge", "potion", "pause", "help", "confirm", "cancel", "jump" };
             int id = System.Array.IndexOf(names, name);
             if (id < 0) id = 1;
             int key = 100 + id;
@@ -109,12 +110,13 @@ namespace Emberfall
             else if (id == 2) { ink.Line(7, 29, 32, 8, 5); ink.Line(32, 8, 57, 29, 5); ink.Line(16, 25, 16, 53, 5); ink.Line(16, 53, 49, 53, 5); ink.Line(49, 53, 49, 25, 5); }
             else if (id == 3) { ink.Ring(32, 31, 23, 4); ink.Arrow(11, 32, 42, 32); }
             else if (id == 4) ink.Sword(32, 32);
-            else if (id == 5) { ink.Arrow(16, 14, 48, 32); ink.Arrow(16, 50, 48, 32); }
-            else if (id == 6) { ink.Line(25, 9, 39, 9, 5); ink.Line(26, 10, 26, 22, 3); ink.Line(38, 10, 38, 22, 3); ink.Disc(32, 38, 18); }
+            else if (id == 5) { ink.Arc(40, 32, 17, -90, 90, 4); ink.Arrow(14, 32, 48, 32); ink.Line(10, 20, 20, 20, 3); ink.Line(10, 44, 20, 44, 3); }
+            else if (id == 6) { ink.color = new Color(1f, .48f, .52f); ink.Line(25, 9, 39, 9, 5); ink.Line(26, 10, 26, 22, 3); ink.Line(38, 10, 38, 22, 3); ink.Disc(32, 38, 18); ink.color = Color.white; ink.Line(32, 29, 32, 47, 4); ink.Line(23, 38, 41, 38, 4); }
             else if (id == 7) { ink.Line(24, 14, 24, 50, 8); ink.Line(40, 14, 40, 50, 8); }
             else if (id == 8) { ink.Arc(32, 23, 13, 190, 470, 5); ink.Line(32, 36, 32, 42, 5); ink.Disc(32, 52, 3); }
             else if (id == 9) { ink.Line(10, 32, 26, 48, 6); ink.Line(26, 48, 54, 16, 6); }
-            else { ink.Line(16, 16, 48, 48, 6); ink.Line(16, 48, 48, 16, 6); }
+            else if (id == 10) { ink.Line(16, 16, 48, 48, 6); ink.Line(16, 48, 48, 16, 6); }
+            else { ink.Arrow(32, 46, 32, 10); ink.Line(15, 55, 49, 55, 4); }
             texture = ink.Finish("Utility " + name); cache[key] = texture; return texture;
         }
 

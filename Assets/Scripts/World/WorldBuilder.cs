@@ -8,6 +8,7 @@ namespace Emberfall
     {
         public static GameObject Build(ZoneKind zone)
         {
+            WorldTraversal.Reset(zone);
             GameObject root = new GameObject(zone == ZoneKind.Wilderness ? "Windwhisper Fields" : "Fallen Star Sanctum");
             WorldResources resources = root.AddComponent<WorldResources>();
             bool dungeon = zone == ZoneKind.Dungeon;
@@ -40,8 +41,7 @@ namespace Emberfall
             Material jade = r.Material(new Color(.24f, .91f, .77f), true);
             Primitive(parent, "Floating island", PrimitiveType.Cylinder, new Vector3(0, -1.4f, 0), new Vector3(49, 1.15f, 49), darkRock);
             Primitive(parent, "Moss rim", PrimitiveType.Cylinder, new Vector3(0, -.45f, 0), new Vector3(48, .35f, 48), edge);
-            // The combat controller remains on y=0 inside radius 22. The irregular
-            // landscape extends past that boundary; raised scenery stays outside it.
+            // Ground traversal and raised blockers share the same authored layout.
             Vector2[] coast = new Vector2[20];
             for (int i = 0; i < coast.Length; i++)
             {
@@ -52,7 +52,7 @@ namespace Emberfall
             Surface(parent, r, "Irregular meadow shoreline", coast, 0, grass);
             Skirt(parent, r, "Fractured meadow cliffs", coast, -2.8f, darkRock);
             Transform woodland = Region(parent, "West woodland and fern trail");
-            Transform lowland = Region(parent, "Shallow brook and timber crossing");
+            Transform lowland = Region(parent, "Deep brook and timber crossing");
             Transform ruins = Region(parent, "Northeast overgrown courtyard");
             Transform camp = Region(parent, "Southern caravan approach");
             Material forestFloor = r.Material(new Color(.12f, .235f, .22f));
@@ -67,16 +67,25 @@ namespace Emberfall
             Ribbon(woodland, r, "Woodland branch path", new[] { new Vector3(0,0,-9), new Vector3(-7,0,-7), new Vector3(-12,0,-2), new Vector3(-14,0,6), new Vector3(-20,0,14) }, 1.9f, .026f, earth);
             Ribbon(ruins, r, "Courtyard branch path", new[] { new Vector3(1,0,4), new Vector3(7,0,7), new Vector3(13,0,12), new Vector3(11,0,21) }, 2.2f, .029f, stone);
             Vector3[] stream = { new Vector3(-25,0,5), new Vector3(-18,0,4), new Vector3(-11,0,2), new Vector3(-5,0,.5f), new Vector3(0,0,-1), new Vector3(7,0,-2), new Vector3(14,0,-5), new Vector3(22,0,-7), new Vector3(26,0,-10) };
+            WorldTraversal.SetRiver(stream, 2.4f, new Rect(-1.9f, -3.9f, 3.8f, 5.8f));
             Ribbon(lowland, r, "Pebble stream banks", stream, 3.4f, .032f, r.Material(new Color(.40f,.46f,.41f)));
-            Ribbon(lowland, r, "Shallow flowing water", stream, 2.4f, .038f, r.Material(new Color(.13f,.43f,.46f)));
+            Ribbon(lowland, r, "Deep flowing water", stream, 2.4f, .038f, r.Material(new Color(.055f,.25f,.33f)));
             Ribbon(lowland, r, "Brook reflected current", stream, .22f, .041f, r.Material(new Color(.32f,.64f,.62f)));
-            // Flush deck and no railings keep every approach traversable with the
-            // existing planar controller; the whole brook is a shallow ford.
+            // The deck is the only ground crossing. Both banks remain reachable
+            // by the shared creature route planner; leaps may clear the water.
             Material timber = r.Material(new Color(.43f,.32f,.215f));
             for (int i = 0; i < 10; i++)
                 Primitive(lowland, "Timber crossing plank", PrimitiveType.Cube, new Vector3(0,.043f,-2.8f+i*.39f), new Vector3(3.8f,.012f,.35f), timber);
             Primitive(lowland, "Bridge edge strip west", PrimitiveType.Cube, new Vector3(-1.85f,.05f,-1.04f), new Vector3(.08f,.008f,4.0f), gold);
             Primitive(lowland, "Bridge edge strip east", PrimitiveType.Cube, new Vector3(1.85f,.05f,-1.04f), new Vector3(.08f,.008f,4.0f), gold);
+
+            Vector3[] trees = { new Vector3(-12,0,-8), new Vector3(-15,0,-4), new Vector3(-9,0,-9), new Vector3(-12,0,7), new Vector3(-15,0,9) };
+            for (int i = 0; i < trees.Length; i++) Tree(woodland, r, trees[i], .9f + i % 2 * .2f, i);
+            Rock(parent, r, new Vector3(8,0,-8), 1.65f, 2);
+            Rock(parent, r, new Vector3(13,0,-10), 1.2f, 5);
+            Rock(parent, r, new Vector3(14,0,5), 1.5f, 4);
+            Primitive(ruins, "Broken courtyard barricade", PrimitiveType.Cube, new Vector3(10.5f,.75f,13), new Vector3(5,1.5f,.85f), stone);
+            WorldTraversal.AddBox(new Vector3(10.5f,0,13), new Vector2(5,.85f));
 
             System.Random random = new System.Random(32019);
             for (int i = 0; i < 56; i++)
@@ -96,8 +105,7 @@ namespace Emberfall
                     new Vector3(x,.043f,z), new Vector3(1.1f,.025f,.73f), stone);
                 tile.transform.rotation = Quaternion.Euler(0, i * 31 % 28 - 14, 0);
             }
-            // Broken walls and tree trunks sit beyond the reachable circle. The
-            // courtyard itself has only ankle-low foundations and paving.
+            // Perimeter ruins complete the silhouette around the playable courtyard.
             for (int i = 0; i < 7; i++)
             {
                 float x = -14 + i * 4.7f;
@@ -175,8 +183,11 @@ namespace Emberfall
             {
                 Transform gallery = side < 0 ? west : east;
                 Primitive(gallery, "Nave edge inlay", PrimitiveType.Cube, new Vector3(side*5.3f,.05f,-2), new Vector3(.075f,.014f,29), rune);
-                // All column bases are beyond radius 18; neither characters nor
-                // combat targeting need new collision or navigation behavior.
+                Pillar(gallery, r, new Vector3(side*7,0,-4), 2.5f, true);
+                Pillar(gallery, r, new Vector3(side*7,0,6), 2.9f, true);
+                Vector3 barricade = new Vector3(side*10.5f,0,-7.5f);
+                Primitive(gallery, "Collapsed gallery partition", PrimitiveType.Cube, barricade + Vector3.up*.65f, new Vector3(4.2f,1.3f,.9f), border);
+                WorldTraversal.AddBox(barricade, new Vector2(4.2f,.9f));
                 for (int i = 0; i < 5; i++)
                 {
                     Vector3 p = new Vector3(side*20.3f,0,-12+i*6);
@@ -314,6 +325,7 @@ namespace Emberfall
 
         private static void Tree(Transform parent, WorldResources r, Vector3 p, float size, int seed)
         {
+            if (p.sqrMagnitude < 22f*22f) WorldTraversal.AddCircle(p, .22f);
             Material trunk = r.Material(new Color(.24f,.22f,.21f));
             Material leaves = r.Material(seed % 2 == 0 ? new Color(.12f,.29f,.29f) : new Color(.2f,.37f,.32f));
             Primitive(parent, "Tree trunk", PrimitiveType.Cylinder, p + Vector3.up * size, new Vector3(.34f, size, .34f), trunk);
@@ -323,6 +335,7 @@ namespace Emberfall
 
         private static void Rock(Transform parent, WorldResources r, Vector3 p, float scale, int seed)
         {
+            if (p.y >= -.1f && p.sqrMagnitude < 22f*22f) WorldTraversal.AddCircle(p, scale * .82f);
             GameObject rock = Primitive(parent, "Weathered rock", PrimitiveType.Cube, p + Vector3.up * scale * .35f,
                 new Vector3(scale * 1.3f, scale, scale * .9f), r.Material(seed % 2 == 0 ? new Color(.28f,.34f,.37f) : new Color(.32f,.4f,.39f)));
             rock.transform.rotation = Quaternion.Euler(seed % 27, seed * 67 % 360, seed % 18);
@@ -330,6 +343,7 @@ namespace Emberfall
 
         private static void Pillar(Transform parent, WorldResources r, Vector3 p, float height, bool dungeon)
         {
+            if (p.sqrMagnitude < (dungeon ? 18f*18f : 22f*22f)) WorldTraversal.AddBox(p, new Vector2(1.4f,1.4f));
             Material stone = r.Material(dungeon ? new Color(.24f,.25f,.35f) : new Color(.44f,.48f,.43f));
             Primitive(parent, "Column base", PrimitiveType.Cube, p + Vector3.up * .25f, new Vector3(1.4f,.5f,1.4f), stone);
             Primitive(parent, "Column", PrimitiveType.Cylinder, p + Vector3.up * height * .5f, new Vector3(.85f,height*.5f,.85f), stone);

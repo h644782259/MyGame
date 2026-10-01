@@ -128,8 +128,20 @@ namespace Emberfall.Editor
             Guid guid;
             if (!Same(Path.GetDirectoryName(Full(result)), expectedRoot) || !runName.StartsWith("PlayMode-", StringComparison.Ordinal) ||
                 !Guid.TryParseExact(runName.Substring("PlayMode-".Length), "N", out guid) || !Same(save, Path.Combine(result, "IsolatedSave")) ||
-                !Same(save, overridden) || !Same(save, game.Progression.SaveDirectory) || !Same(game.Progression.SaveFilePath, Path.Combine(save, "emberfall-save.json")))
+                !Same(save, overridden) || !Same(save, game.Progression.SaveDirectory) || !IsSlotFileInDirectory(game.Progression.SaveFilePath, save))
                 throw new InvalidOperationException("Ground-loot validation refused a save path outside its isolated runner.");
+        }
+
+        private static bool IsSlotFileInDirectory(string path, string directory)
+        {
+            if (!Same(Path.GetDirectoryName(Full(path)), directory)) return false;
+            string name = Path.GetFileName(path);
+            if (name == "emberfall-save.json") return true;
+            const string prefix = "emberfall-save-", suffix = ".json";
+            if (!name.StartsWith(prefix, StringComparison.Ordinal) || !name.EndsWith(suffix, StringComparison.Ordinal) || name.Length != prefix.Length + 32 + suffix.Length) return false;
+            Guid id;
+            string token = name.Substring(prefix.Length, 32);
+            return Guid.TryParseExact(token, "N", out id) && token == id.ToString("N");
         }
 
         private static string Full(string path) { return Path.GetFullPath(path).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar); }

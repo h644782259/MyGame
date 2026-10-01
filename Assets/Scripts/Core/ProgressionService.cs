@@ -6,6 +6,15 @@ using UnityEngine;
 
 namespace Emberfall
 {
+    public sealed class SaveSlotInfo
+    {
+        public string Id, DisplayName;
+        public HeroClass HeroClass;
+        public int Level;
+        public DateTime SavedAtUtc;
+        public bool CanLoad, RecoveredFromBackup, IsCurrent;
+    }
+
     /// <summary>Owns the character's persistent progression. It has no scene dependencies.</summary>
     public class ProgressionService
     {
@@ -17,9 +26,11 @@ namespace Emberfall
         private const int MaximumEquipmentStat = 10000;
         private const int MaximumEquipmentHealth = 100000;
         private const string SaveFormat = "emberfall-character";
-        private readonly string savePath;
-        private readonly string backupPath;
-        private readonly string temporaryPath;
+        private readonly string saveDirectory;
+        private string savePath;
+        private string backupPath;
+        private string temporaryPath;
+        private string currentSlotId = "legacy";
         private readonly System.Random random = new System.Random();
         private readonly HashSet<string> collectedLootIds = new HashSet<string>(StringComparer.Ordinal);
 
@@ -35,16 +46,15 @@ namespace Emberfall
         public event Action Changed;
         public event Action<int> LeveledUp;
         public string LastError { get; private set; }
-        public string SaveDirectory { get { return Path.GetDirectoryName(savePath); } }
+        public string SaveDirectory { get { return saveDirectory; } }
         public string SaveFilePath { get { return savePath; } }
-        public bool HasSave { get { return File.Exists(savePath) || File.Exists(backupPath); } }
+        public bool HasSave { get { return DiscoverSlotIds().Count > 0; } }
 
         public ProgressionService(string saveDirectory = null)
         {
             string directory = string.IsNullOrWhiteSpace(saveDirectory) ? Application.persistentDataPath : saveDirectory;
-            savePath = Path.Combine(directory, "emberfall-save.json");
-            backupPath = savePath + ".bak";
-            temporaryPath = savePath + ".tmp";
+            this.saveDirectory = directory;
+            SelectSlotPath("legacy");
             Profile = CreateProfile(HeroClass.Vanguard);
             LastError = string.Empty;
         }
@@ -59,63 +69,236 @@ namespace Emberfall
 
         public bool Load()
         {
+            // A newly constructed service still addresses the original legacy file.
+            // Once explicitly selected, reload remains local to that selected slot.
+            return LoadSlot(currentSlotId);
+        }
+
+        public bool LoadSlot(string id)
+        {
+            string normalized;
+            if (!TryNormalizeSlotId(id, out normalized)) return Fail("无效的存档编号。");
+            string candidatePath = SlotPath(normalized);
             GameProfile loaded;
             string failure;
-            if (TryReadProfile(savePath, out loaded, out failure))
+            bool recovered;
+            if (TryReadSlot(candidatePath, out loaded, out failure, out recovered))
             {
+                if (currentSlotId != normalized) collectedLootIds.Clear();
+                SelectSlotPath(normalized);
                 Profile = loaded;
                 LastError = failure;
                 RaiseChanged();
                 return true;
             }
-            string backupFailure;
-            if (TryReadProfile(backupPath, out loaded, out backupFailure))
+            return Fail(File.Exists(candidatePath) || File.Exists(candidatePath + ".bak")
+                ? "这个存档及其备份均无法读取；其他存档仍可选择。" : "找不到这个存档。");
+        }
+
+        public List<SaveSlotInfo> GetSaveSlots()
+        {
+            var slots = new List<SaveSlotInfo>();
+            foreach (string id in DiscoverSlotIds())
             {
-                Profile = loaded;
-                LastError = "主存档无法读取，已恢复上一次备份。" + (string.IsNullOrEmpty(backupFailure) ? "" : " " + backupFailure);
-                RaiseChanged();
-                return true;
+                string path = SlotPath(id);
+                GameProfile loaded;
+                string error;
+                bool recovered;
+                bool readable = TryReadSlot(path, out loaded, out error, out recovered);
+                DateTime written = SafeWriteTime(path);
+                DateTime backupWritten = SafeWriteTime(path + ".bak");
+                if (backupWritten > written) written = backupWritten;
+                slots.Add(new SaveSlotInfo
+                {
+                    Id = id,
+                    DisplayName = readable ? GameBalance.ClassName(loaded.heroClass) + " · " + loaded.level + "级" + (id == "legacy" ? " · 旧存档" : "") : (id == "legacy" ? "旧存档 · 无法读取" : "存档 " + id.Substring(0, 6) + " · 无法读取"),
+                    HeroClass = readable ? loaded.heroClass : HeroClass.Vanguard,
+                    Level = readable ? loaded.level : 0,
+                    SavedAtUtc = written,
+                    CanLoad = readable,
+                    RecoveredFromBackup = recovered,
+                    IsCurrent = string.Equals(currentSlotId, id, StringComparison.Ordinal)
+                });
             }
-            LastError = HasSave ? "存档及备份均无法读取，可创建新角色。" : "尚无可继续的存档。";
-            return false;
+            slots.Sort((a, b) => { int time = b.SavedAtUtc.CompareTo(a.SavedAtUtc); return time != 0 ? time : string.CompareOrdinal(a.Id, b.Id); });
+            return slots;
+        }
+
+        public bool CreateNewSlot(HeroClass hero)
+        {
+            if (!Enum.IsDefined(typeof(HeroClass), hero)) return Fail("无效的职业。");
+            return CreateSlot(CreateProfile(hero), true);
+        }
+
+        public bool SaveAsNewSlot()
+        {
+            try
+            {
+                // Validate/write a deep snapshot, never mutate the current profile
+                // while attempting a save that can still fail.
+                GameProfile snapshot = JsonUtility.FromJson<GameProfile>(JsonUtility.ToJson(Profile, true));
+                if (snapshot == null) return Fail("无法创建当前角色的存档快照。");
+                return CreateSlot(snapshot, false);
+            }
+            catch (Exception exception) when (exception is ArgumentException || exception is InvalidOperationException || exception is NotSupportedException)
+            {
+                return Fail("另存失败：" + exception.Message);
+            }
+        }
+
+        private bool CreateSlot(GameProfile candidate, bool newCharacter)
+        {
+            string id = Guid.NewGuid().ToString("N");
+            string path = SlotPath(id);
+            string failure;
+            if (!TryWriteProfile(candidate, path, true, out failure)) return Fail(failure);
+            // Both primary and backup are now durably written. Only then publish
+            // the new active profile/path and notify the UI.
+            SelectSlotPath(id);
+            Profile = candidate;
+            if (newCharacter) collectedLootIds.Clear();
+            LastError = string.Empty;
+            RaiseChanged();
+            return true;
+        }
+
+        private void SelectSlotPath(string id)
+        {
+            currentSlotId = id;
+            savePath = SlotPath(id);
+            backupPath = savePath + ".bak";
+            temporaryPath = savePath + ".tmp";
+        }
+
+        private string SlotPath(string id)
+        {
+            return Path.Combine(saveDirectory, id == "legacy" ? "emberfall-save.json" : "emberfall-save-" + id + ".json");
+        }
+
+        private static bool TryNormalizeSlotId(string id, out string normalized)
+        {
+            normalized = null;
+            if (id == "legacy") { normalized = id; return true; }
+            Guid guid;
+            if (id == null || id.Length != 32 || !Guid.TryParseExact(id, "N", out guid)) return false;
+            normalized = guid.ToString("N");
+            return true;
+        }
+
+        private List<string> DiscoverSlotIds()
+        {
+            var ids = new HashSet<string>(StringComparer.Ordinal);
+            try
+            {
+                if (!Directory.Exists(saveDirectory)) return new List<string>();
+                foreach (string file in Directory.EnumerateFiles(saveDirectory, "emberfall-save*.json*", SearchOption.TopDirectoryOnly))
+                {
+                    string name = Path.GetFileName(file);
+                    if (name.EndsWith(".bak", StringComparison.Ordinal)) name = name.Substring(0, name.Length - 4);
+                    if (name == "emberfall-save.json") { ids.Add("legacy"); continue; }
+                    const string prefix = "emberfall-save-", suffix = ".json";
+                    if (!name.StartsWith(prefix, StringComparison.Ordinal) || !name.EndsWith(suffix, StringComparison.Ordinal)) continue;
+                    string raw = name.Substring(prefix.Length, name.Length - prefix.Length - suffix.Length);
+                    string id;
+                    // Generated filenames are canonical lowercase GuidN. Unknown
+                    // files, temp writes and subdirectories are never save slots.
+                    if (raw.Length == 32 && TryNormalizeSlotId(raw, out id) && raw == id) ids.Add(id);
+                }
+            }
+            catch (Exception exception) when (exception is IOException || exception is UnauthorizedAccessException || exception is ArgumentException || exception is NotSupportedException) { }
+            return new List<string>(ids);
+        }
+
+        private static DateTime SafeWriteTime(string path)
+        {
+            try { return File.Exists(path) ? File.GetLastWriteTimeUtc(path) : DateTime.SpecifyKind(DateTime.MinValue, DateTimeKind.Utc); }
+            catch (Exception exception) when (exception is IOException || exception is UnauthorizedAccessException || exception is ArgumentException || exception is NotSupportedException)
+            { return DateTime.SpecifyKind(DateTime.MinValue, DateTimeKind.Utc); }
+        }
+
+        private static bool TryReadSlot(string primary, out GameProfile profile, out string error, out bool recovered)
+        {
+            recovered = false;
+            if (TryReadProfile(primary, out profile, out error)) return true;
+            if (!TryReadProfile(primary + ".bak", out profile, out error)) return false;
+            recovered = true;
+            error = "主存档无法读取，已恢复上一次备份。" + (string.IsNullOrEmpty(error) ? "" : " " + error);
+            return true;
         }
 
         public void Save()
         {
+            string failure;
+            if (TryWriteProfile(Profile, savePath, false, out failure)) LastError = string.Empty;
+            else { LastError = failure; Debug.LogWarning("Emberfall: " + failure); }
+        }
+
+        private static bool TryWriteProfile(GameProfile profile, string primary, bool createOnly, out string failure)
+        {
+            string backup = primary + ".bak", temporary = primary + ".tmp";
+            bool ownsTemporary = false, ownsBackup = false;
+            failure = string.Empty;
             try
             {
-                ValidateProfile(Profile);
-                Directory.CreateDirectory(Path.GetDirectoryName(savePath));
-                var save = new SaveFile { format = SaveFormat, version = 1, profile = Profile };
+                ValidateProfile(profile);
+                Directory.CreateDirectory(Path.GetDirectoryName(primary));
+                if (createOnly && (File.Exists(primary) || File.Exists(backup) || File.Exists(temporary)))
+                    throw new IOException("新存档文件名已被占用，请重试。");
+                var save = new SaveFile { format = SaveFormat, version = 1, profile = profile };
                 string json = JsonUtility.ToJson(save, true);
                 // Flush the complete new document before atomically replacing the old one.
-                using (var stream = new FileStream(temporaryPath, FileMode.Create, FileAccess.Write, FileShare.None))
-                using (var writer = new StreamWriter(stream, new UTF8Encoding(false)))
+                using (var stream = new FileStream(temporary, createOnly ? FileMode.CreateNew : FileMode.Create, FileAccess.Write, FileShare.None))
                 {
-                    writer.Write(json);
-                    writer.Flush();
-                    stream.Flush(true);
+                    ownsTemporary = true;
+                    using (var writer = new StreamWriter(stream, new UTF8Encoding(false)))
+                    {
+                        writer.Write(json);
+                        writer.Flush();
+                        stream.Flush(true);
+                    }
                 }
-                if (File.Exists(savePath))
+                if (createOnly)
+                {
+                    using (var backupStream = new FileStream(backup, FileMode.CreateNew, FileAccess.Write, FileShare.None))
+                    {
+                        ownsBackup = true;
+                        using (var source = new FileStream(temporary, FileMode.Open, FileAccess.Read, FileShare.Read)) source.CopyTo(backupStream);
+                        backupStream.Flush(true);
+                    }
+                    File.Move(temporary, primary);
+                }
+                else if (File.Exists(primary))
                 {
                     GameProfile previous;
                     string error;
                     // A corrupt primary must never replace a usable recovery backup.
-                    bool validPrevious = TryReadProfile(savePath, out previous, out error);
-                    File.Replace(temporaryPath, savePath, validPrevious ? backupPath : null, true);
+                    bool validPrevious = TryReadProfile(primary, out previous, out error);
+                    File.Replace(temporary, primary, validPrevious ? backup : null, true);
                 }
                 else
                 {
-                    File.Move(temporaryPath, savePath);
-                    if (!File.Exists(backupPath)) File.Copy(savePath, backupPath);
+                    File.Move(temporary, primary);
+                    if (!File.Exists(backup)) File.Copy(primary, backup);
                 }
-                LastError = string.Empty;
+                return true;
             }
             catch (Exception exception) when (exception is IOException || exception is UnauthorizedAccessException || exception is ArgumentException || exception is NotSupportedException)
             {
-                LastError = "保存失败：" + exception.Message;
-                Debug.LogWarning("Emberfall: " + LastError);
+                failure = "保存失败：" + exception.Message;
+                if (createOnly)
+                {
+                    if (ownsTemporary) DeleteFailedSlotFile(temporary);
+                    if (ownsBackup) DeleteFailedSlotFile(backup);
+                }
+                return false;
             }
+        }
+
+        private static void DeleteFailedSlotFile(string path)
+        {
+            try { File.Delete(path); }
+            catch (IOException) { }
+            catch (UnauthorizedAccessException) { }
         }
 
         public StatBlock GetStats()
@@ -488,25 +671,52 @@ namespace Emberfall
             return true;
         }
 
-        /// <summary>Move or swap learned active skills within the selected hotbar page.</summary>
+        public bool AssignConsumable(int hotbarSlot)
+        {
+            if (hotbarSlot < 0 || hotbarSlot >= GameBalance.HotbarSize) return Fail("无效的快捷栏位置。");
+            if (!HasValidHotbarData()) return Fail("快捷栏数据无效。");
+            int pageStart = Profile.hotbarPage * GameBalance.HotbarSize;
+            int target = pageStart + hotbarSlot;
+            if (Profile.equippedSkills[target] == GameBalance.HotbarPotion) return Fail("生命药水已经位于这个快捷栏位置。");
+            for (int slot = pageStart; slot < pageStart + GameBalance.HotbarSize; slot++)
+            {
+                if (Profile.equippedSkills[slot] != GameBalance.HotbarPotion) continue;
+                int displaced = Profile.equippedSkills[target];
+                Profile.equippedSkills[slot] = IsUsableHotbarEntry(displaced) ? displaced : -1;
+                break;
+            }
+            Profile.equippedSkills[target] = GameBalance.HotbarPotion;
+            Commit();
+            return true;
+        }
+
+        private bool HasValidHotbarData()
+        {
+            return Profile.hotbarPage >= 0 && Profile.hotbarPage < GameBalance.HotbarPages && Profile.equippedSkills != null &&
+                Profile.equippedSkills.Length >= GameBalance.HotbarPages * GameBalance.HotbarSize && Profile.skillRanks != null && Profile.skillRanks.Length >= GameBalance.SkillCount;
+        }
+
+        private bool IsUsableHotbarEntry(int entry)
+        {
+            return entry == GameBalance.HotbarPotion ||
+                (entry >= 0 && entry < GameBalance.SkillCount && !GameBalance.IsPassive(entry) && Profile.skillRanks[entry] > 0);
+        }
+
+        /// <summary>Move or swap learned active skills and consumables within the selected hotbar page.</summary>
         public bool MoveHotbarSkill(int sourceSlot, int targetSlot)
         {
             if (sourceSlot < 0 || sourceSlot >= GameBalance.HotbarSize || targetSlot < 0 || targetSlot >= GameBalance.HotbarSize)
                 return Fail("无效的快捷栏位置。");
-            if (sourceSlot == targetSlot) return Fail("技能已经位于这个快捷栏位置。");
-            if (Profile.hotbarPage < 0 || Profile.hotbarPage >= GameBalance.HotbarPages || Profile.equippedSkills == null ||
-                Profile.equippedSkills.Length < GameBalance.HotbarPages * GameBalance.HotbarSize || Profile.skillRanks == null || Profile.skillRanks.Length < GameBalance.SkillCount)
-                return Fail("快捷栏数据无效。");
+            if (sourceSlot == targetSlot) return Fail("已经位于这个快捷栏位置。");
+            if (!HasValidHotbarData()) return Fail("快捷栏数据无效。");
             int pageStart = Profile.hotbarPage * GameBalance.HotbarSize;
             int source = pageStart + sourceSlot;
             int target = pageStart + targetSlot;
             int skill = Profile.equippedSkills[source];
-            if (skill < 0 || skill >= GameBalance.SkillCount || GameBalance.IsPassive(skill) || Profile.skillRanks[skill] < 1)
-                return Fail("只能拖动已经学习的主动技能。");
+            if (!IsUsableHotbarEntry(skill)) return Fail("只能拖动已学习的主动技能或可使用物品。");
             int displaced = Profile.equippedSkills[target];
-            if (displaced < 0 || displaced >= GameBalance.SkillCount || GameBalance.IsPassive(displaced) || Profile.skillRanks[displaced] < 1)
-                displaced = -1;
-            if (skill == displaced) return Fail("这个技能已经位于目标位置。");
+            if (!IsUsableHotbarEntry(displaced)) displaced = -1;
+            if (skill == displaced) return Fail("已经位于目标位置。");
             Profile.equippedSkills[target] = skill;
             Profile.equippedSkills[source] = displaced;
             Commit();
@@ -725,7 +935,7 @@ namespace Emberfall
                         }
                     }
                     // Locked default skills remain mapped; casting still requires a learned rank.
-                    if (skill >= 0 && skill < GameBalance.SkillCount && !GameBalance.IsPassive(skill) && used.Add(skill)) loadout[index] = skill;
+                    if ((skill == GameBalance.HotbarPotion || (skill >= 0 && skill < GameBalance.SkillCount && !GameBalance.IsPassive(skill))) && used.Add(skill)) loadout[index] = skill;
                 }
             }
             return loadout;

@@ -226,6 +226,14 @@ internal static class InstallerRollbackHarness
     Invoke-TestInstaller $badInstaller @('--install-dir', $rejectedDestination) 'reject-traversal-install' 1
     Assert-InstallerCheck (-not (Test-Path -LiteralPath $rejectedDestination) -and -not (Test-Path -LiteralPath (Join-Path $runDirectory 'escaped.txt'))) 'unsafe payload extraction creates neither a destination nor an escaped file'
     Assert-InstallerCheck (No-TransactionsRemain) 'all rejected installs leave no transaction directories'
+    $savePayload = New-SyntheticPayload 'payload-personal-slot' ([ordered]@{
+        'Emberfall.exe' = 'SYNTHETIC'
+        'UnityPlayer.dll' = 'SYNTHETIC'
+        'Emberfall_Data/version.txt' = 'SYNTHETIC'
+        'emberfall-save-0123456789abcdef0123456789abcdef.json' = '{"synthetic_test_sentinel":true}'
+    })
+    $saveInstaller = Build-TestInstaller $savePayload 'Setup-PersonalSlot'
+    Invoke-TestInstaller $saveInstaller @('--verify-payload') 'reject-personal-slot-payload' 1
     $script:installerReport.status = 'PASS'
     Write-Host ('PASS: ' + $script:installerReport.assertions + ' installer assertions. Report: ' + (Join-Path $runDirectory 'installer-test-report.json'))
 }

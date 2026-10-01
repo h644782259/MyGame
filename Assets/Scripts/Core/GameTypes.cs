@@ -71,6 +71,7 @@ namespace Emberfall
     {
         public const int SkillCount = 10;
         public const int HotbarSize = 10;
+        public const int HotbarPotion = -2;
         public const int HotbarPages = 3;
         public static readonly int[] DefaultHotbarKeys = { 122, 120, 99, 118, 98, 49, 50, 51, 52, 53 };
         public static readonly string[] ClassNames = { "剑卫", "元素师", "游侠", "唤灵师" };

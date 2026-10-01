@@ -20,6 +20,10 @@ namespace Emberfall
         private EnemyController target;
         private Transform healthBar;
         private Material healthMaterial;
+        private readonly WorldTraversal.Route route = new WorldTraversal.Route();
+        private float NavigationRadius => RadiusFor(Form);
+
+        private static float RadiusFor(Kind form) => form == Kind.Treant ? .7f : form == Kind.Wolf ? .4f : .35f;
 
         public static int Count(PlayerController owner, bool treants = false)
         {
@@ -38,7 +42,7 @@ namespace Emberfall
                 oldest.Dismiss();
             }
             var obj = new GameObject(form == Kind.Wolf ? "灵狼" : form == Kind.Spirit ? "星灵" : "远古树灵");
-            obj.transform.position = Vector3.ClampMagnitude(CombatFx.Flat(at), game.ArenaRadius - 1);
+            obj.transform.position = WorldTraversal.NearestWalkable(at, RadiusFor(form));
             var companion = obj.AddComponent<SummonedCompanion>();
             companion.Owner = owner; companion.session = game; companion.Form = form;
             companion.rank = rank; companion.epoch = owner.CombatEpoch; companion.damage = strength;
@@ -48,7 +52,7 @@ namespace Emberfall
             companion.model = CombatModel.Companion(obj.transform, form);
             companion.BuildHealthBar();
             active.Add(companion);
-            AdvancedSkillVfx.Rune(owner, at, form == Kind.Treant ? 2.6f : 1.3f, GameBalance.ClassColor(HeroClass.Summoner), .7f, rank);
+            AdvancedSkillVfx.Rune(owner, obj.transform.position, form == Kind.Treant ? 2.6f : 1.3f, GameBalance.ClassColor(HeroClass.Summoner), .7f, rank);
             return companion;
         }
 
@@ -79,7 +83,8 @@ namespace Emberfall
             float earliest = maximumFraction;
             foreach (var pet in active)
             {
-                if (pet != null && pet.IsAlive && CombatFx.SegmentDistance(pet.transform.position, previous, current) < (pet.Form == Kind.Treant ? .9f : .48f))
+                if (pet != null && pet.IsAlive && CombatFx.SegmentDistance(pet.transform.position, previous, current) < (pet.Form == Kind.Treant ? .9f : .48f)
+                    && WorldTraversal.HasLineOfSight(previous, pet.transform.position))
                 {
                     float fraction = segment.sqrMagnitude < .00001f ? 0 : Mathf.Clamp01(Vector3.Dot(CombatFx.Flat(pet.transform.position - previous), segment) / segment.sqrMagnitude);
                     if (fraction <= earliest) { earliest = fraction; first = pet; }
@@ -133,16 +138,31 @@ namespace Emberfall
             cooldown -= dt;
             attackPose = Mathf.Max(0, attackPose - dt * 3);
             target = AcquireTarget();
-            Vector3 destination = target == null ? Owner.transform.position - Owner.transform.forward * 1.6f + Owner.transform.right * (Form == Kind.Wolf ? -1.7f : 1.7f) : target.transform.position;
+            Vector3 followAnchor = WorldTraversal.NearestWalkable(Owner.transform.position - Owner.transform.forward * 1.6f + Owner.transform.right * (Form == Kind.Wolf ? -1.7f : 1.7f), NavigationRadius);
+            if (!WorldTraversal.HasGroundPath(Owner.transform.position, followAnchor, .12f))
+                followAnchor = WorldTraversal.NearestWalkable(Owner.transform.position, NavigationRadius);
+            if (Vector3.Distance(transform.position, Owner.transform.position) > 23
+                && WorldTraversal.HasGroundPath(transform.position, Owner.transform.position, NavigationRadius)
+                && WorldTraversal.HasGroundPath(transform.position, followAnchor, NavigationRadius)
+                && WorldTraversal.HasLineOfSight(transform.position, followAnchor))
+            {
+                CombatFx.Ring(transform.position, .7f, GameBalance.ClassColor(HeroClass.Summoner), .25f, .15f);
+                transform.position = followAnchor;
+                CombatFx.Ring(transform.position, .7f, GameBalance.ClassColor(HeroClass.Summoner), .25f, .15f);
+            }
+            Vector3 destination = target == null ? followAnchor : target.transform.position;
             Vector3 delta = CombatFx.Flat(destination - transform.position);
             float attackRange = Form == Kind.Spirit ? 7.5f : Form == Kind.Treant ? 2.8f : 1.4f;
-            bool moving = delta.magnitude > (target == null ? .5f : attackRange * .85f);
-            if (delta.sqrMagnitude > .01f) transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.LookRotation(delta), 1 - Mathf.Exp(-10 * dt));
-            if (moving) transform.position += delta.normalized * Mathf.Min(delta.magnitude, dt * (Form == Kind.Treant ? 4.2f : 7f));
-            if (Vector3.Distance(transform.position, Owner.transform.position) > 23) transform.position = Owner.transform.position - Owner.transform.forward * 2;
-            transform.position = Vector3.ClampMagnitude(CombatFx.Flat(transform.position), session.ArenaRadius - .9f);
+            bool attackPath = target == null || CanReachTarget(target.transform.position);
+            bool moving = delta.magnitude > (target == null ? .5f : attackRange * .85f) || !attackPath;
+            Vector3 heading = moving ? route.Direction(transform.position, destination, NavigationRadius) : delta.normalized;
+            if (heading.sqrMagnitude > .01f) transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.LookRotation(heading), 1 - Mathf.Exp(-10 * dt));
+            Vector3 previous = transform.position;
+            transform.position = WorldTraversal.Move(transform.position, moving ? heading * Mathf.Min(delta.magnitude, dt * (Form == Kind.Treant ? 4.2f : 7f)) : Vector3.zero, NavigationRadius);
+            moving = (transform.position - previous).sqrMagnitude > .000001f;
             model.Animate(moving ? 1f : 0, attackPose, false);
-            if (target != null && delta.magnitude <= attackRange && cooldown <= 0)
+            delta = CombatFx.Flat(destination - transform.position);
+            if (target != null && delta.magnitude <= attackRange && cooldown <= 0 && CanReachTarget(target.transform.position))
             {
                 attackPose = 1;
                 cooldown = Form == Kind.Treant ? 2.2f : Form == Kind.Spirit ? 1.2f : .85f;
@@ -152,7 +172,8 @@ namespace Emberfall
                 {
                     CombatFx.Ring(transform.position, 3.3f * GameBalance.SkillRangeMultiplier(rank), new Color(.48f, 1f, .63f), .4f, .2f);
                     foreach (var enemy in session.Enemies.ToArray())
-                        if (enemy != null && !enemy.IsDead && CombatFx.Flat(enemy.transform.position - transform.position).magnitude < 3.3f * GameBalance.SkillRangeMultiplier(rank))
+                        if (enemy != null && !enemy.IsDead && CombatFx.Flat(enemy.transform.position - transform.position).magnitude < 3.3f * GameBalance.SkillRangeMultiplier(rank)
+                            && WorldTraversal.HasGroundPath(transform.position, enemy.transform.position, .12f))
                         {
                             enemy.TakeDamage(damage * 1.45f, enemy.transform.position - transform.position, .55f, .3f);
                             if (!enemy.IsDead) enemy.StatusEffects.Knockdown(.45f + rank * .12f);
@@ -164,6 +185,13 @@ namespace Emberfall
                     target.TakeDamage(damage * .65f, delta.normalized, .13f, .05f);
                 }
             }
+        }
+
+        private bool CanReachTarget(Vector3 position)
+        {
+            return Form == Kind.Spirit
+                ? WorldTraversal.HasLineOfSight(transform.position, position)
+                : WorldTraversal.HasGroundPath(transform.position, position, .12f);
         }
 
         private void LateUpdate()

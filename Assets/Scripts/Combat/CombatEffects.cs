@@ -125,6 +125,8 @@ namespace Emberfall
         // chosen at cast time; an arrow gets a very short, bounded correction.
         public static void BasicShot(PlayerController player,GameSession game,Vector3 muzzle,Vector3 target,float amount,Color tint,bool arrow,EnemyController selected)
         {
+            if (!WorldTraversal.HasLineOfSight(player.transform.position, muzzle))
+            { CombatFx.Ring(player.transform.position, .4f, tint, .15f); return; }
             Vector3 direction=CombatFx.Flat(target-muzzle);
             if(direction.sqrMagnitude<.0001f) direction=player.transform.forward;
             CombatProjectile projectile=Make(muzzle,direction,tint,arrow);
@@ -211,11 +213,24 @@ namespace Emberfall
                     direction=Vector3.RotateTowards(direction,towards,70f*Mathf.Deg2Rad*dt,0).normalized;
             }
             Vector3 previous = transform.position;
-            transform.position += direction * speed * dt;
+            Vector3 nextPosition = previous + direction * speed * dt;
+            bool terrainHit = !WorldTraversal.HasLineOfSight(previous, nextPosition);
+            if (terrainHit)
+            {
+                float clear = 0, blocked = 1;
+                for (int sample = 0; sample < 10; sample++)
+                {
+                    float fraction = (clear + blocked) * .5f;
+                    if (WorldTraversal.HasLineOfSight(previous, Vector3.Lerp(previous, nextPosition, fraction))) clear = fraction;
+                    else blocked = fraction;
+                }
+                nextPosition = Vector3.Lerp(previous, nextPosition, clear);
+            }
+            transform.position = nextPosition;
             if(bodyHeightFlight)
             {
                 if(basicAimTarget!=null && !basicAimTarget.IsDead && basicAimTarget.gameObject.activeInHierarchy) impactHeight=owner.EnemyBodyPoint(basicAimTarget).y;
-                distanceTravelled+=speed*dt;
+                distanceTravelled += CombatFx.Flat(nextPosition - previous).magnitude;
                 Vector3 point=transform.position;
                 point.y=Mathf.Lerp(launchHeight,impactHeight,Mathf.Clamp01(distanceTravelled/aimedDistance));
                 transform.position=point;
@@ -223,7 +238,7 @@ namespace Emberfall
             }
             if (hostile)
             {
-                bool strikesPlayer = CombatFx.SegmentDistance(session.Player.transform.position, previous, transform.position) < radius + .46f;
+                bool strikesPlayer = CombatFx.SegmentDistance(session.Player.transform.position, previous, transform.position) < radius + .46f && WorldTraversal.HasLineOfSight(previous, session.Player.transform.position);
                 Vector3 segment = CombatFx.Flat(transform.position - previous);
                 float playerFraction = !strikesPlayer ? 1f : segment.sqrMagnitude < .00001f ? 0 : Mathf.Clamp01(Vector3.Dot(CombatFx.Flat(session.Player.transform.position - previous), segment) / segment.sqrMagnitude);
                 if (SummonedCompanion.HitHostileProjectile(previous, transform.position, damage, playerFraction))
@@ -233,6 +248,7 @@ namespace Emberfall
                     session.Player.TakeDamage(damage);
                     CombatFx.Ring(transform.position, .65f, color, .18f);
                     Destroy(gameObject);
+                    return;
                 }
             }
             else
@@ -243,6 +259,7 @@ namespace Emberfall
                     if (enemy == null || enemy.IsDead || hitTargets.Contains(enemy)) continue;
                     float hitRadius = enemy.IsBoss ? 1.05f : .6f;
                     if (CombatFx.SegmentDistance(enemy.transform.position, previous, transform.position) > hitRadius + radius) continue;
+                    if (!WorldTraversal.HasLineOfSight(previous, enemy.transform.position)) continue;
                     hitTargets.Add(enemy);
                     Vector3 hitPosition = enemy.transform.position;
                     enemy.TakeDamage(damage, direction, .18f);
@@ -261,6 +278,7 @@ namespace Emberfall
                     i=Mathf.Min(i,session.Enemies.Count);
                 }
             }
+            if (terrainHit) { CombatFx.Ring(transform.position, .4f, color, .15f); Destroy(gameObject); return; }
             float bound = session.ArenaRadius + 3f;
             if (Mathf.Abs(transform.position.x) > bound || Mathf.Abs(transform.position.z) > bound) Destroy(gameObject);
         }
@@ -335,7 +353,7 @@ namespace Emberfall
                     if(enemy==null || enemy.IsDead) continue;
                     Vector3 delta=CombatFx.Flat(transform.position-enemy.transform.position);
                     if(delta.magnitude<radius+1f && delta.magnitude>.55f)
-                        enemy.transform.position=Vector3.ClampMagnitude(CombatFx.Flat(enemy.transform.position+delta.normalized*Mathf.Min(delta.magnitude-.55f,pullStrength*Time.deltaTime*(enemy.IsBoss?.25f:1f))),session.ArenaRadius-.7f);
+                        enemy.transform.position = WorldTraversal.Move(enemy.transform.position, delta.normalized * Mathf.Min(delta.magnitude - .55f, pullStrength * Time.deltaTime * (enemy.IsBoss ? .25f : 1f)), enemy.NavigationRadius);
                 }
             }
             if (fallingOrb != null)

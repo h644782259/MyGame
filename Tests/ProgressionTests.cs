@@ -40,6 +40,7 @@ public static class ProgressionTests
         InventoryAndEconomy();
         WorldLootIsCollectedOnce();
         HotbarDragMovesAndSwaps();
+        ConsumableHotbarAndPersistence();
         SummonerHasDistinctStatsAndEquipment();
         UpgradeTransferAndPreview();
         LegacyUpgradesMigrateWithoutAttributeLoss();
@@ -57,6 +58,9 @@ public static class ProgressionTests
         TenSkillRanksAndPointBudget();
         PassiveStatsAreImmediateAndPersistent();
         SaveTransfersBetweenIndependentDirectories();
+        MultipleSaveSlotsAndSnapshots();
+        SaveSlotRecoveryAndFailures();
+        NewSlotsWithoutLegacyAreDiscoverable();
         return "PASS: " + assertions + " assertions across " + cases + " isolated progression scenarios.";
     }
 
@@ -67,6 +71,135 @@ public static class ProgressionTests
         Check(!result.HasSave, "constructor does not create a save");
         result.NewGame(heroClass);
         return result;
+    }
+
+    private static void MultipleSaveSlotsAndSnapshots()
+    {
+        var service = Fresh(HeroClass.Vanguard);
+        service.AddGold(41);
+        string legacyPath = service.SaveFilePath;
+        string legacyBytes = File.ReadAllText(legacyPath);
+        Check(service.GetSaveSlots().Count == 1 && service.GetSaveSlots()[0].Id == "legacy" && service.GetSaveSlots()[0].IsCurrent, "old save is listed as current legacy without renaming");
+        int changes = 0;
+        service.Changed += () => changes++;
+        Check(service.CreateNewSlot(HeroClass.Ranger) && changes == 1 && service.Profile.heroClass == HeroClass.Ranger && service.Profile.gold == 60, "new role creates a selected independent save and emits one change");
+        string rangerPath = service.SaveFilePath;
+        string rangerId = service.GetSaveSlots().Find(slot => slot.IsCurrent).Id;
+        Guid parsed;
+        Check(Guid.TryParseExact(rangerId, "N", out parsed) && Path.GetFileName(rangerPath) == "emberfall-save-" + rangerId + ".json" && File.Exists(rangerPath + ".bak"), "new save uses canonical GuidN primary and its own backup");
+        Check(File.ReadAllText(legacyPath) == legacyBytes && service.SaveDirectory == Path.GetDirectoryName(legacyPath), "creating a role preserves legacy bytes and the root save directory");
+        service.AddGold(23);
+        string rangerBytes = File.ReadAllText(rangerPath);
+        Check(service.CreateNewSlot(HeroClass.Summoner), "another new role creates a third save");
+        string summonerPath = service.SaveFilePath;
+        string summonerId = service.GetSaveSlots().Find(slot => slot.IsCurrent).Id;
+        Check(service.HasSave && service.GetSaveSlots().Count == 3 && summonerId != rangerId && service.Profile.heroClass == HeroClass.Summoner, "multiple roles coexist without a manifest");
+        Check(File.ReadAllText(legacyPath) == legacyBytes && File.ReadAllText(rangerPath) == rangerBytes, "third role does not overwrite either existing character");
+        Check(service.LoadSlot(rangerId.ToUpperInvariant()) && service.Profile.heroClass == HeroClass.Ranger && service.Profile.gold == 83 && service.SaveFilePath == rangerPath, "explicit slot selection loads and normalizes a valid GuidN");
+        string summonerBytes = File.ReadAllText(summonerPath);
+        service.AddGold(9);
+        Check(File.ReadAllText(summonerPath) == summonerBytes && File.ReadAllText(legacyPath) == legacyBytes && service.Profile.gold == 92, "autosave writes only the chosen character");
+        Check(service.Load() && service.Profile.gold == 92 && service.SaveFilePath == rangerPath, "parameterless Load reloads the selected slot within an active service");
+        var freshReader = new ProgressionService(service.SaveDirectory);
+        Check(freshReader.Load() && freshReader.Profile.heroClass == HeroClass.Vanguard && freshReader.Profile.gold == 101, "a fresh service parameterless Load preserves original legacy behavior");
+
+        GameProfile oldProfile = service.Profile;
+        string oldJson = UnityEngine.JsonUtility.ToJson(oldProfile, true);
+        string oldSave = File.ReadAllText(rangerPath);
+        changes = 0;
+        Check(service.SaveAsNewSlot() && changes == 1 && service.GetSaveSlots().Count == 4, "Save As commits one new snapshot and selects it once");
+        string snapshotPath = service.SaveFilePath;
+        string snapshotId = service.GetSaveSlots().Find(slot => slot.IsCurrent).Id;
+        Check(snapshotPath != rangerPath && !ReferenceEquals(oldProfile, service.Profile) && UnityEngine.JsonUtility.ToJson(service.Profile, true) == oldJson && File.ReadAllText(rangerPath) == oldSave, "snapshot deep-copies full progression and preserves the original slot bytes");
+        service.Profile.inventory[0].name = "snapshot-specific item";
+        service.AddGold(15);
+        Check(oldProfile.inventory[0].name != service.Profile.inventory[0].name && File.ReadAllText(rangerPath) == oldSave, "later snapshot changes cannot mutate original items or file");
+
+        DateTime start = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+        string[] paths = { legacyPath, rangerPath, summonerPath, snapshotPath };
+        for (int i = 0; i < paths.Length; i++) { File.SetLastWriteTimeUtc(paths[i], start.AddDays(i)); File.SetLastWriteTimeUtc(paths[i] + ".bak", start.AddDays(i)); }
+        File.WriteAllText(Path.Combine(service.SaveDirectory, "emberfall-save-not-a-guid.json"), "unrelated");
+        File.WriteAllText(Path.Combine(service.SaveDirectory, "emberfall-save.json.tmp"), "interrupted temporary write");
+        string currentJson = UnityEngine.JsonUtility.ToJson(service.Profile, true);
+        changes = 0;
+        List<SaveSlotInfo> slots = service.GetSaveSlots();
+        Check(slots.Count == 4 && slots[0].Id == snapshotId && slots[1].Id == summonerId && slots[2].Id == rangerId && slots[3].Id == "legacy", "slot discovery ignores temp/unknown files and sorts newest first");
+        Check(slots.TrueForAll(slot => slot.CanLoad && !slot.RecoveredFromBackup && slot.Level == 1 && slot.SavedAtUtc.Kind == DateTimeKind.Utc && !string.IsNullOrWhiteSpace(slot.DisplayName)) && slots.FindAll(slot => slot.IsCurrent).Count == 1, "slot metadata exposes readable character identity UTC dates and one current slot");
+        Check(changes == 0 && currentJson == UnityEngine.JsonUtility.ToJson(service.Profile, true), "listing slots does not mutate the active profile or emit an event");
+
+        string destination = Path.Combine(root, "case-" + (++cases));
+        Directory.CreateDirectory(destination);
+        foreach (string path in paths) { File.Copy(path, Path.Combine(destination, Path.GetFileName(path))); File.Copy(path + ".bak", Path.Combine(destination, Path.GetFileName(path) + ".bak")); }
+        var migrated = new ProgressionService(destination);
+        Check(migrated.GetSaveSlots().Count == 4 && migrated.HasSave, "copying only JSON and each backup discovers all slots on another installation");
+        Check(migrated.LoadSlot(snapshotId) && migrated.Profile.gold == 107 && migrated.Profile.inventory[0].name == "snapshot-specific item", "copied snapshot retains all independent progress");
+        Check(migrated.LoadSlot(rangerId) && migrated.Profile.gold == 92 && migrated.Profile.inventory[0].name != "snapshot-specific item" && migrated.LoadSlot("legacy") && migrated.Profile.gold == 101, "migration retains separate original and legacy characters without machine-bound index");
+        Check(Directory.GetFiles(service.SaveDirectory, "*manifest*").Length == 0, "multiple saves require no manifest file");
+    }
+
+    private static void SaveSlotRecoveryAndFailures()
+    {
+        var service = Fresh(HeroClass.Arcanist);
+        string legacyPath = service.SaveFilePath;
+        Check(service.CreateNewSlot(HeroClass.Summoner), "recovery fixture creates independent slot");
+        string slotPath = service.SaveFilePath;
+        string slotId = service.GetSaveSlots().Find(slot => slot.IsCurrent).Id;
+        service.AddGold(40);
+        string goodBackup = File.ReadAllText(slotPath + ".bak");
+        File.WriteAllText(slotPath, "damaged primary");
+        SaveSlotInfo recoverable = service.GetSaveSlots().Find(slot => slot.Id == slotId);
+        Check(recoverable.CanLoad && recoverable.RecoveredFromBackup && recoverable.HeroClass == HeroClass.Summoner && recoverable.Level == 1, "slot preview uses valid backup metadata when primary is damaged");
+        Check(service.LoadSlot(slotId) && service.Profile.gold == 60 && service.LastError.Contains("备份"), "selected damaged slot restores its own backup with an explanation");
+        service.AddGold(5);
+        Check(File.ReadAllText(slotPath + ".bak") == goodBackup && service.Profile.gold == 65, "saving recovered slot preserves valid backup instead of corrupt primary");
+        File.Delete(slotPath);
+        Check(service.GetSaveSlots().Find(slot => slot.Id == slotId).RecoveredFromBackup && service.LoadSlot(slotId) && service.Profile.gold == 60, "backup-only slots remain discoverable and loadable");
+        File.WriteAllText(slotPath, "bad");
+        File.WriteAllText(slotPath + ".bak", "also bad");
+        SaveSlotInfo broken = service.GetSaveSlots().Find(slot => slot.Id == slotId);
+        Check(!broken.CanLoad && !broken.RecoveredFromBackup && broken.Level == 0 && service.HasSave, "fully damaged slot stays visible but unreadable");
+        Check(service.LoadSlot("legacy") && service.Profile.heroClass == HeroClass.Arcanist, "a damaged slot does not prevent loading a good independent slot");
+
+        GameProfile original = service.Profile;
+        string before = UnityEngine.JsonUtility.ToJson(original, true);
+        string saved = File.ReadAllText(legacyPath);
+        int changes = 0;
+        service.Changed += () => changes++;
+        foreach (string invalid in new[] { null, "", "../emberfall-save", "..\\outside", "legacy/../outside", "Legacy", Guid.NewGuid().ToString("D"), slotId + ".json", Guid.NewGuid().ToString("N") })
+            Check(!service.LoadSlot(invalid), "invalid or missing slot ID is rejected without path traversal");
+        Check(!service.LoadSlot(slotId) && !service.CreateNewSlot((HeroClass)999), "bad slot and invalid new class are rejected");
+        Check(ReferenceEquals(service.Profile, original) && UnityEngine.JsonUtility.ToJson(service.Profile, true) == before && service.SaveFilePath == legacyPath && changes == 0 && File.ReadAllText(legacyPath) == saved, "failed selection/new role leaves current profile path file and events untouched");
+        string movedDirectory = service.SaveDirectory + "-preserved";
+        Directory.Move(service.SaveDirectory, movedDirectory);
+        File.WriteAllText(service.SaveDirectory, "blocks directory creation");
+        try
+        {
+            Check(!service.SaveAsNewSlot() && !service.CreateNewSlot(HeroClass.Ranger), "real write failures reject Save As and new role creation");
+            Check(ReferenceEquals(service.Profile, original) && UnityEngine.JsonUtility.ToJson(service.Profile, true) == before && service.SaveFilePath == legacyPath && changes == 0 && service.LastError.Contains("保存失败"), "write failure does not switch or destroy active state");
+        }
+        finally
+        {
+            File.Delete(service.SaveDirectory);
+            Directory.Move(movedDirectory, service.SaveDirectory);
+        }
+        Check(File.ReadAllText(legacyPath) == saved && service.GetSaveSlots().Count == 2, "failed creation leaves originals intact and no phantom new save");
+        File.WriteAllText(legacyPath, "broken legacy");
+        File.WriteAllText(legacyPath + ".bak", "broken legacy backup");
+        Check(service.HasSave && service.GetSaveSlots().TrueForAll(slot => !slot.CanLoad), "HasSave includes a directory containing only damaged slots");
+    }
+
+    private static void NewSlotsWithoutLegacyAreDiscoverable()
+    {
+        string directory = Path.Combine(root, "case-" + (++cases));
+        Directory.CreateDirectory(directory);
+        File.WriteAllText(Path.Combine(directory,"emberfall-save-legacy.json"),"not a canonical slot");
+        File.WriteAllText(Path.Combine(directory,"emberfall-save.json.tmp"),"incomplete write");
+        var service = new ProgressionService(directory);
+        Check(!service.HasSave && service.GetSaveSlots().Count == 0, "unknown new-format legacy aliases and temporary files are not save slots");
+        Check(service.CreateNewSlot(HeroClass.Summoner) && !File.Exists(Path.Combine(directory,"emberfall-save.json")), "first modern character needs no legacy placeholder file");
+        string id = service.GetSaveSlots()[0].Id;
+        var restarted = new ProgressionService(directory);
+        Check(restarted.HasSave && restarted.GetSaveSlots().Count == 1 && restarted.LoadSlot(id) && restarted.Profile.heroClass == HeroClass.Summoner, "fresh process discovers and loads modern slots even when no legacy file exists");
     }
 
     private static void NewCharacterAndPersistence()
@@ -225,6 +358,77 @@ public static class ProgressionTests
             Check(!service.MoveHotbarSkill(0, 8), hero + " a passive cannot become a draggable active source");
             service.Profile.equippedSkills[20] = oldSlot;
         }
+    }
+
+    private static void ConsumableHotbarAndPersistence()
+    {
+        foreach (HeroClass hero in Enum.GetValues(typeof(HeroClass)))
+        {
+            var service = Fresh(hero);
+            int changes = 0;
+            service.Changed += () => changes++;
+            int originalPotions = service.Profile.potions;
+            Check(service.AssignConsumable(8) && service.Profile.equippedSkills[8] == GameBalance.HotbarPotion && changes == 1,
+                hero + " level-one character can assign a potion before learning any skills");
+            Check(service.Profile.potions == originalPotions && service.Profile.skillPoints == 0 && Array.TrueForAll(service.Profile.skillRanks, rank => rank == 0),
+                hero + " assigning a potion does not consume inventory or spend progression");
+            string saved = File.ReadAllText(service.SaveFilePath);
+            DateTime written = File.GetLastWriteTimeUtc(service.SaveFilePath);
+            Check(!service.AssignConsumable(-1) && !service.AssignConsumable(10) && !service.AssignConsumable(8) && !service.AssignSkill(9, GameBalance.HotbarPotion),
+                hero + " invalid consumable slots, same-slot assignment and skill API sentinel misuse reject");
+            Check(changes == 1 && File.ReadAllText(service.SaveFilePath) == saved && File.GetLastWriteTimeUtc(service.SaveFilePath) == written,
+                hero + " rejected consumable changes do not notify or write");
+            Check(service.MoveHotbarSkill(8, 0) && service.Profile.equippedSkills[0] == GameBalance.HotbarPotion && service.Profile.equippedSkills[8] == -1,
+                hero + " potion drag replaces an unlearned placeholder and clears source");
+            Check(service.AssignConsumable(9) && service.Profile.equippedSkills[9] == GameBalance.HotbarPotion && service.Profile.equippedSkills[0] == -1,
+                hero + " repeated potion assignment relocates instead of duplicating");
+            ReachLevel(service, 2);
+            Check(service.LearnSkill(0) && service.AssignSkill(0, 0), hero + " learns an active skill for mixed hotbar swaps");
+            changes = 0;
+            Check(service.MoveHotbarSkill(9, 0) && service.Profile.equippedSkills[0] == GameBalance.HotbarPotion && service.Profile.equippedSkills[9] == 0 && changes == 1,
+                hero + " potion and learned skill drag swap atomically");
+            Check(service.AssignConsumable(9) && service.Profile.equippedSkills[9] == GameBalance.HotbarPotion && service.Profile.equippedSkills[0] == 0,
+                hero + " assigning potion to learned skill swaps the displaced skill back");
+            Check(service.AssignSkill(9, 0) && service.Profile.equippedSkills[9] == 0 && service.Profile.equippedSkills[0] == GameBalance.HotbarPotion,
+                hero + " skill assignment onto potion preserves the displaced potion");
+            while (service.Profile.potions > 0) Check(service.UsePotion(), hero + " exhausts real potion inventory");
+            Check(service.Profile.equippedSkills[0] == GameBalance.HotbarPotion && !service.UsePotion(), hero + " last potion consumption retains empty hotbar entry");
+            Check(service.MoveHotbarSkill(0, 8) && service.AssignConsumable(0) && service.Profile.potions == 0,
+                hero + " zero-quantity potion can still move and be configured");
+            Check(service.SetHotbarPage(1) && service.AssignConsumable(4) && service.SetHotbarPage(2) && service.AssignConsumable(6),
+                hero + " every hotbar page can carry its own potion shortcut");
+            Check(service.Profile.equippedSkills[0] == GameBalance.HotbarPotion && service.Profile.equippedSkills[14] == GameBalance.HotbarPotion && service.Profile.equippedSkills[26] == GameBalance.HotbarPotion,
+                hero + " configuring another page preserves earlier potion positions");
+            CheckLoadout(service.Profile, hero + " potion entries remain unique within each page");
+            var restored = new ProgressionService(service.SaveDirectory);
+            Check(restored.Load() && restored.Profile.potions == 0 && restored.Profile.hotbarPage == 2 && restored.Profile.equippedSkills[0] == GameBalance.HotbarPotion && restored.Profile.equippedSkills[14] == GameBalance.HotbarPotion && restored.Profile.equippedSkills[26] == GameBalance.HotbarPotion,
+                hero + " zero-count consumable entries persist on all three pages");
+            saved = File.ReadAllText(service.SaveFilePath);
+            string originalPath = service.SaveFilePath;
+            Check(service.SaveAsNewSlot() && service.Profile.equippedSkills[26] == GameBalance.HotbarPotion && File.ReadAllText(originalPath) == saved,
+                hero + " snapshot preserves potion entries and original save bytes");
+            Check(service.AssignSkill(6, -1) && service.Profile.equippedSkills[26] == -1 && service.Profile.potions == 0,
+                hero + " empty-slot assignment removes shortcut without affecting inventory");
+            Check(service.Profile.equippedSkills[0] == GameBalance.HotbarPotion && service.Profile.equippedSkills[14] == GameBalance.HotbarPotion,
+                hero + " clearing one potion page preserves the others");
+            Check(restored.Load() && restored.Profile.equippedSkills[26] == GameBalance.HotbarPotion,
+                hero + " modifying snapshot cannot change source potion layout");
+            Check(service.BuyPotion() && service.Profile.potions == 1 && service.Profile.equippedSkills[0] == GameBalance.HotbarPotion,
+                hero + " restocking preserves existing zero-count shortcut");
+        }
+        var repair = Fresh();
+        WriteSkillFixture("null", "[-2,-2,-3,99,3,0,-1,-1,-1,-1,-2,-2]", 1);
+        Check(repair.Load() && repair.Profile.equippedSkills[0] == GameBalance.HotbarPotion && repair.Profile.equippedSkills[1] == -1 && repair.Profile.equippedSkills[2] == -1 && repair.Profile.equippedSkills[3] == -1 && repair.Profile.equippedSkills[4] == -1 && repair.Profile.equippedSkills[5] == 0,
+            "loadout repair preserves first potion while removing duplicate, passive and invalid entries");
+        Check(repair.Profile.equippedSkills[10] == GameBalance.HotbarPotion && repair.Profile.equippedSkills[11] == -1,
+            "repair permits a separate potion shortcut per page");
+        CheckLoadout(repair.Profile, "repaired mixed shortcut array obeys per-page uniqueness");
+        int[] validLoadout = repair.Profile.equippedSkills;
+        repair.Profile.equippedSkills = null;
+        Check(!repair.AssignConsumable(0) && !repair.MoveHotbarSkill(0, 1), "broken in-memory loadout rejects potion operations without exception");
+        repair.Profile.equippedSkills = validLoadout;
+        repair.Profile.hotbarPage = 3;
+        Check(!repair.AssignConsumable(0), "out-of-range page rejects potion operation");
     }
 
     private static void SummonerHasDistinctStatsAndEquipment()
@@ -780,27 +984,29 @@ public static class ProgressionTests
         Check(service.SetHotbarKey(0, 120) && service.Profile.hotbarKeys[0] == 120 && service.Profile.hotbarKeys[1] == 122, "binding an occupied key swaps the two bindings");
         Check(GameBalance.DefaultHotbarKeys[0] == 122 && GameBalance.DefaultHotbarKeys[1] == 120, "user bindings cannot mutate global defaults");
         Check(service.SetHotbarKey(0, 120) && service.Profile.hotbarKeys[1] == 122, "same-slot key reassignment is idempotent");
-        Check(service.SetHotbarKey(9, 113) && service.Profile.hotbarKeys[9] == 113, "unused letter key can be assigned");
+        Check(service.SetHotbarKey(9, 101) && service.Profile.hotbarKeys[9] == 101, "unused letter key can be assigned");
         Check(service.SetHotbarKey(3, 49) && service.Profile.hotbarKeys[3] == 49 && service.Profile.hotbarKeys[5] == 118, "digit binding swaps existing hotkey");
         int[] invalid = { 0, 27, 32, 97, 100, 102, 105, 106, 107, 115, 119, 999 };
         foreach (int key in invalid)
             Check(!service.SetHotbarKey(0, key) && service.Profile.hotbarKeys[0] == 120, "reserved and unsupported keys cannot replace a valid binding");
-        Check(!service.SetHotbarKey(-1, 113) && !service.SetHotbarKey(10, 113), "hotkey slot bounds enforced");
+        Check(!service.SetHotbarKey(-1, 101) && !service.SetHotbarKey(10, 101), "hotkey slot bounds enforced");
         if (GameBalance.IsBindableKey(282)) Check(service.SetHotbarKey(8, 282), "F1 can be assigned when enabled by key policy");
         if (GameBalance.IsBindableKey(293)) Check(service.SetHotbarKey(7, 293), "F12 can be assigned when enabled by key policy");
         int[] expected = (int[])service.Profile.hotbarKeys.Clone();
         var restored = new ProgressionService();
         Check(restored.Load(), "custom keyboard layout loads");
         for (int i = 0; i < 10; i++) Check(restored.Profile.hotbarKeys[i] == expected[i], "custom key order persists");
-        string[] damaged = { "null", "[]", "[120]", "[120,120,97,0,999,282,113,113,49,49,50]" };
+        string[] damaged = { "null", "[]", "[120]", "[120,120,97,0,999,282,101,101,49,49,50]" };
         for (int i = 0; i < damaged.Length; i++)
         {
             WriteSkillFixture("null", "null", 1, damaged[i], i % 2 == 0 ? -1 : 100);
             Check(service.Load() && service.Profile.hotbarPage == 0, "invalid selected page returns to page one");
             CheckHotbarKeys(service.Profile.hotbarKeys, "short or corrupt key array repaired to ten valid unique keys");
             if (i == 2) Check(service.Profile.hotbarKeys[0] == 120 && service.Profile.hotbarKeys[1] == 122, "short key repair preserves chosen key and fills defaults without duplication");
-            if (i == 3) Check(service.Profile.hotbarKeys[0] == 120 && service.Profile.hotbarKeys[6] == 113 && service.Profile.hotbarKeys[8] == 49, "key repair preserves first valid occurrence in each duplicate group");
+            if (i == 3) Check(service.Profile.hotbarKeys[0] == 120 && service.Profile.hotbarKeys[6] == 101 && service.Profile.hotbarKeys[8] == 49, "key repair preserves first valid occurrence in each duplicate group");
         }
+        WriteSkillFixture("null", "null", 1, "[113,120,99,118,98,49,50,51,52,53]", 0);
+        Check(service.Load() && service.Profile.hotbarKeys[0] == 113, "Q remains a valid skill binding while Space controls jumping");
     }
 
     private static void TenSkillRanksAndPointBudget()
@@ -903,7 +1109,7 @@ public static class ProgressionTests
         source.Profile.clearedRuns = 5;
         source.Profile.bestFloor = 5;
         Check(source.SetHotbarPage(2) && source.AssignSkill(0, 9) && source.AssignSkill(9, 7), "portable source configures third-page skills");
-        Check(source.SetHotbarKey(0, 113) && source.SetHotbarKey(9, 282), "portable source configures custom keys");
+        Check(source.SetHotbarKey(0, 101) && source.SetHotbarKey(9, 282), "portable source configures custom keys");
         source.Save();
         string sourceJson = File.ReadAllText(source.SaveFilePath);
         string profileJson = UnityEngine.JsonUtility.ToJson(source.Profile, true);
@@ -918,7 +1124,7 @@ public static class ProgressionTests
         Check(imported.SaveDirectory == destination && imported.HasSave && imported.Load(), "fresh service discovers transferred save in its own directory");
         Check(imported.Profile.heroClass == HeroClass.Ranger && imported.Profile.level == 50 && imported.Profile.xp == 23 && imported.Profile.skillPoints == 19, "transferred class, level, XP and unspent points remain intact");
         Check(imported.Profile.inventory.Count == source.Profile.inventory.Count && imported.Profile.weaponId == source.Profile.weaponId && imported.Profile.armorId == source.Profile.armorId && imported.Profile.relicId == source.Profile.relicId, "transferred inventory and equipped IDs remain intact");
-        Check(imported.Profile.hotbarPage == 2 && imported.Profile.equippedSkills[20] == 9 && imported.Profile.equippedSkills[29] == 7 && imported.Profile.hotbarKeys[0] == 113 && imported.Profile.hotbarKeys[9] == 282, "transferred pages and custom key bindings remain intact");
+        Check(imported.Profile.hotbarPage == 2 && imported.Profile.equippedSkills[20] == 9 && imported.Profile.equippedSkills[29] == 7 && imported.Profile.hotbarKeys[0] == 101 && imported.Profile.hotbarKeys[9] == 282, "transferred pages and custom key bindings remain intact");
         Check(UnityEngine.JsonUtility.ToJson(imported.Profile, true) == profileJson, "every serialized profile field survives cross-directory migration exactly");
         imported.AddGold(1);
         Check(File.ReadAllText(source.SaveFilePath) == sourceJson, "saving imported character cannot modify source installation save");
@@ -985,7 +1191,8 @@ public static class ProgressionTests
                 for (int slot = 0; slot < 10; slot++)
                 {
                     int skill = profile.equippedSkills[page * 10 + slot];
-                    if (skill < -1 || skill >= 10 || (skill >= 0 && (GameBalance.IsPassive(skill) || !used.Add(skill)))) valid = false;
+                    if (skill == -1) continue;
+                    if ((skill != GameBalance.HotbarPotion && (skill < 0 || skill >= 10 || GameBalance.IsPassive(skill))) || !used.Add(skill)) valid = false;
                 }
             }
         Check(valid, description);

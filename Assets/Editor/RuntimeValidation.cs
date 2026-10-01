@@ -163,6 +163,9 @@ namespace Emberfall.Editor
             while (audioValidation.MoveNext()) yield return audioValidation.Current;
             yield return new Delay(.25f, false);
 
+            IEnumerator saveSlotValidation = SaveSlotRuntimeValidation.Validate(game, Check, Append);
+            while (saveSlotValidation.MoveNext()) yield return saveSlotValidation.Current;
+
             for (int heroIndex = 0; heroIndex < 4; heroIndex++)
             {
                 HeroClass hero = (HeroClass)heroIndex;
@@ -180,6 +183,10 @@ namespace Emberfall.Editor
                     IEnumerator mobileValidation = MobileValidation.Validate(game, Check, Append);
                     while (mobileValidation.MoveNext()) yield return mobileValidation.Current;
                     validatingPause = false;
+                    IEnumerator cameraValidation = CameraValidation.Validate(game, Check, Append);
+                    while (cameraValidation.MoveNext()) yield return cameraValidation.Current;
+                    IEnumerator traversalValidation = TraversalValidation.Validate(game, Check, Append);
+                    while (traversalValidation.MoveNext()) yield return traversalValidation.Current;
                 }
                 yield return new Delay(.5f);
                 CaptureWorld(hero + "-world.png", false);
@@ -360,7 +367,7 @@ namespace Emberfall.Editor
             Check(!game.IsDead && !game.Player.IsDead && game.Player.Health == game.Player.MaxHealth && game.Progression.Profile.inventory.Count == inventoryBeforeDeath,
                 "Respawn restores health and preserves equipment");
             game.Progression.Save();
-            Check(string.IsNullOrEmpty(game.Progression.LastError) && File.Exists(savePath), "Isolated progress is saved successfully");
+            Check(string.IsNullOrEmpty(game.Progression.LastError) && File.Exists(game.Progression.SaveFilePath), "Isolated progress is saved successfully");
             game.QuitToTitle();
             Check(!game.HasStarted && Time.timeScale == 0, "Save-and-title ends active combat");
             yield return new Delay(.2f, false);

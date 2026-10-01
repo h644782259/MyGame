@@ -189,7 +189,8 @@ namespace Emberfall
                     for(int i=0;i<3+rank-1;i++)
                     {
                         Vector3 dir=Quaternion.Euler(0,(i-(rank+1)*.5f)*9f,0)*forward;
-                        CombatProjectile.Friendly(owner,session,owner.transform.position+dir,dir,damage*1.65f,color,rank>=2,true,false,range,21f*range,rank==3?Nearest(target,8f*range):null);
+                        if (WorldTraversal.HasLineOfSight(owner.transform.position, owner.transform.position + dir))
+                            CombatProjectile.Friendly(owner,session,owner.transform.position+dir,dir,damage*1.65f,color,rank>=2,true,false,range,21f*range,rank==3?Nearest(target,8f*range):null);
                     }
                     if(rank==3) CombatArea.Spawn(owner,session,origin,3f*range,damage*2f,1.2f,.5f,0,1,color);
                     break;
@@ -202,7 +203,8 @@ namespace Emberfall
                     if (mark != null && mark.StatusEffects != null) mark.StatusEffects.Mark(4f, .08f + rank * .04f);
                     Vector3 fireDirection=mark!=null?CombatFx.Flat(mark.transform.position-owner.transform.position).normalized:forward;
                     Vector3 side=Vector3.Cross(Vector3.up,fireDirection)*(step%2==0?-.55f:.55f);
-                    CombatProjectile.Friendly(owner,session,owner.transform.position+side+fireDirection,fireDirection,damage*1.05f,color,rank>=2,true,false,range,24f*range,mark);
+                    if (WorldTraversal.HasLineOfSight(owner.transform.position, owner.transform.position + side + fireDirection))
+                        CombatProjectile.Friendly(owner,session,owner.transform.position+side+fireDirection,fireDirection,damage*1.05f,color,rank>=2,true,false,range,24f*range,mark);
                     if(step%4==0) AdvancedSkillVfx.Beam(owner,owner.transform.position+side+Vector3.up,owner.transform.position+fireDirection*7f+side+Vector3.up,color,.2f,.07f);
                     break;
                 case 9:
@@ -282,7 +284,7 @@ namespace Emberfall
                 if(enemy==null || enemy.IsDead) continue;
                 Vector3 delta=CombatFx.Flat(at-enemy.transform.position);
                 if(delta.magnitude<radius && delta.magnitude>.6f)
-                    enemy.transform.position=Clamp(enemy.transform.position+delta.normalized*Mathf.Min(delta.magnitude-.6f,strength*Time.deltaTime*(enemy.IsBoss?.25f:1f)));
+                    enemy.transform.position = WorldTraversal.Move(enemy.transform.position, delta.normalized * Mathf.Min(delta.magnitude - .6f, strength * Time.deltaTime * (enemy.IsBoss ? .25f : 1f)), enemy.NavigationRadius);
             }
         }
 

@@ -17,7 +17,7 @@ Tools/ReferenceAssemblies/
 Tests/TestResults/
 
 # Personal saves and local credentials must never be published.
-emberfall-save.json*
+emberfall-save*.json*
 .env
 .env.*
 !.env.example

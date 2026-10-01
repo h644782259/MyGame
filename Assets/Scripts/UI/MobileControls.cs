@@ -25,13 +25,14 @@ namespace Emberfall
         }
         public static Vector2 Move { get; private set; }
         public static bool AttackHeld { get; private set; }
-        private static bool dodge, potion;
+        private static bool dodge, potion, jump;
         private int moveFinger = -1000;
         private GameSession session;
         private GameUI ui;
         private Texture2D disc;
         public static bool ConsumeDodge() { bool value = dodge; dodge = false; return Active && value; }
         public static bool ConsumePotion() { bool value = potion; potion = false; return Active && value; }
+        public static bool ConsumeJump() { bool value = jump; jump = false; return Active && value; }
         public static Rect SafeArea { get { return Active && Screen.safeArea.width > 0 ? Screen.safeArea : new Rect(0, 0, Screen.width, Screen.height); } }
         private float Scale { get { Rect safe = SafeArea; return Mathf.Max(.3f, Mathf.Min(safe.width / 1280f, safe.height / 720f)); } }
         private Vector2 Size { get { return SafeArea.size / Scale; } }
@@ -40,18 +41,19 @@ namespace Emberfall
         private Rect Attack { get { return new Rect(Size.x - 183, Size.y - 210, 108, 108); } }
         private Rect Dodge { get { return new Rect(Size.x - 295, Size.y - 265, 78, 78); } }
         private Rect Potion { get { return new Rect(Size.x - 148, Size.y - 338, 76, 76); } }
+        private Rect Jump { get { return new Rect(Size.x - 379, Size.y - 300, 78, 78); } }
         private Rect Cancel { get { return new Rect(Size.x - 291, Size.y - 353, 78, 58); } }
 
         public void Initialize(GameSession owner) { instance = this; session = owner; ui = owner.GetComponent<GameUI>(); ResetInput(); }
         public static void ResetInput()
         {
-            Move = Vector2.zero; AttackHeld = dodge = potion = false;
+            Move = Vector2.zero; AttackHeld = dodge = potion = jump = false;
             if (instance != null) { instance.fingers.Clear(); instance.moveFinger = -1000; }
         }
         private Vector2 ToUI(Vector2 screen) { return (new Vector2(screen.x, Screen.height - screen.y) - Offset) / Scale; }
         public Vector2 ControlScreenPoint(string name)
         {
-            Rect control = name == "move" ? Joystick : name == "dodge" ? Dodge : name == "potion" ? Potion : name == "cancel" ? Cancel : Attack;
+            Rect control = name == "move" ? Joystick : name == "dodge" ? Dodge : name == "potion" ? Potion : name == "jump" ? Jump : name == "cancel" ? Cancel : Attack;
             Vector2 point = control.center * Scale + Offset;
             return new Vector2(point.x, Screen.height - point.y);
         }
@@ -59,14 +61,14 @@ namespace Emberfall
         {
             if (!Active || instance == null || instance.session == null || instance.session.InputBlocked) return false;
             Vector2 point = instance.ToUI(screen);
-            return instance.Joystick.Contains(point) || instance.Attack.Contains(point) || instance.Dodge.Contains(point) || instance.Potion.Contains(point) || instance.Cancel.Contains(point);
+            return instance.Joystick.Contains(point) || instance.Attack.Contains(point) || instance.Dodge.Contains(point) || instance.Potion.Contains(point) || instance.Jump.Contains(point) || instance.Cancel.Contains(point);
         }
         private void Update()
         {
             if (!Active || session == null || !session.HasStarted) { ResetInput(); return; }
             if (session.InputBlocked)
             {
-                Move = Vector2.zero; AttackHeld = dodge = potion = false; moveFinger = -1000;
+                Move = Vector2.zero; AttackHeld = dodge = potion = jump = false; moveFinger = -1000;
                 staleFingers.Clear();
                 foreach (KeyValuePair<int, Role> finger in fingers) if (finger.Value != Role.Skill) staleFingers.Add(finger.Key);
                 foreach (int finger in staleFingers) fingers.Remove(finger);
@@ -104,6 +106,7 @@ namespace Emberfall
                 }
                 else if (Dodge.Contains(point)) { dodge = true; role = Role.Consumed; }
                 else if (Potion.Contains(point)) { potion = true; role = Role.Consumed; }
+                else if (Jump.Contains(point)) { jump = true; role = Role.Consumed; }
                 else if (Cancel.Contains(point))
                 {
                     if (targeting != null) targeting.Cancel();
@@ -152,8 +155,9 @@ namespace Emberfall
             SkillTargetingController targeting = session.Player.GetComponent<SkillTargetingController>();
             SkillChargeController charge = session.Player.GetComponent<SkillChargeController>();
             Circle(Attack, AttackHeld ? new Color(.76f, .54f, .20f, .95f) : new Color(.43f, .31f, .15f, .9f), targeting != null && targeting.IsTargeting ? "confirm" : "attack");
-            Circle(Dodge, new Color(.13f, .32f, .38f, .9f), "dodge");
+            Circle(Dodge, new Color(.13f, .32f, .38f, .9f), "blink");
             Circle(Potion, new Color(.18f, .38f, .27f, .9f), "potion");
+            Circle(Jump, new Color(.22f, .27f, .40f, .9f), "jump");
             if (targeting != null && targeting.IsTargeting || charge != null && charge.IsCharging) Circle(Cancel, new Color(.38f, .17f, .20f, .9f), "cancel");
             GUI.matrix = oldMatrix; GUI.color = oldColor;
         }

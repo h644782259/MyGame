@@ -105,7 +105,7 @@ namespace Emberfall
             if (candidate.Equals(releaseDirectory, StringComparison.OrdinalIgnoreCase) || candidate.StartsWith(releaseDirectory + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase))
                 throw new InvalidOperationException("Visual validation must never use the release player's save directory.");
             // Reject accidental reuse rather than replacing a previous test character.
-            if (File.Exists(Path.Combine(candidate, "emberfall-save.json")) || File.Exists(Path.Combine(candidate, "emberfall-save.json.bak")))
+            if (Directory.Exists(candidate) && (Directory.GetFiles(candidate, "emberfall-save*.json").Length > 0 || Directory.GetFiles(candidate, "emberfall-save*.json.bak").Length > 0))
                 throw new InvalidOperationException("Choose a fresh visual-validation output directory; this one already contains a test save.");
             Directory.CreateDirectory(outputDirectory);
             Directory.CreateDirectory(candidate);
@@ -197,7 +197,7 @@ namespace Emberfall
             {
                 if (session.HasStarted) { ResetPanels(); session.QuitToTitle(); }
                 SetField("selectedClass", (HeroClass)hero);
-                SetField("confirmNewGame", false);
+                SetField("saveSlotsDirty", true);
                 yield return SetResolution(widths[hero], heights[hero]);
                 string label = ((HeroClass)hero).ToString().ToLowerInvariant();
                 yield return Capture(label + "-title");
@@ -216,6 +216,23 @@ namespace Emberfall
                 // Let actual level-up floating text expire, while input and enemy AI remain disabled.
                 yield return new WaitForSecondsRealtime(1.7f);
                 yield return Capture(label + "-hud-learned");
+                if (hero == 0)
+                {
+                    session.Progression.Profile.potions = 7;
+                    Check(session.Progression.AssignConsumable(9), "Configure visible potion supply on the desktop hotbar");
+                    yield return Capture("hud-potion-hotbar");
+                    AdventureCamera camera = Camera.main.GetComponent<AdventureCamera>();
+                    Check(camera != null, "Orbit camera is available for rotated low-angle capture");
+                    FieldInfo yaw = typeof(AdventureCamera).GetField("yaw", PrivateInstance);
+                    FieldInfo pitch = typeof(AdventureCamera).GetField("pitch", PrivateInstance);
+                    FieldInfo distance = typeof(AdventureCamera).GetField("distance", PrivateInstance);
+                    object priorYaw = yaw.GetValue(camera), priorPitch = pitch.GetValue(camera), priorDistance = distance.GetValue(camera);
+                    yaw.SetValue(camera, 58f); pitch.SetValue(camera, 27f); distance.SetValue(camera, 14f);
+                    camera.Snap();
+                    yield return Capture("camera-orbit-low-angle");
+                    yaw.SetValue(camera, priorYaw); pitch.SetValue(camera, priorPitch); distance.SetValue(camera, priorDistance);
+                    camera.Snap();
+                }
                 SkillTargetingController placement = session.Player.GetComponent<SkillTargetingController>();
                 int placementSkill = (HeroClass)hero == HeroClass.Vanguard ? 9 : 1;
                 Check(SkillTargetingController.RequiresConfirmation((HeroClass)hero, placementSkill) && placement.Begin(placementSkill) && placement.IsTargeting,
@@ -302,6 +319,7 @@ namespace Emberfall
                     yield return Capture("summoner-charging",.12f);
                     session.Player.GetComponent<SkillChargeController>().Cancel();
                     MobileControls.SimulationEnabled=true;
+                    Check(session.Progression.AssignConsumable(9), "Mobile hotbar also displays an assigned potion");
                     yield return SetResolution(1920,900);
                     yield return Capture("mobile-landscape-hud");
                     OpenPanel("Skills");
@@ -312,7 +330,24 @@ namespace Emberfall
                 }
                 session.ReturnToCamp();
             }
-            Check(result.screenshots.Count == 80, "Eighty full-frame captures include four heroes, encounters, moving scenery, summons, charge, mobile and all panels");
+            ResetPanels();
+            Check(session.SaveAsNewSlot(), "Pause save-as creates an independent copy before save selection");
+            session.QuitToTitle();
+            Invoke("OpenSaveSelection");
+            Check(GetField("panel").ToString() == "SaveSelection" && session.Progression.GetSaveSlots().Count >= 5, "Title offers multiple independent character saves");
+            yield return Capture("save-selection");
+            // These files live exclusively in the validation player's isolated directory.
+            Check(Path.GetFullPath(session.Progression.SaveDirectory) == SaveDirectory, "Corrupt-save visual fixtures remain isolated");
+            Check(session.Progression.SaveAsNewSlot(), "Create an isolated backup-recovery fixture");
+            File.WriteAllText(session.Progression.SaveFilePath, "{ invalid visual validation primary }");
+            Check(session.Progression.SaveAsNewSlot(), "Create an isolated unreadable-save fixture");
+            File.WriteAllText(session.Progression.SaveFilePath, "{ invalid visual validation primary }");
+            File.WriteAllText(session.Progression.SaveFilePath + ".bak", "{ invalid visual validation backup }");
+            Invoke("OpenSaveSelection");
+            List<SaveSlotInfo> saveChoices = session.Progression.GetSaveSlots();
+            Check(saveChoices.Exists(slot => slot.CanLoad && slot.RecoveredFromBackup) && saveChoices.Exists(slot => !slot.CanLoad), "Save selection displays recoverable and unreadable slots distinctly");
+            yield return Capture("save-selection-recovery");
+            Check(result.screenshots.Count == 84, "Eighty-four full-frame captures include four heroes, encounters, mobile, saves, potion hotbar and camera orbit");
         }
 
         private IEnumerator SetResolution(int width, int height)

@@ -14,6 +14,7 @@ namespace Emberfall
         public bool IsDead { get { return Health <= 0; } }
         public EnemyKind Kind { get; private set; }
         public bool IsBoss { get; private set; }
+        public float NavigationRadius { get { return IsBoss ? .9f : Kind == EnemyKind.Guardian ? .6f : .45f; } }
         public string DisplayName { get; private set; }
         public string TraitDescription { get { return IsBoss ? "首领：扇形弹幕、范围震地与直线冲锋轮换；抵抗控制。" : Kind == EnemyKind.Slime ? "跳扑近身，黏液命中使你暂时减速。" : Kind == EnemyKind.Goblin ? "绕侧接近，近身后快速出刀并侧移。" : Kind == EnemyKind.Wisp ? "保持远距离游走，发射双重灵弹。" : "正面石甲减伤35%；重击蓄力时护甲失效。"; } }
 
@@ -33,6 +34,7 @@ namespace Emberfall
         private GameObject warning;
         private Transform healthRoot, healthFill;
         private Material healthBackgroundMaterial, healthFillMaterial;
+        private readonly WorldTraversal.Route route = new WorldTraversal.Route();
 
         public void Initialize(GameSession game, EnemyKind kind, int level, bool boss = false)
         {
@@ -51,6 +53,7 @@ namespace Emberfall
             Health = MaxHealth;
             damage = (boss ? 14f : 6f) + level * (boss ? 2.5f : 1.7f);
             speed = boss ? 2.35f : moveSpeed[(int)kind];
+            transform.position = WorldTraversal.NearestWalkable(transform.position, NavigationRadius);
             origin = transform.position;
             patrolPhase = Random.value * Mathf.PI * 2f;
             attackCooldown = Random.Range(.5f,1.2f);
@@ -140,7 +143,7 @@ namespace Emberfall
             attackAnimation = Mathf.Max(0,attackAnimation-dt*3f);
             attackCooldown = Mathf.Max(0,attackCooldown-dt);
             stunTime = Mathf.Max(0,stunTime-dt);
-            transform.position += knockVelocity * dt;
+            transform.position = WorldTraversal.Move(transform.position, knockVelocity * dt, NavigationRadius);
             knockVelocity = Vector3.Lerp(knockVelocity,Vector3.zero,Mathf.Min(1,dt*12f));
             companionTarget = aggro || Tier != ThreatTier.Normal ? SummonedCompanion.ThreatTarget(this, session.Player.transform.position) : null;
             Vector3 combatTargetPosition = companionTarget != null ? companionTarget.transform.position : session.Player.transform.position;
@@ -161,7 +164,7 @@ namespace Emberfall
             if (sidestepTime > 0)
             {
                 sidestepTime -= dt;
-                transform.position += sidestepDirection * effectiveSpeed * 1.6f * dt;
+                transform.position = WorldTraversal.Move(transform.position, sidestepDirection * effectiveSpeed * 1.6f * dt, NavigationRadius);
                 model.Animate(1, attackAnimation, hurtTime > 0);
                 ClampPosition(); return;
             }
@@ -169,8 +172,8 @@ namespace Emberfall
             {
                 chargeTime -= dt;
                 Vector3 previous = transform.position;
-                transform.position += chargeDirection * 11f * dt;
-                if (!chargeHit && CombatFx.SegmentDistance(combatTargetPosition,previous,transform.position) < 1.3f)
+                transform.position = WorldTraversal.Move(previous, chargeDirection * 11f * dt, NavigationRadius);
+                if (!chargeHit && CombatFx.SegmentDistance(combatTargetPosition,previous,transform.position) < 1.3f && WorldTraversal.HasGroundPath(transform.position, combatTargetPosition, .12f))
                 {
                     DamageTarget(damage*1.35f);
                     chargeHit = true;
@@ -187,24 +190,21 @@ namespace Emberfall
             {
                 if (delta.sqrMagnitude>.01f) transform.rotation=Quaternion.Slerp(transform.rotation,Quaternion.LookRotation(delta),dt*9f);
                 float range = Kind==EnemyKind.Wisp ? 7.5f : IsBoss ? 3.5f : Kind==EnemyKind.Guardian ? 2.5f : 1.8f;
-                if (distance <= range && attackCooldown <= 0) BeginAttack();
-                else if (Kind==EnemyKind.Wisp && distance<4.5f)
+                bool attackPath = Kind == EnemyKind.Wisp ? WorldTraversal.HasLineOfSight(transform.position, combatTargetPosition) : WorldTraversal.HasGroundPath(transform.position, combatTargetPosition, .12f);
+                if (distance <= range && attackCooldown <= 0 && attackPath) BeginAttack();
+                else if (Kind==EnemyKind.Wisp && distance<4.5f && attackPath)
                 {
-                    transform.position-=delta.normalized*effectiveSpeed*dt;
+                    transform.position = WorldTraversal.Move(transform.position, -delta.normalized * effectiveSpeed * dt, NavigationRadius);
                     model.Animate(.7f,attackAnimation,hurtTime>0);
                 }
-                else if (distance > range*.82f)
+                else if (distance > range*.82f || !attackPath)
                 {
-                    Vector3 step = delta.normalized + Separation();
-                    if (Kind == EnemyKind.Goblin && distance > 2.5f && distance < 9f)
+                    bool directGround = WorldTraversal.HasGroundPath(transform.position, combatTargetPosition, NavigationRadius);
+                    Vector3 step = route.Direction(transform.position, combatTargetPosition, NavigationRadius) + Separation() * (directGround ? 1f : .15f);
+                    if (directGround && Kind == EnemyKind.Goblin && distance > 2.5f && distance < 9f)
                         step += Vector3.Cross(Vector3.up, delta.normalized) * Mathf.Sin(patrolPhase + Time.time * .8f) * .8f;
-                    transform.position += Vector3.ClampMagnitude(step,1.2f)*effectiveSpeed*dt;
+                    transform.position = WorldTraversal.Move(transform.position, Vector3.ClampMagnitude(step, 1.2f) * effectiveSpeed * dt, NavigationRadius);
                     model.Animate(1,attackAnimation,hurtTime>0);
-                }
-                else if (Kind==EnemyKind.Wisp && distance<3.5f)
-                {
-                    transform.position-=delta.normalized*effectiveSpeed*.7f*dt;
-                    model.Animate(.5f,attackAnimation,hurtTime>0);
                 }
                 else model.Animate(0,attackAnimation,hurtTime>0);
             }
@@ -212,7 +212,8 @@ namespace Emberfall
             {
                 Vector3 patrol = origin + new Vector3(Mathf.Sin(Time.time*.28f+patrolPhase),0,Mathf.Cos(Time.time*.28f+patrolPhase)) * 1.4f;
                 Vector3 toPatrol = CombatFx.Flat(patrol-transform.position);
-                transform.position += Vector3.ClampMagnitude(toPatrol,1)*effectiveSpeed*.22f*dt;
+                Vector3 patrolDirection = route.Direction(transform.position, patrol, NavigationRadius);
+                transform.position = WorldTraversal.Move(transform.position, patrolDirection * Mathf.Min(1, toPatrol.magnitude) * effectiveSpeed * .22f * dt, NavigationRadius);
                 if(toPatrol.sqrMagnitude>.1f) transform.rotation=Quaternion.Slerp(transform.rotation,Quaternion.LookRotation(toPatrol),dt*2f);
                 model.Animate(.2f,0,false);
             }
@@ -293,10 +294,12 @@ namespace Emberfall
                 if(forward.sqrMagnitude<.1f) forward=transform.forward;
                 if(attackType==AttackType.Fan)
                 {
+                    if (!WorldTraversal.HasLineOfSight(transform.position, transform.position + forward)) return;
                     for(int i=-2;i<=2;i++) CombatProjectile.Hostile(session,transform.position+forward,Quaternion.Euler(0,i*17,0)*forward,damage,7f);
                 }
                 else
                 {
+                    if (!WorldTraversal.HasLineOfSight(transform.position, transform.position + forward * .7f)) return;
                     CombatProjectile.Hostile(session,transform.position+forward*.7f,Quaternion.Euler(0,-7,0)*forward,damage*.75f,7.5f);
                     CombatProjectile.Hostile(session,transform.position+forward*.7f,Quaternion.Euler(0,7,0)*forward,damage*.75f,7.5f);
                 }
@@ -305,10 +308,10 @@ namespace Emberfall
             {
                 float radius=attackType==AttackType.Slam?(IsBoss?3.7f:2.65f):1.2f;
                 if(attackType==AttackType.Melee && Kind==EnemyKind.Slime)
-                    transform.position=Vector3.MoveTowards(transform.position,targetPoint,1.25f);
+                    transform.position = WorldTraversal.Move(transform.position, Vector3.ClampMagnitude(CombatFx.Flat(targetPoint - transform.position), 1.25f), NavigationRadius);
                 CombatFx.Ring(targetPoint,radius,new Color(1f,.45f,.25f),.32f,.15f);
                 Vector3 victim = companionTarget != null ? companionTarget.transform.position : session.Player.transform.position;
-                if(CombatFx.Flat(victim-targetPoint).magnitude<radius+.35f)
+                if(CombatFx.Flat(victim-targetPoint).magnitude<radius+.35f && WorldTraversal.HasGroundPath(transform.position, victim, .12f))
                 {
                     float previousHealth = session.Player.Health;
                     DamageTarget(damage*(attackType==AttackType.Slam?1.4f:1f));
@@ -324,6 +327,8 @@ namespace Emberfall
 
         private void DamageTarget(float amount)
         {
+            Vector3 victim = companionTarget != null && companionTarget.IsAlive ? companionTarget.transform.position : session.Player.transform.position;
+            if (!WorldTraversal.HasGroundPath(transform.position, victim, .12f)) return;
             if (companionTarget != null && companionTarget.IsAlive) companionTarget.TakeDamage(amount);
             else session.Player.TakeDamage(amount);
         }
@@ -339,10 +344,7 @@ namespace Emberfall
 
         private void ClampPosition()
         {
-            Vector3 point=transform.position;
-            float bound=Mathf.Max(1,session.ArenaRadius-(IsBoss?1.1f:.55f));
-            point.y=0;
-            transform.position=Vector3.ClampMagnitude(point,bound);
+            transform.position = WorldTraversal.Move(transform.position, Vector3.zero, NavigationRadius);
         }
 
         private void LateUpdate()

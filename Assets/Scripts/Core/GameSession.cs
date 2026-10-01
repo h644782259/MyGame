@@ -127,19 +127,41 @@ namespace Emberfall
         public void StartNew(HeroClass heroClass)
         {
             CollectRemainingDungeonLoot();
+            if (!Progression.CreateNewSlot(heroClass)) { Notify(Progression.LastError); return; }
             collectedGroundLoot.Clear();
-            Progression.NewGame(heroClass);
             BeginAdventure();
-            Notify("欢迎来到风语原野。WASD 移动，鼠标瞄准；先击败怪物，升至 2 级学习技能。");
+            Notify("已创建独立存档 · 风语原野");
         }
 
         public void ContinueGame()
         {
+            ContinueAdventure(null);
+        }
+
+        public bool ContinueGame(string slotId)
+        {
+            return ContinueAdventure(slotId);
+        }
+
+        private bool ContinueAdventure(string slotId)
+        {
             CollectRemainingDungeonLoot();
-            if (!Progression.Load()) { Notify("存档未能读取：" + Progression.LastError); return; }
+            bool loaded = slotId == null ? Progression.Load() : Progression.LoadSlot(slotId);
+            if (!loaded) { Notify("存档未能读取：" + Progression.LastError); return false; }
             string loadWarning = Progression.LastError;
+            collectedGroundLoot.Clear();
             BeginAdventure();
             Notify(string.IsNullOrEmpty(loadWarning) ? "欢迎回来，" + GameBalance.ClassName(Progression.Profile.heroClass) + "。冒险进度已恢复。" : loadWarning);
+            return true;
+        }
+
+        public bool SaveAsNewSlot()
+        {
+            if (!HasStarted || IsDead) return false;
+            CollectRemainingDungeonLoot();
+            bool saved = Progression.SaveAsNewSlot();
+            Notify(saved ? "已另存为新存档。原进度保留，后续自动保存到新存档。" : Progression.LastError);
+            return saved;
         }
 
         private void BeginAdventure()
@@ -211,7 +233,7 @@ namespace Emberfall
             if (!NearPortal()) { Notify("请前往原野北方发光的传送门（小地图菱形），靠近后按 T。"); return; }
             if (Progression.Profile.level < 2) { Notify("遗迹需要 2 级。先在原野战斗，并学习第一个职业技能。"); return; }
             ChangeZone(true);
-            Notify("进入沉星遗迹 · 注意首领脚下的红色预警，按空格闪避！");
+            Notify("已进入沉星遗迹");
         }
 
         public void ReturnToCamp()
@@ -291,7 +313,7 @@ namespace Emberfall
         private void SpawnEnemy(EnemyKind kind, int level, Vector3 position, bool boss)
         {
             GameObject go = new GameObject(boss ? "Sentinel · Boss" : "Enemy · " + kind);
-            go.transform.position = position;
+            go.transform.position = WorldTraversal.NearestWalkable(position, boss ? 1f : .45f);
             EnemyController enemy = go.AddComponent<EnemyController>();
             enemy.Initialize(this, kind, level, boss);
             Enemies.Add(enemy);
@@ -390,6 +412,12 @@ namespace Emberfall
             Progression.Save();
         }
 
+        public void UseHotbarConsumable()
+        {
+            if (InputBlocked || Player == null || Player.TraversalStartedThisFrame) return;
+            DrinkPotion();
+        }
+
         public void QuitToTitle()
         {
             CollectRemainingDungeonLoot();
@@ -444,7 +472,7 @@ namespace Emberfall
             PendingLoot existing;
             if (pendingLoot.TryGetValue(item.id, out existing)) return existing.Pickup;
             position.y = 0;
-            position = Vector3.ClampMagnitude(position, ArenaRadius - .8f);
+            position = WorldTraversal.NearestWalkable(position, .35f);
             GameObject root = new GameObject("Ground loot · " + item.name);
             if (world != null) root.transform.SetParent(world.transform, false);
             root.transform.position = position;
@@ -493,30 +521,89 @@ namespace Emberfall
         }
     }
 
+    [DefaultExecutionOrder(-100)]
     public sealed class AdventureCamera : MonoBehaviour
     {
+        public const float MinimumPitch = 20f;
+        public const float MaximumPitch = 75f;
+        private const float DefaultPitch = 48.36646f;
+        private const float DistanceScale = 1.2041595f;
+        private static AdventureCamera active;
+        private readonly CameraOrbitInput orbitInput = new CameraOrbitInput();
+        private int inputFrame = -1;
         private float distance = 19f;
+        private float yaw, pitch = DefaultPitch;
+        private float smoothYaw, smoothPitch = DefaultPitch, smoothDistance = 19f;
         private Vector3 lookTarget;
-        public void Snap() { HitFeedback.ClearCamera(); lookTarget = DesiredTarget(); MoveCamera(true); }
+        public static bool CancelSkillRequested { get { return !MobileControls.Active && active != null && active.inputFrame == Time.frameCount && active.orbitInput.Clicked; } }
+        public static bool IsOrbitDragging { get { return !MobileControls.Active && active != null && active.orbitInput.IsDragging; } }
+        public float Pitch { get { return pitch; } }
+        public float Yaw { get { return yaw; } }
+
+        private void Awake() { active = this; }
+        public void Snap()
+        {
+            HitFeedback.ClearCamera();
+            ResetOrbitInput();
+            lookTarget = DesiredTarget();
+            MoveCamera(true);
+        }
+
+        public static Vector3 CameraRelativeMovement(Vector2 input, Transform view)
+        {
+            Vector3 forward = view == null ? Vector3.forward : Vector3.ProjectOnPlane(view.forward, Vector3.up);
+            if (forward.sqrMagnitude < .0001f) forward = Vector3.forward;
+            forward.Normalize();
+            Vector3 right = Vector3.Cross(Vector3.up, forward);
+            return Vector3.ClampMagnitude(right * input.x + forward * input.y, 1f);
+        }
+
         private Vector3 DesiredTarget()
         {
             GameSession game = GameSession.Instance;
             return game != null && game.Player != null && game.HasStarted ? game.Player.transform.position + Vector3.up * .7f : new Vector3(0, 0, 1);
         }
-        private void LateUpdate()
+        private void Update()
         {
             GameSession game = GameSession.Instance;
-            if (game != null && !game.InputBlocked && !game.PointerOverUI) distance = Mathf.Clamp(distance - Input.mouseScrollDelta.y * 1.5f, 13, 25);
-            MoveCamera(false);
+            bool canContinue = !MobileControls.Active && Application.isFocused && game != null && !game.InputBlocked;
+            bool canStart = canContinue && !game.PointerOverUI;
+            ProcessOrbitInput(Input.mousePosition, Input.GetMouseButtonDown(1), Input.GetMouseButton(1), Input.GetMouseButtonUp(1), canStart, canContinue, Input.mouseScrollDelta.y);
         }
+
+        private void ProcessOrbitInput(Vector2 position, bool pressed, bool held, bool released, bool canStart, bool canContinue, float scroll)
+        {
+            inputFrame = Time.frameCount;
+            orbitInput.Advance(position, pressed, held, released, canStart, canContinue);
+            if (orbitInput.DragDelta.sqrMagnitude > 0)
+            {
+                yaw = Mathf.Repeat(yaw + orbitInput.DragDelta.x * .22f, 360f);
+                pitch = Mathf.Clamp(pitch + orbitInput.DragDelta.y * .18f, MinimumPitch, MaximumPitch);
+            }
+            if (canStart && canContinue) distance = Mathf.Clamp(distance - scroll * 1.5f, 13f, 25f);
+        }
+
+        private void LateUpdate() { MoveCamera(false); }
         private void MoveCamera(bool snap)
         {
             Vector3 desired = DesiredTarget();
-            lookTarget = snap ? desired : Vector3.Lerp(lookTarget, desired, 1 - Mathf.Exp(-8 * Time.unscaledDeltaTime));
-            transform.position = lookTarget + new Vector3(0, distance * .9f, -distance * .8f);
+            float follow = 1f - Mathf.Exp(-8f * Time.unscaledDeltaTime);
+            float orbit = 1f - Mathf.Exp(-12f * Time.unscaledDeltaTime);
+            lookTarget = snap ? desired : Vector3.Lerp(lookTarget, desired, follow);
+            smoothYaw = snap ? yaw : Mathf.LerpAngle(smoothYaw, yaw, orbit);
+            smoothPitch = snap ? pitch : Mathf.Lerp(smoothPitch, pitch, orbit);
+            smoothDistance = snap ? distance : Mathf.Lerp(smoothDistance, distance, orbit);
+            Vector3 position = lookTarget + Quaternion.Euler(smoothPitch, smoothYaw, 0) * Vector3.back * (smoothDistance * DistanceScale);
+            position.y = Mathf.Max(2.4f, position.y);
+            transform.position = position;
             transform.LookAt(lookTarget);
             transform.position += HitFeedback.CameraOffset;
         }
+
+        private void ResetOrbitInput() { orbitInput.Reset(); inputFrame = -1; }
+        private void OnApplicationFocus(bool focused) { if (!focused) ResetOrbitInput(); }
+        private void OnDisable() { ResetOrbitInput(); }
+        private void OnDestroy() { if (active == this) active = null; }
     }
 
     public sealed class FloatingNumber : MonoBehaviour
