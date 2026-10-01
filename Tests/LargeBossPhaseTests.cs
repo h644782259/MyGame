@@ -34,6 +34,7 @@ public static class LargeBossPhaseTests
         Step(state,6.1f);Check(state.Phase==LargeBossPhase.Combat&&state.IncomingMultiplier==1,"bonus expires");
         Check(!state.TryBegin(.3f,true),"no chained mechanics without recovery");
         Step(state,4.1f);Check(state.TryBegin(.35f,true)&&state.PhaseNumber==2,"second health threshold");
+        Check(state.BeamAngle==0,"second windup resets direction before warning instead of snapping at beam release");
         Check(state.CommitAnchors(3)&&state.InterruptWindup()&&!state.InterruptWindup(),"one real windup interruption ends phase");
         Step(state,11);Check(!state.TryBegin(.1f,true),"exactly two health phases");
         foreach(int mask in new[]{0,1,3,7})

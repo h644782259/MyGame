@@ -26,7 +26,7 @@ namespace Emberfall
         {
             if (!combatActive || Phase != LargeBossPhase.Combat || phaseCooldown > 0 || PhaseNumber >= 2 ||
                 !Finite(healthFraction) || healthFraction <= 0 || healthFraction > (PhaseNumber == 0 ? .7f : .35f)) return false;
-            PhaseNumber++; Phase = LargeBossPhase.Windup; Remaining = WindupSeconds;
+            PhaseNumber++; Phase = LargeBossPhase.Windup; Remaining = WindupSeconds; BeamAngle = 0;
             LiveAnchorMask = 0; anchorsCommitted = false; DamagePulse = false; return true;
         }
         public bool CommitAnchors(int mask)
