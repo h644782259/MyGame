@@ -58,7 +58,7 @@ namespace Emberfall
    foreach(var obj in transientObjects)if(obj!=null){obj.SetActive(false);Destroy(obj);}transientObjects.Clear();
    if(world!=null){world.SetActive(false);Destroy(world);}
    Player.RetireCombatForWorldTransition();RetireWorldLootReceipts(previousCombatEpoch);
-   DungeonLayout=RoomChainRun.Room.Layout;world=WorldBuilder.Build(ZoneKind.Dungeon,DungeonLayout,Progression.Profile.bestFloor);
+   DungeonLayout=RoomChainRun.Room.Layout;world=WorldBuilder.Build(ZoneKind.Dungeon,DungeonLayout,Progression.HighestAdventureTier);
    // Room travel cancels stale effects but deliberately keeps every skill cooldown.
    Player.Teleport(TacticalRoomGeometry.Entrance);Camera.main.GetComponent<AdventureCamera>().Snap();BeginRoomChainScene();
    changingZone=false;UpdateTimeScale();Notify(RoomTactics.Name(RoomChainRun.Room.Objective)+" · 房间 "+(RoomChainRun.Room.Index+1)+" / 5");return true;

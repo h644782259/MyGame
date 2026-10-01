@@ -360,7 +360,7 @@ namespace Emberfall
             DungeonWave = 0;
             DungeonTier = Mathf.Clamp(SelectedDungeonTier, 1, MaximumDungeonTier);
             ResetExpedition(dungeon);
-            world = WorldBuilder.Build(dungeon ? ZoneKind.Dungeon : ZoneKind.Wilderness, DungeonLayout, Progression.Profile.bestFloor,CurrentHub);
+            world = WorldBuilder.Build(dungeon ? ZoneKind.Dungeon : ZoneKind.Wilderness, DungeonLayout, Progression.HighestAdventureTier,CurrentHub);
             Player.Teleport(dungeon&&RoomChainRun!=null?TacticalRoomGeometry.Entrance:new Vector3(0,0,dungeon?-9:-10));
             Player.RefreshStats(true);
             if(dungeon)Player.ResetCooldownsForDungeonEntry();

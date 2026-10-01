@@ -69,6 +69,8 @@ public static class AdventureProgressionTests
         Check(q.TryGrantModeReward(Guid.NewGuid().ToString("N"),10,10,3,1),"achieve goal");
         Check(q.Profile.progressionGoal==ProgressionGoalKind.Tier&&q.Profile.progressionGoalTier==1&&q.ProgressionGoalStatus(3).Contains("已完成")&&q.ProgressionGoalStatus(3).Contains("本局 +3"),"goal completes without auto advancing, shows gains");
         Check(q.LoadSlot(q.CurrentSlotId)&&q.Profile.progressionGoalTier==1,"selected goal persists");
+        Check(q.SelectProgressionGoal(ProgressionGoalKind.SecondPreset)&&q.SaveBuildPreset(1,true)&&!q.ProgressionGoalStatus().Contains("已完成"),"B alone is not two builds");
+        Check(q.SaveBuildPreset(0,true)&&q.ProgressionGoalStatus().Contains("已完成"),"both saved builds complete the second preset goal");
         string saved=State(q);Directory.CreateDirectory(q.SaveFilePath+".tmp");Check(!q.SelectProgressionGoal(ProgressionGoalKind.SecondPreset)&&State(q)==saved,"failed goal switch preserves selection");Directory.Delete(q.SaveFilePath+".tmp");
         Check(!q.SelectProgressionGoal(ProgressionGoalKind.Variant,"missing")&&State(q)==saved,"goal cannot target absent item");
     }

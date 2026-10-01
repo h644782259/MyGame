@@ -228,6 +228,7 @@ namespace Emberfall
             {
                 MobileWorkshopParagraph(ref y,width,"首通整备 · 领取核心、检查路线，再保存配装",jade,draw);
                 MobileWorkshopAction(ref y,width,"机制与核心",gold,true,draw,()=>{campTab=1;CancelMobileScroll();BlockUITransition();});
+                MobileWorkshopAction(ref y,width,"职业路线",jade,true,draw,()=>{campTab=0;CancelMobileScroll();BlockUITransition();});
                 MobileWorkshopAction(ref y,width,"配装方案",jade,true,draw,OpenBuildPlans);
                 MobileWorkshopAction(ref y,width,"选择下一目标",jade,true,draw,OpenProgressionGoals);
             }

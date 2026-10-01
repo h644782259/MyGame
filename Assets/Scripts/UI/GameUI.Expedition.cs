@@ -127,9 +127,10 @@ namespace Emberfall
                 if(p.HighestAdventureTier>0||p.Profile.clearedRuns>0)
                 {
                     Text(new Rect(w.x+42,w.y+435,850,40),"首通整备 · 领取核心、检查路线，再保存一套配装",16,jade);
-                    if(Button(new Rect(w.x+42,w.y+493,260,48),"机制与核心",gold))campTab=1;
-                    if(Button(new Rect(w.x+326,w.y+493,260,48),"配装方案",jade))OpenBuildPlans();
-                    if(Button(new Rect(w.x+610,w.y+493,260,48),"选择下一目标",jade))OpenProgressionGoals();
+                    if(Button(new Rect(w.x+42,w.y+493,200,48),"机制与核心",gold))campTab=1;
+                    if(Button(new Rect(w.x+256,w.y+493,200,48),"职业路线",jade))campTab=0;
+                    if(Button(new Rect(w.x+470,w.y+493,200,48),"配装方案",jade))OpenBuildPlans();
+                    if(Button(new Rect(w.x+684,w.y+493,200,48),"选择下一目标",jade))OpenProgressionGoals();
                 }
             }
         }

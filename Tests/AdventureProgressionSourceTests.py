@@ -25,5 +25,5 @@ for p in ['UI/GameUI.Expedition.cs','UI/GameUI.MobileWorkshop.cs','UI/GameUI.Mod
 check('data.Snapshot.RewardMaterials' in read('UI/GameUI.RunRecap.cs'),'results include actual settled run gains')
 check('SelectProgressionGoal(kind,id,tier)' in selector and 'BeginTouchScroll' in selector,'goal replacement requires an explicit selection in bounded scroll UI')
 check('progressionGoalCharacter!=session.Progression.CurrentSlotId' in selector,'goal modal retires on character change')
-check('OpenProgressionGoals' in camp and 'OpenBuildPlans' in camp and 'campTab=1' in camp,'postclear tutorial links to core, saved builds and next chosen goal')
+check('OpenProgressionGoals' in camp and 'OpenBuildPlans' in camp and 'campTab=1' in camp and 'campTab=0' in camp,'postclear tutorial links to core, class route, saved builds and next chosen goal')
 print(f'PASS: {checks} adventure progression UI/lifecycle contracts (not Unity execution)')

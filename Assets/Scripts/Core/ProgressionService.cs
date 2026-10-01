@@ -1465,7 +1465,7 @@ namespace Emberfall
                     title="装备升华";cost=AscensionCost;done=item!=null&&item.rarity==Rarity.Legendary;
                     requirement=item==null?"目标装备不在背包":"冒险5阶 "+Math.Min(5,HighestAdventureTier)+"/5"+(item.rarity!=Rarity.Epic&&item.rarity!=Rarity.Legendary?" · 需要史诗品质":"");break;
                 case ProgressionGoalKind.SecondPreset:
-                    title="第二套配装";done=HasBuildPreset(1);requirement="营地保存方案 B";break;
+                    title="第二套配装";done=HasBuildPreset(0)&&HasBuildPreset(1);requirement="营地保存方案 A 与 B";break;
                 case ProgressionGoalKind.Tier:
                     title="通关第 "+Profile.progressionGoalTier+" 阶";done=HighestAdventureTier>=Profile.progressionGoalTier;
                     requirement="任一冒险 · 最高 "+HighestAdventureTier+" 阶";break;
