@@ -82,6 +82,7 @@ namespace Emberfall
         {
             float total=rank==3?.55f:rank==2?.42f:.3f;
             owner.Heal(owner.MaxHealth*total/5f);
+            if (heroClass == HeroClass.Summoner) SummonedCompanion.HealAll(owner, total / 5f);
             Vector3 at=owner.transform.position;
             CombatFx.Ring(at,3.2f*range,color,.7f,.13f);
             if(heroClass==HeroClass.Vanguard)
@@ -123,6 +124,7 @@ namespace Emberfall
                     AdvancedSkillVfx.Beam(owner,fault-tangent*2.7f*range,fault+tangent*2.7f*range,new Color(1f,.65f,.23f),.65f,.28f);
                     AdvancedSkillVfx.FallingBlade(owner,fault,color,.5f);
                     owner.HitArea(fault,2.6f*range,damage*2.8f,.7f,.5f);
+                    LaunchArea(fault, 2.6f * range, .6f + rank * .12f, 1f + rank * .2f);
                     if (rank==3 && step==steps-1) Burst(fault,4f*range,damage*4f,color,3);
                     break;
                 case 9: // Successive executions culminate in one enormous falling blade.
@@ -222,6 +224,13 @@ namespace Emberfall
                     }
                     break;
             }
+        }
+
+        private void LaunchArea(Vector3 center, float radius, float duration, float height)
+        {
+            foreach (EnemyController enemy in session.Enemies)
+                if (enemy != null && !enemy.IsDead && enemy.StatusEffects != null && CombatFx.Flat(enemy.transform.position - center).magnitude <= radius)
+                    enemy.StatusEffects.Knockup(duration, height);
         }
 
         private void ChainLightning(int maximumTargets)

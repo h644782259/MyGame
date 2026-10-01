@@ -15,6 +15,7 @@ namespace Emberfall
         public EnemyKind Kind { get; private set; }
         public bool IsBoss { get; private set; }
         public string DisplayName { get; private set; }
+        public string TraitDescription { get { return IsBoss ? "首领：扇形弹幕、范围震地与直线冲锋轮换；抵抗控制。" : Kind == EnemyKind.Slime ? "跳扑近身，黏液命中使你暂时减速。" : Kind == EnemyKind.Goblin ? "绕侧接近，近身后快速出刀并侧移。" : Kind == EnemyKind.Wisp ? "保持远距离游走，发射双重灵弹。" : "正面石甲减伤35%；重击蓄力时护甲失效。"; } }
 
         private enum AttackType { Melee, Bolt, Slam, Charge, Fan }
         private GameSession session;
@@ -23,6 +24,10 @@ namespace Emberfall
         private int attackNumber;
         private Vector3 origin, targetPoint, knockVelocity, chargeDirection;
         private float chargeTime;
+        private float flinchUntil, nextImpactTime;
+        private SummonedCompanion companionTarget;
+        private float sidestepTime;
+        private Vector3 sidestepDirection;
         private bool preparing, aggro, deathReported, chargeHit;
         private AttackType attackType;
         private GameObject warning;
@@ -82,14 +87,27 @@ namespace Emberfall
             return obj.transform;
         }
 
-        public void TakeDamage(float amount, Vector3 direction, float knockback = 0f, float stun = 0f)
+        public void TakeDamage(float amount, Vector3 direction, float knockback = 0f, float stun = 0f, bool impact = true)
         {
             if (session == null || IsDead || amount <= 0) return;
             amount *= StatusEffects == null ? 1 : StatusEffects.DamageMultiplier;
+            if (Kind == EnemyKind.Guardian && !IsBoss && !preparing && CombatFx.Flat(direction).sqrMagnitude > .01f && Vector3.Dot(transform.forward, -CombatFx.Flat(direction).normalized) > .45f)
+                amount *= .65f;
             Health = Mathf.Max(0,Health-amount);
             aggro = true;
             hurtTime = .15f;
             float resistance = IsBoss ? .24f : 1f;
+            if (impact && Time.time >= nextImpactTime)
+            {
+                nextImpactTime = Time.time + .10f;
+                Vector3 push = CombatFx.Flat(direction).normalized;
+                if (push.sqrMagnitude < .01f) push = -transform.forward;
+                float strength = Mathf.Clamp(amount / Mathf.Max(1f, session.Progression.GetStats().Damage), .55f, 2f);
+                model.Recoil(push, strength * (IsBoss ? .5f : 1f));
+                flinchUntil = Time.time + (IsBoss ? .018f : Mathf.Lerp(.035f, .065f, strength / 2f));
+                HitFeedback.Spawn(transform.position + Vector3.up * (IsBoss ? 2f : Kind == EnemyKind.Slime ? .65f : 1.25f), push, strength);
+                GameAudio.Play(SoundCue.Hit);
+            }
             knockVelocity += CombatFx.Flat(direction).normalized * knockback * 7f * resistance;
             stunTime = Mathf.Max(stunTime,stun*resistance);
             if (stun >= .45f && !IsBoss) CancelAttack();
@@ -124,7 +142,9 @@ namespace Emberfall
             stunTime = Mathf.Max(0,stunTime-dt);
             transform.position += knockVelocity * dt;
             knockVelocity = Vector3.Lerp(knockVelocity,Vector3.zero,Mathf.Min(1,dt*12f));
-            Vector3 delta = CombatFx.Flat(session.Player.transform.position-transform.position);
+            companionTarget = aggro || Tier != ThreatTier.Normal ? SummonedCompanion.ThreatTarget(this, session.Player.transform.position) : null;
+            Vector3 combatTargetPosition = companionTarget != null ? companionTarget.transform.position : session.Player.transform.position;
+            Vector3 delta = CombatFx.Flat(combatTargetPosition-transform.position);
             float distance = delta.magnitude;
             float effectiveSpeed = speed * (StatusEffects == null ? 1 : StatusEffects.MoveMultiplier);
             // Ordinary wildlife stays neutral regardless of proximity. Damage/control
@@ -132,20 +152,27 @@ namespace Emberfall
             if (Tier != ThreatTier.Normal && (session.InDungeon || distance < (IsBoss?15f:9f))) aggro = true;
             if (!session.InDungeon && distance > 17f) aggro = false;
             healthFillMaterial.color = ThreatColor();
-            if (stunTime > 0)
+            if (stunTime > 0 || Time.time < flinchUntil)
             {
                 model.Animate(0,attackAnimation,hurtTime>0);
                 ClampPosition();
                 return;
+            }
+            if (sidestepTime > 0)
+            {
+                sidestepTime -= dt;
+                transform.position += sidestepDirection * effectiveSpeed * 1.6f * dt;
+                model.Animate(1, attackAnimation, hurtTime > 0);
+                ClampPosition(); return;
             }
             if (chargeTime > 0)
             {
                 chargeTime -= dt;
                 Vector3 previous = transform.position;
                 transform.position += chargeDirection * 11f * dt;
-                if (!chargeHit && CombatFx.SegmentDistance(session.Player.transform.position,previous,transform.position) < 1.3f)
+                if (!chargeHit && CombatFx.SegmentDistance(combatTargetPosition,previous,transform.position) < 1.3f)
                 {
-                    session.Player.TakeDamage(damage*1.35f);
+                    DamageTarget(damage*1.35f);
                     chargeHit = true;
                 }
                 model.Animate(1,.6f,hurtTime>0);
@@ -161,9 +188,16 @@ namespace Emberfall
                 if (delta.sqrMagnitude>.01f) transform.rotation=Quaternion.Slerp(transform.rotation,Quaternion.LookRotation(delta),dt*9f);
                 float range = Kind==EnemyKind.Wisp ? 7.5f : IsBoss ? 3.5f : Kind==EnemyKind.Guardian ? 2.5f : 1.8f;
                 if (distance <= range && attackCooldown <= 0) BeginAttack();
+                else if (Kind==EnemyKind.Wisp && distance<4.5f)
+                {
+                    transform.position-=delta.normalized*effectiveSpeed*dt;
+                    model.Animate(.7f,attackAnimation,hurtTime>0);
+                }
                 else if (distance > range*.82f)
                 {
                     Vector3 step = delta.normalized + Separation();
+                    if (Kind == EnemyKind.Goblin && distance > 2.5f && distance < 9f)
+                        step += Vector3.Cross(Vector3.up, delta.normalized) * Mathf.Sin(patrolPhase + Time.time * .8f) * .8f;
                     transform.position += Vector3.ClampMagnitude(step,1.2f)*effectiveSpeed*dt;
                     model.Animate(1,attackAnimation,hurtTime>0);
                 }
@@ -208,7 +242,7 @@ namespace Emberfall
 
         private void BeginAttack()
         {
-            targetPoint=session.Player.transform.position;
+            targetPoint=companionTarget != null ? companionTarget.transform.position : session.Player.transform.position;
             attackNumber++;
             preparing=true;
             Color warningColor=new Color(1f,.24f,.29f,.9f);
@@ -261,7 +295,11 @@ namespace Emberfall
                 {
                     for(int i=-2;i<=2;i++) CombatProjectile.Hostile(session,transform.position+forward,Quaternion.Euler(0,i*17,0)*forward,damage,7f);
                 }
-                else CombatProjectile.Hostile(session,transform.position+forward*.7f,forward,damage,7.5f);
+                else
+                {
+                    CombatProjectile.Hostile(session,transform.position+forward*.7f,Quaternion.Euler(0,-7,0)*forward,damage*.75f,7.5f);
+                    CombatProjectile.Hostile(session,transform.position+forward*.7f,Quaternion.Euler(0,7,0)*forward,damage*.75f,7.5f);
+                }
             }
             else
             {
@@ -269,9 +307,25 @@ namespace Emberfall
                 if(attackType==AttackType.Melee && Kind==EnemyKind.Slime)
                     transform.position=Vector3.MoveTowards(transform.position,targetPoint,1.25f);
                 CombatFx.Ring(targetPoint,radius,new Color(1f,.45f,.25f),.32f,.15f);
-                if(CombatFx.Flat(session.Player.transform.position-targetPoint).magnitude<radius+.35f)
-                    session.Player.TakeDamage(damage*(attackType==AttackType.Slam?1.4f:1f));
+                Vector3 victim = companionTarget != null ? companionTarget.transform.position : session.Player.transform.position;
+                if(CombatFx.Flat(victim-targetPoint).magnitude<radius+.35f)
+                {
+                    float previousHealth = session.Player.Health;
+                    DamageTarget(damage*(attackType==AttackType.Slam?1.4f:1f));
+                    if (Kind == EnemyKind.Slime && companionTarget == null && session.Player.Health < previousHealth) session.Player.ApplySlow(1.8f, .35f);
+                }
+                if (Kind == EnemyKind.Goblin)
+                {
+                    sidestepTime = .28f;
+                    sidestepDirection = Vector3.Cross(Vector3.up, transform.forward) * (attackNumber % 2 == 0 ? 1f : -1f);
+                }
             }
+        }
+
+        private void DamageTarget(float amount)
+        {
+            if (companionTarget != null && companionTarget.IsAlive) companionTarget.TakeDamage(amount);
+            else session.Player.TakeDamage(amount);
         }
 
         private void CancelAttack()

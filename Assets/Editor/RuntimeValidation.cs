@@ -122,11 +122,11 @@ namespace Emberfall.Editor
             try
             {
                 double elapsed = EditorApplication.timeSinceStartup - SessionState.GetFloat(Prefix + "Started", 0);
-                if (elapsed > 150) throw new TimeoutException("Runtime validation exceeded 150 seconds including play-mode startup.");
+                if (elapsed > 260) throw new TimeoutException("Runtime validation exceeded 260 seconds including play-mode startup.");
                 if (EditorApplication.isCompiling || !EditorApplication.isPlaying) return;
                 EditorApplication.QueuePlayerLoopUpdate();
                 if (GameSession.Instance == null) return;
-                if (GameSession.Instance.Paused && !validatingPause) GameSession.Instance.SetPaused(false);
+                if (GameSession.Instance.Paused && !validatingPause && !GroundLootValidation.IsCheckingPause) GameSession.Instance.SetPaused(false);
                 if (routine == null)
                 {
                     Append("Play mode entered; InitializeOnLoad restored the validation runner after domain reload.");
@@ -159,9 +159,11 @@ namespace Emberfall.Editor
             Check(!game.HasStarted && game.Player == null, "Runtime bootstrap creates a title session");
             Check(game.GetComponent<GameUI>() != null && Camera.main != null, "Runtime UI and camera bootstrap");
             GameAudio.Muted = true;
+            IEnumerator audioValidation = AudioValidation.Validate(Check, Append);
+            while (audioValidation.MoveNext()) yield return audioValidation.Current;
             yield return new Delay(.25f, false);
 
-            for (int heroIndex = 0; heroIndex < 3; heroIndex++)
+            for (int heroIndex = 0; heroIndex < 4; heroIndex++)
             {
                 HeroClass hero = (HeroClass)heroIndex;
                 Append("HERO " + hero + " — learning, passives, all eight active skills, camera capture");
@@ -172,6 +174,13 @@ namespace Emberfall.Editor
                 SessionState.SetInt(Prefix + "Assertions", SessionState.GetInt(Prefix + "Assertions", 0) + inventoryAssertions);
                 Append("INVENTORY " + hero + " passed " + inventoryAssertions + " classification, sorting and sale checks.");
                 FreezeEnemies(game);
+                if (heroIndex == 0)
+                {
+                    validatingPause = true;
+                    IEnumerator mobileValidation = MobileValidation.Validate(game, Check, Append);
+                    while (mobileValidation.MoveNext()) yield return mobileValidation.Current;
+                    validatingPause = false;
+                }
                 yield return new Delay(.5f);
                 CaptureWorld(hero + "-world.png", false);
 
@@ -223,6 +232,18 @@ namespace Emberfall.Editor
                 IEnumerator combatSystems = ValidateCombatSystems(game, hero);
                 while (combatSystems.MoveNext()) yield return combatSystems.Current;
 
+                validatingPause = true;
+                game.Player.enabled = false;
+                IEnumerator chargeValidation = ChargeValidation.Validate(game, Check, Append);
+                while (chargeValidation.MoveNext()) yield return chargeValidation.Current;
+                if (hero == HeroClass.Summoner)
+                {
+                    IEnumerator summonerValidation = SummonerValidation.Validate(game, Check, Append);
+                    while (summonerValidation.MoveNext()) yield return summonerValidation.Current;
+                }
+                game.Player.enabled = true;
+                validatingPause = false;
+
                 for (int skill = 0; skill < GameBalance.SkillCount; skill++)
                 {
                     if (GameBalance.IsPassive(skill)) continue;
@@ -244,8 +265,8 @@ namespace Emberfall.Editor
                     Vector3 positionBefore = game.Player.transform.position;
                     float energyBefore = game.Player.Energy;
                     Cast(game.Player, skill);
-                    Check(Mathf.Abs(game.Player.Energy - (energyBefore - GameBalance.SkillEnergyCosts[skill])) < .02f, hero + " skill " + skill + " spends its configured resource cost");
-                    Check(Mathf.Abs(game.Player.SkillCooldownRemaining(skill) - GameBalance.EffectiveCooldown(skill, 3)) < .02f, hero + " skill " + skill + " uses the awakened cooldown");
+                    Check(Mathf.Abs(game.Player.Energy - (energyBefore - GameBalance.SkillEnergyCost(hero, skill))) < .02f, hero + " skill " + skill + " spends its configured resource cost");
+                    Check(Mathf.Abs(game.Player.SkillCooldownRemaining(skill) - GameBalance.EffectiveCooldown(hero, skill, 3)) < .02f, hero + " skill " + skill + " uses the awakened cooldown");
 
                     if (skill == 0)
                     {
@@ -279,12 +300,14 @@ namespace Emberfall.Editor
                         game.Player.TakeDamage(100f);
                         Check(before - game.Player.Health < unprotected * .8f, hero + " defense ability reduces actual incoming damage");
                     }
-                    float settle = skill == 9 ? 3.9f : category == SkillCategory.Healing ? 1.25f : skill == 2 ? 1.15f : 1f;
+                    float settle = skill == 9 ? 3.9f : hero == HeroClass.Summoner && skill == 7 ? 2.9f : category == SkillCategory.Healing ? 1.25f : skill == 2 ? 1.15f : 1f;
                     yield return new Delay(settle);
                     Check(!game.IsDead, hero + " remains alive after skill " + skill);
-                    Check(game.Player.SkillCooldownRemaining(skill) < GameBalance.EffectiveCooldown(skill, 3), hero + " skill " + skill + " cooldown advances in live frames");
+                    Check(game.Player.SkillCooldownRemaining(skill) < GameBalance.EffectiveCooldown(hero, skill, 3), hero + " skill " + skill + " cooldown advances in live frames");
                     if (category == SkillCategory.Healing) Check(game.Player.Health > healthBefore, hero + " healing skill restores real health over time");
-                    if (category == SkillCategory.Damage || category == SkillCategory.Control)
+                    if (hero == HeroClass.Summoner && (skill == 2 || skill == 4 || skill == 9))
+                        Check(SummonedCompanion.Count(game.Player, skill == 9) > 0, "Summoning skill creates its actual combat companion");
+                    else if (category == SkillCategory.Damage || category == SkillCategory.Control)
                         Check(EnemyHealth(game) < enemiesBefore, hero + " skill " + skill + " damages runtime enemies");
                     if (category == SkillCategory.Mobility) Check(Vector3.Distance(game.Player.transform.position, positionBefore) > 1f, hero + " mobility skill moves the actual character");
                     if (skill == 9) CaptureWorld(hero + "-awakened-ultimate.png", false);
@@ -295,6 +318,9 @@ namespace Emberfall.Editor
             game.Player.Teleport(new Vector3(0, 0, 11));
             game.EnterDungeon();
             Check(game.InDungeon && game.DungeonWave == 1 && game.Enemies.Count > 0, "Portal creates dungeon wave one");
+            IEnumerator groundLootValidation = GroundLootValidation.Validate(game, Check, Append);
+            while (groundLootValidation.MoveNext()) yield return groundLootValidation.Current;
+            game.Player.enabled = true;
             CaptureWorld("Dungeon-wave-one.png", true);
             int originalClears = game.Progression.Profile.clearedRuns;
             int originalItems = game.Progression.Profile.inventory.Count;
@@ -319,8 +345,9 @@ namespace Emberfall.Editor
                 yield return new Delay(.15f);
             }
             Check(lastWave == 3 && game.Progression.Profile.clearedRuns == originalClears + 1, "All three dungeon waves award exactly one clear");
-            Check(game.Progression.Profile.inventory.Count > originalItems, "Dungeon completion retains equipment loot");
+            Check(game.PendingLootCount > 0, "Dungeon rewards remain visibly on the ground until pickup");
             game.ReturnToCamp();
+            Check(game.PendingLootCount == 0 && game.Progression.Profile.inventory.Count > originalItems, "Dungeon exit automatically collects remaining equipment exactly once");
             Check(!game.InDungeon && game.Player.Health == game.Player.MaxHealth, "Dungeon exit returns to camp and heals");
             int inventoryBeforeDeath = game.Progression.Profile.inventory.Count;
             int goldBeforeDeath = game.Progression.Profile.gold;
@@ -342,7 +369,7 @@ namespace Emberfall.Editor
                 "Continue reloads isolated level and dungeon progress");
             for (int skill = 0; skill < GameBalance.SkillCount; skill++) Check(game.Progression.Profile.skillRanks[skill] == 3, "Persisted evolution restored for skill " + skill);
             yield return new Delay(.25f);
-            Append("COMPLETE: all three heroes and 24 active casts exercised in the Unity player loop.");
+            Append("COMPLETE: four heroes, 32 active casts, touch controls and new encounter systems exercised in the Unity player loop.");
         }
 
         private static IEnumerator ValidateCombatSystems(GameSession game, HeroClass hero)
@@ -355,7 +382,7 @@ namespace Emberfall.Editor
             SetField(game, "respawnTimer", 10000f);
             try
             {
-                Append("COMBAT " + hero + " — projected body selection, attack direction and uncommitted skill placement");
+                Append("COMBAT " + hero + " — projected body selection, attack direction, direct casts and uncommitted ground placement");
                 EnemyKind[] kinds = { EnemyKind.Slime, EnemyKind.Wisp, EnemyKind.Guardian };
                 for (int i = 0; i < kinds.Length; i++)
                 {
@@ -412,7 +439,7 @@ namespace Emberfall.Editor
             Call(player, "BasicAttack");
             Component shot = FindBasicProjectile(player);
             Check(shot != null && Mathf.Abs(ReadFloat(shot, "lifetime") - 1.15f) < .001f, hero + " basic projectile retains its original 1.15 second lifetime");
-            Check((EnemyController)Field(shot.GetType(), "homingTarget").GetValue(shot) == (hero == HeroClass.Arcanist ? target : null), hero + " uses the correct mage homing / straight arrow target policy");
+            Check((EnemyController)Field(shot.GetType(), "homingTarget").GetValue(shot) == (hero != HeroClass.Ranger ? target : null), hero + " uses the correct mage homing / straight arrow target policy");
             Vector3 initial = ReadVector(shot, "direction");
             if (hero == HeroClass.Ranger) target.transform.position += Vector3.right * .8f;
             yield return new Delay(.25f);
@@ -424,7 +451,7 @@ namespace Emberfall.Editor
             yield return new Delay(.12f);
             Check(shot != null, hero + " projectile survives the moving-target steering fixture");
             Vector3 lateDirection = ReadVector(shot, "direction");
-            if (hero == HeroClass.Arcanist)
+            if (hero == HeroClass.Arcanist || hero == HeroClass.Summoner)
             {
                 Check(lateDirection.x > earlyDirection.x + .02f && (EnemyController)Field(shot.GetType(), "homingTarget").GetValue(shot) == target,
                     "Mage bolt still follows its original moving target after the ranger correction window has ended");
@@ -439,7 +466,7 @@ namespace Emberfall.Editor
             yield return new Delay(1.2f);
             Check(shot == null, hero + " basic projectile expires without a homing range extension");
 
-            if (hero == HeroClass.Arcanist)
+            if (hero == HeroClass.Arcanist || hero == HeroClass.Summoner)
             {
                 ResetCombatFixture(game);
                 origin = player.transform.position;
@@ -467,42 +494,137 @@ namespace Emberfall.Editor
             runtime.Advance(200); runtime.FillEnergy();
             SkillTargetingController targeting = player.GetComponent<SkillTargetingController>();
             int skill = hero == HeroClass.Vanguard ? 9 : 1;
+            for (int candidate = 0; candidate < GameBalance.SkillCount; candidate++)
+            {
+                bool expected = hero == HeroClass.Vanguard ? candidate == 9 :
+                    hero == HeroClass.Arcanist ? candidate == 1 || candidate == 2 || candidate == 7 || candidate == 9 :
+                    hero == HeroClass.Summoner ? candidate == 1 || candidate == 7 || candidate == 9 :
+                    candidate == 1 || candidate == 2 || candidate == 5 || candidate == 9;
+                Check(SkillTargetingController.RequiresConfirmation(hero, candidate) == expected,
+                    hero + " skill " + candidate + " has its intended direct / ground-confirmation policy");
+            }
+            Check(!SkillTargetingController.RequiresConfirmation(hero, -1) && !SkillTargetingController.RequiresConfirmation(hero, GameBalance.SkillCount),
+                hero + " invalid skill identifiers cannot request ground confirmation");
             EnemyController target = SpawnFixtureEnemy(game, EnemyKind.Guardian, player.transform.position + Vector3.forward * 8);
             Vector3 screen = ProjectBody(player, target);
             Call(player, "ApplyAim", new Vector2(screen.x, screen.y));
             float energy = player.Energy;
             Check(targeting != null && targeting.Begin(skill) && targeting.IsTargeting && Mathf.Approximately(player.Energy, energy) && player.SkillCooldownRemaining(skill) == 0,
                 hero + " entering skill preview spends no resources and starts no cooldown");
+            Check(PlacementVisible(targeting), hero + " an actual ground-confirmation skill displays its preview geometry");
             targeting.SetTarget(player.transform.position + Vector3.right * 1000);
             Check(Mathf.Abs(Vector3.Distance(player.transform.position, targeting.TargetPoint) - targeting.CurrentPreview.distance) < .01f && targeting.TargetPoint.magnitude <= game.ArenaRadius + .01f,
                 hero + " out-of-range placement clamps to the actual cast distance and arena");
             targeting.Cancel();
             Check(!targeting.IsTargeting && targeting.CancelledThisFrame && targeting.TickInput() && Mathf.Approximately(player.Energy, energy) && player.SkillCooldownRemaining(skill) == 0,
                 hero + " cancelling preserves energy/cooldown and consumes the same-frame ordinary attack input");
+            Check(!PlacementVisible(targeting), hero + " cancelling hides all placement geometry");
             Check(targeting.Begin(skill), hero + " cancelled preview can be entered again");
             Vector3 chosen = player.transform.position + new Vector3(-3, 0, 2);
             targeting.SetTarget(chosen);
             Check(targeting.Confirm() && !targeting.IsTargeting && player.AimTarget == null && Vector3.Distance(player.AimPoint, chosen) < .01f,
                 hero + " confirmation keeps the precise chosen ground point and clears a prior monster lock");
-            float spentEnergy = energy - GameBalance.SkillEnergyCosts[skill];
-            float cooldown = GameBalance.EffectiveCooldown(skill, 3);
+            if (SkillChargeController.Duration(hero, skill) > 0)
+            {
+                Check(player.GetComponent<SkillChargeController>().IsCharging && Mathf.Approximately(player.Energy, energy), hero + " confirmed heavy skill begins charging without an early resource charge");
+                yield return new Delay(SkillChargeController.Duration(hero, skill) + .08f);
+            }
+            float spentEnergy = energy - GameBalance.SkillEnergyCost(hero, skill);
+            float cooldown = GameBalance.EffectiveCooldown(hero, skill, 3);
             Check(Mathf.Abs(player.Energy - spentEnergy) < .01f && Mathf.Abs(player.SkillCooldownRemaining(skill) - cooldown) < .01f,
                 hero + " confirmation consumes the configured cost and cooldown exactly once");
             Check(!targeting.Confirm() && !targeting.Begin(skill) && Mathf.Abs(player.Energy - spentEnergy) < .01f && Mathf.Abs(player.SkillCooldownRemaining(skill) - cooldown) < .01f,
                 hero + " duplicate confirmation or cooldown preview cannot double-spend resources");
+
+            // Vanguard has only one ground-confirmation skill. Finish the earlier
+            // independent cooldown checks, then explicitly reset this fixture and use
+            // a direct cast as the cooldown that teleport/pause must preserve.
+            yield return new Delay(.01f);
+            runtime.Advance(200); runtime.FillEnergy();
+            Check(targeting.Begin(0) && !targeting.IsTargeting && !PlacementVisible(targeting),
+                hero + " a ready self/directional skill releases immediately without visible placement");
+            float directEnergy = player.MaxEnergy - GameBalance.SkillEnergyCost(hero, 0);
+            float directCooldown = GameBalance.EffectiveCooldown(hero, 0, 3);
+            Check(Mathf.Abs(player.Energy - directEnergy) < .01f && Mathf.Abs(player.SkillCooldownRemaining(0) - directCooldown) < .01f,
+                hero + " direct release consumes its resource and cooldown exactly once");
+            Check(!targeting.Confirm() && !targeting.Begin(0) && !targeting.Begin(6) && targeting.TickInput() &&
+                !targeting.IsTargeting && !PlacementVisible(targeting) &&
+                Mathf.Abs(player.Energy - directEnergy) < .01f && player.SkillCooldownRemaining(6) == 0,
+                hero + " direct release rejects duplicate/different same-frame casts and suppresses ordinary attack without spending again");
+            yield return new Delay(.01f);
             runtime.FillEnergy();
-            Check(targeting.Begin(0), hero + " another ready skill may enter preview independently");
+            Check(targeting.Begin(skill) && targeting.IsTargeting && PlacementVisible(targeting),
+                hero + " a ready ground skill may enter preview while the direct skill cools down");
+            int learnedHealingRank = game.Progression.Profile.skillRanks[6];
+            try
+            {
+                game.Progression.Profile.skillRanks[6] = 0;
+                Check(!targeting.Begin(6) && targeting.IsTargeting && PlacementVisible(targeting) &&
+                    targeting.SkillName == GameBalance.SkillName(hero, skill) && Mathf.Approximately(player.Energy, player.MaxEnergy) &&
+                    player.SkillCooldownRemaining(6) == 0,
+                    hero + " an unlearned direct-cast request cannot spend resources or replace an existing valid ground preview");
+            }
+            finally { game.Progression.Profile.skillRanks[6] = learnedHealingRank; }
             player.Teleport(player.transform.position + Vector3.right);
-            Check(!targeting.IsTargeting && !targeting.Confirm() && Mathf.Approximately(player.Energy, player.MaxEnergy) && player.SkillCooldownRemaining(0) == 0 && Mathf.Abs(player.SkillCooldownRemaining(skill) - cooldown) < .01f,
+            Check(!targeting.IsTargeting && !PlacementVisible(targeting) && !targeting.Confirm() && Mathf.Approximately(player.Energy, player.MaxEnergy) &&
+                player.SkillCooldownRemaining(skill) == 0 && Mathf.Abs(player.SkillCooldownRemaining(0) - directCooldown) < .01f,
                 hero + " teleport invalidates pending placement while preserving existing independent cooldowns");
-            Check(targeting.Begin(0), hero + " teleport leaves ready skills available");
+            Check(targeting.Begin(skill), hero + " teleport leaves ready ground skills available");
             validatingPause = true;
             game.SetPaused(true);
             yield return new Delay(.12f, false);
-            Check(!targeting.IsTargeting && Mathf.Approximately(player.Energy, player.MaxEnergy) && player.SkillCooldownRemaining(0) == 0,
+            Check(!targeting.IsTargeting && !PlacementVisible(targeting) && Mathf.Approximately(player.Energy, player.MaxEnergy) &&
+                player.SkillCooldownRemaining(skill) == 0 && Mathf.Abs(player.SkillCooldownRemaining(0) - directCooldown) < .01f,
                 hero + " paused player loop cancels uncommitted placement without spending");
             game.SetPaused(false);
             validatingPause = false;
+
+            IEnumerator direct = ValidateDirectSkills(game, hero);
+            while (direct.MoveNext()) yield return direct.Current;
+        }
+
+        private static bool PlacementVisible(SkillTargetingController targeting)
+        {
+            GameObject visuals = (GameObject)Field(typeof(SkillTargetingController), "visuals").GetValue(targeting);
+            return visuals != null && visuals.activeInHierarchy;
+        }
+
+        private static IEnumerator ValidateDirectSkills(GameSession game, HeroClass hero)
+        {
+            PlayerController player = game.Player;
+            SkillRuntime runtime = Runtime(player);
+            SkillTargetingController targeting = player.GetComponent<SkillTargetingController>();
+            for (int skill = 0; skill < GameBalance.SkillCount; skill++)
+            {
+                if (GameBalance.IsPassive(skill) || SkillTargetingController.RequiresConfirmation(hero, skill)) continue;
+                ResetCombatFixture(game);
+                runtime.Advance(200); runtime.FillEnergy();
+                SetField(player, "aimPoint", player.transform.position + new Vector3(3, 0, 6));
+                int learnedRank = game.Progression.Profile.skillRanks[skill];
+                try
+                {
+                    game.Progression.Profile.skillRanks[skill] = 0;
+                    Check(!targeting.Begin(skill) && !targeting.IsTargeting && !PlacementVisible(targeting) &&
+                        Mathf.Approximately(player.Energy, player.MaxEnergy) && player.SkillCooldownRemaining(skill) == 0,
+                        hero + " unlearned direct skill " + skill + " cannot release, display a preview, spend or start cooldown");
+                }
+                finally { game.Progression.Profile.skillRanks[skill] = learnedRank; }
+                Check(targeting.Begin(skill) && !targeting.IsTargeting && !PlacementVisible(targeting),
+                    hero + " direct skill " + skill + " releases without needing a second click or showing preview geometry");
+                if (SkillChargeController.Duration(hero, skill) > 0)
+                    yield return new Delay(SkillChargeController.Duration(hero, skill) + .08f);
+                float expectedEnergy = player.MaxEnergy - GameBalance.SkillEnergyCost(hero, skill);
+                float expectedCooldown = GameBalance.EffectiveCooldown(hero, skill, learnedRank);
+                Check(Mathf.Abs(player.Energy - expectedEnergy) < .01f && Mathf.Abs(player.SkillCooldownRemaining(skill) - expectedCooldown) < .01f,
+                    hero + " direct skill " + skill + " uses its configured energy and learned cooldown");
+                Check(!targeting.Begin(skill) && !targeting.Confirm() && (SkillChargeController.Duration(hero, skill) > 0 || targeting.TickInput()) &&
+                    Mathf.Abs(player.Energy - expectedEnergy) < .01f && Mathf.Abs(player.SkillCooldownRemaining(skill) - expectedCooldown) < .01f,
+                    hero + " direct skill " + skill + " cannot double-spend through another Begin or Confirm");
+                // Wait for a genuine player-loop frame: EditorApplication.update can
+                // run more than once while Time.frameCount is unchanged.
+                yield return new Delay(.01f);
+            }
+            ResetCombatFixture(game);
         }
 
         private static IEnumerator ValidateNeutralAndStatusEffects(GameSession game)

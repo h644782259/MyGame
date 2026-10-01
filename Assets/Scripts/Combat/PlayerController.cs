@@ -10,29 +10,38 @@ namespace Emberfall
         public bool IsDead { get { return Health <= 0; } }
         public HeroClass HeroClass { get; private set; }
         public float DodgeCooldown { get { return dodgeCooldown; } }
-        public float Energy { get { return skillRuntime.Energy; } }
+        public float Energy { get { return skillRuntime != null ? skillRuntime.Energy : SkillRuntime.MaximumEnergy; } }
         public float MaxEnergy { get { return SkillRuntime.MaximumEnergy; } }
         public EnemyController AimTarget { get; private set; }
         public Vector3 AimPoint { get { return aimPoint; } }
+        public float MovementMultiplier { get { return (slowTime > 0 ? Mathf.Max(.3f, 1f - slowStrength) : 1f) * (charge != null && charge.IsCharging ? .4f : 1f); } }
         internal int CombatEpoch { get; private set; }
 
         private GameSession session;
         private StatBlock stats;
         private CombatModel model;
         private SkillTargetingController targeting;
+        private SkillChargeController charge;
+        private bool executingChargedSkill;
         private readonly Dictionary<EnemyController,Renderer[]> aimGeometry = new Dictionary<EnemyController,Renderer[]>();
         private readonly List<EnemyController> staleAimGeometry = new List<EnemyController>();
-        private readonly SkillRuntime skillRuntime = new SkillRuntime();
+        private SkillRuntime skillRuntime;
         private float attackCooldown, attackAnimation, hurtTimer, dodgeCooldown, dodgeTime, invulnerability, skillFeedbackCooldown;
         private float guardTime, guardPower, guardReduction, guardRadius, guardPulseTimer;
         private int guardRank, mobilityRank;
         private float healingProtectionTime, healingReduction, mobilityTime;
+        private float slowTime, slowStrength;
         private float passiveCooldown, passiveTime, passiveReduction, passiveSpeed;
         private Vector3 dodgeDirection, aimPoint;
         private GameObject dodgeHalo;
 
         public void Initialize(GameSession game, HeroClass heroClass)
         {
+            // Re-initializing the same hero cannot reset resources or cooldowns.
+            // A different class belongs to a new character and a new controller.
+            if (skillRuntime == null) skillRuntime = new SkillRuntime(heroClass);
+            else if (skillRuntime.HeroClass != heroClass)
+                throw new System.InvalidOperationException("A player controller cannot change class during an adventure.");
             session = game;
             HeroClass = heroClass;
             gameObject.name = "Hero - " + GameBalance.ClassName(heroClass);
@@ -41,6 +50,9 @@ namespace Emberfall
             targeting = GetComponent<SkillTargetingController>();
             if (targeting == null) targeting = gameObject.AddComponent<SkillTargetingController>();
             targeting.Initialize(this,session);
+            charge = GetComponent<SkillChargeController>();
+            if (charge == null) charge = gameObject.AddComponent<SkillChargeController>();
+            charge.Initialize(this,session);
             RefreshStats(true);
             aimPoint = transform.position + Vector3.forward * 5;
         }
@@ -72,6 +84,7 @@ namespace Emberfall
         {
             CombatEpoch++;
             if (targeting != null) targeting.Cancel();
+            if (charge != null) charge.Cancel();
             AimTarget = null;
             aimGeometry.Clear();
             position.y = 0;
@@ -79,6 +92,7 @@ namespace Emberfall
             aimPoint = position+transform.forward*5f;
             dodgeTime = 0;
             guardTime = healingProtectionTime = mobilityTime = passiveTime = 0;
+            slowTime = slowStrength = 0;
             attackAnimation = 0;
             attackCooldown = .15f;
             invulnerability = .65f;
@@ -111,6 +125,7 @@ namespace Emberfall
             {
                 CombatEpoch++;
                 if (targeting != null) targeting.Cancel();
+                if (charge != null) charge.Cancel();
                 AimTarget = null;
                 dodgeTime = 0;
                 model.transform.localRotation = Quaternion.Euler(0,0,75f);
@@ -119,7 +134,7 @@ namespace Emberfall
         }
 
         public float CooldownRemaining(int slot) { return SkillCooldownRemaining(HotbarSkill(slot)); }
-        public float SkillCooldownRemaining(int skillIndex) { return skillRuntime.Remaining(skillIndex); }
+        public float SkillCooldownRemaining(int skillIndex) { return skillRuntime != null ? skillRuntime.Remaining(skillIndex) : 0f; }
 
         private int HotbarSkill(int slot)
         {
@@ -132,6 +147,7 @@ namespace Emberfall
         private void Update()
         {
             if (session == null || model == null) return;
+            if (charge != null && charge.IsCharging && (Input.GetKeyDown(KeyCode.Escape) || (!MobileControls.Active && Input.GetMouseButtonDown(1)))) charge.Cancel();
             if (session.InputBlocked && targeting != null) targeting.Cancel();
             float dt = Time.deltaTime;
             if (dt <= 0) return;
@@ -143,6 +159,8 @@ namespace Emberfall
             skillFeedbackCooldown = Mathf.Max(0,skillFeedbackCooldown - dt);
             if (IsDead) return;
             skillRuntime.Advance(dt);
+            slowTime = Mathf.Max(0, slowTime - dt);
+            if (slowTime <= 0) slowStrength = 0;
             guardTime = Mathf.Max(0, guardTime - dt);
             healingProtectionTime = Mathf.Max(0,healingProtectionTime-dt);
             mobilityTime = Mathf.Max(0,mobilityTime-dt);
@@ -165,10 +183,14 @@ namespace Emberfall
                 model.Animate(0,attackAnimation,hurtTimer > 0);
                 return;
             }
-            Vector3 movement = new Vector3(Input.GetAxisRaw("Horizontal"),0,Input.GetAxisRaw("Vertical"));
+            bool mobile = MobileControls.Active;
+            Vector2 moveInput = mobile ? MobileControls.Move : new Vector2(Input.GetAxisRaw("Horizontal"), Input.GetAxisRaw("Vertical"));
+            Vector3 movement = new Vector3(moveInput.x, 0, moveInput.y);
             movement = Vector3.ClampMagnitude(movement,1);
-            if (Input.GetKeyDown(KeyCode.Space) && dodgeCooldown <= 0)
+            bool wantsDodge = mobile ? MobileControls.ConsumeDodge() : Input.GetKeyDown(KeyCode.Space);
+            if (wantsDodge && dodgeCooldown <= 0)
             {
+                if (charge != null) charge.Cancel();
                 dodgeDirection = movement.sqrMagnitude > .01f ? movement.normalized : transform.forward;
                 GameAudio.Play(SoundCue.Dodge);
                 dodgeTime = .27f;
@@ -185,7 +207,7 @@ namespace Emberfall
             {
                 float movementBonus = passiveTime>0?passiveSpeed:0;
                 if (mobilityTime>0) movementBonus += .1f+mobilityRank*.05f;
-                transform.position += movement * stats.MoveSpeed * (1f+movementBonus) * dt;
+                transform.position += movement * stats.MoveSpeed * (1f+movementBonus) * MovementMultiplier * dt;
             }
             Vector3 bounded = transform.position;
             float bound = Mathf.Max(1,session.ArenaRadius - .65f);
@@ -193,11 +215,12 @@ namespace Emberfall
             transform.position = Vector3.ClampMagnitude(bounded,bound);
             // Mouse selection uses this frame's final position. Walking only turns
             // the model; it never overwrites the independent mouse aim point.
-            if (!session.PointerOverUI) aimPoint = ResolveAim(Camera.main,Input.mousePosition);
-            bool wantsBasic = !session.PointerOverUI && (Input.GetMouseButton(0) || Input.GetKey(KeyCode.J));
-            if (movement.sqrMagnitude > .01f && !wantsBasic)
+            if ((charge == null || !charge.IsCharging) && (mobile || !session.PointerOverUI))
+                aimPoint = mobile ? ResolveMobileAim(movement) : ResolveAim(Camera.main,Input.mousePosition);
+            bool wantsBasic = mobile ? MobileControls.AttackHeld : !session.PointerOverUI && (Input.GetMouseButton(0) || Input.GetKey(KeyCode.J));
+            if (movement.sqrMagnitude > .01f && !wantsBasic && (charge == null || !charge.IsCharging))
                 transform.rotation = Quaternion.RotateTowards(transform.rotation,Quaternion.LookRotation(movement),720f*dt);
-            if (dodgeTime <= 0 && !session.PointerOverUI)
+            if (dodgeTime <= 0 && !mobile && !session.PointerOverUI)
             {
                 GameProfile profile = session.Progression.Profile;
                 for (int slot=0;slot<GameBalance.HotbarSize;slot++)
@@ -208,18 +231,20 @@ namespace Emberfall
                     }
             }
             bool suppressBasic = targeting != null && targeting.TickInput();
-            if (dodgeTime <= 0 && wantsBasic && !suppressBasic)
+            if (dodgeTime <= 0 && wantsBasic && !suppressBasic && (charge == null || (!charge.IsCharging && !charge.ConsumedThisFrame)))
             {
                 FaceAim();
                 if (attackCooldown <= 0) BasicAttack();
             }
             model.Animate(dodgeTime > 0 ? 1 : movement.magnitude,attackAnimation,hurtTimer > 0);
+            if (charge != null && charge.IsCharging) model.AnimateCharge(charge.Progress);
         }
 
         // Kept independent of Input so runtime validation can project a known body
         // point, move the player and check that the firing direction is recalculated.
         private void ApplyAim(Vector2 screenPosition)
         {
+            if (charge != null && charge.IsCharging) return;
             aimPoint = ResolveAim(Camera.main,screenPosition);
             FaceAim();
         }
@@ -252,6 +277,23 @@ namespace Emberfall
             }
             PruneAimGeometry();
             return AimTarget != null ? CombatFx.Flat(AimTarget.transform.position) : freeAim;
+        }
+
+        private Vector3 ResolveMobileAim(Vector3 movement)
+        {
+            AimTarget = null;
+            Vector3 direction = movement.sqrMagnitude > .01f ? movement.normalized : transform.forward;
+            float nearest = 14f;
+            for (int i = 0; i < session.Enemies.Count; i++)
+            {
+                EnemyController enemy = session.Enemies[i];
+                if (!ValidAimTarget(enemy)) continue;
+                Vector3 delta = CombatFx.Flat(enemy.transform.position - transform.position);
+                float distance = delta.magnitude;
+                if (distance < nearest && Vector3.Angle(direction, delta) <= 75f)
+                { nearest = distance; AimTarget = enemy; }
+            }
+            return AimTarget != null ? CombatFx.Flat(AimTarget.transform.position) : transform.position + direction * 8f;
         }
 
         private static bool ProjectedBounds(Camera camera,Bounds bounds,out Rect screenBounds)
@@ -344,7 +386,8 @@ namespace Emberfall
 
         private void BasicAttack()
         {
-            if (HeroClass==HeroClass.Arcanist && !ValidAimTarget(AimTarget)) AimTarget=MagicConeTarget();
+            if (charge != null && (charge.IsCharging || charge.ConsumedThisFrame)) return;
+            if ((HeroClass==HeroClass.Arcanist || HeroClass==HeroClass.Summoner) && !ValidAimTarget(AimTarget)) AimTarget=MagicConeTarget();
             FaceAim();
             GameAudio.Play(SoundCue.Attack);
             model.PlayAction(-1,true);
@@ -428,9 +471,9 @@ namespace Emberfall
                 passiveReduction=.2f+rank*.1f;
                 if(rank==3) HitArea(transform.position,radius,stats.Damage*1.6f,.9f,.65f);
             }
-            else if(HeroClass==HeroClass.Arcanist)
+            else if(HeroClass==HeroClass.Arcanist || HeroClass==HeroClass.Summoner)
             {
-                passiveReduction=.3f+rank*.1f;
+                passiveReduction=(HeroClass==HeroClass.Summoner?.25f:.3f)+rank*.1f;
                 skillRuntime.RestoreEnergy(2f+rank*2f);
                 if(rank==3) ControlArea(transform.position,radius,1.5f);
             }
@@ -467,23 +510,57 @@ namespace Emberfall
         internal bool CanBeginSkillTargeting(int skill)
         {
             if(session==null || IsDead || !session.HasStarted || session.InputBlocked || skill<0 || skill>=GameBalance.SkillCount || GameBalance.IsPassive(skill)) return false;
+            if(charge != null && (charge.IsCharging || charge.ConsumedThisFrame)) return false;
             int rank=session.Progression.Profile.skillRanks[skill];
             string failure=null;
             if(rank<=0) failure="按 K 学习这个技能后再施放。";
             else if(skillRuntime.Remaining(skill)>0) failure=GameBalance.SkillName(HeroClass,skill)+" 冷却中（"+skillRuntime.Remaining(skill).ToString("0.0")+" 秒）";
-            else if(Energy<GameBalance.SkillEnergyCosts[skill]) failure="能量不足：普攻命中回复 8 点，持续回复每秒 4 点。";
+            else if(Energy<GameBalance.SkillEnergyCost(HeroClass,skill)) failure="能量不足：普攻命中回复 8 点，持续回复每秒 4 点。";
             if(failure==null) return true;
             if(skillFeedbackCooldown<=0) { session.Notify(failure); skillFeedbackCooldown=.8f; }
             return false;
         }
 
-        internal void ConfirmTargetedSkill(int skill,Vector3 worldPoint)
+        internal bool CastImmediateSkill(int skill)
         {
-            if(!CanBeginSkillTargeting(skill)) return;
+            if(SkillTargetingController.RequiresConfirmation(HeroClass,skill) || !CanBeginSkillTargeting(skill)) return false;
+            // Mouse aim is resolved independently of movement. Re-read a selected
+            // living target's position here so immediate directional casts face it.
+            FaceAim();
+            if (SkillChargeController.Duration(HeroClass, skill) > 0) return charge.Begin(skill);
+            CastSkill(skill);
+            return true;
+        }
+
+        internal bool ConfirmTargetedSkill(int skill,Vector3 worldPoint)
+        {
+            if(!SkillTargetingController.RequiresConfirmation(HeroClass,skill) || !CanBeginSkillTargeting(skill)) return false;
             AimTarget=null;
             aimPoint=CombatFx.Flat(worldPoint);
             FaceAim();
+            if (SkillChargeController.Duration(HeroClass, skill) > 0) return charge.Begin(skill);
             CastSkill(skill);
+            return true;
+        }
+
+        internal bool ExecuteChargedSkill(int skill)
+        {
+            if (charge == null || !CanBeginSkillTargeting(skill)) return false;
+            AimTarget = null;
+            aimPoint = charge.TargetPoint;
+            transform.rotation = Quaternion.LookRotation(charge.Direction);
+            executingChargedSkill = true;
+            try { CastSkill(skill); }
+            finally { executingChargedSkill = false; }
+            return true;
+        }
+
+        public void ApplySlow(float duration, float strength)
+        {
+            if (IsDead || duration <= 0 || strength <= 0 || float.IsNaN(duration) || float.IsInfinity(duration) || float.IsNaN(strength) || float.IsInfinity(strength)) return;
+            slowTime = Mathf.Max(slowTime, duration);
+            slowStrength = Mathf.Max(slowStrength, Mathf.Clamp(strength, 0, .7f));
+            CombatFx.Ring(transform.position, .9f, new Color(.42f, .85f, .3f), .3f, .08f);
         }
 
         private void CastSkill(int slot)
@@ -504,19 +581,31 @@ namespace Emberfall
                 if (skillFeedbackCooldown <= 0)
                 {
                     float remaining = skillRuntime.Remaining(slot);
-                    session.Notify(remaining > 0 ? GameBalance.SkillName(HeroClass,slot) + " 冷却中（" + remaining.ToString("0.0") + " 秒）" : "能量不足：需要 " + GameBalance.SkillEnergyCosts[slot] + " 点；普攻命中回复 8 点，持续回复每秒 4 点。");
+                    session.Notify(remaining > 0 ? GameBalance.SkillName(HeroClass,slot) + " 冷却中（" + remaining.ToString("0.0") + " 秒）" : "能量不足：需要 " + GameBalance.SkillEnergyCost(HeroClass,slot) + " 点；普攻命中回复 8 点，持续回复每秒 4 点。");
                     skillFeedbackCooldown = .8f;
                 }
                 return;
             }
             GameAudio.Play(SoundCue.Cast);
-            model.PlayAction(slot,false);
+            if (executingChargedSkill) model.ReleaseCharge(slot);
+            else model.PlayAction(slot,false);
             attackAnimation = 1;
             float power = 1f + (rank-1)*.3f;
             float range = GameBalance.SkillRangeMultiplier(rank);
             Color color = GameBalance.ClassColor(HeroClass);
-            Vector3 target = transform.position + Vector3.ClampMagnitude(CombatFx.Flat(aimPoint-transform.position),9f*range);
+            Vector3 target = executingChargedSkill ? charge.TargetPoint : transform.position + Vector3.ClampMagnitude(CombatFx.Flat(aimPoint-transform.position),9f*range);
             target = Vector3.ClampMagnitude(target,session.ArenaRadius);
+            if (HeroClass == HeroClass.Summoner)
+            {
+                if (slot == 5)
+                {
+                    guardTime = 6f + (rank - 1) * 2f;
+                    guardRank = rank; guardReduction = .25f + rank * .1f;
+                    AdvancedSkillVfx.Rune(this, transform.position, 2.8f * range, color, guardTime, rank + 1, true);
+                }
+                else SummonerSpell.Cast(this, session, slot, rank, target, stats.Damage * power);
+                return;
+            }
             if (slot >= 3)
             {
                 if (HeroClass == HeroClass.Vanguard && slot == 4)

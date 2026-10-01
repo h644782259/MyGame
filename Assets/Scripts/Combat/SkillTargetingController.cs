@@ -2,7 +2,7 @@ using UnityEngine;
 
 namespace Emberfall
 {
-    /// <summary>Uncommitted casts: positioning never spends a resource or starts a cooldown.</summary>
+    /// <summary>Dispatches immediate skills and previews uncommitted ground-target casts.</summary>
     public sealed class SkillTargetingController : MonoBehaviour
     {
         public enum Shape { Self, Ground, Cone, Lane, Retreat }
@@ -23,6 +23,7 @@ namespace Emberfall
 
         public bool IsTargeting { get { return skill >= 0; } }
         public bool CancelledThisFrame { get { return cancelledFrame == Time.frameCount; } }
+        public bool ConsumedThisFrame { get { return CancelledThisFrame || castFrame == Time.frameCount; } }
         public string SkillName { get { return IsTargeting ? GameBalance.SkillName(owner.HeroClass, skill) : ""; } }
         public Vector3 TargetPoint { get; private set; }
         public Preview CurrentPreview { get; private set; }
@@ -35,7 +36,7 @@ namespace Emberfall
 
         private PlayerController owner;
         private GameSession session;
-        private int skill = -1, epoch, cancelledFrame = -1;
+        private int skill = -1, epoch, cancelledFrame = -1, castFrame = -1;
         private GameObject visuals;
         private Material material;
         private LineRenderer area, range, marker, startArea, endArea;
@@ -46,9 +47,27 @@ namespace Emberfall
 
         public void Initialize(PlayerController hero, GameSession game) { owner = hero; session = game; }
 
+        public static bool RequiresConfirmation(HeroClass hero, int index)
+        {
+            if (hero == HeroClass.Vanguard) return index == 9;
+            if (hero == HeroClass.Arcanist) return index == 1 || index == 2 || index == 7 || index == 9;
+            if (hero == HeroClass.Ranger) return index == 1 || index == 2 || index == 5 || index == 9;
+            if (hero == HeroClass.Summoner) return index == 1 || index == 7 || index == 9;
+            return false;
+        }
+
+        // Shared entry point for keyboard and UI. Successful immediate casts return
+        // true without ever entering placement mode; rejected requests keep a preview.
         public bool Begin(int index)
         {
-            if (owner == null || !owner.CanBeginSkillTargeting(index)) return false;
+            if (castFrame == Time.frameCount || owner == null || !owner.CanBeginSkillTargeting(index)) return false;
+            if (!RequiresConfirmation(owner.HeroClass, index))
+            {
+                if (!owner.CastImmediateSkill(index)) return false;
+                Cancel();
+                castFrame = Time.frameCount;
+                return true;
+            }
             skill = index;
             epoch = owner.CombatEpoch;
             CurrentPreview = Describe(owner.HeroClass, index, session.Progression.Profile.skillRanks[index]);
@@ -82,22 +101,27 @@ namespace Emberfall
 
         public bool Confirm()
         {
+            if (castFrame == Time.frameCount) return false;
             if (!IsTargeting || Invalid()) { Cancel(); return false; }
             int confirmed = skill;
             Vector3 point = TargetPoint;
             bool ready = owner.CanBeginSkillTargeting(confirmed);
             Cancel();
             if (!ready) return false;
-            owner.ConfirmTargetedSkill(confirmed, point);
+            if (!owner.ConfirmTargetedSkill(confirmed, point)) return false;
+            castFrame = Time.frameCount;
             return true;
         }
 
-        // Called after player movement, before any ordinary attack. A confirmation click
-        // remains consumed for the entire frame so it cannot also fire a basic attack.
+        // Called after movement and skill requests, before ordinary attacks. Both
+        // immediate casts and confirmation clicks consume the entire current frame.
         public bool TickInput()
         {
-            if (!IsTargeting) return CancelledThisFrame;
+            if (!IsTargeting) return ConsumedThisFrame;
             if (Invalid()) { Cancel(); return true; }
+            // Mobile controls own world-touch selection and explicit confirmation;
+            // a joystick finger must never act as a simulated mouse confirmation.
+            if (MobileControls.Active) return true;
             if (Input.GetMouseButtonDown(1) || Input.GetKeyDown(KeyCode.Escape)) { Cancel(); return true; }
             if (!session.PointerOverUI)
             {
@@ -131,6 +155,14 @@ namespace Emberfall
         {
             float r = GameBalance.SkillRangeMultiplier(rank);
             if (skill == 6) return new Preview(Shape.Self, 3.2f * r);
+            if (hero == HeroClass.Summoner)
+            {
+                if (skill == 0) return new Preview(Shape.Cone, 0, 5f * r, 110);
+                if (skill == 1) return new Preview(Shape.Ground, 3.2f * r, 9f * r);
+                if (skill == 7) return new Preview(Shape.Ground, 4.4f * r, 9f * r);
+                if (skill == 9) return new Preview(Shape.Ground, 3.3f * r, 9f * r);
+                return new Preview(Shape.Self, 2.8f * r);
+            }
             if (hero == HeroClass.Vanguard)
             {
                 if (skill == 0) return new Preview(Shape.Self, 3.4f * r);

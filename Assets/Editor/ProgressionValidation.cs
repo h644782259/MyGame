@@ -43,6 +43,26 @@ namespace Emberfall.Editor
             public string relicId;
         }
 
+        [Serializable]
+        private sealed class LegacyEquipmentItem
+        {
+            public string id, name;
+            public ItemSlot slot;
+            public Rarity rarity;
+            public int level, attack, defense, health, upgradeLevel;
+        }
+
+        [Serializable]
+        private sealed class LegacyEquipmentProfile
+        {
+            public int version = 1;
+            public HeroClass heroClass;
+            public int level, xp, gold, potions;
+            public int[] skillRanks;
+            public string weaponId, armorId, relicId;
+            public List<LegacyEquipmentItem> inventory = new List<LegacyEquipmentItem>();
+        }
+
         private static ValidationReport report;
 
         [MenuItem("Emberfall/Validate Progression and Skills")]
@@ -61,7 +81,7 @@ namespace Emberfall.Editor
             };
             try
             {
-                for (int hero = 0; hero < 3; hero++)
+                for (int hero = 0; hero < Enum.GetValues(typeof(HeroClass)).Length; hero++)
                 {
                     ValidateClass((HeroClass)hero);
                     ValidateSkillTreeGates((HeroClass)hero);
@@ -73,6 +93,10 @@ namespace Emberfall.Editor
                 ValidateBackupRecovery();
                 ValidateSkillRuntime();
                 ValidatePortableSaveTransfer();
+                ValidateUpgradeTransfers();
+                ValidateLegacyEquipment();
+                ValidateLootCollection();
+                ValidateHotbarDrag();
                 report.status = "PASS";
                 Debug.Log("Emberfall Unity validation PASS: " + report.assertions + " assertions. Report: " + Path.Combine(output, "validation-report.json"));
             }
@@ -93,6 +117,92 @@ namespace Emberfall.Editor
                 if (!string.IsNullOrEmpty(report.failure)) summary.AppendLine(report.failure);
                 File.WriteAllText(Path.Combine(output, "validation-report.txt"), summary.ToString(), new UTF8Encoding(false));
             }
+        }
+
+        private static void ValidateLootCollection()
+        {
+            const string name = "world-loot";
+            ProgressionService service = Fresh(name);
+            int changed = 0;
+            service.Changed += () => changed++;
+            string before = JsonUtility.ToJson(service.Profile, true);
+            string saved = File.ReadAllText(service.SaveFilePath);
+            DateTime written = File.GetLastWriteTimeUtc(service.SaveFilePath);
+            ItemData loot = service.RollLoot(0, false);
+            ItemData boss = service.RollLoot(int.MaxValue, true);
+            Check(loot.id != boss.id && loot.level == 1 && boss.level == 100 && boss.rarity >= Rarity.Rare, "world loot: unique IDs, level caps and boss rarity");
+            Check(loot.upgradeBaseInitialized && boss.upgradeBaseInitialized && loot.upgradeLevel == 0, "world loot: initialized permanent upgrade metadata");
+            Check(JsonUtility.ToJson(service.Profile, true) == before && changed == 0, "world loot: rolling does not insert gear, award gold or emit events");
+            Check(File.ReadAllText(service.SaveFilePath) == saved && File.GetLastWriteTimeUtc(service.SaveFilePath) == written, "world loot: rolling does not write a save");
+            string originalItem = JsonUtility.ToJson(loot, true);
+            int gold = service.Profile.gold;
+            Check(service.CollectLoot(loot) && service.Profile.inventory.Count == 4 && changed == 1 && service.Profile.gold == gold, "world loot: first pickup grants exactly one item and event");
+            Check(JsonUtility.ToJson(service.Profile.inventory.Find(item => item.id == loot.id), true) == originalItem, "world loot: pickup retains identity and every item attribute");
+            var restored = new ProgressionService(service.SaveDirectory);
+            Check(restored.Load() && restored.Profile.inventory.Exists(item => item.id == loot.id), "world loot: collected item survives real JsonUtility round trip");
+            Check(!restored.CollectLoot(JsonUtility.FromJson<ItemData>(originalItem)) && restored.Profile.inventory.Count == 4, "world loot: saved inventory identity rejects repeated pickup after reload");
+            before = JsonUtility.ToJson(service.Profile, true);
+            saved = File.ReadAllText(service.SaveFilePath);
+            written = File.GetLastWriteTimeUtc(service.SaveFilePath);
+            Check(!service.CollectLoot(loot) && !service.CollectLoot(JsonUtility.FromJson<ItemData>(originalItem)), "world loot: object and copied-ID duplicate pickup rejected");
+            Check(JsonUtility.ToJson(service.Profile, true) == before && changed == 1 && File.ReadAllText(service.SaveFilePath) == saved && File.GetLastWriteTimeUtc(service.SaveFilePath) == written, "world loot: duplicate causes no profile, event or save changes");
+            Check(service.Sell(loot.id), "world loot: picked-up unequipped item can be sold");
+            gold = service.Profile.gold;
+            Check(!service.CollectLoot(loot) && service.Profile.gold == gold && service.Profile.inventory.Count == 3 && changed == 2, "world loot: sold receipt cannot be picked up again");
+            before = JsonUtility.ToJson(service.Profile, true);
+            Check(!service.CollectLoot(null) && !service.CollectLoot(new ItemData()) && !service.CollectLoot(new ItemData { id = "invalid-slot", slot = (ItemSlot)99 }) && !service.CollectLoot(new ItemData { id = "invalid-rarity", rarity = (Rarity)99 }), "world loot: malformed drops rejected");
+            Check(JsonUtility.ToJson(service.Profile, true) == before && changed == 2, "world loot: invalid pickup cannot mutate progression");
+            while (service.Profile.inventory.Count < ProgressionService.InventoryCapacity) service.CreateLoot(1, false);
+            changed = 0;
+            gold = service.Profile.gold;
+            saved = File.ReadAllText(service.SaveFilePath);
+            written = File.GetLastWriteTimeUtc(service.SaveFilePath);
+            ItemData overflow = service.RollLoot(8, true);
+            Check(service.Profile.inventory.Count == 72 && service.Profile.gold == gold && changed == 0 && File.ReadAllText(service.SaveFilePath) == saved && File.GetLastWriteTimeUtc(service.SaveFilePath) == written, "world loot: full bag does not convert an uncollected drop");
+            int value = service.SellValue(overflow);
+            Check(service.CollectLoot(overflow) && service.Profile.inventory.Count == 72 && service.Profile.gold == gold + value && changed == 1 && service.LastError.Contains("自动出售"), "world loot: full-bag pickup converts once to exact sale value");
+            Check(!service.Profile.inventory.Exists(item => item.id == overflow.id), "world loot: overflow preserves existing equipment");
+            saved = File.ReadAllText(service.SaveFilePath);
+            written = File.GetLastWriteTimeUtc(service.SaveFilePath);
+            Check(!service.CollectLoot(overflow) && !service.CollectLoot(JsonUtility.FromJson<ItemData>(JsonUtility.ToJson(overflow, true))), "world loot: overflow receipt rejects object and copied-ID duplicates");
+            Check(service.Profile.gold == gold + value && changed == 1 && File.ReadAllText(service.SaveFilePath) == saved && File.GetLastWriteTimeUtc(service.SaveFilePath) == written, "world loot: duplicate overflow cannot grant more gold or write saves");
+            restored = new ProgressionService(service.SaveDirectory);
+            Check(restored.Load() && restored.Profile.inventory.Count == 72 && restored.Profile.gold == gold + value, "world loot: full bag and converted gold persist");
+            report.passedStages.Add("world loot: delayed collection, identity deduplication, full-bag sale and real JSON persistence");
+        }
+
+        private static void ValidateHotbarDrag()
+        {
+            foreach (HeroClass hero in Enum.GetValues(typeof(HeroClass)))
+            {
+                ProgressionService service = Fresh("hotbar-drag-" + hero, hero);
+                string saved = File.ReadAllText(service.SaveFilePath);
+                int changes = 0;
+                service.Changed += () => changes++;
+                Check(!service.MoveHotbarSkill(0, 1) && !service.MoveHotbarSkill(-1, 1) && !service.MoveHotbarSkill(0, 10) && changes == 0 && File.ReadAllText(service.SaveFilePath) == saved, hero + ": unlearned and invalid drags do not save");
+                ReachLevel(service, 4);
+                Check(service.LearnSkill(0), hero + ": drag fixture learns root through actual progression");
+                int[] pages = (int[])service.Profile.equippedSkills.Clone();
+                changes = 0;
+                Check(service.MoveHotbarSkill(0, 1) && service.Profile.equippedSkills[0] == -1 && service.Profile.equippedSkills[1] == 0 && changes == 1, hero + ": drag onto unlearned preset treats it as empty");
+                for (int i = 10; i < pages.Length; i++) Check(service.Profile.equippedSkills[i] == pages[i], hero + ": other pages survive first-page drag");
+                Check(service.MoveHotbarSkill(1, 9) && service.Profile.equippedSkills[1] == -1 && service.Profile.equippedSkills[9] == 0, hero + ": empty-slot drag moves learned skill");
+                Check(service.LearnSkill(1) && service.AssignSkill(0, 1), hero + ": second learned skill assigned");
+                changes = 0;
+                Check(service.MoveHotbarSkill(9, 0) && service.Profile.equippedSkills[0] == 0 && service.Profile.equippedSkills[9] == 1 && changes == 1, hero + ": occupied learned slots swap atomically");
+                saved = File.ReadAllText(service.SaveFilePath);
+                DateTime written = File.GetLastWriteTimeUtc(service.SaveFilePath);
+                Check(!service.MoveHotbarSkill(0, 0) && !service.MoveHotbarSkill(1, 2) && changes == 1 && File.ReadAllText(service.SaveFilePath) == saved && File.GetLastWriteTimeUtc(service.SaveFilePath) == written, hero + ": no-op drags do not mutate saved state");
+                Check(service.SetHotbarPage(2) && service.AssignSkill(0, 0), hero + ": selected third page with independent learned skill");
+                pages = (int[])service.Profile.equippedSkills.Clone();
+                Check(service.MoveHotbarSkill(0, 9) && service.Profile.equippedSkills[20] == -1 && service.Profile.equippedSkills[29] == 0, hero + ": selected third page receives move");
+                for (int i = 0; i < 20; i++) Check(service.Profile.equippedSkills[i] == pages[i], hero + ": first two pages survive third-page drag");
+                var restored = new ProgressionService(service.SaveDirectory);
+                Check(restored.Load() && restored.Profile.heroClass == hero && restored.Profile.hotbarPage == 2 && restored.Profile.equippedSkills[0] == 0 && restored.Profile.equippedSkills[9] == 1 && restored.Profile.equippedSkills[20] == -1 && restored.Profile.equippedSkills[29] == 0, hero + ": real JsonUtility retains swapped and moved skills");
+                service.Profile.equippedSkills[20] = 3;
+                Check(!service.MoveHotbarSkill(0, 8), hero + ": passive source cannot be dragged onto active bar");
+            }
+            report.passedStages.Add("hotbar drag: four-class learned moves, swaps, selected-page isolation and real JSON persistence");
         }
 
         private static ProgressionService Fresh(string name, HeroClass hero = HeroClass.Vanguard)
@@ -129,6 +239,8 @@ namespace Emberfall.Editor
                 Check(Near(stats.Damage, baseline.Damage * 1.22f) && Near(stats.Armor, baseline.Armor + 7), name + ": rank-three passive includes equipment damage and armor");
             else if (hero == HeroClass.Arcanist)
                 Check(Near(stats.Damage, baseline.Damage * 1.18f) && Near(stats.MaxHealth, baseline.MaxHealth * 1.1f), name + ": rank-three passive includes equipped damage and health");
+            else if (hero == HeroClass.Summoner)
+                Check(Near(stats.Damage, baseline.Damage * 1.18f) && Near(stats.MaxHealth, baseline.MaxHealth) && Near(stats.CritChance, baseline.CritChance), name + ": summoner passive improves damage without ranger or mage bonuses");
             else
                 Check(Near(stats.CritChance, baseline.CritChance + .12f) && Near(stats.MoveSpeed, baseline.MoveSpeed * 1.1f), name + ": rank-three passive improves critical chance and movement");
             Check(service.AssignSkill(0, 9) && service.Profile.equippedSkills[7] == 0, name + ": active assignment swaps same-page skill");
@@ -323,17 +435,20 @@ namespace Emberfall.Editor
             LearnPrerequisites(service, 9);
             for (int rank = 1; rank <= 3; rank++) Check(service.LearnSkill(9), "runtime: ultimate learned through production progression");
             Check(service.SetHotbarPage(0) && service.AssignSkill(0, 9), "runtime: ultimate mapped on first page");
-            var runtime = new SkillRuntime();
-            Check(runtime.TryConsume(9, service.Profile.skillRanks[9]) && Near(runtime.Energy, 15) && Near(runtime.Remaining(9), 77.4f), "runtime: rank-three ultimate spends 85 energy and starts independent cooldown");
+            var runtime = new SkillRuntime(service.Profile.heroClass);
+            float ultimateCooldown = GameBalance.EffectiveCooldown(service.Profile.heroClass, 9, 3);
+            float remainingEnergy = 100 - GameBalance.SkillEnergyCost(service.Profile.heroClass, 9);
+            Check(runtime.TryConsume(9, service.Profile.skillRanks[9]) && Near(runtime.Energy, remainingEnergy) && Near(runtime.Remaining(9), ultimateCooldown), "runtime: rank-three ultimate spends class-specific energy and starts its independent cooldown");
             Check(service.SetHotbarPage(1) && service.AssignSkill(5, 9) && service.SetHotbarKey(5, 113), "runtime: same skill can be mapped and rebound on second page");
             int mapped = service.Profile.equippedSkills[service.Profile.hotbarPage * 10 + 5];
-            Check(!runtime.TryConsume(mapped, service.Profile.skillRanks[mapped]) && Near(runtime.Remaining(9), 77.4f), "runtime: changing pages and bindings cannot bypass cooldown");
-            Check(!runtime.TryConsume(7, 1) && Near(runtime.Remaining(7), 0) && Near(runtime.Energy, 15), "runtime: insufficient energy changes no resources");
-            Check(runtime.TryConsume(0, 1) && Near(runtime.Energy, 7), "runtime: a low-cost skill remains usable after ultimate");
+            Check(!runtime.TryConsume(mapped, service.Profile.skillRanks[mapped]) && Near(runtime.Remaining(9), ultimateCooldown), "runtime: changing pages and bindings cannot bypass cooldown");
+            Check(!runtime.TryConsume(7, 1) && Near(runtime.Remaining(7), 0) && Near(runtime.Energy, remainingEnergy), "runtime: insufficient energy changes no resources");
+            remainingEnergy -= GameBalance.SkillEnergyCost(service.Profile.heroClass, 0);
+            Check(runtime.TryConsume(0, 1) && Near(runtime.Energy, remainingEnergy), "runtime: a low-cost skill remains usable after ultimate");
             runtime.Advance(5);
-            Check(Near(runtime.Remaining(0), 0) && Near(runtime.Remaining(9), 72.4f) && Near(runtime.Energy, 27), "runtime: energy regeneration and cooldown passage are independent");
+            Check(Near(runtime.Remaining(0), 0) && Near(runtime.Remaining(9), ultimateCooldown - 5) && Near(runtime.Energy, remainingEnergy + 20), "runtime: energy regeneration and cooldown passage are independent");
             runtime.FillEnergy();
-            Check(Near(runtime.Energy, 100) && Near(runtime.Remaining(9), 72.4f), "runtime: resource refill cannot reset cooldown");
+            Check(Near(runtime.Energy, 100) && Near(runtime.Remaining(9), ultimateCooldown - 5), "runtime: resource refill cannot reset cooldown");
             Check(!runtime.TryConsume(3, 3) && !runtime.TryConsume(8, 3), "runtime: both learned passive IDs cannot cast");
             Check(!runtime.TryConsume(-1, 1) && !runtime.TryConsume(10, 1) && !runtime.TryConsume(0, 0) && !runtime.TryConsume(0, 4), "runtime: empty slots and invalid ranks safely rejected");
             float beforeCooldown = runtime.Remaining(9);
@@ -391,6 +506,205 @@ namespace Emberfall.Editor
             Check(empty.HasSave && empty.Profile.heroClass == HeroClass.Arcanist && empty.Profile.level == 1 && empty.Profile.skillPoints == 0 && File.Exists(empty.SaveFilePath), "portable: third installation creates independent new character");
             Check(File.ReadAllText(source.SaveFilePath) == sourceJson && migrated.Profile.heroClass == HeroClass.Ranger, "portable: new independent character does not overwrite other installations");
             report.passedStages.Add("portable primary-JSON-only transfer, complete profile equality and independent clean installation");
+        }
+
+        private static void ValidateUpgradeTransfers()
+        {
+            foreach (ItemSlot slot in new[] { ItemSlot.Weapon, ItemSlot.Armor, ItemSlot.Relic })
+            {
+                string name = "equipment-transfer-" + slot;
+                var service = Fresh(name);
+                ReachLevel(service, 50);
+                service.AddGold(1000000);
+                ItemData source = service.Equipped(slot);
+                ItemData zeroSource = service.PreviewUpgrade(source, 0);
+                ItemData target = TransferItem(service, slot);
+                ItemData zeroTarget = service.PreviewUpgrade(target, 0);
+                ItemData paidSource = CloneEquipment(service, source);
+                ItemData paidTarget = CloneEquipment(service, target);
+                UpgradeTo(service, source, 5);
+                UpgradeTo(service, paidSource, 2);
+                UpgradeTo(service, paidTarget, 5);
+                ItemData fiveSource = service.PreviewUpgrade(source, 5);
+                int events = 0;
+                StatBlock observed = new StatBlock();
+                service.Changed += () => { events++; observed = service.GetStats(); };
+                string profile = JsonUtility.ToJson(service.Profile, true);
+                string saved = File.ReadAllText(service.SaveFilePath);
+                for (int rank = 0; rank <= 10; rank++)
+                {
+                    ItemData preview = service.PreviewUpgrade(target, rank);
+                    Check(preview != null && !ReferenceEquals(preview, target) && preview.upgradeLevel == rank && BoundedEquipment(preview) && preview.id == target.id && preview.slot == slot && preview.level == 35, name + ": independent bounded preview at rank " + rank);
+                    preview.name = "preview-only mutation";
+                    preview.attack = 9999;
+                }
+                Check(service.PreviewUpgrade(null, 1) == null && service.PreviewUpgrade(target, -1) == null && service.PreviewUpgrade(target, 11) == null, name + ": null and out-of-range previews rejected");
+                Check(JsonUtility.ToJson(service.Profile, true) == profile && File.ReadAllText(service.SaveFilePath) == saved && events == 0, name + ": preview changes no profile, resource, event or actual JSON bytes");
+                source.upgradeLevel = 11;
+                string malformed = JsonUtility.ToJson(service.Profile, true);
+                Check(!service.TransferUpgrade(source.id, target.id) && JsonUtility.ToJson(service.Profile, true) == malformed && events == 0, name + ": source rank outside cap is rejected without mutation");
+                source.upgradeLevel = 5;
+                foreach (int invalidRank in new[] { -1, 11 })
+                {
+                    target.upgradeLevel = invalidRank;
+                    malformed = JsonUtility.ToJson(service.Profile, true);
+                    Check(!service.TransferUpgrade(source.id, target.id) && JsonUtility.ToJson(service.Profile, true) == malformed && events == 0, name + ": target rank outside range is rejected without mutation");
+                }
+                target.upgradeLevel = 0;
+
+                service.AddGold(-service.Profile.gold);
+                events = 0;
+                StatBlock before = service.GetStats();
+                Check(service.TransferUpgrade(source.id, target.id) && SameEquipment(source, zeroSource) && SameEquipment(target, paidTarget), name + ": +5 moves to a different base exactly like five paid target upgrades");
+                Check(service.Profile.gold == 0 && events == 1 && source.upgradeLevel + target.upgradeLevel == 5 && service.Equipped(slot).id == source.id && source.level == 1 && target.level == 35, name + ": transfer works without gold, preserves ranks and equipped IDs across item levels");
+                StatBlock after = service.GetStats();
+                Check(Near(after.Damage, before.Damage - fiveSource.attack + zeroSource.attack) && Near(after.Armor, before.Armor - fiveSource.defense + zeroSource.defense) && Near(after.MaxHealth, before.MaxHealth - fiveSource.health + zeroSource.health) && SameStats(observed, after), name + ": one Changed event exposes final equipped totals including reduced maximum health");
+                profile = JsonUtility.ToJson(service.Profile, true);
+                saved = File.ReadAllText(service.SaveFilePath);
+                events = 0;
+                ItemData wrongSlot = service.Equipped(slot == ItemSlot.Weapon ? ItemSlot.Armor : ItemSlot.Weapon);
+                Check(!service.TransferUpgrade(null, target.id) && !service.TransferUpgrade(target.id, "missing") && !service.TransferUpgrade("missing", target.id), name + ": absent transfer items rejected");
+                Check(!service.TransferUpgrade(target.id, target.id) && !service.TransferUpgrade(target.id, wrongSlot.id) && !service.TransferUpgrade(source.id, target.id), name + ": identical IDs, different slots and +0 sources rejected");
+                Check(JsonUtility.ToJson(service.Profile, true) == profile && File.ReadAllText(service.SaveFilePath) == saved && events == 0, name + ": rejected requests preserve the entire profile and persisted file");
+                Check(service.TransferUpgrade(target.id, source.id) && SameEquipment(source, fiveSource) && SameEquipment(target, zeroTarget), name + ": reversal exactly restores both original attribute sets");
+                service.AddGold(1000000);
+                UpgradeTo(service, target, 2);
+                ItemData twoTarget = service.PreviewUpgrade(target, 2);
+                int gold = service.Profile.gold;
+                Check(service.TransferUpgrade(source.id, target.id) && SameEquipment(source, paidSource) && SameEquipment(target, paidTarget) && source.upgradeLevel + target.upgradeLevel == 7 && service.Profile.gold == gold, name + ": +5 and +2 swap instead of stacking or copying");
+                string sourceSnapshot = JsonUtility.ToJson(source, true);
+                string targetSnapshot = JsonUtility.ToJson(target, true);
+                for (int cycle = 0; cycle < 6; cycle++) Check(service.TransferUpgrade(source.id, target.id) && service.Profile.gold == gold && source.upgradeLevel + target.upgradeLevel == 7, name + ": repeated swap conserves ranks and gold");
+                Check(JsonUtility.ToJson(source, true) == sourceSnapshot && JsonUtility.ToJson(target, true) == targetSnapshot, name + ": repeated swaps preserve all stats and persistent metadata without inflation");
+                service.Save();
+                var restored = new ProgressionService(CaseDirectory(name));
+                Check(restored.Load(), name + ": transferred equipment loads through real JsonUtility");
+                ItemData restoredSource = restored.Profile.inventory.Find(item => item.id == source.id);
+                ItemData restoredTarget = restored.Profile.inventory.Find(item => item.id == target.id);
+                Check(JsonUtility.ToJson(restoredSource, true) == sourceSnapshot && JsonUtility.ToJson(restoredTarget, true) == targetSnapshot, name + ": all base and anchor metadata survive JSON round trip");
+                Check(restored.TransferUpgrade(restoredTarget.id, restoredSource.id) && SameEquipment(restoredSource, fiveSource) && SameEquipment(restoredTarget, twoTarget), name + ": loaded upgrades remain fully reversible");
+                ItemData next = restored.PreviewUpgrade(restoredSource, 6);
+                int cost = restored.UpgradeCost(restoredSource);
+                gold = restored.Profile.gold;
+                Check(restored.Upgrade(restoredSource.id) && SameEquipment(restoredSource, next) && restored.Profile.gold == gold - cost, name + ": loaded transferred equipment still upgrades with exact preview and normal price");
+                UpgradeTo(restored, restoredSource, 10);
+                gold = restored.Profile.gold;
+                Check(!restored.Upgrade(restoredSource.id) && restoredSource.upgradeLevel == 10 && restored.UpgradeCost(restoredSource) == 0 && restored.Profile.gold == gold, name + ": maximum upgrade cap prevents a further charge");
+                Check(restored.TransferUpgrade(restoredSource.id, restoredTarget.id) && restoredSource.upgradeLevel == 2 && restoredTarget.upgradeLevel == 10 && BoundedEquipment(restoredSource) && BoundedEquipment(restoredTarget) && restored.Profile.gold == gold, name + ": capped upgrades transfer safely and for free");
+            }
+            report.passedStages.Add("three equipment slots: free movement and swaps, exact attributes, refresh events, immutable previews and persisted upgrade bases");
+        }
+
+        private static void ValidateLegacyEquipment()
+        {
+            foreach (bool unusual in new[] { false, true })
+            {
+                string name = unusual ? "equipment-legacy-caps" : "equipment-legacy-normal";
+                var seed = Fresh(name);
+                ReachLevel(seed, 50);
+                seed.AddGold(1000000);
+                var sources = new List<string>();
+                var targets = new List<string>();
+                foreach (ItemSlot slot in new[] { ItemSlot.Weapon, ItemSlot.Armor, ItemSlot.Relic })
+                {
+                    ItemData source = seed.Equipped(slot);
+                    UpgradeTo(seed, source, 5);
+                    sources.Add(source.id);
+                    targets.Add(TransferItem(seed, slot).id);
+                }
+                var legacy = new LegacyEquipmentProfile { heroClass = seed.Profile.heroClass, level = seed.Profile.level, xp = seed.Profile.xp, gold = seed.Profile.gold, potions = seed.Profile.potions,
+                    skillRanks = seed.Profile.skillRanks, weaponId = seed.Profile.weaponId, armorId = seed.Profile.armorId, relicId = seed.Profile.relicId };
+                var expected = new Dictionary<string, ItemData>();
+                foreach (ItemData item in seed.Profile.inventory)
+                {
+                    var oldItem = new LegacyEquipmentItem { id = item.id, name = item.name, slot = item.slot, rarity = item.rarity, level = item.level, attack = item.attack, defense = item.defense, health = item.health, upgradeLevel = item.upgradeLevel };
+                    if (unusual && sources.Contains(item.id))
+                    {
+                        oldItem.upgradeLevel = item.slot == ItemSlot.Weapon ? 8 : 7;
+                        oldItem.attack = item.slot == ItemSlot.Weapon ? 10000 : item.slot == ItemSlot.Relic ? 1 : 0;
+                        oldItem.defense = item.slot == ItemSlot.Armor ? 10000 : 0;
+                        oldItem.health = item.slot == ItemSlot.Weapon ? 0 : item.slot == ItemSlot.Relic ? 100000 : 3;
+                    }
+                    legacy.inventory.Add(oldItem);
+                    if (sources.Contains(item.id)) expected[item.id] = JsonUtility.FromJson<ItemData>(JsonUtility.ToJson(oldItem));
+                }
+                string payload = JsonUtility.ToJson(legacy);
+                Check(!payload.Contains("baseAttack") && !payload.Contains("upgradeAnchorLevel") && !payload.Contains("upgradeBaseInitialized"), name + ": legacy JSON actually omits new equipment metadata");
+                WriteEnvelope(name, payload);
+                string untouched = File.ReadAllText(SavePath(name));
+                foreach (ItemData item in expected.Values)
+                {
+                    string itemJson = JsonUtility.ToJson(item, true);
+                    ItemData preview = seed.PreviewUpgrade(item, item.upgradeLevel);
+                    Check(preview != null && preview.upgradeBaseInitialized && SameEquipment(preview, item) && !item.upgradeBaseInitialized && JsonUtility.ToJson(item, true) == itemJson, name + ": legacy preview initializes only its independent copy");
+                }
+                Check(File.ReadAllText(SavePath(name)) == untouched, name + ": legacy preview never rewrites the saved file");
+                var restored = new ProgressionService(CaseDirectory(name));
+                Check(restored.Load(), name + ": old upgraded items load through real JsonUtility");
+                var metadata = new Dictionary<string, string>();
+                for (int i = 0; i < sources.Count; i++)
+                {
+                    ItemData item = restored.Profile.inventory.Find(entry => entry.id == sources[i]);
+                    Check(SameEquipment(item, expected[item.id]) && item.upgradeBaseInitialized && item.upgradeAnchorLevel == expected[item.id].upgradeLevel, name + ": migration preserves visible rank and all attributes exactly");
+                    metadata[item.id] = JsonUtility.ToJson(item, true);
+                }
+                for (int cycle = 0; cycle < 2; cycle++)
+                    for (int i = 0; i < sources.Count; i++)
+                    {
+                        int gold = restored.Profile.gold;
+                        Check(restored.TransferUpgrade(sources[i], targets[i]), name + ": legacy rank transfers before reload");
+                        var away = new ProgressionService(CaseDirectory(name));
+                        Check(away.Load() && away.TransferUpgrade(targets[i], sources[i]), name + ": legacy rank returns after an intervening save/load");
+                        restored = new ProgressionService(CaseDirectory(name));
+                        Check(restored.Load() && restored.Profile.gold == gold && JsonUtility.ToJson(restored.Profile.inventory.Find(entry => entry.id == sources[i]), true) == metadata[sources[i]], name + ": repeated reload and transfer preserve all three stats and all eight metadata fields");
+                    }
+                for (int i = 0; i < sources.Count; i++)
+                {
+                    ItemData item = restored.Profile.inventory.Find(entry => entry.id == sources[i]);
+                    ItemData before = expected[item.id];
+                    ItemData next = restored.PreviewUpgrade(item, item.upgradeLevel + 1);
+                    int cost = restored.UpgradeCost(item);
+                    int gold = restored.Profile.gold;
+                    Check(restored.Upgrade(item.id) && SameEquipment(item, next) && item.attack >= before.attack && item.defense >= before.defense && item.health >= before.health && BoundedEquipment(item) && restored.Profile.gold == gold - cost, name + ": migrated anchors support continued paid upgrades without decreases or overflow");
+                }
+                report.passedStages.Add(name + ": missing base fields, exact anchored legacy values, immutable preview and repeated reversible JSON transfers");
+            }
+        }
+
+        private static ItemData TransferItem(ProgressionService service, ItemSlot slot)
+        {
+            var item = new ItemData { id = Guid.NewGuid().ToString("N"), name = "Transfer fixture " + slot, slot = slot, rarity = Rarity.Epic, level = 35,
+                attack = slot == ItemSlot.Weapon ? 47 : slot == ItemSlot.Relic ? 18 : 0,
+                defense = slot == ItemSlot.Armor ? 26 : 0, health = slot == ItemSlot.Armor ? 180 : slot == ItemSlot.Relic ? 90 : 0 };
+            service.Profile.inventory.Add(item);
+            service.Save();
+            Check(item.upgradeBaseInitialized, "equipment fixture receives persistent metadata through production validation");
+            return item;
+        }
+
+        private static ItemData CloneEquipment(ProgressionService service, ItemData item)
+        {
+            ItemData copy = service.PreviewUpgrade(item, 0);
+            copy.id = Guid.NewGuid().ToString("N");
+            copy.name += " paid reference";
+            service.Profile.inventory.Add(copy);
+            service.Save();
+            return copy;
+        }
+
+        private static void UpgradeTo(ProgressionService service, ItemData item, int rank)
+        {
+            while (item.upgradeLevel < rank) Check(service.Upgrade(item.id), "fixture purchases an actual upgrade: " + item.slot + " +" + rank);
+        }
+
+        private static bool SameEquipment(ItemData a, ItemData b)
+        {
+            return a != null && b != null && a.attack == b.attack && a.defense == b.defense && a.health == b.health && a.upgradeLevel == b.upgradeLevel;
+        }
+
+        private static bool BoundedEquipment(ItemData item)
+        {
+            return item.upgradeLevel >= 0 && item.upgradeLevel <= 10 && item.attack >= 0 && item.attack <= 10000 && item.defense >= 0 && item.defense <= 10000 && item.health >= 0 && item.health <= 100000;
         }
 
         private static void ReachLevel(ProgressionService service, int level)

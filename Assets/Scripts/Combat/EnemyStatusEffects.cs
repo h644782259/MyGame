@@ -9,8 +9,10 @@ namespace Emberfall
         public float DamageMultiplier { get { return markTime > 0 ? 1 + markStrength : 1; } }
         public int PoisonStacks { get { return poisonTime > 0 ? poisonStacks : 0; } }
         public bool KnockedDown { get { return downTime > 0; } }
+        public bool IsAirborne { get { return airborneTime > 0; } }
+        public float AirborneHeight { get { return airborneTime <= 0 ? 0 : Mathf.Sin(Mathf.Clamp01(1f - airborneTime / airborneDuration) * Mathf.PI) * airborneHeight; } }
         public string Summary { get {
-            string value = downTime > 0 ? "击倒 " : frozenTime > 0 ? "冻结 " : enemy != null && enemy.IsStunned ? "眩晕 " : "";
+            string value = IsAirborne ? "浮空 " : downTime > 0 ? "击倒 " : frozenTime > 0 ? "冻结 " : enemy != null && enemy.IsStunned ? "眩晕 " : "";
             if (slowTime > 0) value += "减速 ";
             if (PoisonStacks > 0) value += "中毒×" + PoisonStacks + " ";
             if (markTime > 0) value += "锁定易伤 ";
@@ -22,6 +24,7 @@ namespace Emberfall
         private PlayerController poisonSource;
         private Transform model;
         private bool wasDown;
+        private float airborneTime, airborneDuration, airborneHeight, airborneRecovery;
 
         private void Awake() { enemy = GetComponent<EnemyController>(); }
         public void Slow(float duration, float strength)
@@ -40,6 +43,16 @@ namespace Emberfall
         {
             downTime = Mathf.Max(downTime, duration * (enemy.IsBoss ? .24f : 1));
             enemy.ApplyControl(duration);
+        }
+        public void Knockup(float duration, float height)
+        {
+            if (enemy == null || enemy.IsDead || duration <= 0 || IsAirborne || airborneRecovery > 0) return;
+            airborneDuration = Mathf.Clamp(duration, .3f, 1.2f) * (enemy.IsBoss ? .24f : 1f);
+            airborneTime = airborneDuration;
+            airborneHeight = Mathf.Clamp(height, .25f, 2f) * (enemy.IsBoss ? .18f : 1f);
+            airborneRecovery = airborneDuration + (enemy.IsBoss ? 2.5f : .35f);
+            enemy.ApplyControl(duration);
+            enemy.Provoke();
         }
         public void Mark(float duration, float vulnerability)
         {
@@ -66,6 +79,8 @@ namespace Emberfall
             markTime = Mathf.Max(0, markTime - dt);
             downTime = Mathf.Max(0, downTime - dt);
             frozenTime = Mathf.Max(0, frozenTime - dt);
+            airborneTime = Mathf.Max(0, airborneTime - dt);
+            airborneRecovery = Mathf.Max(0, airborneRecovery - dt);
             if (slowTime <= 0) slowStrength = 0;
             if (markTime <= 0) markStrength = 0;
             if (poisonTime <= 0) return;
@@ -76,7 +91,7 @@ namespace Emberfall
             if (poisonTick <= 0)
             {
                 poisonTick += .75f;
-                enemy.TakeDamage(poisonDamage * poisonStacks, Vector3.zero);
+                enemy.TakeDamage(poisonDamage * poisonStacks, Vector3.zero, impact: false);
                 CombatFx.Ring(enemy.transform.position, .6f, new Color(.55f, 1f, .28f), .35f, .06f);
             }
         }

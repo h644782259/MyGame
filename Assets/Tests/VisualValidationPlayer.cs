@@ -13,7 +13,7 @@ namespace Emberfall
     public sealed class VisualValidationPlayer : MonoBehaviour
     {
         private const BindingFlags PrivateInstance = BindingFlags.NonPublic | BindingFlags.Instance;
-        private const float TimeoutSeconds = 180f;
+        private const float TimeoutSeconds = 230f;
         private static string outputDirectory;
         private static string saveDirectory;
         private static string setupError;
@@ -25,6 +25,8 @@ namespace Emberfall
         private bool expectedPause;
         private int requestedWidth;
         private int requestedHeight;
+        private bool movingPreview;
+        private EnemyController hitPreview;
 
         [Serializable]
         private sealed class Screenshot
@@ -138,9 +140,13 @@ namespace Emberfall
             if (session.Player != null)
             {
                 CombatModel model = session.Player.GetComponentInChildren<CombatModel>();
-                if (model != null) model.Animate(0, 0, false);
+                if (movingPreview) session.Player.transform.position += Vector3.right * Time.deltaTime * 4f;
+                if (model != null) model.Animate(movingPreview ? 1 : 0, 0, false);
+                var charge = session.Player.GetComponent<SkillChargeController>();
+                if (charge != null && charge.IsCharging && model != null) model.AnimateCharge(charge.Progress);
             }
             foreach (EnemyController enemy in session.Enemies) if (enemy != null) enemy.enabled = false;
+            if (hitPreview != null) hitPreview.GetComponentInChildren<CombatModel>().Animate(0,0,true);
             // Focus-loss pauses only this test player; keep the requested screenshot state stable.
             if (session.Paused != expectedPause) session.SetPaused(expectedPause);
         }
@@ -185,9 +191,9 @@ namespace Emberfall
             ui = session.GetComponent<GameUI>();
             Check(ui != null, "Runtime IMGUI component exists");
             Check(Path.GetFullPath(session.Progression.SaveDirectory) == SaveDirectory, "Test player uses its isolated save directory");
-            int[] widths = { 1280, 1600, 1920 };
-            int[] heights = { 720, 900, 1080 };
-            for (int hero = 0; hero < 3; hero++)
+            int[] widths = { 1280, 1600, 1920, 1600 };
+            int[] heights = { 720, 900, 1080, 900 };
+            for (int hero = 0; hero < 4; hero++)
             {
                 if (session.HasStarted) { ResetPanels(); session.QuitToTitle(); }
                 SetField("selectedClass", (HeroClass)hero);
@@ -211,7 +217,9 @@ namespace Emberfall
                 yield return new WaitForSecondsRealtime(1.7f);
                 yield return Capture(label + "-hud-learned");
                 SkillTargetingController placement = session.Player.GetComponent<SkillTargetingController>();
-                Check(placement.Begin(1), "Learned skill enters placement preview");
+                int placementSkill = (HeroClass)hero == HeroClass.Vanguard ? 9 : 1;
+                Check(SkillTargetingController.RequiresConfirmation((HeroClass)hero, placementSkill) && placement.Begin(placementSkill) && placement.IsTargeting,
+                    "A learned ground skill enters placement preview: " + label);
                 placement.SetTarget(session.Player.transform.position + new Vector3(3, 0, 6));
                 yield return Capture(label + "-skill-placement");
                 placement.Cancel();
@@ -230,6 +238,23 @@ namespace Emberfall
                 ResetPanels();
                 OpenPanel("Inventory");
                 yield return Capture(label + "-inventory");
+                ItemData transferSource = session.Progression.Equipped(ItemSlot.Weapon);
+                var transferTarget = new ItemData {
+                    id = "visual-transfer-target-" + hero, name = "传承试炼武器",
+                    slot = ItemSlot.Weapon, rarity = Rarity.Epic, level = 10, attack = 40
+                };
+                session.Progression.Profile.inventory.Add(transferTarget);
+                session.Progression.Profile.gold = 100000;
+                while (transferSource.upgradeLevel < 3) Check(session.Progression.Upgrade(transferSource.id), "Prepare reinforced source for inheritance");
+                Check(session.Progression.Upgrade(transferTarget.id), "Prepare reinforced destination for exchange preview");
+                Invoke("OpenUpgradeTransfer", transferTarget);
+                SetField("transferSourceId", transferSource.id);
+                Check(GetField("panel").ToString() == "UpgradeTransfer", "Inheritance panel opens with the selected destination");
+                yield return Capture(label + "-upgrade-transfer-preview");
+                Invoke("ConfirmUpgradeTransfer");
+                Check(GetField("panel").ToString() == "Inventory" && transferSource.upgradeLevel == 1 && transferTarget.upgradeLevel == 3,
+                    "Inheritance confirmation returns to inventory and preserves both enhancement levels");
+                yield return Capture(label + "-upgrade-transfer-result");
                 ResetPanels();
                 OpenPanel("Skills");
                 Invoke("OpenBindings");
@@ -248,8 +273,46 @@ namespace Emberfall
                 OpenPanel("SaveLocation");
                 yield return Capture(label + "-save-location");
                 ResetPanels();
+                session.Player.Teleport(new Vector3(0,0,11));
+                session.EnterDungeon();
+                session.Player.enabled = false;
+                foreach(var enemy in session.Enemies) if(enemy!=null) enemy.enabled=false;
+                for(int i=0;i<3;i++) session.SpawnGroundLoot(new ItemData {
+                    id="visual-ground-"+hero+"-"+i, name=new[]{"星辉法器","古树护甲","星辰遗物"}[i],
+                    level=50, rarity=(Rarity)(i+1), slot=(ItemSlot)i, attack=60
+                }, new Vector3(-3+i*3,0,1));
+                yield return Capture(label + "-dungeon-ground-loot");
+                if(hero==3)
+                {
+                    SummonedCompanion.Summon(session.Player,session,SummonedCompanion.Kind.Wolf,3,session.Player.transform.position+new Vector3(-2,0,2),50);
+                    SummonedCompanion.Summon(session.Player,session,SummonedCompanion.Kind.Spirit,3,session.Player.transform.position+new Vector3(2,0,2),50);
+                    SummonedCompanion.Summon(session.Player,session,SummonedCompanion.Kind.Treant,3,session.Player.transform.position+new Vector3(0,0,4),50);
+                    yield return Capture("summoner-companions",.12f);
+                    movingPreview=true;
+                    for(int frame=0;frame<3;frame++) yield return Capture("dungeon-moving-"+frame,.12f);
+                    movingPreview=false;
+                    hitPreview=session.Enemies[0];
+                    hitPreview.transform.position=session.Player.transform.position+Vector3.forward*3;
+                    hitPreview.TakeDamage(10,Vector3.forward,.1f);
+                    yield return Capture("enemy-impact",.035f);
+                    hitPreview=null;
+                    SkillRuntime runtime=(SkillRuntime)typeof(PlayerController).GetField("skillRuntime",PrivateInstance).GetValue(session.Player);
+                    runtime.Advance(200); runtime.FillEnergy();
+                    Check(session.Player.GetComponent<SkillTargetingController>().Begin(4),"Summoner starts visible charge");
+                    yield return Capture("summoner-charging",.12f);
+                    session.Player.GetComponent<SkillChargeController>().Cancel();
+                    MobileControls.SimulationEnabled=true;
+                    yield return SetResolution(1920,900);
+                    yield return Capture("mobile-landscape-hud");
+                    OpenPanel("Skills");
+                    yield return Capture("mobile-landscape-skills");
+                    ResetPanels();
+                    MobileControls.SimulationEnabled=false;
+                    MobileControls.ResetInput();
+                }
+                session.ReturnToCamp();
             }
-            Check(result.screenshots.Count == 45, "Forty-five full-frame screenshots include placement, animation phases, help and all panels");
+            Check(result.screenshots.Count == 80, "Eighty full-frame captures include four heroes, encounters, moving scenery, summons, charge, mobile and all panels");
         }
 
         private IEnumerator SetResolution(int width, int height)

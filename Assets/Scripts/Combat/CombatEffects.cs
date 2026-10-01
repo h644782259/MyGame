@@ -223,7 +223,12 @@ namespace Emberfall
             }
             if (hostile)
             {
-                if (CombatFx.SegmentDistance(session.Player.transform.position, previous, transform.position) < radius + .46f)
+                bool strikesPlayer = CombatFx.SegmentDistance(session.Player.transform.position, previous, transform.position) < radius + .46f;
+                Vector3 segment = CombatFx.Flat(transform.position - previous);
+                float playerFraction = !strikesPlayer ? 1f : segment.sqrMagnitude < .00001f ? 0 : Mathf.Clamp01(Vector3.Dot(CombatFx.Flat(session.Player.transform.position - previous), segment) / segment.sqrMagnitude);
+                if (SummonedCompanion.HitHostileProjectile(previous, transform.position, damage, playerFraction))
+                { CombatFx.Ring(transform.position, .65f, color, .18f); Destroy(gameObject); return; }
+                if (strikesPlayer)
                 {
                     session.Player.TakeDamage(damage);
                     CombatFx.Ring(transform.position, .65f, color, .18f);
@@ -360,7 +365,7 @@ namespace Emberfall
                         enemy.TakeDamage(damage,delta.normalized,.3f,stun);
                         if (enemy.StatusEffects != null && statusSkill == 0 && owner.HeroClass == HeroClass.Arcanist)
                             enemy.StatusEffects.Freeze(1.5f + statusRank * .25f);
-                        if (enemy.StatusEffects != null && statusSkill == 5 && owner.HeroClass == HeroClass.Ranger)
+                        if (enemy.StatusEffects != null && ((statusSkill == 5 && owner.HeroClass == HeroClass.Ranger) || (statusSkill == 1 && owner.HeroClass == HeroClass.Summoner)))
                         {
                             enemy.StatusEffects.Slow(3f, .3f + statusRank * .07f);
                             enemy.StatusEffects.Poison(owner, 3.5f + statusRank * .5f, damage * .2f);

@@ -14,11 +14,14 @@ namespace Emberfall
         public const int MaximumUpgrade = 10;
         public const int PotionPrice = 20;
         private const int MaximumGold = 999999999;
+        private const int MaximumEquipmentStat = 10000;
+        private const int MaximumEquipmentHealth = 100000;
         private const string SaveFormat = "emberfall-character";
         private readonly string savePath;
         private readonly string backupPath;
         private readonly string temporaryPath;
         private readonly System.Random random = new System.Random();
+        private readonly HashSet<string> collectedLootIds = new HashSet<string>(StringComparer.Ordinal);
 
         [Serializable]
         private class SaveFile
@@ -50,6 +53,7 @@ namespace Emberfall
         {
             if (!Enum.IsDefined(typeof(HeroClass), heroClass)) heroClass = HeroClass.Vanguard;
             Profile = CreateProfile(heroClass);
+            collectedLootIds.Clear();
             Commit();
         }
 
@@ -127,6 +131,9 @@ namespace Emberfall
                 case HeroClass.Ranger:
                     stats = new StatBlock { MaxHealth = 140 + 17 * growth, Damage = 21 + 3.2f * growth, Armor = 4 + 1.1f * growth, MoveSpeed = 6.6f, CritChance = .14f };
                     break;
+                case HeroClass.Summoner:
+                    stats = new StatBlock { MaxHealth = 125 + 13 * growth, Damage = 15 + 2.3f * growth, Armor = 3 + .75f * growth, MoveSpeed = 5.5f, CritChance = .10f };
+                    break;
                 default:
                     stats = new StatBlock { MaxHealth = 170 + 20 * growth, Damage = 20 + 3 * growth, Armor = 7 + 1.4f * growth, MoveSpeed = 6f, CritChance = .08f };
                     break;
@@ -151,6 +158,10 @@ namespace Emberfall
                 {
                     stats.Damage *= 1f + (passiveRank == 1 ? .06f : passiveRank == 2 ? .11f : .18f);
                     stats.MaxHealth *= 1f + (passiveRank == 1 ? .04f : passiveRank == 2 ? .07f : .10f);
+                }
+                else if (Profile.heroClass == HeroClass.Summoner)
+                {
+                    stats.Damage *= 1f + (passiveRank == 1 ? .06f : passiveRank == 2 ? .11f : .18f);
                 }
                 else
                 {
@@ -188,6 +199,14 @@ namespace Emberfall
 
         public ItemData CreateLoot(int level, bool boss)
         {
+            ItemData item = RollLoot(level, boss);
+            CollectLoot(item);
+            return item;
+        }
+
+        /// <summary>Generate an identified drop without putting it into the bag or saving.</summary>
+        public ItemData RollLoot(int level, bool boss)
+        {
             level = Clamp(level, 1, MaximumLevel);
             int roll = random.Next(100);
             Rarity rarity = boss
@@ -214,13 +233,25 @@ namespace Emberfall
                 item.attack = Round((2 + level) * multiplier);
                 item.health = Round((6 + level * 3) * multiplier);
             }
+            EnsureUpgradeBasis(item);
+            return item;
+        }
+
+        /// <summary>Collect an existing drop once, preserving the full-bag gold fallback.</summary>
+        public bool CollectLoot(ItemData item)
+        {
+            if (item == null || string.IsNullOrWhiteSpace(item.id) || !Enum.IsDefined(typeof(ItemSlot), item.slot) || !Enum.IsDefined(typeof(Rarity), item.rarity))
+                return Fail("掉落装备无效。");
+            if (collectedLootIds.Contains(item.id) || FindItem(item.id) != null)
+                return Fail("这件装备已经拾取。");
             bool overflow = Profile.inventory.Count >= InventoryCapacity;
             if (overflow) Profile.gold = (int)Math.Min(MaximumGold, (long)Profile.gold + SellValue(item));
             else Profile.inventory.Add(item);
+            collectedLootIds.Add(item.id);
             Commit();
             if (overflow && string.IsNullOrEmpty(LastError))
                 LastError = "背包已满，" + item.name + "已自动出售，获得 " + SellValue(item) + " 金币。";
-            return item;
+            return true;
         }
 
         public ItemData Equipped(ItemSlot slot)
@@ -258,13 +289,134 @@ namespace Emberfall
             if (item.upgradeLevel >= MaximumUpgrade) return Fail("装备已达到强化上限 +10。");
             int cost = UpgradeCost(item);
             if (Profile.gold < cost) return Fail("金币不足，强化需要 " + cost + " 金币。");
+            EnsureUpgradeBasis(item);
             Profile.gold -= cost;
-            item.upgradeLevel++;
-            if (item.attack > 0) item.attack = Math.Min(10000, item.attack + Math.Max(1, Round(item.attack * .12f)));
-            if (item.defense > 0) item.defense = Math.Min(10000, item.defense + Math.Max(1, Round(item.defense * .12f)));
-            if (item.health > 0) item.health = Math.Min(100000, item.health + Math.Max(2, Round(item.health * .12f)));
+            ApplyUpgradeRank(item, item.upgradeLevel + 1);
             Commit();
             return true;
+        }
+
+        /// <summary>
+        /// Moves the source's rank onto another item of the same slot for free.
+        /// An upgraded destination returns its old rank to the source: no ranks are
+        /// added, copied or destroyed, and each item's own base attributes stay put.
+        /// </summary>
+        public bool TransferUpgrade(string sourceId, string targetId)
+        {
+            ItemData source = FindItem(sourceId);
+            ItemData target = FindItem(targetId);
+            if (source == null || target == null) return Fail("找不到来源或目标装备，可能已经出售。");
+            if (source == target || source.id == target.id) return Fail("请选择两件不同的装备。");
+            if (source.slot != target.slot) return Fail("只有相同部位的装备可以转移强化。");
+            if (source.upgradeLevel <= 0) return Fail("来源装备没有可转移的强化等级。");
+            if (source.upgradeLevel > MaximumUpgrade || target.upgradeLevel < 0 || target.upgradeLevel > MaximumUpgrade)
+                return Fail("装备强化等级无效，请重新读取存档。");
+
+            // Validate the entire request before initializing or changing either item.
+            EnsureUpgradeBasis(source);
+            EnsureUpgradeBasis(target);
+            int sourceRank = source.upgradeLevel;
+            int targetRank = target.upgradeLevel;
+            ApplyUpgradeRank(source, targetRank);
+            ApplyUpgradeRank(target, sourceRank);
+            Commit();
+            return true;
+        }
+
+        /// <summary>Returns an independent preview; never mutates items, gold, saves or events.</summary>
+        public ItemData PreviewUpgrade(ItemData item, int rank)
+        {
+            if (item == null || rank < 0 || rank > MaximumUpgrade) return null;
+            var preview = new ItemData
+            {
+                id = item.id, name = item.name, slot = item.slot, rarity = item.rarity, level = item.level,
+                attack = item.attack, defense = item.defense, health = item.health, upgradeLevel = item.upgradeLevel,
+                upgradeBaseInitialized = item.upgradeBaseInitialized,
+                baseAttack = item.baseAttack, baseDefense = item.baseDefense, baseHealth = item.baseHealth,
+                upgradeAnchorLevel = item.upgradeAnchorLevel, upgradeAnchorAttack = item.upgradeAnchorAttack,
+                upgradeAnchorDefense = item.upgradeAnchorDefense, upgradeAnchorHealth = item.upgradeAnchorHealth
+            };
+            EnsureUpgradeBasis(preview);
+            ApplyUpgradeRank(preview, rank);
+            return preview;
+        }
+
+        private static void ApplyUpgradeRank(ItemData item, int rank)
+        {
+            item.upgradeLevel = Clamp(rank, 0, MaximumUpgrade);
+            item.attack = UpgradeValue(item.baseAttack, item.upgradeAnchorAttack, item.upgradeAnchorLevel, item.upgradeLevel, 1, MaximumEquipmentStat);
+            item.defense = UpgradeValue(item.baseDefense, item.upgradeAnchorDefense, item.upgradeAnchorLevel, item.upgradeLevel, 1, MaximumEquipmentStat);
+            item.health = UpgradeValue(item.baseHealth, item.upgradeAnchorHealth, item.upgradeAnchorLevel, item.upgradeLevel, 2, MaximumEquipmentHealth);
+        }
+
+        private static int UpgradeValue(int basis, int anchor, int anchorRank, int rank, int minimumIncrease, int cap)
+        {
+            // A legacy value can be capped or not exactly invertible. Its recorded
+            // anchor guarantees returning to the original rank restores it exactly.
+            // Normal legacy values are exact on both sides of the same growth curve.
+            return rank >= anchorRank ? GrowUpgradeStat(anchor, rank - anchorRank, minimumIncrease, cap)
+                : GrowUpgradeStat(basis, rank, minimumIncrease, cap);
+        }
+
+        private static int GrowUpgradeStat(int value, int ranks, int minimumIncrease, int cap)
+        {
+            if (value <= 0) return 0;
+            for (int i = 0; i < ranks; i++)
+                value = Math.Min(cap, value + Math.Max(minimumIncrease, Round(value * .12f)));
+            return value;
+        }
+
+        private static int RecoverUpgradeBase(int value, int rank, int minimumIncrease)
+        {
+            if (rank <= 0 || value <= 0) return value;
+            // The uncapped integer growth function is strictly increasing for
+            // positive values. Binary search finds the exact old base when it
+            // exists; otherwise use the greatest conservative base below it.
+            // Never invert the capped function, whose plateau would invent a base.
+            int low = 0, high = value, best = 0;
+            while (low <= high)
+            {
+                int middle = low + (high - low) / 2;
+                int grown = GrowUpgradeStat(middle, rank, minimumIncrease, int.MaxValue);
+                if (grown <= value) { best = middle; low = middle + 1; }
+                else high = middle - 1;
+            }
+            return best;
+        }
+
+        private static bool ValidUpgradeBasis(int basis, int anchor, int anchorRank, int minimumIncrease, int cap)
+        {
+            return basis >= 0 && basis <= cap && anchor >= 0 && anchor <= cap &&
+                basis == RecoverUpgradeBase(anchor, anchorRank, minimumIncrease);
+        }
+
+        private static void EnsureUpgradeBasis(ItemData item)
+        {
+            item.upgradeLevel = Clamp(item.upgradeLevel, 0, MaximumUpgrade);
+            item.attack = Clamp(item.attack, 0, MaximumEquipmentStat);
+            item.defense = Clamp(item.defense, 0, MaximumEquipmentStat);
+            item.health = Clamp(item.health, 0, MaximumEquipmentHealth);
+            int anchorRank = item.upgradeAnchorLevel;
+            bool valid = item.upgradeBaseInitialized && anchorRank >= 0 && anchorRank <= MaximumUpgrade &&
+                ValidUpgradeBasis(item.baseAttack, item.upgradeAnchorAttack, anchorRank, 1, MaximumEquipmentStat) &&
+                ValidUpgradeBasis(item.baseDefense, item.upgradeAnchorDefense, anchorRank, 1, MaximumEquipmentStat) &&
+                ValidUpgradeBasis(item.baseHealth, item.upgradeAnchorHealth, anchorRank, 2, MaximumEquipmentHealth);
+            if (valid &&
+                item.attack == UpgradeValue(item.baseAttack, item.upgradeAnchorAttack, anchorRank, item.upgradeLevel, 1, MaximumEquipmentStat) &&
+                item.defense == UpgradeValue(item.baseDefense, item.upgradeAnchorDefense, anchorRank, item.upgradeLevel, 1, MaximumEquipmentStat) &&
+                item.health == UpgradeValue(item.baseHealth, item.upgradeAnchorHealth, anchorRank, item.upgradeLevel, 2, MaximumEquipmentHealth)) return;
+
+            // Initialize old saves (or repair inconsistent metadata) without changing
+            // their currently visible attributes. The anchor remains immutable across
+            // future upgrades, rank transfers, previews and save/load round trips.
+            item.upgradeAnchorLevel = item.upgradeLevel;
+            item.upgradeAnchorAttack = item.attack;
+            item.upgradeAnchorDefense = item.defense;
+            item.upgradeAnchorHealth = item.health;
+            item.baseAttack = RecoverUpgradeBase(item.attack, item.upgradeLevel, 1);
+            item.baseDefense = RecoverUpgradeBase(item.defense, item.upgradeLevel, 1);
+            item.baseHealth = RecoverUpgradeBase(item.health, item.upgradeLevel, 2);
+            item.upgradeBaseInitialized = true;
         }
 
         public int UpgradeCost(ItemData item)
@@ -332,6 +484,31 @@ namespace Emberfall
                 }
             }
             Profile.equippedSkills[target] = skillIndex;
+            Commit();
+            return true;
+        }
+
+        /// <summary>Move or swap learned active skills within the selected hotbar page.</summary>
+        public bool MoveHotbarSkill(int sourceSlot, int targetSlot)
+        {
+            if (sourceSlot < 0 || sourceSlot >= GameBalance.HotbarSize || targetSlot < 0 || targetSlot >= GameBalance.HotbarSize)
+                return Fail("无效的快捷栏位置。");
+            if (sourceSlot == targetSlot) return Fail("技能已经位于这个快捷栏位置。");
+            if (Profile.hotbarPage < 0 || Profile.hotbarPage >= GameBalance.HotbarPages || Profile.equippedSkills == null ||
+                Profile.equippedSkills.Length < GameBalance.HotbarPages * GameBalance.HotbarSize || Profile.skillRanks == null || Profile.skillRanks.Length < GameBalance.SkillCount)
+                return Fail("快捷栏数据无效。");
+            int pageStart = Profile.hotbarPage * GameBalance.HotbarSize;
+            int source = pageStart + sourceSlot;
+            int target = pageStart + targetSlot;
+            int skill = Profile.equippedSkills[source];
+            if (skill < 0 || skill >= GameBalance.SkillCount || GameBalance.IsPassive(skill) || Profile.skillRanks[skill] < 1)
+                return Fail("只能拖动已经学习的主动技能。");
+            int displaced = Profile.equippedSkills[target];
+            if (displaced < 0 || displaced >= GameBalance.SkillCount || GameBalance.IsPassive(displaced) || Profile.skillRanks[displaced] < 1)
+                displaced = -1;
+            if (skill == displaced) return Fail("这个技能已经位于目标位置。");
+            Profile.equippedSkills[target] = skill;
+            Profile.equippedSkills[source] = displaced;
             Commit();
             return true;
         }
@@ -405,6 +582,7 @@ namespace Emberfall
                 defense = slot == ItemSlot.Armor ? 4 : 0,
                 health = slot == ItemSlot.Armor ? 20 : slot == ItemSlot.Relic ? 10 : 0
             };
+            EnsureUpgradeBasis(item);
             profile.inventory.Add(item);
             SetEquipped(profile, item);
         }
@@ -413,7 +591,7 @@ namespace Emberfall
         {
             if (slot == ItemSlot.Armor) return "战衣";
             if (slot == ItemSlot.Relic) return "护符";
-            return heroClass == HeroClass.Arcanist ? "法杖" : heroClass == HeroClass.Ranger ? "长弓" : "长剑";
+            return heroClass == HeroClass.Arcanist ? "法杖" : heroClass == HeroClass.Ranger ? "长弓" : heroClass == HeroClass.Summoner ? "法器" : "长剑";
         }
 
         private static void SetEquipped(GameProfile profile, ItemData item)
@@ -499,6 +677,7 @@ namespace Emberfall
                 item.defense = Clamp(item.defense, 0, 10000);
                 item.health = Clamp(item.health, 0, 100000);
                 item.upgradeLevel = Clamp(item.upgradeLevel, 0, MaximumUpgrade);
+                EnsureUpgradeBasis(item);
                 if (string.IsNullOrWhiteSpace(item.name)) item.name = "无名" + ItemBaseName(item.slot, profile.heroClass);
                 if (item.name.Length > 60) item.name = item.name.Substring(0, 60);
                 items.Add(item);

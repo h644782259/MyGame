@@ -17,12 +17,41 @@ namespace Emberfall
         private float actionAge, actionDuration, gaitPhase;
         private bool slime, floating;
         private float phase;
+        private float recoilStarted = -10f, recoilStrength;
+        private Vector3 recoilDirection;
+        private EnemyController enemyOwner;
+        private Quaternion bodyRestRotation = Quaternion.identity;
+
+        public void Recoil(Vector3 worldDirection, float strength)
+        {
+            recoilStarted = Time.time;
+            recoilStrength = Mathf.Clamp(strength, .35f, 1.6f);
+            recoilDirection = transform.parent.InverseTransformDirection(worldDirection.normalized);
+        }
+
+        private void ApplyRecoil()
+        {
+            float age = Time.time - recoilStarted;
+            float recovery = Mathf.Clamp01(1f - age / .22f);
+            float impulse = recovery * recovery * recoilStrength;
+            transform.localPosition += recoilDirection * (.12f * impulse);
+            if (body != null) body.localRotation = bodyRestRotation * Quaternion.Euler(recoilDirection.z * 9f * impulse, 0, -recoilDirection.x * 9f * impulse);
+        }
+
+        private void LateUpdate()
+        {
+            if (isHero) return;
+            float flash = Mathf.Clamp01(1f - (Time.time - recoilStarted) / .11f) * .52f;
+            foreach (var pair in palette)
+                if (pair.Value != null) pair.Value.color = Color.Lerp(pair.Key, new Color(1f, .92f, .73f), flash);
+        }
 
         public static CombatModel Hero(Transform parent, HeroClass hero)
         {
             CombatModel model = Create(parent);
             model.BuildHero(hero);
             model.EnhanceHero(hero);
+            if (hero == HeroClass.Summoner) model.SummonerCrown();
             return model;
         }
 
@@ -33,6 +62,58 @@ namespace Emberfall
             return model;
         }
 
+        public static CombatModel Companion(Transform parent, SummonedCompanion.Kind form)
+        {
+            CombatModel model = Create(parent);
+            if (form == SummonedCompanion.Kind.Spirit)
+            {
+                model.floating = true;
+                model.body = model.Part("Star spirit", PrimitiveType.Sphere, new Vector3(0,1.2f,0), new Vector3(.54f,.7f,.54f), new Color(.4f,1f,.84f));
+                model.decoration = model.Part("Star crown", PrimitiveType.Cube, new Vector3(0,1.75f,0), Vector3.one*.25f, new Color(1f,.87f,.47f));
+                for(int i=-1;i<=1;i+=2) model.Part("Spirit wing",PrimitiveType.Capsule,new Vector3(i*.42f,1.35f,0),new Vector3(.18f,.5f,.15f),new Color(.67f,1f,.88f)).localRotation=Quaternion.Euler(0,0,i*45);
+            }
+            else if (form == SummonedCompanion.Kind.Treant)
+            {
+                model.Humanoid(new Color(.35f,.26f,.15f), new Color(.28f,.32f,.14f), new Color(.4f,.69f,.32f), 1.6f);
+                model.transform.localScale = Vector3.one * 1.3f;
+                for (int i = -1; i <= 1; i++)
+                    model.Part("Leaf crown", PrimitiveType.Sphere, new Vector3(i * .35f, 2.23f, -.08f), new Vector3(.75f,.65f,.65f), new Color(.35f,.69f,.37f));
+            }
+            else
+            {
+                Color fur = new Color(.57f,.82f,.77f);
+                model.body = model.Part("Spirit wolf torso", PrimitiveType.Capsule, new Vector3(0,.66f,0), new Vector3(.48f,.57f,.52f), fur);
+                model.body.localRotation = Quaternion.Euler(90,0,0);
+                model.bodyRestRotation = model.body.localRotation;
+                model.Part("Wolf head", PrimitiveType.Cube, new Vector3(0,.9f,.55f), new Vector3(.42f,.42f,.52f), fur);
+                model.Part("Muzzle", PrimitiveType.Cube, new Vector3(0,.8f,.9f), new Vector3(.28f,.2f,.3f), new Color(.27f,.47f,.45f));
+                for (int sign = -1; sign <= 1; sign += 2)
+                {
+                    model.Part("Ear", PrimitiveType.Cube, new Vector3(sign*.17f,1.2f,.5f), new Vector3(.1f,.32f,.19f), fur).localRotation=Quaternion.Euler(-15,0,sign*15);
+                    model.Part("Luminous eye", PrimitiveType.Sphere, new Vector3(sign*.22f,.96f,.72f), Vector3.one*.09f, new Color(.75f,1f,.6f));
+                }
+                model.leftLeg = model.Joint("Wolf left gait", Vector3.zero);
+                model.rightLeg = model.Joint("Wolf right gait", Vector3.zero);
+                for (int i=0;i<4;i++) model.Part("Paw",PrimitiveType.Capsule,new Vector3(i%2==0?-.22f:.22f,.29f,i<2?.4f:-.4f),new Vector3(.15f,.3f,.2f),fur,i%2==0?model.leftLeg:model.rightLeg);
+                model.Part("Tail",PrimitiveType.Capsule,new Vector3(0,.75f,-.72f),new Vector3(.18f,.4f,.19f),fur).localRotation=Quaternion.Euler(-45,0,0);
+            }
+            return model;
+        }
+
+        private void SummonerCrown()
+        {
+            RemovePart(headRig.Find("Pointed Wizard Hat"));
+            RemovePart(headRig.Find("Hat Brim"));
+            RemovePart(headRig.Find("Hat Gem"));
+            Color jade = new Color(.54f,1f,.76f);
+            for(int side=-1;side<=1;side+=2)
+            {
+                Part("Spirit antler",PrimitiveType.Capsule,new Vector3(side*.25f,.42f,-.06f),new Vector3(.09f,.36f,.1f),jade,headRig).localRotation=Quaternion.Euler(-12,0,-side*25);
+                Part("Spirit antler branch",PrimitiveType.Capsule,new Vector3(side*.39f,.55f,-.06f),new Vector3(.07f,.16f,.08f),jade,headRig).localRotation=Quaternion.Euler(0,0,-side*65);
+            }
+            Part("Moonstone circlet",PrimitiveType.Sphere,new Vector3(0,.32f,.22f),new Vector3(.18f,.22f,.08f),jade,headRig);
+        }
+
 
         private static CombatModel Create(Transform parent)
         {
@@ -40,6 +121,7 @@ namespace Emberfall
             obj.transform.SetParent(parent, false);
             CombatModel model = obj.AddComponent<CombatModel>();
             model.phase = Random.value * 6.28f;
+            model.enemyOwner = parent.GetComponent<EnemyController>();
             return model;
         }
 
@@ -142,7 +224,7 @@ namespace Emberfall
                 Part("Silver Blade", PrimitiveType.Cube, new Vector3(0,.2f,.11f), new Vector3(.14f,.95f,.055f), steel, rightArm);
                 Part("Blade Tip", PrimitiveType.Sphere, new Vector3(0,.68f,.11f), new Vector3(.14f,.2f,.055f), steel, rightArm);
             }
-            else if (hero == HeroClass.Arcanist)
+            else if (hero == HeroClass.Arcanist || hero == HeroClass.Summoner)
             {
                 Part("Hat Brim", PrimitiveType.Cylinder, new Vector3(0,2.21f,0), new Vector3(.88f,.05f,.88f), accent * .6f);
                 Part("Wizard Hat", PrimitiveType.Capsule, new Vector3(0,2.38f,-.045f), new Vector3(.43f,.3f,.43f), accent * .48f);
@@ -211,7 +293,7 @@ namespace Emberfall
                         new Vector3(.085f, .23f, .14f), steel).localRotation = Quaternion.Euler(-12f, 0, i * 8f);
                 }
             }
-            else if (hero == HeroClass.Arcanist)
+            else if (hero == HeroClass.Arcanist || hero == HeroClass.Summoner)
             {
                 RemovePart(transform.Find("Wizard Hat"));
                 Tapered("Pointed Wizard Hat", transform, new Vector3(0, 2.24f, -.02f),
@@ -283,7 +365,7 @@ namespace Emberfall
                     Part("Shield Inlay", PrimitiveType.Cube, new Vector3(-.14f + i * .17f, -.09f, .254f),
                         new Vector3(.065f, .43f, .055f), gold, leftElbow).localRotation = Quaternion.Euler(0, 0, i * -20f);
             }
-            else if (hero == HeroClass.Arcanist)
+            else if (hero == HeroClass.Arcanist || hero == HeroClass.Summoner)
             {
                 staffRig = NewJoint("Staff Wrist", rightElbow, new Vector3(0, -.23f, .12f));
                 foreach (string name in new[] { "Staff", "Staff Gold", "Arcane Crystal" })
@@ -424,6 +506,12 @@ namespace Emberfall
                 : (skill == 9 ? 1.12f : skill >= 4 ? .84f : .68f);
         }
 
+        public void ReleaseCharge(int skill)
+        {
+            PlayAction(skill, false);
+            actionAge = actionDuration * .30f;
+        }
+
         private static Quaternion Pose(Vector3 idle, Vector3 windup, Vector3 release, float normalizedTime)
         {
             // A readable anticipation, a fast release, and a longer settling phase.
@@ -446,14 +534,13 @@ namespace Emberfall
             float lift = Mathf.Abs(Mathf.Sin(gaitPhase));
             float breathing = Mathf.Sin(Time.time * 2f + phase);
             transform.localPosition = Vector3.up * (lift * .035f * speed);
-            if (hurt) transform.localPosition += Vector3.right * (Mathf.Sin(Time.time * 90f) * .04f);
             pelvis.localPosition = new Vector3(stride * .024f, .83f, 0);
             pelvis.localRotation = Quaternion.Euler(0, stride * -4f, stride * 2f);
             leftLeg.localRotation = Quaternion.Euler(stride * 30f, 0, -2f);
             rightLeg.localRotation = Quaternion.Euler(-stride * 30f, 0, 2f);
             leftKnee.localRotation = Quaternion.Euler(Mathf.Max(0, -stride) * 42f, 0, 0);
             rightKnee.localRotation = Quaternion.Euler(Mathf.Max(0, stride) * 42f, 0, 0);
-            spine.localPosition = new Vector3(0, 1.12f + breathing * .009f, 0);
+            spine.localPosition = new Vector3(0, 1.12f + breathing * .009f, hurt ? -.035f : 0);
             spine.localRotation = Quaternion.Euler(speed * 5f, stride * 4f, -stride * 1.5f);
             headRig.localRotation = Quaternion.Euler(-speed * 3f, -stride * 3f, stride);
             leftArm.localRotation = Quaternion.Euler(-stride * 18f, 0, -8f);
@@ -482,7 +569,7 @@ namespace Emberfall
                 }
                 else rightArm.localRotation = Quaternion.Euler(idleR);
             }
-            else if (heroClass == HeroClass.Arcanist)
+            else if (heroClass == HeroClass.Arcanist || heroClass == HeroClass.Summoner)
             {
                 staffRig.localRotation = Quaternion.Euler(12, 0, -12);
                 if (acting)
@@ -518,6 +605,43 @@ namespace Emberfall
                 arrowRig.gameObject.SetActive(!acting || t < .44f || t > .83f);
             }
             if (decoration != null) decoration.Rotate(0, dt * (acting ? 145f : 42f), 0, Space.Self);
+        }
+
+        public void AnimateCharge(float progress)
+        {
+            if (!isHero || spine == null) return;
+            float ready = .3f + .7f * Mathf.SmoothStep(0, 1, Mathf.Clamp01(progress));
+            spine.localRotation = Quaternion.Euler(-7f * ready, -12f * ready, 0);
+            headRig.localRotation = Quaternion.Euler(4f * ready, 8f * ready, 0);
+            if (heroClass == HeroClass.Vanguard)
+            {
+                rightArm.localRotation = Quaternion.Euler(Mathf.Lerp(-18, -150, ready), 12, 18);
+                rightElbow.localRotation = Quaternion.Euler(-55f * ready, 0, 0);
+                swordRig.localRotation = Quaternion.Euler(Mathf.Lerp(24, -25, ready), 0, -14);
+                leftArm.localRotation = Quaternion.Euler(-50f * ready, 0, -20);
+                leftElbow.localRotation = Quaternion.Euler(-35f, 0, 0);
+            }
+            else if (heroClass == HeroClass.Arcanist || heroClass == HeroClass.Summoner)
+            {
+                rightArm.localRotation = Quaternion.Euler(-105f * ready, -12, 25);
+                rightElbow.localRotation = Quaternion.Euler(-32f * ready, 0, 0);
+                staffRig.localRotation = Quaternion.Euler(Mathf.Lerp(12, 80, ready), 0, -15);
+                leftArm.localRotation = Quaternion.Euler(-66f * ready, 8, -28);
+                leftElbow.localRotation = Quaternion.Euler(-72f * ready, 0, 0);
+                if (castingOrb != null) castingOrb.localScale = Vector3.one * Mathf.Lerp(.23f, .49f, ready);
+            }
+            else
+            {
+                Vector3 bowHand = Vector3.Lerp(new Vector3(-.32f, .1f, .28f), new Vector3(-.035f, .45f, .415f), ready);
+                AimArm(leftArm, leftElbow, bowHand, new Vector3(-1, -.5f, 0));
+                bowRig.rotation = spine.rotation * Quaternion.Euler(0, 10, -7);
+                bowRig.localPosition = new Vector3(0, -.23f, .04f) - bowRig.localRotation * new Vector3(0, 0, .275f);
+                Vector3 nock = new Vector3(0, 0, .05f - ready * .3f);
+                bowstring.SetPosition(1, nock);
+                arrowRig.localPosition = nock;
+                arrowRig.gameObject.SetActive(true);
+                AimArm(rightArm, rightElbow, spine.InverseTransformPoint(bowRig.TransformPoint(nock)), new Vector3(1, -.2f, -.2f));
+            }
         }
 
         private static void AimArm(Transform shoulder, Transform elbow, Vector3 target, Vector3 bendHint)
@@ -608,7 +732,9 @@ namespace Emberfall
                 transform.localPosition=Vector3.up*(Mathf.Abs(Mathf.Sin(Time.time*11f+phase))*.035f*Mathf.Min(speed,1f));
             }
             if(decoration!=null) decoration.Rotate(0,Time.deltaTime*80f,0,Space.Self);
-            if(hurt) transform.localPosition+=new Vector3(Mathf.Sin(Time.time*90f)*.05f,0,0);
+            ApplyRecoil();
+            if (enemyOwner != null && enemyOwner.StatusEffects != null)
+                transform.localPosition += Vector3.up * enemyOwner.StatusEffects.AirborneHeight;
         }
 
         private void OnDestroy()

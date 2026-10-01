@@ -17,22 +17,23 @@ public static class SkillRuntimeTests
     }
     private static bool Near(float a, float b) { return Math.Abs(a - b) < .001f; }
 
-    private static void CollectPrerequisites(int skill, HashSet<int> ancestors)
+    private static void RejectsArgument(Action operation, string message)
     {
-        foreach (int parent in GameBalance.SkillPrerequisites[skill])
-            if (ancestors.Add(parent)) CollectPrerequisites(parent, ancestors);
+        try { operation(); }
+        catch (ArgumentOutOfRangeException) { Check(true, message); return; }
+        Check(false, message);
     }
 
     public static string Run()
     {
         assertions = 0;
-        var state = new SkillRuntime();
+        var state = new SkillRuntime(HeroClass.Vanguard);
         Check(Near(state.Energy, 100), "new adventure starts with full energy");
         Check(state.TryConsume(9, 1), "learned ultimate can cast when ready");
-        Check(Near(state.Energy, 15) && Near(state.Remaining(9), 90), "ultimate spends 85 and starts 90-second cooldown");
+        Check(Near(state.Energy, 36) && Near(state.Remaining(9), 42), "Vanguard execution spends 64 and starts a 42-second cooldown");
         Check(!state.TryConsume(7, 1), "second high-tier skill blocked by resource budget");
-        Check(Near(state.Remaining(7), 0) && Near(state.Energy, 15), "failed cast does not spend or start cooldown");
-        Check(state.TryConsume(0, 1) && Near(state.Energy, 7), "short-cooldown skill remains usable after ultimate");
+        Check(Near(state.Remaining(7), 0) && Near(state.Energy, 36), "failed cast does not spend or start cooldown");
+        Check(state.TryConsume(0, 1) && Near(state.Energy, 24), "short-cooldown skill remains usable after ultimate");
         state.RestoreEnergy(1000);
         Check(Near(state.Energy, 100) && !state.TryConsume(0, 1), "energy restoration does not reset skill cooldown");
 
@@ -44,17 +45,17 @@ public static class SkillRuntimeTests
         int mappedSkill = profile.equippedSkills[profile.hotbarPage * GameBalance.HotbarSize];
         Check(!state.TryConsume(mappedSkill, 1), "page changes and key rebinding cannot bypass cooldown by skill identity");
         state.Advance(5);
-        Check(Near(state.Remaining(0), 0) && Near(state.Remaining(9), 85), "low-tier becomes ready while ultimate still cools");
+        Check(Near(state.Remaining(0), 0) && Near(state.Remaining(9), 37), "low-tier becomes ready while ultimate still cools");
         Check(state.TryConsume(0, 1), "low-tier reusable during ultimate downtime");
         state.FillEnergy();
-        Check(Near(state.Remaining(9), 85), "filling energy keeps cooldown");
-        state.Advance(85);
+        Check(Near(state.Remaining(9), 37), "filling energy keeps cooldown");
+        state.Advance(37);
         Check(state.TryConsume(9, 3), "rank-three ultimate usable after full cooldown");
-        Check(Near(state.Remaining(9), 77.4f), "rank upgrades reduce cooldown without removing tradeoff");
+        Check(Near(state.Remaining(9), 36.12f), "rank upgrades reduce cooldown without removing tradeoff");
         state.Advance(2);
-        Check(Near(state.Energy, 23), "passive regeneration is four energy per second");
+        Check(Near(state.Energy, 44), "passive regeneration is four energy per second");
         state.RestoreEnergy(8);
-        Check(Near(state.Energy, 31), "normal attack hit rewards eight energy");
+        Check(Near(state.Energy, 52), "normal attack hit rewards eight energy");
 
         float energyBefore = state.Energy;
         float cooldownBefore = state.Remaining(9);
@@ -67,7 +68,9 @@ public static class SkillRuntimeTests
         state.Advance(10000);
         Check(Near(state.Energy, 100) && Near(state.Remaining(9), 0), "large legitimate elapsed time clamps both resources");
 
-        for (int hero = 0; hero < 3; hero++)
+        Check((int)HeroClass.Vanguard == 0 && (int)HeroClass.Arcanist == 1 && (int)HeroClass.Ranger == 2 && (int)HeroClass.Summoner == 3, "adding Summoner preserves all existing serialized class identities");
+        Check(GameBalance.ClassNames.Length == 4 && GameBalance.ClassColors.Length == 4 && GameBalance.ClassDescriptions.Length == 4, "all four classes have selection labels, descriptions and colors");
+        for (int hero = 0; hero < GameBalance.ClassNames.Length; hero++)
         {
             var names = new HashSet<string>();
             for (int skill = 0; skill < GameBalance.SkillCount; skill++)
@@ -75,6 +78,8 @@ public static class SkillRuntimeTests
                 string name = GameBalance.SkillName((HeroClass)hero, skill);
                 Check(!string.IsNullOrWhiteSpace(name) && names.Add(name), "class " + hero + " unique skill " + skill);
                 Check(!string.IsNullOrWhiteSpace(GameBalance.SkillDescription((HeroClass)hero, skill)), "skill has a readable effect description");
+                for (int rank = 1; rank <= 3; rank++)
+                    Check(!string.IsNullOrWhiteSpace(GameBalance.SkillEvolution((HeroClass)hero, skill, rank)), "each class has a readable evolution at every rank");
             }
         }
         // IDs are stable save/hotbar identities. Branches can unlock in a different
@@ -98,7 +103,8 @@ public static class SkillRuntimeTests
             if (GameBalance.IsPassive(skill))
             {
                 passiveCount++;
-                Check(Near(GameBalance.SkillEnergyCosts[skill], 0) && Near(GameBalance.SkillCooldowns[skill], 0), "passive has no manual cast budget");
+                for (int hero = 0; hero < GameBalance.ClassNames.Length; hero++)
+                    Check(Near(GameBalance.SkillEnergyCost((HeroClass)hero, skill), 0) && Near(GameBalance.SkillCooldown((HeroClass)hero, skill), 0), "passive has no manual cast budget for any class");
             }
             else activeCount++;
         }
@@ -116,25 +122,20 @@ public static class SkillRuntimeTests
             }
         Check(reachable.Count == GameBalance.SkillCount, "all skills are reachable with no prerequisite cycle or stranded branch");
 
+        for (int hero = 0; hero < GameBalance.ClassNames.Length; hero++)
         for (int skill = 0; skill < GameBalance.SkillCount; skill++)
         {
             if (GameBalance.IsPassive(skill)) continue;
-            var ancestors = new HashSet<int>();
-            CollectPrerequisites(skill, ancestors);
-            foreach (int parent in ancestors)
-            {
-                if (GameBalance.IsPassive(parent)) continue;
-                Check(GameBalance.SkillEnergyCosts[skill] > GameBalance.SkillEnergyCosts[parent], "deeper active skill costs more energy than active prerequisite " + parent + " -> " + skill);
-                Check(GameBalance.EffectiveCooldown(skill, 3) > GameBalance.EffectiveCooldown(parent, 1), "even awakened descendant retains longer cooldown than its active prerequisite");
-            }
-            Check(GameBalance.EffectiveCooldown(skill, 3) < GameBalance.EffectiveCooldown(skill, 2) &&
-                GameBalance.EffectiveCooldown(skill, 2) < GameBalance.EffectiveCooldown(skill, 1), "upgrading the same active skill reduces its cooldown");
+            HeroClass heroClass = (HeroClass)hero;
+            Check(GameBalance.SkillEnergyCost(heroClass, skill) > 0 && GameBalance.SkillEnergyCost(heroClass, skill) <= SkillRuntime.MaximumEnergy, "active skill has a reachable positive resource cost");
+            Check(GameBalance.EffectiveCooldown(heroClass, skill, 3) < GameBalance.EffectiveCooldown(heroClass, skill, 2) &&
+                GameBalance.EffectiveCooldown(heroClass, skill, 2) < GameBalance.EffectiveCooldown(heroClass, skill, 1), "upgrading the same active skill reduces its cooldown");
             for (int rank = 1; rank <= 3; rank++)
             {
-                var cast = new SkillRuntime();
-                float expected = GameBalance.EffectiveCooldown(skill, rank);
+                var cast = new SkillRuntime(heroClass);
+                float expected = GameBalance.EffectiveCooldown(heroClass, skill, rank);
                 Check(cast.TryConsume(skill, rank), "active skill can cast at rank " + rank);
-                Check(Near(cast.Remaining(skill), expected) && Near(cast.Energy, 100 - GameBalance.SkillEnergyCosts[skill]), "cast uses the selected rank's cooldown and catalog resource cost");
+                Check(cast.HeroClass == heroClass && Near(cast.Remaining(skill), expected) && Near(cast.Energy, 100 - GameBalance.SkillEnergyCost(heroClass, skill)), "cast uses its immutable class, selected rank cooldown and class resource cost");
                 cast.FillEnergy();
                 Check(!cast.TryConsume(skill, 3) && Near(cast.Remaining(skill), expected), "changing rank cannot reset an already-running cooldown");
                 cast.Advance(expected - .01f);
@@ -144,6 +145,13 @@ public static class SkillRuntimeTests
                 Check(cast.TryConsume(skill, rank), "cast becomes available after its cooldown elapses");
             }
         }
+        CheckRoleBudgets();
+        CheckCombatRotations();
+        RejectsArgument(() => new SkillRuntime((HeroClass)(-1)), "negative class rejected when constructing combat state");
+        RejectsArgument(() => new SkillRuntime((HeroClass)4), "unknown class cannot silently use another class budget");
+        RejectsArgument(() => GameBalance.SkillCooldown(HeroClass.Vanguard, 10), "out-of-range skill budget rejected");
+        RejectsArgument(() => GameBalance.SkillEnergyCost((HeroClass)4, 0), "unknown class resource budget rejected");
+        Check(typeof(SkillRuntime).GetProperty("HeroClass").GetSetMethod(true) == null, "runtime class cannot be swapped to bypass per-skill cooldowns");
         int[] layout = GameBalance.DefaultLoadout();
         Check(layout.Length == 30, "three independent ten-slot pages");
         int[] active = { 0, 1, 2, 4, 5, 6, 7, 9 };
@@ -155,5 +163,59 @@ public static class SkillRuntimeTests
             Check(!GameBalance.IsBindableKey(key), "navigation and utility controls reserved");
         Check(GameBalance.KeyName(122) == "Z" && GameBalance.KeyName(49) == "1" && GameBalance.KeyName(293) == "F12", "custom key names readable");
         return "PASS: " + assertions + " skill combat, catalog, paging, and binding assertions.";
+    }
+
+    private static void CheckRoleBudgets()
+    {
+        // These are mechanic constraints, not a requirement for ever-longer
+        // cooldowns on deeper tree nodes. They include the strongest rank.
+        Check(GameBalance.SkillCooldown(HeroClass.Vanguard, 5) < GameBalance.SkillCooldown(HeroClass.Vanguard, 2), "lane dash cycles faster than the following persistent bladestorm");
+        Check(GameBalance.SkillEnergyCost(HeroClass.Vanguard, 5) < GameBalance.SkillEnergyCost(HeroClass.Vanguard, 2), "narrow dash reserves energy for sustained area damage");
+        Check(GameBalance.SkillCooldown(HeroClass.Arcanist, 4) < GameBalance.SkillCooldown(HeroClass.Arcanist, 1), "advanced chain lightning cycles faster than the earlier meteor burst");
+        Check(GameBalance.SkillCooldown(HeroClass.Ranger, 4) < GameBalance.SkillCooldown(HeroClass.Ranger, 2), "retreat is available sooner than persistent arrow rain");
+        Check(GameBalance.SkillCooldown(HeroClass.Summoner, 4) < GameBalance.SkillCooldown(HeroClass.Summoner, 2), "ranged spirit can be refreshed sooner than the earlier melee summon");
+        foreach (HeroClass hero in (HeroClass[])Enum.GetValues(typeof(HeroClass)))
+        {
+            Check(GameBalance.EffectiveCooldown(hero, 6, 3) > 5.2f * 4, "strongest heal protection covers less than a quarter of its reuse cycle: " + hero);
+            Check(GameBalance.SkillEnergyCost(hero, 9) + GameBalance.SkillEnergyCost(hero, 7) > 100, "ultimate plus heavy control/volley needs recovery or basic hits: " + hero);
+            Check(GameBalance.SkillEnergyCost(hero, 9) + GameBalance.SkillEnergyCost(hero, 0) <= 100, "ultimate still permits the basic class skill: " + hero);
+        }
+        Check(GameBalance.EffectiveCooldown(HeroClass.Vanguard, 4, 3) > 20 && GameBalance.EffectiveCooldown(HeroClass.Arcanist, 5, 3) > 20 && GameBalance.EffectiveCooldown(HeroClass.Summoner, 5, 3) > 20, "ten-second shields leave a longer exposed interval than their protected interval");
+        Check(GameBalance.EffectiveCooldown(HeroClass.Arcanist, 0, 3) > 2.75f * 2, "double frost nova cannot permanently freeze one enemy by itself");
+        Check(GameBalance.EffectiveCooldown(HeroClass.Vanguard, 7, 3) > 2.5f * 3, "multi-segment airborne control leaves recovery time");
+        Check(GameBalance.EffectiveCooldown(HeroClass.Ranger, 4, 3) > 7f + 3f, "retreat's seven-second damage and mobility buff has a real gap");
+        Check(GameBalance.EffectiveCooldown(HeroClass.Ranger, 5, 3) > 10.45f, "poison field plus lingering poison does not run indefinitely from one cast");
+        Check(GameBalance.EffectiveCooldown(HeroClass.Summoner, 9, 3) > 16f * 2, "ancient guardian cannot have permanent uptime");
+    }
+
+    private static void CheckCombatRotations()
+    {
+        var warrior = new SkillRuntime(HeroClass.Vanguard);
+        Check(warrior.TryConsume(5, 1) && warrior.TryConsume(1, 1) && warrior.TryConsume(2, 1), "warrior can engage, knock down and start a bladestorm");
+        Check(Near(warrior.Energy, 22) && !warrior.TryConsume(4, 1), "aggressive warrior opening must earn energy before shielding");
+        warrior.RestoreEnergy(8);
+        Check(warrior.TryConsume(4, 1) && Near(warrior.Energy, 0), "one landed basic attack funds the emergency shield exactly");
+        warrior.Advance(9);
+        Check(warrior.TryConsume(1, 1) && !warrior.TryConsume(5, 1) && warrior.Remaining(2) > 0, "knockdown returns first while dash and persistent damage keep independent clocks");
+
+        var mage = new SkillRuntime(HeroClass.Arcanist);
+        Check(mage.TryConsume(4, 1) && mage.TryConsume(1, 1) && mage.TryConsume(2, 1) && Near(mage.Energy, 10), "mage can combine chain, meteor and storm at a substantial resource cost");
+        Check(!mage.TryConsume(0, 1) && Near(mage.Remaining(0), 0), "offensive sequence temporarily postpones defensive nova without starting its clock");
+        mage.RestoreEnergy(8);
+        Check(mage.TryConsume(0, 1) && Near(mage.Energy, 0), "one landed attack restores exactly enough for the emergency nova");
+
+        var ranger = new SkillRuntime(HeroClass.Ranger);
+        Check(ranger.TryConsume(4, 3) && ranger.TryConsume(7, 3) && ranger.TryConsume(5, 3) && Near(ranger.Energy, 6), "ranger combines retreat buff, marked volley and poison with little energy remaining");
+        ranger.Advance(7);
+        Check(!ranger.TryConsume(4, 3) && Near(ranger.Remaining(4), 3.32f), "retreat cannot immediately renew its awakened buff when the buff expires");
+        ranger.Advance(3.33f);
+        Check(ranger.TryConsume(4, 3) && ranger.Remaining(7) > 0 && ranger.Remaining(5) > 0, "ranger regains mobility before both sustained offensive skills");
+
+        var summoner = new SkillRuntime(HeroClass.Summoner);
+        Check(summoner.TryConsume(2, 1) && summoner.TryConsume(4, 1) && summoner.TryConsume(1, 1) && Near(summoner.Energy, 14), "summoner can establish wolf, spirit and a control field");
+        Check(!summoner.TryConsume(9, 1) && Near(summoner.Remaining(9), 0), "establishing summons postpones the guardian without wasting its cooldown");
+        summoner.Advance(14);
+        Check(summoner.TryConsume(9, 1) && Near(summoner.Energy, 0), "natural regeneration funds the guardian while earlier companions remain alive");
+        Check(!summoner.TryConsume(2, 1) && Near(summoner.Remaining(2), 0), "ready summon still respects the shared class energy pool");
     }
 }

@@ -13,6 +13,34 @@ namespace Emberfall
             Texture2D texture;
             if (cache.TryGetValue(key, out texture)) return texture;
             var ink = new Icon(GameBalance.ClassColor(hero));
+            if (hero == HeroClass.Summoner && skill != 3 && skill != 6 && skill != 8 && skill != 9)
+            {
+                if (skill == 0 || skill == 1)
+                {
+                    ink.Polygon(new[] { V(16, 31), V(11, 10), V(29, 22), V(35, 22), V(53, 10), V(48, 31), V(47, 45), V(32, 55), V(17, 45) });
+                    ink.Disc(24, 34, 3); ink.Disc(40, 34, 3); ink.Line(29, 43, 35, 43, 3);
+                    if (skill == 1) { ink.Arc(32, 32, 29, 5, 78, 2); ink.Arc(32, 32, 29, 105, 170, 2); }
+                }
+                else if (skill == 2)
+                {
+                    ink.Shield(); ink.Ring(32, 29, 9, 3); ink.Line(14, 50, 8, 56, 4); ink.Line(50, 50, 56, 56, 4);
+                }
+                else if (skill == 4)
+                {
+                    ink.Ring(32, 32, 20, 3); ink.Disc(32, 32, 8);
+                    for (int i = 0; i < 4; i++) ink.Radial(i * 90 + 45, 23, 29, 3);
+                }
+                else if (skill == 5)
+                {
+                    ink.Disc(16, 32, 9); ink.Disc(48, 32, 9); ink.Line(24, 32, 40, 32, 4); ink.Arc(32, 32, 25, 205, 335, 3); ink.Arc(32, 32, 25, 25, 155, 3);
+                }
+                else
+                {
+                    ink.Polygon(new[] { V(12, 26), V(31, 12), V(31, 51), V(12, 39) });
+                    ink.Arc(29, 32, 15, -60, 60, 3); ink.Arc(29, 32, 25, -65, 65, 3);
+                }
+                texture = ink.Finish("Skill icon " + key); cache[key] = texture; return texture;
+            }
             switch (skill)
             {
                 case 0:
@@ -69,7 +97,7 @@ namespace Emberfall
         {
             if (name == "inventory") name = "bag";
             if (name == "camp") name = "home";
-            string[] names = { "bag", "skills", "home", "portal", "attack", "dodge", "potion", "pause", "help" };
+            string[] names = { "bag", "skills", "home", "portal", "attack", "dodge", "potion", "pause", "help", "confirm", "cancel" };
             int id = System.Array.IndexOf(names, name);
             if (id < 0) id = 1;
             int key = 100 + id;
@@ -84,7 +112,9 @@ namespace Emberfall
             else if (id == 5) { ink.Arrow(16, 14, 48, 32); ink.Arrow(16, 50, 48, 32); }
             else if (id == 6) { ink.Line(25, 9, 39, 9, 5); ink.Line(26, 10, 26, 22, 3); ink.Line(38, 10, 38, 22, 3); ink.Disc(32, 38, 18); }
             else if (id == 7) { ink.Line(24, 14, 24, 50, 8); ink.Line(40, 14, 40, 50, 8); }
-            else { ink.Arc(32, 23, 13, 190, 470, 5); ink.Line(32, 36, 32, 42, 5); ink.Disc(32, 52, 3); }
+            else if (id == 8) { ink.Arc(32, 23, 13, 190, 470, 5); ink.Line(32, 36, 32, 42, 5); ink.Disc(32, 52, 3); }
+            else if (id == 9) { ink.Line(10, 32, 26, 48, 6); ink.Line(26, 48, 54, 16, 6); }
+            else { ink.Line(16, 16, 48, 48, 6); ink.Line(16, 48, 48, 16, 6); }
             texture = ink.Finish("Utility " + name); cache[key] = texture; return texture;
         }
 

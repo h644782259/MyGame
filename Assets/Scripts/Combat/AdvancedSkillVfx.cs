@@ -54,10 +54,10 @@ namespace Emberfall
             return fx;
         }
 
-        public static void Rune(PlayerController hero, Vector3 at, float size, Color color, float lifetime, int detail, bool followHero = false)
+        public static AdvancedSkillVfx Rune(PlayerController hero, Vector3 at, float size, Color color, float lifetime, int detail, bool followHero = false)
         {
             AdvancedSkillVfx fx = Create(hero,at,color,lifetime);
-            if (fx == null) return;
+            if (fx == null) return null;
             fx.radius = size;
             fx.follow = followHero;
             int rings = detail >= 2 ? 3 : 2;
@@ -108,6 +108,7 @@ namespace Emberfall
                 fx.Line(spiral,.045f,false,rotor);
             }
             fx.SolidRune(size, Mathf.Clamp(detail, 1, 3));
+            return fx;
         }
 
         public static void Beam(PlayerController hero, Vector3 start, Vector3 end, Color color, float lifetime, float width = .18f)

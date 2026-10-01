@@ -27,6 +27,10 @@ emberfall-save.json*
 *.pfx
 *.p12
 *.keystore
+*.mobileprovision
+*.provisionprofile
+*.p8
+xcuserdata/
 
 # Editor and operating-system artifacts.
 .DS_Store

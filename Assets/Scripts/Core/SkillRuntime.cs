@@ -7,8 +7,16 @@ namespace Emberfall
     {
         public const float MaximumEnergy = 100f;
         public const float EnergyPerSecond = 4f;
+        public HeroClass HeroClass { get; }
         public float Energy { get; private set; } = MaximumEnergy;
         private readonly float[] cooldowns = new float[GameBalance.SkillCount];
+
+        public SkillRuntime(HeroClass heroClass)
+        {
+            if ((int)heroClass < 0 || (int)heroClass >= GameBalance.ClassNames.Length)
+                throw new ArgumentOutOfRangeException(nameof(heroClass));
+            HeroClass = heroClass;
+        }
 
         public float Remaining(int skill)
         {
@@ -25,10 +33,10 @@ namespace Emberfall
         public bool TryConsume(int skill, int rank)
         {
             if (skill < 0 || skill >= cooldowns.Length || GameBalance.IsPassive(skill) || rank < 1 || rank > 3 || cooldowns[skill] > 0) return false;
-            float cost = GameBalance.SkillEnergyCosts[skill];
+            float cost = GameBalance.SkillEnergyCost(HeroClass, skill);
             if (Energy < cost) return false;
             Energy -= cost;
-            cooldowns[skill] = GameBalance.EffectiveCooldown(skill, rank);
+            cooldowns[skill] = GameBalance.EffectiveCooldown(HeroClass, skill, rank);
             return true;
         }
 

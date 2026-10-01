@@ -19,6 +19,7 @@ namespace Emberfall
         public int TotalWaves { get { return 3; } }
         public float ArenaRadius { get { return InDungeon ? 18f : 22f; } }
         public bool DungeonCleared { get; private set; }
+        public int PendingLootCount { get { return pendingLoot.Count; } }
         public string ZoneName { get { return InDungeon ? "沉星遗迹 · 第 " + DungeonTier + " 阶" : "风语原野"; } }
         public string Notification
         {
@@ -38,7 +39,7 @@ namespace Emberfall
             {
                 if (!HasStarted) return "踏入星烬纪元";
                 if (IsDead) return "旅途尚未结束 · 返回营地重整旗鼓";
-                if (InDungeon) return DungeonCleared ? "遗迹已肃清！战利品已收入背包 · 按 T 返回" :
+                if (InDungeon) return DungeonCleared ? "遗迹已肃清 · 收集地面战利品 · 按 T 返回" :
                     "肃清遗迹 " + DungeonWave + "/" + TotalWaves + " · 剩余 " + Enemies.Count + " 个敌人";
                 if (Progression.Profile.level < 2) return "击败原野怪物，升至 2 级 · 按 K 查看职业技能";
                 if (Progression.Profile.skillRanks[0] == 0) return "你已获得技能点！按 K 学习第一个职业技能";
@@ -58,6 +59,14 @@ namespace Emberfall
         private float portalHintTimer;
         private Coroutine waveRoutine;
         private readonly List<GameObject> transientObjects = new List<GameObject>();
+        private sealed class PendingLoot
+        {
+            public ItemData Item;
+            public GroundLootPickup Pickup;
+            public bool Collecting;
+        }
+        private readonly Dictionary<string, PendingLoot> pendingLoot = new Dictionary<string, PendingLoot>();
+        private readonly HashSet<string> collectedGroundLoot = new HashSet<string>();
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void Bootstrap()
@@ -71,6 +80,7 @@ namespace Emberfall
 
         private void Awake()
         {
+            Debug.Log("Emberfall " + Application.version + " · " + Application.platform);
             if (Instance != null && Instance != this) { Destroy(gameObject); return; }
             Instance = this;
             Application.targetFrameRate = 60;
@@ -89,6 +99,7 @@ namespace Emberfall
             ConfigureCamera();
             ui = gameObject.AddComponent<GameUI>();
             ui.Initialize(this);
+            gameObject.AddComponent<MobileControls>().Initialize(this);
             Time.timeScale = 0f;
         }
 
@@ -115,6 +126,8 @@ namespace Emberfall
 
         public void StartNew(HeroClass heroClass)
         {
+            CollectRemainingDungeonLoot();
+            collectedGroundLoot.Clear();
             Progression.NewGame(heroClass);
             BeginAdventure();
             Notify("欢迎来到风语原野。WASD 移动，鼠标瞄准；先击败怪物，升至 2 级学习技能。");
@@ -122,6 +135,7 @@ namespace Emberfall
 
         public void ContinueGame()
         {
+            CollectRemainingDungeonLoot();
             if (!Progression.Load()) { Notify("存档未能读取：" + Progression.LastError); return; }
             string loadWarning = Progression.LastError;
             BeginAdventure();
@@ -147,7 +161,7 @@ namespace Emberfall
             if (!HasStarted || IsDead || Paused || uiBlocking) return;
             if (!InputBlocked)
             {
-                if (Input.GetKeyDown(KeyCode.F)) DrinkPotion();
+                if (Input.GetKeyDown(KeyCode.F) || MobileControls.ConsumePotion()) DrinkPotion();
                 if (Input.GetKeyDown(KeyCode.T)) { if (InDungeon) { if (DungeonCleared) ReturnToCamp(); else Notify("先击败本轮敌人；按 H 可放弃副本返回营地。"); } else EnterDungeon(); }
                 if (Input.GetKeyDown(KeyCode.H)) ReturnToCamp();
             }
@@ -179,6 +193,14 @@ namespace Emberfall
         {
             return HasStarted && Progression.SetHotbarPage(page);
         }
+        public bool MoveHotbarSkill(int sourceSlot, int targetSlot)
+        {
+            if (!CanChangeLoadout) return false;
+            bool changed = Progression.MoveHotbarSkill(sourceSlot, targetSlot);
+            if (changed) Notify("快捷栏已更新 · 技能冷却保留");
+            else if (!string.IsNullOrEmpty(Progression.LastError)) Notify(Progression.LastError);
+            return changed;
+        }
         private void UpdateTimeScale() { Time.timeScale = HasStarted && !Paused && !uiBlocking && !IsDead ? 1 : 0; }
 
         private bool NearPortal() { return Player != null && Vector3.Distance(Player.transform.position, new Vector3(0, 0, 11)) < 4.3f; }
@@ -208,6 +230,7 @@ namespace Emberfall
 
         private void ChangeZone(bool dungeon)
         {
+            CollectRemainingDungeonLoot();
             changingZone = true;
             if (waveRoutine != null) { StopCoroutine(waveRoutine); waveRoutine = null; }
             foreach (EnemyController enemy in Enemies) if (enemy != null) { enemy.gameObject.SetActive(false); Destroy(enemy.gameObject); }
@@ -288,12 +311,17 @@ namespace Emberfall
             SpawnFloatingText(position + Vector3.up * 2, "+" + experience + " XP  +" + gold + " G", new Color(.95f, .83f, .4f));
             if (boss || Random.value < (InDungeon ? .7f : .5f))
             {
-                ItemData loot = Progression.CreateLoot(Progression.Profile.level + (boss ? 1 : 0), boss);
+                ItemData loot = InDungeon ? Progression.RollLoot(Progression.Profile.level + (boss ? 1 : 0), boss)
+                    : Progression.CreateLoot(Progression.Profile.level + (boss ? 1 : 0), boss);
                 if (loot != null)
                 {
-                    GameAudio.Play(SoundCue.Loot);
-                    Notify("获得 " + GameBalance.RarityName(loot.rarity) + "装备：「" + loot.name + "」 · 按 I 查看" + (string.IsNullOrEmpty(Progression.LastError) ? "" : " · " + Progression.LastError));
-                    SpawnLootBeacon(position, GameBalance.RarityColor(loot.rarity));
+                    if (InDungeon) SpawnGroundLoot(loot, position);
+                    else
+                    {
+                        GameAudio.Play(SoundCue.Loot);
+                        Notify("获得 " + GameBalance.RarityName(loot.rarity) + "装备：「" + loot.name + "」 · 按 I 查看" + (string.IsNullOrEmpty(Progression.LastError) ? "" : " · " + Progression.LastError));
+                        SpawnLootBeacon(position, GameBalance.RarityColor(loot.rarity));
+                    }
                 }
             }
             enemy.gameObject.SetActive(false);
@@ -324,7 +352,7 @@ namespace Emberfall
                 Progression.GrantExperience(100 + DungeonTier * 20);
                 Player.Heal(Player.MaxHealth);
                 Progression.Save();
-                Notify("遗迹通关！额外金币与经验已发放 · 按 I 查看装备，按 T 返回营地。");
+                Notify("遗迹通关 · 拾取战利品，返回营地");
             }
             waveRoutine = null;
         }
@@ -364,6 +392,7 @@ namespace Emberfall
 
         public void QuitToTitle()
         {
+            CollectRemainingDungeonLoot();
             if (HasStarted) Progression.Save();
             StopAllCoroutines();
             waveRoutine = null;
@@ -407,12 +436,57 @@ namespace Emberfall
             Destroy(beacon, 2.5f);
         }
 
+        public GroundLootPickup SpawnGroundLoot(ItemData item, Vector3 position)
+        {
+            if (!HasStarted || !InDungeon || item == null || string.IsNullOrWhiteSpace(item.id) ||
+                !System.Enum.IsDefined(typeof(ItemSlot), item.slot) || !System.Enum.IsDefined(typeof(Rarity), item.rarity) ||
+                collectedGroundLoot.Contains(item.id) || Progression.Profile.inventory.Exists(value => value != null && value.id == item.id)) return null;
+            PendingLoot existing;
+            if (pendingLoot.TryGetValue(item.id, out existing)) return existing.Pickup;
+            position.y = 0;
+            position = Vector3.ClampMagnitude(position, ArenaRadius - .8f);
+            GameObject root = new GameObject("Ground loot · " + item.name);
+            if (world != null) root.transform.SetParent(world.transform, false);
+            root.transform.position = position;
+            GroundLootPickup pickup = root.AddComponent<GroundLootPickup>();
+            pendingLoot.Add(item.id, new PendingLoot { Item = item, Pickup = pickup });
+            pickup.Initialize(this, item);
+            return pickup;
+        }
+
+        public bool TryCollectGroundLoot(string itemId, bool feedback = true)
+        {
+            PendingLoot pending;
+            if (string.IsNullOrEmpty(itemId) || !pendingLoot.TryGetValue(itemId, out pending) || pending.Collecting) return false;
+            pending.Collecting = true;
+            bool accepted = Progression.CollectLoot(pending.Item);
+            pending.Collecting = false;
+            if (!accepted) return false;
+            pendingLoot.Remove(itemId);
+            collectedGroundLoot.Add(itemId);
+            if (pending.Pickup != null) pending.Pickup.Retire();
+            if (feedback)
+            {
+                GameAudio.Play(SoundCue.Loot);
+                Notify("拾取 " + pending.Item.name + (string.IsNullOrEmpty(Progression.LastError) ? "" : " · " + Progression.LastError));
+            }
+            return true;
+        }
+
+        public void CollectRemainingDungeonLoot()
+        {
+            if (Progression == null || pendingLoot.Count == 0) return;
+            var ids = new List<string>(pendingLoot.Keys);
+            foreach (string id in ids) TryCollectGroundLoot(id, false);
+        }
+
         private void OnApplicationPause(bool pause) { if (pause && HasStarted) { Progression.Save(); SetPaused(true); } }
         private void OnApplicationFocus(bool focus) { if (!focus && HasStarted) SetPaused(true); }
-        private void OnApplicationQuit() { if (HasStarted) Progression.Save(); }
+        private void OnApplicationQuit() { CollectRemainingDungeonLoot(); if (HasStarted) Progression.Save(); }
         private void OnDestroy()
         {
             if (Instance != this) return;
+            CollectRemainingDungeonLoot();
             if (Progression != null) { Progression.Changed -= OnProgressChanged; Progression.LeveledUp -= OnLevelUp; }
             Instance = null;
             Time.timeScale = 1;
@@ -423,7 +497,7 @@ namespace Emberfall
     {
         private float distance = 19f;
         private Vector3 lookTarget;
-        public void Snap() { lookTarget = DesiredTarget(); MoveCamera(true); }
+        public void Snap() { HitFeedback.ClearCamera(); lookTarget = DesiredTarget(); MoveCamera(true); }
         private Vector3 DesiredTarget()
         {
             GameSession game = GameSession.Instance;
@@ -441,6 +515,7 @@ namespace Emberfall
             lookTarget = snap ? desired : Vector3.Lerp(lookTarget, desired, 1 - Mathf.Exp(-8 * Time.unscaledDeltaTime));
             transform.position = lookTarget + new Vector3(0, distance * .9f, -distance * .8f);
             transform.LookAt(lookTarget);
+            transform.position += HitFeedback.CameraOffset;
         }
     }
 
