@@ -16,6 +16,10 @@ namespace Emberfall.Editor
             PlayerController player = game.Player;
             check(player.HeroClass == HeroClass.Summoner && !game.InDungeon, "Summoner fixture is a wilderness summoner");
             float previousRespawnTimer = Read<float>(game, "respawnTimer");
+            bool playerEnabled = player.enabled;
+            SummonerRoute previousRoute = game.Progression.Profile.summonerRoute;
+            player.enabled = false; // Isolate automatic foundation upkeep from explicit contract fixtures.
+            game.Progression.Profile.summonerRoute = SummonerRoute.Bonded;
             Set(game, "respawnTimer", 600f);
             try
             {
@@ -38,8 +42,9 @@ namespace Emberfall.Editor
                 Invoke(player, "CastSkill", skill);
                 SummonedCompanion pet = Find(player, form);
                 check(pet != null && pet.IsAlive && pet.Owner == player, form + " actual class skill creates a living companion belonging to its caster");
-                check(Mathf.Abs(pet.RemainingLifetime - (form == SummonedCompanion.Kind.Treant ? 16 : 24)) < .01f,
-                    form + " awakened companion has its documented finite lifetime");
+                check(form == SummonedCompanion.Kind.Treant ? !pet.IsPermanent && Mathf.Abs(pet.RemainingLifetime - 16) < .01f
+                    : pet.IsPermanent && float.IsPositiveInfinity(pet.RemainingLifetime),
+                    form + " bonded wolf/spirit remain permanent while awakened tree keeps finite lifetime");
                 float health = enemy.Health;
                 double until = Time.timeAsDouble + .8;
                 while (Time.timeAsDouble < until) yield return null;
@@ -63,6 +68,42 @@ namespace Emberfall.Editor
             }
 
             Clear(game);
+            player.Teleport(new Vector3(0, 0, -5));
+            SummonedCompanion foundation = SummonedCompanion.SummonStarter(player, game, 10);
+            foundation.TakeDamage(foundation.MaxHealth * .4f);
+            float foundationRatio = foundation.Health / foundation.MaxHealth;
+            SummonedCompanion sameWolf = SummonedCompanion.CastContract(player, game, SummonedCompanion.Kind.Wolf, 3, player.transform.position, 10, false);
+            check(ReferenceEquals(foundation, sameWolf) && foundation.IsPermanent && foundation.IsStarter &&
+                Mathf.Abs(foundation.Health / foundation.MaxHealth - foundationRatio) < .001f,
+                "Learned wolf contract commands the existing permanent foundation without replacing or freely healing it");
+            SummonedCompanion bondedSpirit = SummonedCompanion.CastContract(player, game, SummonedCompanion.Kind.Spirit, 3, player.transform.position, 10, false);
+            SummonedCompanion temporary = SummonedCompanion.Summon(player, game, SummonedCompanion.Kind.Wolf, 2, player.transform.position, 10);
+            player.Teleport(player.transform.position + Vector3.right * 2);
+            check(foundation.IsAlive && bondedSpirit.IsAlive && foundation.IsPermanent && bondedSpirit.IsPermanent &&
+                WorldTraversal.IsWalkable(foundation.transform.position, .4f) && WorldTraversal.IsWalkable(bondedSpirit.transform.position, .35f) &&
+                Mathf.Abs(foundation.Health / foundation.MaxHealth - foundationRatio) < .001f && !foundation.IsRecalling,
+                "Teleport transfers only living permanent partners to legal new ground, preserving health and clearing commands");
+            check(!temporary.IsAlive && SummonedCompanion.Count(player) == 2,
+                "Teleport still invalidates old temporary pets and excludes them from the new encounter cap");
+            game.Progression.Profile.summonerRoute = SummonerRoute.Pack;
+            SummonedCompanion.EnforceCapacity(player);
+            check(foundation.IsPermanent && !bondedSpirit.IsPermanent && bondedSpirit.RemainingLifetime <= 24,
+                "Pack switch keeps permanent foundation but gives spirit its documented upkeep lifetime");
+            SummonedCompanion.CastContract(player, game, SummonedCompanion.Kind.Wolf, 3, player.transform.position, 10, true);
+            check(SummonedCompanion.Count(player) == 4 && foundation.IsAlive,
+                "Awakened pack command fills available four-pet slots without replacing its permanent foundation");
+            game.Progression.Profile.summonerRoute = SummonerRoute.Bonded;
+            SummonedCompanion.EnforceCapacity(player);
+            check(SummonedCompanion.Count(player) == 2 && foundation.IsAlive && bondedSpirit.IsPermanent,
+                "Bonded switch removes timed extras and keeps exactly one wolf and one spirit");
+            foundation.TakeDamage(foundation.MaxHealth * 20f);
+            SummonedCompanion resurrected = SummonedCompanion.CastContract(player, game, SummonedCompanion.Kind.Wolf, 3, player.transform.position, 10, false);
+            check(!foundation.IsAlive && resurrected != null && resurrected.IsAlive && !ReferenceEquals(foundation, resurrected) &&
+                SummonedCompanion.Count(player) == 2 && bondedSpirit.IsAlive,
+                "A dead foundation alone is resummoned; the other living partner is retained");
+
+            Clear(game);
+            game.Progression.Profile.summonerRoute = SummonerRoute.Pack;
             player.Teleport(new Vector3(0, 0, -5));
             SummonedCompanion oldest = null;
             for (int i = 0; i < 7; i++)
@@ -101,7 +142,7 @@ namespace Emberfall.Editor
             player.Teleport(player.transform.position + Vector3.right);
             frame = Time.frameCount;
             while (Time.frameCount < frame + 2) yield return null;
-            check(SummonedCompanion.Count(player) == 0 && SummonedCompanion.Count(player, true) == 0, "Changing encounter epoch dismisses every old companion");
+            check(SummonedCompanion.Count(player) == 0 && SummonedCompanion.Count(player, true) == 0, "Changing encounter epoch dismisses every old temporary companion");
             SummonedCompanion doomed = SummonedCompanion.Summon(player, game, SummonedCompanion.Kind.Wolf, 1, player.transform.position, 10);
             float savedHealth = player.Health;
             try
@@ -151,9 +192,14 @@ namespace Emberfall.Editor
             player.Teleport(new Vector3(0, 0, -5));
             player.RefreshStats(true);
             runtime.Advance(200); runtime.FillEnergy();
-            log("SUMMONER passed real skill summons, neutral wildlife, attacks, health/healing, finite lifetime, 4+1 cap, pause, epoch/death cleanup, visible airborne resistance and guardian armor.");
+            log("SUMMONER passed real skill summons, neutral wildlife, attacks, health/healing, permanent contracts, route switches, finite packs, 4+1 cap, pause, permanent transfers and temporary epoch/death cleanup, visible airborne resistance and guardian armor.");
             }
-            finally { Set(game, "respawnTimer", previousRespawnTimer); }
+            finally
+            {
+                Set(game, "respawnTimer", previousRespawnTimer);
+                game.Progression.Profile.summonerRoute = previousRoute;
+                player.enabled = playerEnabled;
+            }
         }
 
         private static void Clear(GameSession game)

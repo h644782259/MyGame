@@ -25,7 +25,10 @@ namespace Emberfall
         public const int PendingLootCapacity = 24;
         public const int RecoveryLootCapacity = 256;
         public const int MechanicExchangeCost = 12;
-        public const int MaximumMasteryRank = 23;
+        public const int MaximumMasteryRank = 35;
+        public const int FashionChoiceCost = 30;
+        public const int ReforgeCost = 6;
+        public const int VariantCost = 4;
         private static readonly int[] WingHealthPercents = { 3, 5, 8, 12 };
         private static readonly int[] WingArmorPercents = { 2, 3, 5, 8 };
         private static readonly int[] WeaponPercents = { 2, 4, 6, 9 };
@@ -390,14 +393,14 @@ namespace Emberfall
                     stats.MoveSpeed *= 1f + (passiveRank == 1 ? .03f : passiveRank == 2 ? .06f : .10f);
                 }
             }
-            FashionData wings = EquippedFashion(FashionSlot.Wings);
+            FashionData wings = StrongestFashion(FashionSlot.Wings);
             if (wings != null)
             {
                 int rank = (int)wings.rarity;
                 stats.MaxHealth *= 1f + WingHealthPercents[rank] / 100f;
                 stats.Armor *= 1f + WingArmorPercents[rank] / 100f;
             }
-            FashionData weaponFashion = EquippedFashion(FashionSlot.Weapon);
+            FashionData weaponFashion = StrongestFashion(FashionSlot.Weapon);
             if (weaponFashion != null)
             {
                 float bonus = WeaponPercents[(int)weaponFashion.rarity] / 100f;
@@ -406,9 +409,9 @@ namespace Emberfall
             }
             if (Profile.masteryRanks != null && Profile.masteryRanks.Length >= 3)
             {
-                stats.Damage *= 1f + Clamp(Profile.masteryRanks[0], 0, MaximumMasteryRank) * .005f;
-                stats.MaxHealth *= 1f + Clamp(Profile.masteryRanks[1], 0, MaximumMasteryRank) * .0075f;
-                stats.Armor += Clamp(Profile.masteryRanks[2], 0, MaximumMasteryRank) * .75f;
+                stats.Damage *= 1f + Clamp(Profile.masteryRanks[0], 0, MaximumMasteryRank) * .003f;
+                stats.MaxHealth *= 1f + Clamp(Profile.masteryRanks[1], 0, MaximumMasteryRank) * .005f;
+                stats.Armor *= 1f + Clamp(Profile.masteryRanks[2], 0, MaximumMasteryRank) * .0075f;
             }
             return stats;
         }
@@ -662,14 +665,19 @@ namespace Emberfall
             return false;
         }
 
+        public static int MasteryCap(int level)
+        { return level < 50 ? 0 : level < 65 ? 10 : level < 80 ? 20 : level < 95 ? 30 : MaximumMasteryRank; }
+
+        public bool HasMasteryCore(MasteryType mastery)
+        { return Profile.masteryCore == (int)mastery && Profile.masteryRanks[(int)mastery] >= 20; }
+
         public string MasteryLockReason(MasteryType mastery)
         {
             if (!Enum.IsDefined(typeof(MasteryType), mastery)) return "无效的精通。";
-            if (Profile.level < MaximumLevel) return "100级开放精通，消耗剩余技能点。";
-            for (int skill = 0; skill < GameBalance.SkillCount; skill++)
-                if (Profile.skillRanks[skill] < 3) return "先将十个技能全部觉醒，再分配剩余69点精通。";
-            if (Profile.masteryRanks[(int)mastery] >= MaximumMasteryRank) return "该精通已达到23点上限。";
-            if (Profile.skillPoints < 1) return "需要1点剩余技能点。";
+            int cap = MasteryCap(Profile.level);
+            if (cap == 0) return "50级开放精通；与技能共用点数，营地免费重置。";
+            if (Profile.masteryRanks[(int)mastery] >= cap) return "已达当前等级精通上限 " + cap + "；65/80/95级继续开放。";
+            if (Profile.skillPoints < 1) return "需要1点技能点；可在营地重置精通。";
             return string.Empty;
         }
 
@@ -677,18 +685,85 @@ namespace Emberfall
         {
             string reason = MasteryLockReason(mastery);
             if (!string.IsNullOrEmpty(reason)) return Fail(reason);
-            Profile.masteryRanks[(int)mastery]++;
-            Profile.skillPoints--;
-            Commit();
-            return true;
+            GameProfile candidate = Snapshot();
+            candidate.masteryRanks[(int)mastery]++;
+            return CommitCandidate(candidate);
+        }
+
+        public bool SelectMasteryCore(MasteryType mastery, bool inCamp)
+        {
+            if (!inCamp) return Fail("只能在营地切换精通核心。");
+            if (!Enum.IsDefined(typeof(MasteryType), mastery) || Profile.masteryRanks[(int)mastery] < 20)
+                return Fail("该方向投入20点后可启用核心；只能启用一个。");
+            GameProfile candidate = Snapshot(); candidate.masteryCore = (int)mastery;
+            return CommitCandidate(candidate);
         }
 
         public bool ResetMastery(bool inCamp)
         {
             if (!inCamp) return Fail("只能在营地免费重置精通。");
-            Profile.masteryRanks = new int[3];
-            Commit(); // Validation reconstructs exactly the remaining lifetime point budget.
-            return true;
+            GameProfile candidate = Snapshot(); candidate.masteryRanks = new int[4]; candidate.masteryCore = -1;
+            return CommitCandidate(candidate);
+        }
+
+        private GameProfile Snapshot() { return JsonUtility.FromJson<GameProfile>(JsonUtility.ToJson(Profile, true)); }
+        private bool CommitCandidate(GameProfile candidate)
+        {
+            string failure;
+            if (!TryWriteProfile(candidate, savePath, false, out failure)) return Fail(failure);
+            Profile = candidate; LastError = string.Empty; RaiseChanged(); return true;
+        }
+
+        public bool SetSummonerRoute(SummonerRoute route, bool inCamp)
+        {
+            if (!inCamp || Profile.heroClass != HeroClass.Summoner || !Enum.IsDefined(typeof(SummonerRoute), route))
+                return Fail("在营地可选择群契或双契伙伴路线。");
+            GameProfile candidate = Snapshot(); candidate.summonerRoute = route; return CommitCandidate(candidate);
+        }
+
+        public FashionData StrongestFashion(FashionSlot slot)
+        {
+            FashionData best = null;
+            foreach (FashionData fashion in Profile.fashions)
+                if (fashion != null && fashion.slot == slot && (best == null || fashion.rarity > best.rarity)) best = fashion;
+            return best;
+        }
+
+        public bool ChooseLegendaryFashion(FashionSlot slot, bool inCamp)
+        {
+            if (!inCamp || !Enum.IsDefined(typeof(FashionSlot), slot)) return Fail("请在营地选择有效的时装部位。");
+            string id = "fashion-" + (int)slot + "-3";
+            if (Profile.fashions.Exists(x => x.id == id)) return Fail("已拥有该部位传说外观，无需兑换。");
+            if (Profile.fashionThreads < FashionChoiceCost) return Fail("需要30缕星纹；每次开箱+1，重复时装额外增加。");
+            GameProfile candidate = Snapshot(); candidate.fashionThreads -= FashionChoiceCost;
+            candidate.fashions.Add(new FashionData { id = id, slot = slot, rarity = Rarity.Legendary, name = FashionName(slot, Rarity.Legendary) });
+            return CommitCandidate(candidate);
+        }
+
+        public bool ReforgeMechanic(string id, bool inCamp)
+        {
+            ItemData existing = FindItem(id);
+            if (!inCamp || existing == null || existing.mechanic == EquipmentMechanic.None || !HasDiscoveredMechanic(existing.mechanic))
+                return Fail("在营地可将已发现配方的机制装备重铸。");
+            if (existing.level >= Profile.level) return Fail("装备已达到当前角色等级。");
+            if (Profile.mechanicMaterials < ReforgeCost) return Fail("重铸需要6枚星烬碎片。");
+            GameProfile candidate = Snapshot(); candidate.mechanicMaterials -= ReforgeCost;
+            ItemData item = candidate.inventory.Find(x => x.id == id); item.level = candidate.level;
+            item.upgradeLevel = 0; item.upgradeBaseInitialized = false; SetRolledStats(item); EnsureUpgradeBasis(item);
+            if (IsEquipped(candidate, id)) ApplyUpgradeRank(item, candidate.slotUpgradeRanks[(int)item.slot]);
+            return CommitCandidate(candidate);
+        }
+
+        public bool ToggleMechanicVariant(string id, bool inCamp)
+        {
+            ItemData existing = FindItem(id);
+            if (!inCamp || existing == null || (existing.mechanic != EquipmentMechanic.FrostEcho && existing.mechanic != EquipmentMechanic.CinderTrail))
+                return Fail("在营地可切换元素机制装备的互斥变体。");
+            if (!existing.mechanicVariantUnlocked && Profile.mechanicMaterials < VariantCost) return Fail("首次解锁变体需要4枚碎片，之后免费切换。");
+            GameProfile candidate = Snapshot(); ItemData item = candidate.inventory.Find(x => x.id == id);
+            if (!item.mechanicVariantUnlocked) candidate.mechanicMaterials -= VariantCost;
+            item.mechanicVariantUnlocked = true; item.mechanicVariant = 1 - item.mechanicVariant;
+            return CommitCandidate(candidate);
         }
 
         public void PrepareDungeonChest()
@@ -720,6 +795,7 @@ namespace Emberfall
             }
             GameProfile candidate = JsonUtility.FromJson<GameProfile>(JsonUtility.ToJson(Profile, true));
             candidate.pendingFashionChest = false;
+            candidate.fashionThreads = Clamp(candidate.fashionThreads + 1, 0, 999999);
             var receipt = new ChestReward { id = Guid.NewGuid().ToString("N"), choice = choice, gold = 60 + random.Next(41), name = "金币" };
             Rarity? rarity = RollFashionRarity(random.Next(100));
             if (!rarity.HasValue) receipt.summary = "宝箱 " + (choice + 1) + "：获得 " + receipt.gold + " 金币";
@@ -735,6 +811,7 @@ namespace Emberfall
                 if (receipt.duplicate)
                 {
                     int duplicateGold = new[] { 40, 100, 250, 800 }[(int)rarity.Value];
+                    candidate.fashionThreads = Clamp(candidate.fashionThreads + new[] { 1, 2, 4, 8 }[(int)rarity.Value], 0, 999999);
                     receipt.summary = "宝箱 " + (choice + 1) + "：" + receipt.name + " 已拥有，转化 " + duplicateGold + " 金币；另得 " + receipt.gold + " 金币";
                     receipt.gold += duplicateGold;
                 }
@@ -744,6 +821,7 @@ namespace Emberfall
                     receipt.summary = "宝箱 " + (choice + 1) + "：获得" + GameBalance.RarityName(rarity.Value) + "时装「" + receipt.name + "」及 " + receipt.gold + " 金币";
                 }
             }
+            receipt.summary += " · 星纹 " + candidate.fashionThreads + "/30";
             candidate.gold = (int)Math.Min(MaximumGold, (long)candidate.gold + receipt.gold);
             candidate.lastChestReward = receipt;
             candidate.pendingChestReveal = true;
@@ -989,6 +1067,7 @@ namespace Emberfall
         {
             item.attack = state.attack; item.defense = state.defense; item.health = state.health;
             item.upgradeLevel = state.upgradeLevel; item.upgradeBaseInitialized = state.upgradeBaseInitialized;
+            item.balanceRevision = state.balanceRevision;
             item.baseAttack = state.baseAttack; item.baseDefense = state.baseDefense; item.baseHealth = state.baseHealth;
             item.upgradeAnchorLevel = state.upgradeAnchorLevel; item.upgradeAnchorAttack = state.upgradeAnchorAttack;
             item.upgradeAnchorDefense = state.upgradeAnchorDefense; item.upgradeAnchorHealth = state.upgradeAnchorHealth;
@@ -1002,6 +1081,7 @@ namespace Emberfall
             {
                 id = item.id, name = item.name, slot = item.slot, rarity = item.rarity, level = item.level,
                 mechanic = item.mechanic, locked = item.locked,
+                mechanicVariant = item.mechanicVariant, mechanicVariantUnlocked = item.mechanicVariantUnlocked, balanceRevision = item.balanceRevision,
                 attack = item.attack, defense = item.defense, health = item.health, upgradeLevel = item.upgradeLevel,
                 upgradeBaseInitialized = item.upgradeBaseInitialized,
                 baseAttack = item.baseAttack, baseDefense = item.baseDefense, baseHealth = item.baseHealth,
@@ -1023,14 +1103,12 @@ namespace Emberfall
 
         private static int UpgradeValue(int basis, int anchor, int anchorRank, int rank, int minimumIncrease, int cap)
         {
-            // A legacy value can be capped or not exactly invertible. Its recorded
-            // anchor guarantees returning to the original rank restores it exactly.
-            // Normal legacy values are exact on both sides of the same growth curve.
-            return rank >= anchorRank ? GrowUpgradeStat(anchor, rank - anchorRank, minimumIncrease, cap)
-                : GrowUpgradeStat(basis, rank, minimumIncrease, cap);
+            // The recorded unenhanced basis is the sole authority after migration.
+            // Rank changes always reevaluate the linear curve, never compound caches.
+            return CombatBalance.UpgradeValue(basis, rank, minimumIncrease, cap);
         }
 
-        private static int GrowUpgradeStat(int value, int ranks, int minimumIncrease, int cap)
+        private static int GrowLegacyUpgradeStat(int value, int ranks, int minimumIncrease, int cap)
         {
             if (value <= 0) return 0;
             for (int i = 0; i < ranks; i++)
@@ -1049,7 +1127,7 @@ namespace Emberfall
             while (low <= high)
             {
                 int middle = low + (high - low) / 2;
-                int grown = GrowUpgradeStat(middle, rank, minimumIncrease, int.MaxValue);
+                int grown = GrowLegacyUpgradeStat(middle, rank, minimumIncrease, int.MaxValue);
                 if (grown <= value) { best = middle; low = middle + 1; }
                 else high = middle - 1;
             }
@@ -1068,27 +1146,40 @@ namespace Emberfall
             item.attack = Clamp(item.attack, 0, MaximumEquipmentStat);
             item.defense = Clamp(item.defense, 0, MaximumEquipmentStat);
             item.health = Clamp(item.health, 0, MaximumEquipmentHealth);
-            int anchorRank = item.upgradeAnchorLevel;
-            bool valid = item.upgradeBaseInitialized && anchorRank >= 0 && anchorRank <= MaximumUpgrade &&
-                ValidUpgradeBasis(item.baseAttack, item.upgradeAnchorAttack, anchorRank, 1, MaximumEquipmentStat) &&
-                ValidUpgradeBasis(item.baseDefense, item.upgradeAnchorDefense, anchorRank, 1, MaximumEquipmentStat) &&
-                ValidUpgradeBasis(item.baseHealth, item.upgradeAnchorHealth, anchorRank, 2, MaximumEquipmentHealth);
-            if (valid &&
-                item.attack == UpgradeValue(item.baseAttack, item.upgradeAnchorAttack, anchorRank, item.upgradeLevel, 1, MaximumEquipmentStat) &&
-                item.defense == UpgradeValue(item.baseDefense, item.upgradeAnchorDefense, anchorRank, item.upgradeLevel, 1, MaximumEquipmentStat) &&
-                item.health == UpgradeValue(item.baseHealth, item.upgradeAnchorHealth, anchorRank, item.upgradeLevel, 2, MaximumEquipmentHealth)) return;
+            bool old = item.balanceRevision < 1;
+            bool validOld = item.upgradeBaseInitialized && item.upgradeAnchorLevel >= 0 && item.upgradeAnchorLevel <= MaximumUpgrade &&
+                ValidUpgradeBasis(item.baseAttack, item.upgradeAnchorAttack, item.upgradeAnchorLevel, 1, MaximumEquipmentStat) &&
+                ValidUpgradeBasis(item.baseDefense, item.upgradeAnchorDefense, item.upgradeAnchorLevel, 1, MaximumEquipmentStat) &&
+                ValidUpgradeBasis(item.baseHealth, item.upgradeAnchorHealth, item.upgradeAnchorLevel, 2, MaximumEquipmentHealth);
+            bool validNew = item.upgradeBaseInitialized && item.baseAttack >= 0 && item.baseAttack <= MaximumEquipmentStat &&
+                item.baseDefense >= 0 && item.baseDefense <= MaximumEquipmentStat && item.baseHealth >= 0 && item.baseHealth <= MaximumEquipmentHealth &&
+                item.attack == CombatBalance.UpgradeValue(item.baseAttack, item.upgradeLevel, 1, MaximumEquipmentStat) &&
+                item.defense == CombatBalance.UpgradeValue(item.baseDefense, item.upgradeLevel, 1, MaximumEquipmentStat) &&
+                item.health == CombatBalance.UpgradeValue(item.baseHealth, item.upgradeLevel, 2, MaximumEquipmentHealth);
+            if (!old && validNew) return;
+            if (old && validOld) { /* Preserve the saved unenhanced item, not compounded inflation. */ }
+            else
+            {
+                item.baseAttack = old ? RecoverUpgradeBase(item.attack, item.upgradeLevel, 1) : RecoverLinearBase(item.attack, item.upgradeLevel, 1);
+                item.baseDefense = old ? RecoverUpgradeBase(item.defense, item.upgradeLevel, 1) : RecoverLinearBase(item.defense, item.upgradeLevel, 1);
+                item.baseHealth = old ? RecoverUpgradeBase(item.health, item.upgradeLevel, 2) : RecoverLinearBase(item.health, item.upgradeLevel, 2);
+            }
+            item.upgradeBaseInitialized = true; item.balanceRevision = 1;
+            item.upgradeAnchorLevel = 0;
+            item.upgradeAnchorAttack = item.baseAttack; item.upgradeAnchorDefense = item.baseDefense; item.upgradeAnchorHealth = item.baseHealth;
+            ApplyUpgradeRank(item, item.upgradeLevel);
+        }
 
-            // Initialize old saves (or repair inconsistent metadata) without changing
-            // their currently visible attributes. The anchor remains immutable across
-            // future upgrades, rank transfers, previews and save/load round trips.
-            item.upgradeAnchorLevel = item.upgradeLevel;
-            item.upgradeAnchorAttack = item.attack;
-            item.upgradeAnchorDefense = item.defense;
-            item.upgradeAnchorHealth = item.health;
-            item.baseAttack = RecoverUpgradeBase(item.attack, item.upgradeLevel, 1);
-            item.baseDefense = RecoverUpgradeBase(item.defense, item.upgradeLevel, 1);
-            item.baseHealth = RecoverUpgradeBase(item.health, item.upgradeLevel, 2);
-            item.upgradeBaseInitialized = true;
+        private static int RecoverLinearBase(int value, int rank, int minimumIncrease)
+        {
+            int low = 0, high = value, best = 0;
+            while (low <= high)
+            {
+                int middle = low + (high - low) / 2;
+                if (CombatBalance.UpgradeValue(middle, rank, minimumIncrease, int.MaxValue) <= value) { best = middle; low = middle + 1; }
+                else high = middle - 1;
+            }
+            return best;
         }
 
         public int UpgradeCost(ItemData item)
@@ -1322,7 +1413,10 @@ namespace Emberfall
                 SaveFile data = JsonUtility.FromJson<SaveFile>(File.ReadAllText(path, Encoding.UTF8));
                 if (data == null || data.format != SaveFormat || data.version != 1 || data.profile == null || data.profile.version != 1)
                 { error = "unsupported format"; return false; }
+                bool balanceChanged = HasLegacyEnhancement(data.profile.inventory) || HasLegacyEnhancement(data.profile.pendingLoot) || HasLegacyEnhancement(data.profile.recoveryLoot);
+                bool masteryRefund = data.profile.masteryRevision < 1 && data.profile.masteryRanks != null && Array.Exists(data.profile.masteryRanks, rank => rank > 0);
                 int refundedRanks = ValidateProfile(data.profile);
+                if (balanceChanged || masteryRefund) error = "战斗平衡已更新：部位强化等级与装备基础保留，强化属性按新曲线重算；旧精通投入已返还，可在营地重新选择。";
                 if (refundedRanks > 0) error = "部分技能阶级尚未达到新的解锁等级，已调整并返还技能点；角色与装备进度均已保留。";
                 profile = data.profile;
                 return true;
@@ -1333,6 +1427,9 @@ namespace Emberfall
                 return false;
             }
         }
+
+        private static bool HasLegacyEnhancement(List<ItemData> items)
+        { return items != null && items.Exists(item => item != null && item.balanceRevision < 1 && item.upgradeLevel > 0); }
 
         private static int ValidateProfile(GameProfile profile)
         {
@@ -1382,19 +1479,22 @@ namespace Emberfall
                 remaining -= ranks[slot];
             }
             profile.skillRanks = ranks;
-            int[] mastery = new int[3];
-            bool allSkillsAwakened = true;
-            foreach (int rank in ranks) if (rank != 3) allSkillsAwakened = false;
-            if (profile.level == MaximumLevel && allSkillsAwakened)
-            {
+            int[] mastery = new int[4];
+            // Old three-track maximum-level allocations are refunded once: the new
+            // four-track capacity and exclusive core require a deliberate choice.
+            if (profile.masteryRevision >= 1 && profile.level >= 50)
                 for (int track = 0; track < mastery.Length; track++)
                 {
                     int oldRank = profile.masteryRanks != null && track < profile.masteryRanks.Length ? profile.masteryRanks[track] : 0;
-                    mastery[track] = Math.Min(Clamp(oldRank, 0, MaximumMasteryRank), remaining);
+                    mastery[track] = Math.Min(Clamp(oldRank, 0, MasteryCap(profile.level)), remaining);
                     remaining -= mastery[track];
                 }
-            }
             profile.masteryRanks = mastery;
+            if (profile.masteryRevision < 1 || profile.masteryCore < 0 || profile.masteryCore >= mastery.Length || mastery[profile.masteryCore] < 20)
+                profile.masteryCore = -1;
+            profile.masteryRevision = 1;
+            profile.fashionThreads = Clamp(profile.fashionThreads, 0, 999999);
+            if (!Enum.IsDefined(typeof(SummonerRoute), profile.summonerRoute)) profile.summonerRoute = SummonerRoute.Bonded;
             // No saved free-point counter is trusted. Levels pay for both skills and
             // bounded mastery, so loading/repeated saves can neither mint nor lose points.
             profile.skillPoints = remaining;
@@ -1535,6 +1635,7 @@ namespace Emberfall
             item.upgradeLevel = Clamp(item.upgradeLevel, 0, MaximumUpgrade);
             if (!Enum.IsDefined(typeof(EquipmentMechanic), item.mechanic) ||
                 (item.mechanic != EquipmentMechanic.None && BuildCatalog.MechanicSlot(item.mechanic) != item.slot)) item.mechanic = EquipmentMechanic.None;
+            item.mechanicVariant = item.mechanicVariantUnlocked && (item.mechanic == EquipmentMechanic.FrostEcho || item.mechanic == EquipmentMechanic.CinderTrail) ? Clamp(item.mechanicVariant, 0, 1) : 0;
             EnsureUpgradeBasis(item);
             if (string.IsNullOrWhiteSpace(item.name)) item.name = "无名" + ItemBaseName(item.slot, hero);
             if (item.name.Length > 60) item.name = item.name.Substring(0, 60);

@@ -7,6 +7,7 @@ try {
     Add-Type -Path @(
         (Join-Path $projectDirectory 'Assets/Scripts/Core/GameTypes.cs'),
         (Join-Path $projectDirectory 'Assets/Scripts/Core/ProgressionService.cs'),
+        (Join-Path $projectDirectory 'Assets/Scripts/Core/CombatBalance.cs'),
         (Join-Path $PSScriptRoot 'ProgressionTests.cs')
     )
     [ProgressionTests]::Run($testDirectory)

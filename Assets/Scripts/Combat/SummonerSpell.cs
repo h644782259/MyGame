@@ -8,6 +8,7 @@ namespace Emberfall
         private GameSession session;
         private int rank, epoch;
         private float damage, age, nextTick;
+        private CombatDamage finisherDamage;
         private float Radius { get { return 4.4f * GameBalance.SkillRangeMultiplier(rank); } }
         public static void Cast(PlayerController player, GameSession game, int skill, int rank, Vector3 target, float damage)
         {
@@ -17,17 +18,19 @@ namespace Emberfall
             {
                 var form = skill == 2 ? SummonedCompanion.Kind.Wolf : skill == 4 ? SummonedCompanion.Kind.Spirit : SummonedCompanion.Kind.Treant;
                 Vector3 position = skill == 9 ? target : player.transform.position + player.transform.forward * 2 + player.transform.right * (skill == 2 ? -1 : 1);
-                SummonedCompanion.Summon(player, game, form, rank, position, damage);
+                SummonedCompanion.CastContract(player, game, form, rank, position, damage,
+                    game.Progression.Profile.summonerRoute == SummonerRoute.Pack, player.AimTarget);
             }
             else if (skill == 0)
             {
                 CombatFx.Slash(player.transform.position, player.transform.forward, 5f * range, color);
+                CombatDamage impact = player.RollDirectDamage(damage * 1.8f);
                 foreach (var enemy in game.Enemies.ToArray())
                 {
                     if (enemy == null || enemy.IsDead) continue;
                     Vector3 delta = CombatFx.Flat(enemy.transform.position - player.transform.position);
                     if (delta.magnitude <= 5f * range && (delta.sqrMagnitude < .1f || Vector3.Angle(player.transform.forward, delta) < 55))
-                        enemy.TakeDamage(damage * 1.8f, delta.normalized, 1.25f + rank * .2f, .2f);
+                        enemy.TakeDamage(impact.Amount, delta.normalized, 1.25f + rank * .2f, .2f, critical: impact.IsCritical);
                 }
             }
             else if (skill == 1)
@@ -39,6 +42,7 @@ namespace Emberfall
                 var obj = new GameObject("引力印记"); obj.transform.position = target;
                 var spell = obj.AddComponent<SummonerSpell>();
                 spell.owner = player; spell.session = game; spell.rank = rank; spell.damage = damage; spell.epoch = player.CombatEpoch;
+                spell.finisherDamage = player.RollDirectDamage(damage * 3.2f);
                 AdvancedSkillVfx.Rune(player, target, 4.4f * range, color, 3.3f, rank + 1);
             }
         }
@@ -58,7 +62,7 @@ namespace Emberfall
                         delta.normalized * Mathf.Min(delta.magnitude - .6f, Time.deltaTime * (3.5f + rank) * (enemy.IsBoss ? .25f : 1f)), enemy.NavigationRadius);
                 if (age >= 2.6f)
                 {
-                    enemy.TakeDamage(damage * 3.2f, -delta.normalized, .3f, .25f);
+                    enemy.TakeDamage(finisherDamage.Amount, -delta.normalized, .3f, .25f, critical: finisherDamage.IsCritical);
                     if (!enemy.IsDead) enemy.StatusEffects.Knockup(.7f + rank * .1f, 1.2f + rank * .2f);
                 }
                 else if (age >= nextTick) enemy.TakeDamage(damage * .45f, Vector3.zero, impact: false);

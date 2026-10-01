@@ -131,9 +131,9 @@ namespace Emberfall
             Primitive(camp, "Camp rug", PrimitiveType.Cube, new Vector3(0,.047f,-10), new Vector3(3.8f,.018f,2.7f), r.Material(new Color(.25f,.37f,.36f)));
             BuildCampfire(camp, r, new Vector3(-5.5f, 0, -23));
             Tent(camp, r, new Vector3(5.5f, 0, -23));
-            Label(parent, "CAMP", new Vector3(0, .13f, -13.9f), .13f, new Color(.74f, .82f, .73f), true);
+            Label(parent, "CAMP", "营地", new Vector3(0, .13f, -13.9f), .13f, new Color(.74f, .82f, .73f), true);
             Portal(parent, r, new Vector3(0, 0, 11), jade);
-            Label(parent, "FALLEN STAR", new Vector3(0, 4.65f, 11), .10f, new Color(.65f, 1, .87f), false);
+            Label(parent, "FALLEN STAR", "沉星遗迹", new Vector3(0, 4.65f, 11), .10f, new Color(.65f, 1, .87f), false);
             for (int i = 0; i < 12; i++)
             {
                 float angle = i * Mathf.PI / 6;
@@ -145,7 +145,9 @@ namespace Emberfall
         private static void BuildCampFacilities(Transform parent, WorldResources r, int progress)
         {
             Transform facilities = Region(parent, "Camp progression facilities");
+            // Stable object IDs are separate from player-facing text.
             string[] names = { "STAR CORE", "APPRENTICE", "CODEX", "CLASS TRIAL" };
+            string[] labels = { "星核", "观星学徒", "装备图鉴", "职业试炼" };
             Color[] colors = { new Color(.4f,.85f,1), new Color(.8f,.6f,1), new Color(1,.77f,.4f), new Color(.4f,1,.7f) };
             for (int i = 0; i < 4; i++)
             {
@@ -154,7 +156,7 @@ namespace Emberfall
                 Material glow = r.Material(colors[i] * (progress > i ? 1f : .6f), true);
                 Primitive(facilities, names[i] + " plinth", PrimitiveType.Cylinder, p + Vector3.up*.35f, new Vector3(.9f,.35f,.9f), stone);
                 Crystal(facilities, r, p + Vector3.up * (1.1f + Mathf.Min(progress,5)*.06f), .35f + Mathf.Min(progress,5)*.025f, glow);
-                Label(facilities, names[i], p + Vector3.up*2.1f, .055f, colors[i], false);
+                Label(facilities, names[i], labels[i], p + Vector3.up*2.1f, .055f, colors[i], false);
                 WorldTraversal.AddCircle(p,.48f);
             }
         }
@@ -248,7 +250,7 @@ namespace Emberfall
                 float x = (i - 2) * 5.8f;
                 Primitive(parent, "Lost wall", PrimitiveType.Cube, new Vector3(x, 2.8f, 26), new Vector3(5.5f, 5.6f + i % 2, .7f), baseStone);
             }
-            Label(parent, "THE FALLEN SANCTUM", new Vector3(0,.075f,-7), .12f, new Color(.46f,.55f,.72f), true);
+            Label(parent, "THE FALLEN SANCTUM", "沉星遗迹", new Vector3(0,.075f,-7), .12f, new Color(.46f,.55f,.72f), true);
             Portal(parent, r, new Vector3(0, 0, -16), r.Material(new Color(.58f,.38f,.94f), true));
             PointLight(parent, new Vector3(-9,4,1), new Color(.18f,.48f,1), 2, 17);
             PointLight(parent, new Vector3(9,4,7), new Color(.7f,.25f,1), 1.8f, 16);
@@ -455,10 +457,18 @@ namespace Emberfall
         private static void PointLight(Transform parent,Vector3 p,Color color,float intensity,float range)
         { GameObject go=new GameObject("Magic light"); go.transform.SetParent(parent); go.transform.position=p; Light light=go.AddComponent<Light>(); light.type=LightType.Point; light.color=color; light.intensity=intensity; light.range=range; }
 
-        private static void Label(Transform parent,string value,Vector3 p,float size,Color color,bool floor)
+        private static void Label(Transform parent,string objectName,string value,Vector3 p,float size,Color color,bool floor)
         {
-            GameObject go=new GameObject(value); go.transform.SetParent(parent); go.transform.position=p;
-            TextMesh text=go.AddComponent<TextMesh>(); text.text=value; text.anchor=TextAnchor.MiddleCenter; text.alignment=TextAlignment.Center; text.fontSize=64; text.characterSize=size; text.color=color;
+            GameObject go=new GameObject(objectName); go.transform.SetParent(parent); go.transform.position=p;
+            // Ship the exact Chinese glyphs rather than relying on a device's OS fonts.
+            // TextMesh needs both the font and its atlas material to render correctly.
+            Font font=Resources.Load<Font>("Fonts/EmberfallWorldLabels");
+            if(font==null) throw new System.InvalidOperationException("Bundled world-label font is missing.");
+            TextMesh text=go.AddComponent<TextMesh>(); text.font=font; text.fontSize=64; text.characterSize=size;
+            text.anchor=TextAnchor.MiddleCenter; text.alignment=TextAlignment.Center; text.color=color;
+            font.RequestCharactersInTexture(value,text.fontSize,FontStyle.Normal);
+            go.GetComponent<MeshRenderer>().sharedMaterial=font.material;
+            text.text=value;
             go.transform.rotation=Quaternion.Euler(floor?90:18,0,0);
         }
 

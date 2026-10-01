@@ -25,7 +25,8 @@ namespace Emberfall
         private GameSession session;
         private CombatModel model;
         private float speed, damage, attackCooldown, windup, stunTime, hurtTime, attackAnimation, patrolPhase;
-        private int attackNumber;
+        private int attackNumber, repeatedMove;
+        private BossAttackPolicy.Move previousMove;
         private Vector3 origin, targetPoint, knockVelocity, chargeDirection;
         private float chargeTime, totalWindup, comboDelay;
         private int comboRemaining;
@@ -56,12 +57,11 @@ namespace Emberfall
             DisplayName = (Tier == ThreatTier.Boss ? "首领 · " : Tier == ThreatTier.Elite ? "精英 · " : "普通 · ") +
                 (boss ? "星蚀巨像" : new[] { "森林史莱姆", "盗宝哥布林", "幽光魔灵", "遗迹守卫" }[(int)kind]);
             gameObject.name = DisplayName;
-            float[] baseHealth = { 32, 46, 35, 100 };
-            float[] healthGrowth = { 9, 12, 10, 24 };
             float[] moveSpeed = { 2.05f, 3.1f, 2.5f, 2.1f };
-            MaxHealth = boss ? 310 + level * 65 : baseHealth[(int)kind] + level * healthGrowth[(int)kind];
+            int challengeTier = game.InDungeon ? game.DungeonTier : 1;
+            MaxHealth = CombatBalance.EnemyHealth(level, challengeTier, boss, kind);
             Health = MaxHealth;
-            damage = (boss ? 14f : 6f) + level * (boss ? 2.5f : 1.7f);
+            damage = CombatBalance.EnemyDamage(level, challengeTier, boss);
             speed = boss ? 2.35f : moveSpeed[(int)kind];
             transform.position = WorldTraversal.NearestWalkable(transform.position, NavigationRadius);
             origin = transform.position;
@@ -229,8 +229,8 @@ namespace Emberfall
             else if (aggro)
             {
                 if (delta.sqrMagnitude>.01f) transform.rotation=Quaternion.Slerp(transform.rotation,Quaternion.LookRotation(delta),dt*9f);
-                float range = IsBoss ? BossAttackPolicy.EngageRange : Kind==EnemyKind.Wisp ? 7.5f : Kind==EnemyKind.Guardian ? 2.5f : 1.8f;
-                bool attackPath = IsBoss ? CanUseBossAttack(BossAttackPolicy.Select(distance), combatTargetPosition) : Kind == EnemyKind.Wisp ? WorldTraversal.HasLineOfSight(transform.position, combatTargetPosition) : WorldTraversal.HasGroundPath(transform.position, combatTargetPosition, .12f);
+                float range = IsBoss ? (BossAttackPolicy.ShouldAdvance(distance, previousMove, repeatedMove) ? BossAttackPolicy.ChargeRange : BossAttackPolicy.EngageRange) : Kind==EnemyKind.Wisp ? 7.5f : Kind==EnemyKind.Guardian ? 2.5f : 1.8f;
+                bool attackPath = IsBoss ? CanUseBossAttack(BossAttackPolicy.Select(distance, previousMove, repeatedMove), combatTargetPosition) : Kind == EnemyKind.Wisp ? WorldTraversal.HasLineOfSight(transform.position, combatTargetPosition) : WorldTraversal.HasGroundPath(transform.position, combatTargetPosition, .12f);
                 if (distance <= range && attackCooldown <= 0 && attackPath) BeginAttack();
                 else if (Kind==EnemyKind.Wisp && distance<4.5f && attackPath)
                 {
@@ -305,7 +305,7 @@ namespace Emberfall
         {
             Vector3 target = companionTarget != null ? companionTarget.transform.position : session.Player.transform.position;
             comboRemaining = IsEnraged ? 1 : 0;
-            AttackType next = IsBoss ? ToAttack(BossAttackPolicy.Select(CombatFx.Flat(target - transform.position).magnitude)) : Kind == EnemyKind.Wisp ? AttackType.Bolt : Kind == EnemyKind.Guardian ? AttackType.Slam : AttackType.Melee;
+            AttackType next = IsBoss ? ToAttack(BossAttackPolicy.Select(CombatFx.Flat(target - transform.position).magnitude, previousMove, repeatedMove)) : Kind == EnemyKind.Wisp ? AttackType.Bolt : Kind == EnemyKind.Guardian ? AttackType.Slam : AttackType.Melee;
             PrepareAttack(next, false, target);
         }
 
@@ -324,6 +324,7 @@ namespace Emberfall
         private void PrepareAttack(AttackType type, bool followUp, Vector3 target)
         {
             attackNumber++;
+            if (IsBoss) { BossAttackPolicy.Move move = ToMove(type); repeatedMove = repeatedMove > 0 && previousMove == move ? repeatedMove+1 : 1; previousMove = move; }
             attackType = type;
             preparing = true;
             dodgeRegistered = dodgePending = false;
@@ -419,8 +420,14 @@ namespace Emberfall
                     transform.position = WorldTraversal.Move(transform.position, Vector3.ClampMagnitude(CombatFx.Flat(targetPoint - transform.position), 1.25f), NavigationRadius);
                 CombatFx.Ring(targetPoint, ImpactRadius, new Color(1f,.45f,.25f), .32f, .15f);
                 ConfirmImpactDodge();
+                if (attackType == AttackType.Slam)
+                {
+                    if (InsideImpact(session.Player.transform.position)) session.Player.TakeDamageFrom(damage * 1.4f, DisplayName);
+                    foreach (SummonedCompanion ally in SummonedCompanion.Snapshot(session.Player))
+                        if (ally != null && ally.IsAlive && InsideImpact(ally.transform.position)) ally.TakeDamage(damage * 1.4f, areaAttack: true);
+                }
                 Vector3 victim = companionTarget != null && companionTarget.IsAlive ? companionTarget.transform.position : session.Player.transform.position;
-                if (InsideImpact(victim))
+                if (attackType != AttackType.Slam && InsideImpact(victim))
                 {
                     float previousHealth = session.Player.Health;
                     DamageTarget(damage * (attackType == AttackType.Slam ? 1.4f : 1f));
@@ -438,20 +445,22 @@ namespace Emberfall
 
         private void FinishAttack()
         {
+            if (IsBoss && attackType == AttackType.Charge && !chargeHit) { comboRemaining = 0; attackCooldown = 2.1f; return; }
             if (IsBoss && comboRemaining > 0) { comboDelay = BossAttackPolicy.ComboGap; attackCooldown = 0; }
             else attackCooldown = IsBoss ? BossAttackPolicy.Recovery(IsEnraged) : Kind == EnemyKind.Wisp ? 1.55f : 1.3f;
         }
 
         private bool InsideImpact(Vector3 point)
         {
-            return CombatFx.Flat(point - targetPoint).magnitude < ImpactRadius && WorldTraversal.HasGroundPath(transform.position, point, .12f);
+            Vector3 offset = CombatFx.Flat(point - targetPoint);
+            return PlayerUpgradeRules.IsInsideArea(offset.x, offset.z, ImpactRadius, WorldTraversal.HasGroundPath(transform.position, point, .12f));
         }
 
         /// <summary>Register only a successful blink out of an imminent actual hit. Resolution confirms the reward.</summary>
         public bool TryRegisterPerfectDodge(Vector3 origin, Vector3 destination, float timingWindow = .22f)
         {
             if (session == null || session.Player == null || session.Player.IsDead || IsDead || !enabled || !gameObject.activeInHierarchy || !session.HasStarted || session.Paused || session.IsDead || dodgeRegistered || stunTime > 0 || Time.time < flinchUntil || timingWindow <= 0 || float.IsNaN(timingWindow) || float.IsInfinity(timingWindow)) return false;
-            if (companionTarget != null && companionTarget.IsAlive) return false;
+            if (attackType != AttackType.Slam && companionTarget != null && companionTarget.IsAlive) return false;
             if (!FinitePoint(origin) || !FinitePoint(destination) || CombatFx.Flat(destination - origin).sqrMagnitude < .01f) return false;
             timingWindow = Mathf.Min(.3f, timingWindow);
             if (attackType == AttackType.Charge)
@@ -482,7 +491,7 @@ namespace Emberfall
 
         private bool PendingDodgeIsValid()
         {
-            return dodgePending && dodgePlayer != null && session.Player == dodgePlayer && !dodgePlayer.IsDead && dodgePlayer.CombatEpoch == dodgeEpoch && (companionTarget == null || !companionTarget.IsAlive);
+            return dodgePending && dodgePlayer != null && session.Player == dodgePlayer && !dodgePlayer.IsDead && dodgePlayer.CombatEpoch == dodgeEpoch && (attackType == AttackType.Slam || companionTarget == null || !companionTarget.IsAlive);
         }
 
         private void ConfirmImpactDodge()

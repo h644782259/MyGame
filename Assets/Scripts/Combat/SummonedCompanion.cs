@@ -7,16 +7,28 @@ namespace Emberfall
     {
         public enum Kind { Wolf, Spirit, Treant }
         private static readonly List<SummonedCompanion> active = new List<SummonedCompanion>();
+        private sealed class BondState
+        {
+            public int Epoch;
+            public float EmpoweredUntil;
+            public readonly CompanionCooperationTracker<EnemyController> Cooperation = new CompanionCooperationTracker<EnemyController>();
+        }
+        private static readonly Dictionary<PlayerController, BondState> bonds = new Dictionary<PlayerController, BondState>();
         public PlayerController Owner { get; private set; }
         public Kind Form { get; private set; }
         public bool IsStarter { get; private set; }
+        public bool IsPermanent { get; private set; }
+        public bool IsRecalling { get { return recallTime > 0; } }
+        public int Rank { get { return rank; } }
         public float Health { get; private set; }
         public float MaxHealth { get; private set; }
         public float RemainingLifetime { get; private set; }
         public bool IsAlive { get { return Health > 0 && Owner != null && !Owner.IsDead && Owner.gameObject.activeInHierarchy && gameObject.activeInHierarchy && session != null && session.HasStarted && session.Player == Owner && Owner.CombatEpoch == epoch; } }
         private GameSession session;
         private int epoch, rank;
-        private float damage, cooldown, attackPose, baseMaxHealth;
+        private float damage, cooldown, attackPose, baseMaxHealth, statRefresh;
+        private float recallTime, commandTime, commandMultiplier = 1, idleTime;
+        private EnemyController commandedTarget;
         private CombatModel model;
         private EnemyController target;
         private Transform healthBar;
@@ -33,30 +45,64 @@ namespace Emberfall
             return count;
         }
 
-        public static SummonedCompanion Summon(PlayerController owner, GameSession game, Kind form, int rank, Vector3 at, float strength)
+        private static BondState State(PlayerController owner)
         {
-            if (form == Kind.Wolf && rank > 0) DismissStarters(owner);
-            int cap = form == Kind.Treant ? 1 : owner.HasMechanic(EquipmentMechanic.TwinSummonResonance) ? 2 : 4;
+            var stale = new List<PlayerController>();
+            foreach (var pair in bonds) if (pair.Key == null) stale.Add(pair.Key);
+            foreach (PlayerController key in stale) bonds.Remove(key);
+            BondState state;
+            if (!bonds.TryGetValue(owner, out state) || state.Epoch != owner.CombatEpoch)
+            {
+                state = new BondState { Epoch = owner.CombatEpoch };
+                bonds[owner] = state;
+            }
+            return state;
+        }
+
+        public static SummonedCompanion[] Snapshot(PlayerController owner)
+        {
+            return active.FindAll(pet => pet != null && pet.IsAlive && pet.Owner == owner).ToArray();
+        }
+
+        private static SummonedCompanion EvictionCandidate(PlayerController owner, Kind incoming)
+        {
+            return active.Find(pet => pet != null && pet.IsAlive && pet.Owner == owner && !pet.IsPermanent && !pet.IsStarter && pet.Form == incoming)
+                ?? active.Find(pet => pet != null && pet.IsAlive && pet.Owner == owner && !pet.IsPermanent && !pet.IsStarter && pet.Form != Kind.Treant)
+                ?? active.Find(pet => pet != null && pet.IsAlive && pet.Owner == owner && !pet.IsStarter && pet.Form != Kind.Treant);
+        }
+
+        // Low-level spawn remains available for timed pack members. Permanent
+        // contracts use CastContract so living partners are never replaced.
+        public static SummonedCompanion Summon(PlayerController owner, GameSession game, Kind form, int rank, Vector3 at, float strength,
+            bool permanent = false, bool foundation = false)
+        {
+            if (owner == null || owner.IsDead || game == null) return null;
+            if (foundation)
+            {
+                SummonedCompanion existing = active.Find(pet => pet != null && pet.IsAlive && pet.Owner == owner && pet.IsStarter);
+                if (existing != null) return existing;
+            }
+            int cap = form == Kind.Treant ? 1 : CompanionRules.NormalCapacity(owner.HasMechanic(EquipmentMechanic.TwinSummonResonance));
             while (Count(owner, form == Kind.Treant) >= cap)
             {
-                var oldest = active.Find(pet => pet != null && pet.IsAlive && pet.Owner == owner && (pet.Form == Kind.Treant) == (form == Kind.Treant));
-                if (oldest == null) break;
+                SummonedCompanion oldest = form == Kind.Treant
+                    ? active.Find(pet => pet != null && pet.IsAlive && pet.Owner == owner && pet.Form == Kind.Treant)
+                    : EvictionCandidate(owner, form);
+                if (oldest == null) return null;
                 oldest.Dismiss();
             }
             var obj = new GameObject(form == Kind.Wolf ? "灵狼" : form == Kind.Spirit ? "星灵" : "远古树灵");
             obj.transform.position = WorldTraversal.NearestWalkable(at, RadiusFor(form));
             var companion = obj.AddComponent<SummonedCompanion>();
             companion.Owner = owner; companion.session = game; companion.Form = form;
-            companion.rank = rank; companion.epoch = owner.CombatEpoch; companion.damage = strength;
-            companion.IsStarter = rank == 0;
-            companion.baseMaxHealth = game.Progression.GetStats().MaxHealth * (companion.IsStarter ? .25f : form == Kind.Treant ? 1.2f : .42f + rank * .08f);
-            companion.MaxHealth = companion.baseMaxHealth * (owner.HasMechanic(EquipmentMechanic.TwinSummonResonance) ? .85f : 1f);
-            companion.Health = companion.MaxHealth;
-            companion.RemainingLifetime = companion.IsStarter ? float.PositiveInfinity : form == Kind.Treant ? 10 + rank * 2 : 15 + rank * 3;
+            companion.rank = Mathf.Clamp(rank, 0, 3); companion.epoch = owner.CombatEpoch; companion.damage = strength;
+            companion.IsStarter = foundation; companion.IsPermanent = permanent;
+            companion.RefreshPower(true);
+            companion.RemainingLifetime = permanent ? float.PositiveInfinity : form == Kind.Treant ? 10 + rank * 2 : 15 + rank * 3;
             companion.model = CombatModel.Companion(obj.transform, form);
             companion.BuildHealthBar();
             active.Add(companion);
-            AdvancedSkillVfx.Rune(owner, obj.transform.position, form == Kind.Treant ? 2.6f : 1.3f, GameBalance.ClassColor(HeroClass.Summoner), .7f, rank);
+            AdvancedSkillVfx.Rune(owner, obj.transform.position, form == Kind.Treant ? 2.6f : 1.3f, GameBalance.ClassColor(HeroClass.Summoner), .7f, Mathf.Max(1, rank));
             return companion;
         }
 
@@ -67,10 +113,11 @@ namespace Emberfall
 
         public static SummonedCompanion SummonStarter(PlayerController owner, GameSession game, float strength)
         {
-            if (owner == null || owner.IsDead || owner.HeroClass != HeroClass.Summoner || game.Progression.Profile.skillRanks[2] > 0 || HasStarter(owner)) return null;
-            SummonedCompanion companion = Summon(owner, game, Kind.Wolf, 0,
-                owner.transform.position - owner.transform.forward * 1.2f, strength * .45f);
-            companion.gameObject.name = "幼年灵狼 · 基础伙伴";
+            if (owner == null || owner.IsDead || owner.HeroClass != HeroClass.Summoner || HasStarter(owner)) return null;
+            int learnedRank = game.Progression.Profile.skillRanks[2];
+            SummonedCompanion companion = Summon(owner, game, Kind.Wolf, learnedRank,
+                owner.transform.position - owner.transform.forward * 1.2f, strength, true, true);
+            if (companion != null) companion.gameObject.name = "灵狼 · 常驻伙伴";
             return companion;
         }
 
@@ -82,13 +129,160 @@ namespace Emberfall
 
         public static void EnforceCapacity(PlayerController owner)
         {
-            int cap = owner.HasMechanic(EquipmentMechanic.TwinSummonResonance) ? 2 : 4;
+            if (owner == null || owner.IsDead) return;
+            bool bonded = owner != null && GameSession.Instance != null && GameSession.Instance.Progression.Profile.summonerRoute == SummonerRoute.Bonded;
+            bool keptSpirit = false;
+            foreach (SummonedCompanion pet in Snapshot(owner))
+            {
+                if (bonded && pet.Form == Kind.Spirit)
+                {
+                    if (keptSpirit) { pet.Dismiss(); continue; }
+                    keptSpirit = true;
+                }
+                if (pet.Form == Kind.Spirit && bonded && !pet.IsPermanent)
+                { pet.IsPermanent = true; pet.RemainingLifetime = float.PositiveInfinity; }
+                else if (pet.Form == Kind.Spirit && !bonded && pet.IsPermanent)
+                { pet.IsPermanent = false; pet.RemainingLifetime = 15f + pet.rank * 3f; }
+                if (bonded && pet.Form == Kind.Wolf && !pet.IsStarter) pet.Dismiss();
+            }
+            int cap = CompanionRules.NormalCapacity(owner.HasMechanic(EquipmentMechanic.TwinSummonResonance));
             while (Count(owner) > cap)
             {
-                SummonedCompanion oldest = active.Find(pet => pet != null && pet.Owner == owner && pet.IsAlive && pet.Form != Kind.Treant);
+                SummonedCompanion oldest = EvictionCandidate(owner, Kind.Wolf);
                 if (oldest == null) break;
                 oldest.Dismiss();
             }
+        }
+
+        public static void TransferPermanentPartners(PlayerController owner)
+        {
+            if (owner == null || owner.IsDead) return;
+            foreach (SummonedCompanion pet in active.ToArray())
+            {
+                // IsAlive includes the old epoch, so inspect the surviving body
+                // directly after Teleport increments the owner's combat epoch.
+                if (pet == null || pet.Owner != owner || !CompanionRules.CanTransfer(pet.IsPermanent, pet.Health, pet.gameObject.activeInHierarchy) || pet.session == null || pet.session.Player != owner) continue;
+                pet.epoch = owner.CombatEpoch;
+                pet.commandedTarget = pet.target = null;
+                pet.commandTime = pet.recallTime = pet.idleTime = pet.attackPose = 0;
+                pet.commandMultiplier = 1;
+                pet.cooldown = Mathf.Max(.35f, pet.cooldown);
+                pet.RefreshPower(false);
+                pet.statRefresh = .5f;
+                Vector3 anchor = owner.transform.position - owner.transform.forward * 1.2f + owner.transform.right * (pet.Form == Kind.Wolf ? -1.1f : 1.1f);
+                anchor = WorldTraversal.NearestWalkable(anchor, pet.NavigationRadius);
+                if (!WorldTraversal.HasGroundPath(owner.transform.position, anchor, pet.NavigationRadius))
+                    anchor = WorldTraversal.NearestWalkable(owner.transform.position, pet.NavigationRadius);
+                pet.transform.position = anchor;
+                pet.RemainingLifetime = float.PositiveInfinity;
+            }
+            // New encounter cannot inherit cooperation marks or a queued command.
+            bonds[owner] = new BondState { Epoch = owner.CombatEpoch };
+        }
+
+        public static void EmpowerNextCommand(PlayerController owner)
+        {
+            if (owner != null && !owner.IsDead) State(owner).EmpoweredUntil = Time.time + 8f;
+        }
+
+        public static void RecallAll(PlayerController owner)
+        {
+            foreach (SummonedCompanion pet in Snapshot(owner))
+            {
+                pet.recallTime = CompanionRules.RecallDuration;
+                pet.commandedTarget = null;
+                pet.target = null;
+            }
+        }
+
+        public static SummonedCompanion CastContract(PlayerController owner, GameSession game, Kind form, int rank, Vector3 at,
+            float strength, bool timedPackRoute, EnemyController focus = null)
+        {
+            if (owner == null || owner.IsDead || game == null) return null;
+            SummonedCompanion partner = form == Kind.Wolf
+                ? active.Find(pet => pet != null && pet.IsAlive && pet.Owner == owner && pet.IsStarter)
+                : active.Find(pet => pet != null && pet.IsAlive && pet.Owner == owner && pet.Form == form);
+            if (CompanionRules.ShouldCreatePartner(partner != null))
+                partner = form == Kind.Wolf ? SummonStarter(owner, game, strength)
+                    : Summon(owner, game, form, rank, at, strength, CompanionRules.PermanentPartner(false, (int)form, timedPackRoute));
+            if (partner == null) return null;
+            partner.rank = Mathf.Clamp(rank, 1, 3);
+            partner.RefreshPower(false);
+            if (!partner.IsPermanent) partner.RemainingLifetime = Mathf.Max(partner.RemainingLifetime, form == Kind.Treant ? 10 + rank * 2 : 15 + rank * 3);
+            BondState state = State(owner);
+            bool empowered = state.EmpoweredUntil > Time.time;
+            state.EmpoweredUntil = 0;
+            partner.Command(focus, empowered);
+            if (timedPackRoute && form == Kind.Wolf)
+            {
+                int reinforcements = CompanionRules.PackReinforcements(Count(owner), rank, owner.HasMechanic(EquipmentMechanic.TwinSummonResonance));
+                for (int i = 0; i < reinforcements; i++)
+                {
+                    SummonedCompanion pet = Summon(owner, game, Kind.Wolf, rank, owner.transform.position + owner.transform.right * (i % 2 == 0 ? -1.5f : 1.5f), strength);
+                    if (pet != null) { pet.RemainingLifetime = CompanionRules.PackLifetime(rank); pet.Command(focus, empowered); }
+                }
+            }
+            game.RecordCombatAction("契约指令");
+            return partner;
+        }
+
+        private void RefreshPower(bool fill)
+        {
+            if (Owner == null || session == null) return;
+            if (IsStarter) rank = Mathf.Clamp(session.Progression.Profile.skillRanks[2], 0, 3);
+            StatBlock stats = session.Progression.GetStats();
+            damage = stats.Damage * CompanionRules.RankPower(rank);
+            baseMaxHealth = stats.MaxHealth * CompanionRules.HealthFraction((int)Form, rank, IsStarter);
+            float maximum = baseMaxHealth * CompanionRules.HealthMultiplier(Owner.HasMechanic(EquipmentMechanic.TwinSummonResonance));
+            Health = fill ? maximum : maximum * Mathf.Clamp01(Health / Mathf.Max(1f, MaxHealth));
+            MaxHealth = maximum;
+        }
+
+        private bool ValidTarget(EnemyController enemy)
+        {
+            return enemy != null && !enemy.IsDead && enemy.gameObject.activeInHierarchy &&
+                CombatFx.Flat(enemy.transform.position - Owner.transform.position).sqrMagnitude <= 14f * 14f;
+        }
+
+        private void Command(EnemyController focus, bool empowered)
+        {
+            recallTime = 0;
+            commandedTarget = ValidTarget(focus) ? focus : Owner.FocusTarget;
+            if (!ValidTarget(commandedTarget)) commandedTarget = AcquireTarget();
+            commandTime = empowered ? 4f : 3f;
+            commandMultiplier = CompanionRules.CommandMultiplier(rank) * (empowered ? 1.5f : 1f);
+            if (commandedTarget == null) { recallTime = CompanionRules.RecallDuration; return; }
+            if (Form == Kind.Wolf)
+            {
+                Vector3 previous = transform.position;
+                Vector3 towards = CombatFx.Flat(commandedTarget.transform.position - previous);
+                transform.position = WorldTraversal.Move(previous, towards.normalized * Mathf.Min(3.5f, Mathf.Max(0, towards.magnitude - .7f)), NavigationRadius);
+                AdvancedSkillVfx.Beam(Owner, previous + Vector3.up * .5f, transform.position + Vector3.up * .5f, GameBalance.ClassColor(HeroClass.Summoner), .25f, .15f);
+                if (CombatFx.Flat(commandedTarget.transform.position - transform.position).magnitude <= 1.8f && CanReachTarget(commandedTarget.transform.position))
+                {
+                    commandedTarget.TakeDamage(damage * AttackMultiplier * 1.2f, towards.normalized, .35f, .2f);
+                    OnConfirmedHit(commandedTarget);
+                    cooldown = .6f; attackPose = 1;
+                }
+            }
+            else cooldown = Mathf.Min(cooldown, .1f);
+        }
+
+        private float AttackMultiplier { get { return CompanionRules.DamageMultiplier(Owner.HasMechanic(EquipmentMechanic.TwinSummonResonance)) * (commandTime > 0 ? commandMultiplier : 1f); } }
+
+        public void OnConfirmedHit(EnemyController enemy)
+        {
+            if (!IsAlive || !ValidTarget(enemy) || !Owner.HasMechanic(EquipmentMechanic.TwinSummonResonance)) return;
+            bool commandedFocus = false;
+            foreach (SummonedCompanion partner in active)
+                if (partner != null && partner.Owner == Owner && partner.IsAlive && partner.commandTime > 0 && partner.commandedTarget == enemy)
+                { commandedFocus = true; break; }
+            if (!CompanionRules.CoordinatedTarget(Owner.FocusTarget == enemy, commandedFocus)) return;
+            if (!State(Owner).Cooperation.RegisterHit(enemy, (int)Form, Time.time)) return;
+            enemy.TakeDamage(damage * CompanionRules.DamageMultiplier(true) * CompanionRules.CooperationDamage, Vector3.zero, impact: false);
+            AdvancedSkillVfx.Beam(Owner, transform.position + Vector3.up, enemy.transform.position + Vector3.up, new Color(.5f, 1f, .9f), .3f, .2f);
+            session.SpawnFloatingText(enemy.transform.position + Vector3.up * 2f, "异契共鸣", new Color(.5f, 1f, .9f));
+            session.RecordCombatAction("双契共鸣");
         }
 
         public static void HealAll(PlayerController owner, float fraction)
@@ -129,9 +323,11 @@ namespace Emberfall
             first.TakeDamage(damage); return true;
         }
 
-        public void TakeDamage(float amount)
+        public void TakeDamage(float amount, bool areaAttack = false)
         {
-            if (!IsAlive || amount <= 0) return;
+            if (!IsAlive) return;
+            amount = CompanionRules.DamageTaken(amount, areaAttack, recallTime > 0);
+            if (amount <= 0) return;
             Health = Mathf.Max(0, Health - amount);
             if (Health <= 0 && IsStarter && Owner != null) Owner.OnStarterCompanionDefeated();
             model.Recoil(-transform.forward, .7f);
@@ -153,6 +349,8 @@ namespace Emberfall
 
         private EnemyController AcquireTarget()
         {
+            if (recallTime > 0) return null;
+            if (commandTime > 0 && ValidTarget(commandedTarget)) return commandedTarget;
             EnemyController focused = Owner.FocusTarget;
             if (focused != null) return focused;
             EnemyController chosen = null;
@@ -172,17 +370,22 @@ namespace Emberfall
             if (session.InputBlocked) return;
             float dt = Time.deltaTime;
             if (dt <= 0) return;
-            float healthMaximum = baseMaxHealth * (Owner.HasMechanic(EquipmentMechanic.TwinSummonResonance) ? .85f : 1f);
-            if (Mathf.Abs(healthMaximum - MaxHealth) > .01f)
-            {
-                Health = healthMaximum * Mathf.Clamp01(Health / Mathf.Max(1f, MaxHealth));
-                MaxHealth = healthMaximum;
-            }
+            recallTime = Mathf.Max(0, recallTime - dt);
+            commandTime = Mathf.Max(0, commandTime - dt);
+            if (commandTime <= 0 || !ValidTarget(commandedTarget)) commandedTarget = null;
+            statRefresh -= dt;
+            if (statRefresh <= 0) { statRefresh = .5f; RefreshPower(false); }
             RemainingLifetime -= dt;
             if (RemainingLifetime <= 0) { Dismiss(); return; }
             cooldown -= dt;
             attackPose = Mathf.Max(0, attackPose - dt * 3);
             target = AcquireTarget();
+            bool threatened = false;
+            foreach (EnemyController hostile in session.Enemies)
+                if (hostile != null && !hostile.IsDead && hostile.IsAggro && CombatFx.Flat(hostile.transform.position - Owner.transform.position).sqrMagnitude <= CompanionRules.RestThreatRadius * CompanionRules.RestThreatRadius) { threatened = true; break; }
+            idleTime = target == null && !threatened ? idleTime + dt : 0;
+            if (IsPermanent && idleTime > 3f && CombatFx.Flat(transform.position - Owner.transform.position).sqrMagnitude < 9f)
+                Health = Mathf.Min(MaxHealth, Health + MaxHealth * .06f * dt);
             Vector3 followAnchor = WorldTraversal.NearestWalkable(Owner.transform.position - Owner.transform.forward * 1.6f + Owner.transform.right * (Form == Kind.Wolf ? -1.7f : 1.7f), NavigationRadius);
             if (!WorldTraversal.HasGroundPath(Owner.transform.position, followAnchor, .12f))
                 followAnchor = WorldTraversal.NearestWalkable(Owner.transform.position, NavigationRadius);
@@ -203,17 +406,17 @@ namespace Emberfall
             Vector3 heading = moving ? route.Direction(transform.position, destination, NavigationRadius) : delta.normalized;
             if (heading.sqrMagnitude > .01f) transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.LookRotation(heading), 1 - Mathf.Exp(-10 * dt));
             Vector3 previous = transform.position;
-            transform.position = WorldTraversal.Move(transform.position, moving ? heading * Mathf.Min(delta.magnitude, dt * (Form == Kind.Treant ? 4.2f : 7f)) : Vector3.zero, NavigationRadius);
+            transform.position = WorldTraversal.Move(transform.position, moving ? heading * Mathf.Min(delta.magnitude, dt * (Form == Kind.Treant ? 4.2f : recallTime > 0 ? 9f : 7f)) : Vector3.zero, NavigationRadius);
             moving = (transform.position - previous).sqrMagnitude > .000001f;
             model.Animate(moving ? 1f : 0, attackPose, false);
             delta = CombatFx.Flat(destination - transform.position);
             if (target != null && delta.magnitude <= attackRange && cooldown <= 0 && CanReachTarget(target.transform.position))
             {
                 attackPose = 1;
-                float attackDamage = damage * (Owner.HasMechanic(EquipmentMechanic.TwinSummonResonance) ? 1.35f : 1f);
+                float attackDamage = damage * AttackMultiplier;
                 cooldown = Form == Kind.Treant ? 2.2f : Form == Kind.Spirit ? 1.2f : .85f;
                 if (Form == Kind.Spirit)
-                    CombatProjectile.Friendly(Owner, session, transform.position, delta.normalized, attackDamage * .72f, GameBalance.ClassColor(HeroClass.Summoner), tracking: target);
+                    CombatProjectile.Friendly(Owner, session, transform.position, delta.normalized, attackDamage * .72f, GameBalance.ClassColor(HeroClass.Summoner), tracking: target, companionSource: this);
                 else if (Form == Kind.Treant)
                 {
                     CombatFx.Ring(transform.position, 3.3f * GameBalance.SkillRangeMultiplier(rank), new Color(.48f, 1f, .63f), .4f, .2f);
@@ -223,14 +426,15 @@ namespace Emberfall
                         {
                             enemy.TakeDamage(attackDamage * 1.45f, enemy.transform.position - transform.position, .55f, .3f);
                             if (!enemy.IsDead) enemy.StatusEffects.Knockdown(.45f + rank * .12f);
+                            OnConfirmedHit(enemy);
                         }
                 }
                 else
                 {
                     CombatFx.Slash(transform.position, delta.normalized, 1.25f, new Color(.55f, 1f, .87f));
                     target.TakeDamage(attackDamage * .65f, delta.normalized, .13f, .05f);
+                    OnConfirmedHit(target);
                 }
-                Owner.OnCompanionAttack(target, transform.position, damage);
             }
         }
 

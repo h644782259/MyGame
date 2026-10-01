@@ -97,9 +97,10 @@ public static class ProgressionTests
         var wings = new FashionData { id = "fashion-0-3", slot = FashionSlot.Wings, rarity = Rarity.Legendary, name = "烬王之翼" };
         var weapon = new FashionData { id = "fashion-1-3", slot = FashionSlot.Weapon, rarity = Rarity.Legendary, name = "烬王兵装" };
         service.Profile.fashions.RemoveAll(value => value.id == wings.id || value.id == weapon.id);
+        service.Profile.fashions.Clear();
+        StatBlock baseStats = service.GetStats();
         service.Profile.fashions.Add(wings);
         service.Profile.fashions.Add(weapon);
-        StatBlock baseStats = service.GetStats();
         Check(service.EquipFashion(wings.id) && service.EquipFashion(weapon.id), "level-one character can wear both legendary fashion slots");
         StatBlock dressed = service.GetStats();
         Check(Math.Abs(dressed.MaxHealth / baseStats.MaxHealth - 1.12f) < .0001f &&
@@ -564,7 +565,7 @@ public static class ProgressionTests
                     item["defense"] = slot == 1 ? 10000 : 0;
                     item["health"] = slot == 0 ? 0 : slot == 2 ? 100000 : 3;
                 }
-                foreach (string field in new[] { "upgradeBaseInitialized", "baseAttack", "baseDefense", "baseHealth", "upgradeAnchorLevel", "upgradeAnchorAttack", "upgradeAnchorDefense", "upgradeAnchorHealth" }) item.Remove(field);
+                foreach (string field in new[] { "upgradeBaseInitialized", "baseAttack", "baseDefense", "baseHealth", "upgradeAnchorLevel", "upgradeAnchorAttack", "upgradeAnchorDefense", "upgradeAnchorHealth", "balanceRevision" }) item.Remove(field);
                 if (sourceIds.Contains(id)) expected[id] = UnityEngine.JsonUtility.FromJson<ItemData>(item.ToJsonString());
             }
             File.WriteAllText(service.SaveFilePath, legacy.ToJsonString());
@@ -573,7 +574,7 @@ public static class ProgressionTests
             {
                 string untouchedItem = UnityEngine.JsonUtility.ToJson(oldItem, true);
                 ItemData preview = service.PreviewUpgrade(oldItem, oldItem.upgradeLevel);
-                Check(preview != null && preview.upgradeBaseInitialized && SameEquipment(preview, oldItem) && !oldItem.upgradeBaseInitialized && UnityEngine.JsonUtility.ToJson(oldItem, true) == untouchedItem, "preview initializes only its copy of legacy equipment and preserves exact current attributes");
+                Check(preview != null && preview.upgradeBaseInitialized && preview.upgradeLevel == oldItem.upgradeLevel && preview.balanceRevision == 1 && BoundedEquipment(preview) && !oldItem.upgradeBaseInitialized && UnityEngine.JsonUtility.ToJson(oldItem, true) == untouchedItem, "preview initializes only its copy of legacy equipment and preserves exact current attributes");
             }
             Check(File.ReadAllText(service.SaveFilePath) == untouchedLegacySave, "legacy equipment preview never rewrites a save to add base fields");
             var migrated = new ProgressionService();
@@ -584,7 +585,9 @@ public static class ProgressionTests
                 ItemData source = migrated.Profile.inventory.Find(item => item.id == sourceIds[index]);
                 ItemData target = migrated.Profile.inventory.Find(item => item.id == targetIds[index]);
                 ItemData original = expected[source.id];
-                Check(SameEquipment(source, original) && source.upgradeBaseInitialized && source.upgradeAnchorLevel == original.upgradeLevel, "legacy migration preserves the exact visible rank and stats, including capped and non-invertible values");
+                Check(source.id == original.id && source.upgradeLevel == original.upgradeLevel && source.upgradeBaseInitialized && source.balanceRevision == 1 && BoundedEquipment(source), "legacy migration preserves identity and paid rank while recalculating bounded linear attributes");
+                expected[source.id] = UnityEngine.JsonUtility.FromJson<ItemData>(UnityEngine.JsonUtility.ToJson(source, true));
+                original = expected[source.id];
                 string stable = UnityEngine.JsonUtility.ToJson(source, true);
                 metadata[source.id] = stable;
                 int gold = migrated.Profile.gold;

@@ -62,7 +62,7 @@ namespace Emberfall
             {
                 EncounterSpawn next=reinforcementQueue.Peek(); Vector3 position;
                 if(!TrySafeSpawn(new Vector3(next.X,0,next.Z),next.Kind==EnemyKind.Guardian?.65f:.5f,7f,out position))break;
-                reinforcementQueue.Dequeue(); SpawnEnemy(next.Kind,Mathf.Clamp(Progression.Profile.level+DungeonTier-1,2,100),position,false); spawned++;
+                reinforcementQueue.Dequeue(); SpawnEnemy(next.Kind,Mathf.Clamp(Progression.Profile.level,2,100),position,false); spawned++;
             }
             if(spawned>0)Notify("遗迹援军接近 · "+spawned+" 名");
         }

@@ -19,8 +19,8 @@ public static class RunChoicesTests
                 RunBlessing[] offer=state.Offer;
                 check(offer.Length==3,"three options");
                 check(new HashSet<RunBlessing>(offer).Count==3,"no duplicate cards");
-                bool compatible=false;foreach(var item in offer){compatible|=RunChoices.IsCompatible(item,(HeroClass)hero,ranks);check(!state.Has(item),"already selected blessings not repeated");}
-                check(compatible,"at least one current-build-compatible option");
+                int compatible=0;foreach(var item in offer){if(RunChoices.IsCompatible(item,(HeroClass)hero,ranks))compatible++;check(!state.Has(item),"already selected blessings not repeated");}
+                check(compatible>=2,"at least two immediately compatible options");
                 check(!state.Choose(-1)&&state.AwaitingChoice,"invalid choice doesn't advance");
                 check(!state.Choose(3)&&state.AwaitingChoice,"out-of-range cannot spend choice");
                 state.Prepare(wave,(HeroClass)hero,ranks,seed+19);

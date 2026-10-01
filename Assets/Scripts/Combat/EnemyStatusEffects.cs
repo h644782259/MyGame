@@ -55,6 +55,21 @@ namespace Emberfall
             enemy.ApplyControl(duration);
             Slow(duration + 2, .4f);
         }
+        public void FrostMark(float duration)
+        {
+            if (enemy == null || enemy.IsDead || duration <= 0) return;
+            frostMarkTime = Mathf.Max(frostMarkTime, duration);
+            Slow(duration, .15f);
+        }
+
+        public bool TryShatter(PlayerController source, int castId)
+        {
+            if (source == null || source.IsDead || enemy == null || enemy.IsDead) return false;
+            PrepareCastOwner(source);
+            if (!meteorCasts.TryEnterEligible(castId, HasFrostMark)) return false;
+            return ConsumeFrost();
+        }
+
         public void Knockdown(float duration)
         {
             downTime = Mathf.Max(downTime, duration * (enemy.IsBoss ? .24f : 1));

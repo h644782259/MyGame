@@ -189,6 +189,7 @@ namespace Emberfall.Editor
                     while (traversalValidation.MoveNext()) yield return traversalValidation.Current;
                 }
                 yield return new Delay(.5f);
+                WorldLabelValidation.Validate(ZoneKind.Wilderness, Check);
                 CaptureWorld(hero + "-world.png", false);
 
                 game.Progression.GrantExperience(1000000);
@@ -331,6 +332,7 @@ namespace Emberfall.Editor
             IEnumerator groundLootValidation = GroundLootValidation.Validate(game, Check, Append);
             while (groundLootValidation.MoveNext()) yield return groundLootValidation.Current;
             game.Player.enabled = true;
+            WorldLabelValidation.Validate(ZoneKind.Dungeon, Check);
             CaptureWorld("Dungeon-wave-one.png", true);
             int originalClears = game.Progression.Profile.clearedRuns;
             int originalItems = game.Progression.Profile.inventory.Count;
