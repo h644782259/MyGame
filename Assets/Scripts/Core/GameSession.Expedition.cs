@@ -16,13 +16,13 @@ namespace Emberfall
         public int DungeonEntryLevel { get; private set; } = 2;
         public string LastRunSummary { get; private set; } = "";
         public bool IsInCamp { get { return HasStarted && !InDungeon && !IsDead && Player != null && (Vector3.Distance(Player.transform.position, new Vector3(0,0,-10)) < 7f || NearbyHubNpc!=HubNpcKind.None); } }
-        public bool SideEventAvailable { get { return InDungeon && ModeRun==null && (RoomChainRun==null || RoomChainRun.Room.Index==1&&RoomChainRun.DoorUnlocked&&!RoomChainRun.Finished) && !DungeonCleared && !sideEventStarted && Player != null && Vector3.Distance(Player.transform.position, sideEventPosition) < 3.5f; } }
+        public bool SideEventAvailable { get { return InDungeon && ModeRun==null && (RoomChainRun==null || RoomChainRun.Room.Index==RoomTactics.EventRoom(runSeed)&&RoomChainRun.DoorUnlocked&&!RoomChainRun.Finished) && !DungeonCleared && sideCrystal!=null && !sideEventStarted && Player != null && Vector3.Distance(Player.transform.position, sideEventPosition) < 3.5f; } }
         private int runSeed, wavePopulation;
         private readonly Queue<EncounterSpawn> reinforcementQueue=new Queue<EncounterSpawn>();
         private float nextReinforcementAt;
         private readonly Dictionary<string, int> combatActions = new Dictionary<string, int>();
         private readonly HashSet<EnemyController> sideEventEnemies = new HashSet<EnemyController>();
-        private readonly Vector3 sideEventPosition = new Vector3(12,0,-3);
+        private Vector3 sideEventPosition = new Vector3(12,0,-3);
         private string lastDamageSource = "未记录";
         private float lastDamageAmount, lastInterruptAt = -10;
         private bool objectiveHealedThisWave, sideEventStarted;
@@ -39,7 +39,7 @@ namespace Emberfall
             ChallengeRun = SelectedChallengeMode;
             if(!ChangeZone(true)){ChallengeRun=previousChallengeRun;DungeonSelectionOpen=true;UpdateTimeScale();Notify(Progression.LastError);return;}
             UpdateTimeScale();
-            Notify(ModeName+" · " + DungeonTier + " 阶 · " + (DungeonLayout == 0 ? "双廊" : "断柱") + (ChallengeRun ? " · 限疗挑战" : " · 普通模式"));
+            Notify(ModeName+" · " + DungeonTier + " 阶 · " + (RoomChainRun!=null?RoomTactics.Name(RoomChainRun.Room.Objective):DungeonLayout == 0 ? "双廊" : "断柱") + (ChallengeRun ? " · 限疗挑战" : " · 普通模式"));
         }
 
         private void ResetExpedition(bool dungeon)
@@ -134,6 +134,8 @@ namespace Emberfall
 
         private void BuildSideEvent()
         {
+            sideEventPosition = RoomChainRun==null?new Vector3(12,0,-3):new Vector3(-RoomTactics.Mirror(runSeed)*12,0,-6);
+            if(RoomChainRun!=null&&!WorldTraversal.CanReach(new Vector3(0,0,-12),sideEventPosition,.65f))return;
             sideCrystal = WorldBuilder.MakeLootBeacon(sideEventPosition, new Color(.33f,.85f,1));
             sideCrystal.name = "Optional power crystal"; transientObjects.Add(sideCrystal);
         }

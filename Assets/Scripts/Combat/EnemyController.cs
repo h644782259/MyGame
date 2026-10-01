@@ -151,6 +151,7 @@ namespace Emberfall
         public void TakeDamage(float amount, Vector3 direction, float knockback = 0f, float stun = 0f, bool impact = true, bool critical = false)
         {
             if (session == null || !AdventureResultPolicy.AcceptsDamage(session.HasStarted,session.CombatEnded) || IsDead || amount <= 0 || float.IsNaN(amount) || float.IsInfinity(amount)) return;
+            amount *= session.RoomSupportMultiplier(this);
             amount *= StatusEffects == null ? 1 : StatusEffects.DamageMultiplier;
             if (largeBoss != null) amount *= largeBoss.State.IncomingMultiplier;
             if (Kind == EnemyKind.Guardian && !IsBoss && !preparing && CombatFx.Flat(direction).sqrMagnitude > .01f && Vector3.Dot(transform.forward, -CombatFx.Flat(direction).normalized) > .45f)

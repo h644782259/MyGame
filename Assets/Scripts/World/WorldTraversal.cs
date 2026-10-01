@@ -190,6 +190,8 @@ namespace Emberfall
                 return CombatFx.Flat(waypoints[next] - from).normalized;
             }
         }
+        public static bool CanReach(Vector3 from,Vector3 target,float radius=.65f)
+        { return IsWalkable(from,radius) && IsWalkable(target,radius) && FindPath(from,target,radius).Count>0; }
         private static Vector3 Point(int index) { return new Vector3(GridOrigin + index % Side * Cell, 0, GridOrigin + index / Side * Cell); }
         private static int NearestNode(Vector3 point, bool[] grid, float radius)
         {

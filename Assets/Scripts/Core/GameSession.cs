@@ -265,6 +265,7 @@ namespace Emberfall
         {
             if (InputBlocked) return;
             if(ModeRun!=null){TickArenaRun();if(InputBlocked)return;}
+            if(RoomChainRun!=null)TickRoomTactics();
             if (!InputBlocked)
             {
                 if (Input.GetKeyDown(KeyCode.F) || MobileControls.ConsumePotion()) DrinkPotion();
