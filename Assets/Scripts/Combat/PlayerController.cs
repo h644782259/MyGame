@@ -393,7 +393,7 @@ namespace Emberfall
                     }
             }
             bool suppressBasic = targeting != null && targeting.TickInput();
-            if (wantsBasic && !suppressBasic && (charge == null || (!charge.IsCharging && !charge.ConsumedThisFrame)))
+            if (!TraversalStartedThisFrame && wantsBasic && !suppressBasic && (charge == null || (!charge.IsCharging && !charge.ConsumedThisFrame)))
             {
                 FaceAim();
                 if (attackCooldown <= 0) BasicAttack();
@@ -577,7 +577,7 @@ namespace Emberfall
 
         private void BasicAttack()
         {
-            if (model.BasicActionBlocked) return;
+            if (TraversalStartedThisFrame || model.BasicActionBlocked) return;
             if (charge != null && (charge.IsCharging || charge.ConsumedThisFrame)) return;
             if ((HeroClass==HeroClass.Arcanist || HeroClass==HeroClass.Summoner) && !ValidAimTarget(AimTarget)) AimTarget=MagicConeTarget();
             FaceAim();

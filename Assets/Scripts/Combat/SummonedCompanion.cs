@@ -360,7 +360,9 @@ namespace Emberfall
             hasCommandPoint = false;
             commandedTarget = ValidTarget(focus) ? focus : preservePoint ? null : Owner.FocusTarget;
             if (!ValidTarget(commandedTarget)) commandedTarget = preservePoint ? null : AcquireTarget();
-            if (preservePoint && commandedTarget == null)
+            // Preserve the captured fallback even while the original target is alive.
+            // If it dies during the command, do not silently acquire a bystander.
+            if (preservePoint)
             { commandedPoint = WorldTraversal.NearestWalkable(CombatSight.GroundPoint(Owner.transform.position,point),NavigationRadius); hasCommandPoint = true; }
             commandTime = CompanionRules.CommandDuration(empowered);
             commandEmpowered = empowered;
