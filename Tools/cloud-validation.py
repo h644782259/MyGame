@@ -232,10 +232,17 @@ def main():
             ("combat-text-layout", "CombatTextLayoutTests", ["Combat/CombatTextLayout"]),
             ("combat-opportunity", "CombatOpportunityTests", ["UI/CombatOpportunityPresentation"]),
             ("large-boss-motion", "LargeBossMotionTests", ["Core/LargeBossMotion", "Core/LargeBossPhaseState"]),
+            ("deferred-room-choice", "DeferredRoomChoiceTests", ["Core/DeferredRoomChoice"]),
+            ("locomotion-poses", "LocomotionPoseTests", ["Core/LocomotionPoseState"]),
+            ("camera-visibility", "CameraVisibilityTests", ["Core/CameraVisibilityRules"]),
             ("companion-directive", "CompanionDirectiveTests", ["Combat/CompanionDirective"]),
         ]:
             checks.append((name,[ROOT/("Assets/Scripts/"+helper+".cs") for helper in helpers]+[ROOT/("Tests/"+test+".cs")],
                 'using System; internal static class Program { static void Main() { Console.WriteLine('+test+'.Run()); } }'))
+        checks.append(("equipment-comparison",[ROOT/"Assets/Scripts/Core/GameTypes.cs",ROOT/"Assets/Scripts/Core/SkillRuntime.cs",ROOT/"Assets/Scripts/UI/EquipmentComparisonPresentation.cs",ROOT/"Tests/SkillRuntimeTests.cs",ROOT/"Tests/EquipmentComparisonPresentationTests.cs"],
+            'using System; internal static class Program { static void Main() { Console.WriteLine(EquipmentComparisonPresentationTests.Run()); } }'))
+        checks.append(("hub-settlement-geometry",[ROOT/"Assets/Scripts/World/WorldTraversal.cs",ROOT/"Assets/Scripts/World/HubSettlementPlan.cs",ROOT/"Tests/DestructibleTraversalTests.cs",ROOT/"Tests/HubSettlementGeometryTests.cs"],
+            'using System; internal static class Program { static void Main() { Console.WriteLine(HubSettlementGeometryTests.Run()); } }'))
         checks.append(("costume-recipes",[ROOT/"Assets/Scripts/Core/GameTypes.cs",ROOT/"Assets/Scripts/Core/SkillRuntime.cs",ROOT/"Assets/Scripts/Core/CostumeRecipes.cs",ROOT/"Tests/SkillRuntimeTests.cs",ROOT/"Tests/CostumeRecipeTests.cs"],
             'using System; internal static class Program { static void Main() { Console.WriteLine(CostumeRecipeTests.Run()); } }'))
         checks.append(("skill-visual-recipe",[ROOT/"Assets/Scripts/Core/GameTypes.cs",ROOT/"Assets/Scripts/Core/SkillRuntime.cs",ROOT/"Assets/Scripts/Core/FilledVfxRecipes.cs",ROOT/"Assets/Scripts/Core/SkillVisualRecipe.cs",ROOT/"Tests/SkillRuntimeTests.cs",ROOT/"Tests/SkillVisualRecipeTests.cs"],
