@@ -521,7 +521,6 @@ namespace Emberfall
             Vector3 previous = transform.position;
             transform.position = WorldTraversal.Move(transform.position, moving ? heading * Mathf.Min(delta.magnitude, dt * (Form == Kind.Treant ? 4.2f : recallTime > 0 ? 9f : 7f)) : Vector3.zero, NavigationRadius);
             moving = (transform.position - previous).sqrMagnitude > .000001f;
-            model.Animate(moving ? 1f : 0, attackPose, false);
             delta = CombatFx.Flat(destination - transform.position);
             if (target != null && delta.magnitude <= attackRange && cooldown <= 0 && CanReachTarget(target.transform.position))
             {
@@ -549,6 +548,10 @@ namespace Emberfall
                     OnConfirmedHit(target);
                 }
             }
+            // Sample only this frame's navigated displacement, after the actual
+            // release event so projectile/damage and contact pose share a frame.
+            float locomotion = CombatFx.Flat(transform.position - previous).magnitude / Mathf.Max(.0001f, dt * (Form == Kind.Treant ? 4.2f : 7f));
+            model.Animate(Mathf.Clamp01(locomotion), attackPose, false);
         }
 
         private bool CanReachTarget(Vector3 position)

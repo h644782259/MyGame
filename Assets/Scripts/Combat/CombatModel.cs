@@ -34,7 +34,9 @@ namespace Emberfall
         private int actionSkill, swingCount;
         private float actionAge, actionDuration, gaitPhase;
         private int actionStartedFrame;
-        private bool slime, floating;
+        private bool slime, floating, treantCompanion;
+        private Transform wolfJaw;
+        private Vector3 companionBodyScale;
         private float phase;
         private float recoilStarted = -10f, recoilStrength;
         private Vector3 recoilDirection;
@@ -430,11 +432,13 @@ namespace Emberfall
             {
                 model.floating = true;
                 model.body = model.Part("Star spirit", PrimitiveType.Sphere, new Vector3(0,1.2f,0), new Vector3(.54f,.7f,.54f), new Color(.4f,1f,.84f));
+                model.companionBodyScale = model.body.localScale;
                 model.decoration = model.Part("Star crown", PrimitiveType.Cube, new Vector3(0,1.75f,0), Vector3.one*.25f, new Color(1f,.87f,.47f));
                 for(int i=-1;i<=1;i+=2) model.Part("Spirit wing",PrimitiveType.Capsule,new Vector3(i*.42f,1.35f,0),new Vector3(.18f,.5f,.15f),new Color(.67f,1f,.88f)).localRotation=Quaternion.Euler(0,0,i*45);
             }
             else if (form == SummonedCompanion.Kind.Treant)
             {
+                model.treantCompanion = true;
                 model.Humanoid(new Color(.35f,.26f,.15f), new Color(.28f,.32f,.14f), new Color(.4f,.69f,.32f), 1.6f);
                 model.transform.localScale = Vector3.one * 1.3f;
                 for (int i = -1; i <= 1; i++)
@@ -447,7 +451,8 @@ namespace Emberfall
                 model.body.localRotation = Quaternion.Euler(90,0,0);
                 model.bodyRestRotation = model.body.localRotation;
                 model.Part("Wolf head", PrimitiveType.Cube, new Vector3(0,.9f,.55f), new Vector3(.42f,.42f,.52f), fur);
-                model.Part("Muzzle", PrimitiveType.Cube, new Vector3(0,.8f,.9f), new Vector3(.28f,.2f,.3f), new Color(.27f,.47f,.45f));
+                model.wolfJaw = model.Joint("Wolf bite hinge", new Vector3(0,.79f,.72f));
+                model.Part("Muzzle", PrimitiveType.Cube, new Vector3(0,0,.18f), new Vector3(.28f,.2f,.3f), new Color(.27f,.47f,.45f), model.wolfJaw);
                 for (int sign = -1; sign <= 1; sign += 2)
                 {
                     model.Part("Ear", PrimitiveType.Cube, new Vector3(sign*.17f,1.2f,.5f), new Vector3(.1f,.32f,.19f), fur).localRotation=Quaternion.Euler(-15,0,sign*15);
@@ -1144,18 +1149,25 @@ namespace Emberfall
             else if (floating)
             {
                 transform.localPosition = Vector3.up*(Mathf.Sin(Time.time*2.5f+phase)*.11f);
-                if (body != null) body.localRotation = Quaternion.Euler(stride*3f,0,Mathf.Sin(Time.time*1.7f+phase)*5f);
+                if (body != null)
+                {
+                    body.localRotation = Quaternion.Euler(stride*3f-attack*16f,0,Mathf.Sin(Time.time*1.7f+phase)*5f);
+                    if (companionBodyScale.sqrMagnitude > 0) body.localScale = Vector3.Scale(companionBodyScale, new Vector3(1-attack*.2f,1+attack*.22f,1-attack*.2f));
+                }
             }
             else if (quadruped)
             {
                 for (int i=0;i<4;i++)
                 {
                     float legPhase = gaitPhase + (i == 0 || i == 3 ? 0 : Mathf.PI);
-                    paws[i].localRotation = Quaternion.Euler(Mathf.Sin(legPhase)*smoothedSpeed*29f,0,0);
+                    paws[i].localRotation = Quaternion.Euler(Mathf.Sin(legPhase)*smoothedSpeed*29f + attack*(i<2?-38f:28f),0,0);
                     paws[i].localPosition = pawOrigins[i] + Vector3.up*Mathf.Max(0,Mathf.Cos(legPhase))*.04f*smoothedSpeed;
                 }
                 if (tailRig != null) tailRig.localRotation = Quaternion.Euler(stride*5f,Mathf.Sin(gaitPhase*.65f)*16f,0);
-                transform.localPosition = Vector3.up*(Mathf.Abs(stride)*.035f*smoothedSpeed);
+                // The release frame is the bite contact; recovery opens the jaw
+                // and settles the local pounce without moving the navigation body.
+                if (wolfJaw != null) wolfJaw.localRotation = Quaternion.Euler(-Mathf.Sin(attack*Mathf.PI)*26f,0,0);
+                transform.localPosition = new Vector3(0,Mathf.Abs(stride)*.035f*smoothedSpeed+Mathf.Sin(attack*Mathf.PI)*.12f,attack*.15f);
             }
             else
             {
@@ -1177,6 +1189,13 @@ namespace Emberfall
                     leftElbow.localRotation=Quaternion.Euler(-18f-windup*20f,0,0);
                     leftKnee.localRotation=Quaternion.Euler(Mathf.Max(0,-stride)*smoothedSpeed*35f,0,0);
                     rightKnee.localRotation=Quaternion.Euler(Mathf.Max(0,stride)*smoothedSpeed*35f,0,0);
+                }
+                else if (treantCompanion)
+                {
+                    float recover = Mathf.Sin(Mathf.Clamp01(attack)*Mathf.PI);
+                    if (leftArm != null) leftArm.localRotation=Quaternion.Euler(-attack*48f-recover*72f,0,-10f);
+                    if (rightArm != null) rightArm.localRotation=Quaternion.Euler(-attack*48f-recover*72f,0,10f);
+                    if (body != null) body.localRotation=Quaternion.Euler(attack*15f,0,0);
                 }
                 else if(rightArm!=null) rightArm.localRotation=Quaternion.Euler(attack>0?-75f+attack*160f:walk*.6f,attack>0?-40f:0,8f);
                 transform.localPosition=Vector3.up*(Mathf.Abs(stride)*.028f*smoothedSpeed);
