@@ -4,9 +4,13 @@ namespace Emberfall
     public sealed partial class GameSession
     {
         private int previousRoomSeed=-1, beforePreviousRoomSeed=-1;
+        public bool RoomCaptureInside {get;private set;}
+        public bool RoomCaptureContested {get;private set;}
         private GameObject roomObjectiveMarker;
         private EnemyController roomSupplier;
         private float nextSupplyVisual;
+        public bool RoomSupplyActive {get{return RoomChainRun!=null&&!RoomChainRun.Finished&&roomSupplier!=null&&!roomSupplier.IsDead;}}
+        public bool IsRoomSupplier(EnemyController enemy){return RoomSupplyActive&&enemy==roomSupplier;}
         public int RoomRunSeed {get{return RoomChainRun==null?0:RoomChainRun.Room.Seed;}}
         private Vector3 RoomObjectivePoint
         {
@@ -31,15 +35,15 @@ namespace Emberfall
         }
         private void BuildRoomObjective()
         {
-            roomSupplier=null;roomObjectiveMarker=null;nextSupplyVisual=0;
+            roomSupplier=null;roomObjectiveMarker=null;nextSupplyVisual=0;RoomCaptureInside=RoomCaptureContested=false;
             var plan=RoomChainRun.Room;
             if(plan.Interlude||plan.Boss)return;
-            if(!WorldTraversal.IsWalkable(new Vector3(0,0,14),.65f)||!WorldTraversal.CanReach(new Vector3(0,0,-12),new Vector3(0,0,14),.65f))
+            if(!WorldTraversal.IsWalkable(new Vector3(0,0,14),.65f)||!WorldTraversal.CanReach(TacticalRoomGeometry.Entrance,new Vector3(0,0,14),.65f))
             {RoomChainRun.Fail();Notify("房间路线不可达，已安全结束远征");return;}
             if(plan.Objective==RoomObjective.Hunt)return;
             Vector3 first=RoomObjectivePoint;
             Vector3 second=new Vector3(RoomTactics.Mirror(RoomRunSeed)*8,0,9);
-            if(!WorldTraversal.CanReach(new Vector3(0,0,-12),first,.65f)||!WorldTraversal.CanReach(first,second,.65f))
+            if(!WorldTraversal.CanReach(TacticalRoomGeometry.Entrance,first,.65f)||!WorldTraversal.CanReach(first,second,.65f))
             {RoomChainRun.Fail();Notify("目标路线不可达，已安全结束远征");return;}
             roomObjectiveMarker=WorldBuilder.MakeRoomObjective(first);
             roomObjectiveMarker.name="Room objective: stand within 2.4m";
@@ -54,7 +58,11 @@ namespace Emberfall
                 bool contested=false;
                 foreach(var enemy in Enemies)
                     if(enemy!=null&&!enemy.IsDead&&Vector3.Distance(enemy.transform.position,target)<3.8f&&WorldTraversal.HasLineOfSight(enemy.transform.position,target)){contested=true;break;}
-                RoomChainRun.Advance(Time.deltaTime,true,Vector3.Distance(Player.transform.position,target)<2.4f,contested);
+                RoomCaptureInside=Vector3.Distance(Player.transform.position,target)<2.4f;
+                RoomCaptureContested=contested;
+                int previousSeals=RoomChainRun.Seals;
+                RoomChainRun.Advance(Time.deltaTime,true,RoomCaptureInside,RoomCaptureContested);
+                if(previousSeals!=RoomChainRun.Seals)RoomCaptureInside=RoomCaptureContested=false;
                 roomObjectiveMarker.transform.position=RoomObjectivePoint;
                 if(RoomChainRun.DoorUnlocked){roomObjectiveMarker.SetActive(false);OpenRoomGate();}
             }

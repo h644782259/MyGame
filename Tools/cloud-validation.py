@@ -218,6 +218,8 @@ def main():
             'using System; internal static class Program { static void Main(string[] args) { Console.WriteLine(BuildPresetTests.Run(args[0])); } }'))
         checks.append(("build-size-policy", [ROOT/"Assets/Editor/BuildSizePolicy.cs", ROOT/"Tests/BuildSizePolicyTests.cs"],
             'using System; internal static class Program { static void Main() { Console.WriteLine(BuildSizePolicyTests.Run()); } }'))
+        checks.append(("mobile-room-objective",[ROOT/"Assets/Scripts/Core/RoomChainState.cs",ROOT/"Assets/Scripts/UI/RoomObjectivePresentation.cs",ROOT/"Assets/Scripts/UI/MobileControlLayout.cs",ROOT/"Tests/RoomObjectivePresentationTests.cs"],
+            'using System; internal static class Program { static void Main() { Console.WriteLine(RoomObjectivePresentationTests.Run()); } }'))
         checks.append(("tactical-room-geometry",[ROOT/"Assets/Scripts/World/WorldTraversal.cs",ROOT/"Assets/Scripts/World/TacticalRoomGeometry.cs",ROOT/"Tests/DestructibleTraversalTests.cs",ROOT/"Tests/TacticalRoomGeometryTests.cs"],
             'using System; internal static class Program { static void Main() { Console.WriteLine(TacticalRoomGeometryTests.Run()); } }'))
         for _, sources, _ in checks:

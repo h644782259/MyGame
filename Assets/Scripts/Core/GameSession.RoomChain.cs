@@ -30,7 +30,7 @@ namespace Emberfall
     bool boss=plan.Boss&&index==0;EnemyKind kind=plan.Boss?(boss?EnemyKind.Guardian:index%3==1?EnemyKind.Goblin:EnemyKind.Guardian):index==0?EnemyKind.Wisp:index%3==1?EnemyKind.Guardian:index%3==2?EnemyKind.Goblin:EnemyKind.Slime;
     float angle=index*2.39996f+plan.Index*.42f;Vector3 desired=new Vector3(Mathf.Sin(angle)*10,0,Mathf.Cos(angle)*9+2),point;
     bool safe=plan.Boss?TrySafeSpawn(desired,boss?1.3f:.65f,5.5f,out point):TacticalRoomGeometry.TrySpawn(runSeed,plan.Index,index,occupied,out point);
-    if(!safe||!WorldTraversal.CanReach(new Vector3(0,0,-12),point,boss?1.3f:.65f)||!RoomChainRun.Register(plan,index)){RoomChainRun.Fail();FinalizeRoomChain();return;}
+    if(!safe||!WorldTraversal.CanReach(TacticalRoomGeometry.Entrance,point,boss?1.3f:.65f)||!RoomChainRun.Register(plan,index)){RoomChainRun.Fail();FinalizeRoomChain();return;}
     try
     {
      occupied.Add(point);SpawnEnemy(kind,DungeonEntryLevel,point,boss);EnemyController enemy=Enemies[Enemies.Count-1];
@@ -60,7 +60,7 @@ namespace Emberfall
    Player.RetireCombatForWorldTransition();RetireWorldLootReceipts(previousCombatEpoch);
    DungeonLayout=RoomChainRun.Room.Layout;world=WorldBuilder.Build(ZoneKind.Dungeon,DungeonLayout,Progression.Profile.bestFloor);
    // Room travel cancels stale effects but deliberately keeps every skill cooldown.
-   Player.Teleport(new Vector3(0,0,-12));Camera.main.GetComponent<AdventureCamera>().Snap();BeginRoomChainScene();
+   Player.Teleport(TacticalRoomGeometry.Entrance);Camera.main.GetComponent<AdventureCamera>().Snap();BeginRoomChainScene();
    changingZone=false;UpdateTimeScale();Notify(RoomTactics.Name(RoomChainRun.Room.Objective)+" · 房间 "+(RoomChainRun.Room.Index+1)+" / 5");return true;
   }
   private bool ConfirmRoomInterlude(int index)

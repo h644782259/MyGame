@@ -20,6 +20,18 @@ assert 'WorldTraversal.HasLineOfSight(enemy.transform.position,roomSupplier.tran
 assert 'TacticalRoomGeometry.Register(layout)' in w and 'TacticalRoomGeometry.Walls(layout)' in w
 assert 'MakeRoomObjective(first)' in t and '2.4f,.09f' in w
 assert 'TickRoomTactics();' in read('Assets/Scripts/Core/GameSession.cs')
-print('PASS: room tactics pause, route, support, marker and transition wiring (source contracts only)')
 
-assert "dungeon ? (RoomChainRun!=null ? -12 : -9) : -10" in read("Assets/Scripts/Core/GameSession.cs")
+assert "Player.Teleport(dungeon&&RoomChainRun!=null?TacticalRoomGeometry.Entrance:" in read("Assets/Scripts/Core/GameSession.cs")
+assert "Player.Teleport(TacticalRoomGeometry.Entrance)" in s
+assert "Vector3 entrance=Entrance;" in read("Assets/Scripts/World/TacticalRoomGeometry.cs")
+assert "var entrance=TacticalRoomGeometry.Entrance;" in read("Tests/TacticalRoomGeometryTests.cs")
+
+mobile=read('Assets/Scripts/UI/GameUI.Mobile.cs');modes=read('Assets/Scripts/UI/GameUI.Modes.cs')
+assert 'TouchRect(l.AdventureStatus)' in mobile
+assert 'RoomObjectivePresentation.Create(session.RoomChainRun,session.RoomCaptureInside,session.RoomCaptureContested,session.InputBlocked,session.RoomSupplyActive)' in modes
+for value in ['objective.Title','objective.ProgressText','objective.Hint','objective.Fraction','objective.SupportHint']:assert value in modes
+assert 'RoomCaptureContested=contested;' in t and 'RoomCaptureInside=Vector3.Distance(Player.transform.position,target)<2.4f;' in t
+
+assert "session.IsRoomSupplier(this)" in e and "6米内可见同伴减伤30%" in e
+
+print('PASS: room tactics pause, route, support, mobile objective and shared arrival wiring (source contracts only)')

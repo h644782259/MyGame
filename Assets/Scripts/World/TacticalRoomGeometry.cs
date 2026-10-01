@@ -4,6 +4,7 @@ namespace Emberfall
     // Render and navigation consume the same authored wall/bridge geometry.
     public static class TacticalRoomGeometry
     {
+        public static Vector3 Entrance {get{return new Vector3(0,0,-12);}}
         public struct Wall
         {
             public Vector3 Position; public Vector2 Size;
@@ -23,7 +24,7 @@ namespace Emberfall
         {
             float angle=index*2.39996f+room*.42f+(seed%97)*.06f;
             Vector3 desired=new Vector3(Mathf.Sin(angle)*10,0,Mathf.Cos(angle)*9+2);
-            Vector3 entrance=new Vector3(0,0,-12);
+            Vector3 entrance=Entrance;
             for(int attempt=0;attempt<48;attempt++)
             {
                 Vector3 probe=attempt==0?desired:desired+new Vector3(Mathf.Sin(attempt*2.39996f),0,Mathf.Cos(attempt*2.39996f))*(.5f+attempt*.23f);

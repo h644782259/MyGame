@@ -19,7 +19,7 @@ public static class TacticalRoomGeometryTests
             }
             TacticalRoomGeometry.Register(layout);
             int mirror=layout%2==0?1:-1;
-            var entrance=new Vector3(0,0,-12);var exit=new Vector3(0,0,14);
+            var entrance=TacticalRoomGeometry.Entrance;var exit=new Vector3(0,0,14);
             foreach(float radius in new[]{.45f,.65f,1.3f})
             {
                 foreach(var target in new[]{exit,new Vector3(-mirror*8,0,-6),new Vector3(mirror*8,0,9),new Vector3(0,0,11),new Vector3(-mirror*12,0,-6)})

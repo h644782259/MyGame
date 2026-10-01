@@ -135,7 +135,7 @@ namespace Emberfall
         private void BuildSideEvent()
         {
             sideEventPosition = RoomChainRun==null?new Vector3(12,0,-3):new Vector3(-RoomTactics.Mirror(runSeed)*12,0,-6);
-            if(RoomChainRun!=null&&!WorldTraversal.CanReach(new Vector3(0,0,-12),sideEventPosition,.65f))return;
+            if(RoomChainRun!=null&&!WorldTraversal.CanReach(TacticalRoomGeometry.Entrance,sideEventPosition,.65f))return;
             sideCrystal = WorldBuilder.MakeLootBeacon(sideEventPosition, new Color(.33f,.85f,1));
             sideCrystal.name = "Optional power crystal"; transientObjects.Add(sideCrystal);
         }
