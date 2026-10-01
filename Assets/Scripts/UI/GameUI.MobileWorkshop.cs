@@ -49,8 +49,6 @@ namespace Emberfall
         private float DrawMobileWorkshopContent(float width, bool draw)
         {
             float y = 8;
-            if (!string.IsNullOrEmpty(mobileWorkshopStatus))
-                MobileWorkshopParagraph(ref y, width, mobileWorkshopStatus, mobileWorkshopFailed ? gold : jade, draw, true);
             if (campTab == 0) DrawMobileWorkshopAbilities(ref y, width, draw);
             else if (campTab == 1) DrawMobileWorkshopMechanics(ref y, width, draw);
             else if (campTab == 2) DrawMobileWorkshopLoot(ref y, width, draw);
@@ -75,7 +73,7 @@ namespace Emberfall
             mobileWorkshopFailed = !accepted || !string.IsNullOrEmpty(session.Progression.LastError);
             mobileWorkshopStatus = mobileWorkshopFailed ? (string.IsNullOrEmpty(session.Progression.LastError) ? "当前操作未完成，请重试。" : session.Progression.LastError) : message;
             CancelMobileScroll();
-            mobileWorkshopScroll[campTab] = Vector2.zero;
+            // The fixed header carries feedback; preserve the current reading/action position.
             Feedback(!mobileWorkshopFailed, mobileWorkshopStatus);
             BlockUITransition();
         }

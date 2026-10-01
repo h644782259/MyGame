@@ -53,10 +53,13 @@ check(claims.index('claimed == 0 && !string.IsNullOrEmpty(p.LastError)') < claim
 check('sold > 0 || string.IsNullOrEmpty(p.LastError)' in camp, 'bulk sale failure cannot be announced as success')
 check('tutorialMask & (1 << i)' in camp and 'actions.Length' in camp, 'tutorial completion comes from real progress bits')
 result = method(camp, 'private void MobileWorkshopResult(')
-check('!accepted || !string.IsNullOrEmpty(session.Progression.LastError)' in result and 'CancelMobileScroll();' in result and 'Vector2.zero' in result,
-      'failed actions retain real error and return the measured content to visible status')
+check('!accepted || !string.IsNullOrEmpty(session.Progression.LastError)' in result and 'CancelMobileScroll();' in result and 'Vector2.zero' not in result,
+      'failed actions retain real error and preserve the current scroll position')
 check('BlockUITransition();' in result and 'BlockUITransition();' in method(skills, 'private void DrawMobileSkills()'), 'actions prevent repeated in-flight taps')
 check('Profile.skillRanks[' not in camp and 'Profile.masteryRanks[i]++' not in camp and 'Profile.mechanicMaterials -=' not in camp,
       'panels do not duplicate progression mutation')
 check('GUI.BeginScrollView' not in skills + camp and 'GUI.matrix' not in skills + camp, 'panels preserve the shared scroll/input and scale boundaries')
+
+check('mobileWorkshopStatus' not in method(camp, 'private float DrawMobileWorkshopContent('), 'result feedback does not insert content above the current scroll anchor')
+
 print(f'PASS: {checks} mobile skills/workshop source contracts (not Unity execution)')

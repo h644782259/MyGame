@@ -127,7 +127,7 @@ namespace Emberfall
         {
             if(session.NearRoomExit){Rect next=new Rect((width-300)*.5f,height-225,300,48);blockedRects.Add(next);if(Button(next,"北门已开启 · 进入下一间",gold))session.EnterNextRoom();}
             if(session.IsInCamp)
-            { Rect r=new Rect(16,height-(MobileControls.Active?425:223),212,36);blockedRects.Add(r);if(Button(r,"营地工坊",jade)) {panel=Panel.Camp;session.SetUIBlocking(true);} }
+            { Rect r=new Rect(16,AdventureSelectionLayout.WorkshopY(height,session.SystemMessages.Count,systemHistory),212,36);blockedRects.Add(r);if(Button(r,"营地工坊",jade)) {panel=Panel.Camp;session.SetUIBlocking(true);} }
             if(session.SideEventAvailable)
             { Rect r=new Rect((width-410)*.5f,height-260,410,48);blockedRects.Add(r);
               if(Button(r,"唤醒晶核守卫 · 碎片 + 补给",gold,true,"额外一名遗迹守卫与一名魔灵；全部击败才获得1碎片和补给。"))session.StartSideEvent(); }
@@ -136,10 +136,11 @@ namespace Emberfall
         }
         private void DrawSystemLog()
         {
+            if(panel!=Panel.None || session.InputBlocked)return;
             var messages=session.SystemMessages;
             if(messages.Count==0)return;
             int show=systemHistory?Mathf.Min(8,messages.Count):Mathf.Min(3,messages.Count);
-            float panelHeight=show*39+34;
+            float panelHeight=AdventureSelectionLayout.LogHeight(messages.Count,systemHistory);
             float bottom=height-(MobileControls.Active?220:16);
             Rect r=new Rect(16,bottom-panelHeight,344,panelHeight);
             Fill(r,new Color(.025f,.045f,.065f,.88f));
