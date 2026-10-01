@@ -506,6 +506,7 @@ namespace Emberfall
             IsDead = true;
             if(ModeRun!=null)ModeRun.Fail(ExpeditionModeFailure.PlayerDefeated);
             if(RoomChainRun!=null)RoomChainRun.Fail();
+            pendingRoomChoice.Cancel();
             DungeonSelectionOpen = false;
             LastRunSummary = BuildRunSummary(false);
             GameAudio.Play(SoundCue.Death);

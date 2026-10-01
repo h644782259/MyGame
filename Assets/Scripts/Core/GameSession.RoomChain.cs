@@ -13,6 +13,7 @@ namespace Emberfall
   public string RoomObjectiveStatus {get{return RoomChainRun==null?"":RoomChainRun.Finished?(RoomChainRun.Failed?"远征结束 · 返回营地":"远征完成 · 领取结算"):"房间 "+(RoomChainRun.Room.Index+1)+" / 5 · "+TacticalObjectiveStatus;}}
   private void ResetRoomChain(bool dungeon)
   {
+   pendingRoomChoice.Cancel();
    if(RoomChainRun!=null)RoomChainRun.Dispose();RoomChainRun=null;roomEnemies.Clear();roomExitMarker=null;roomObjectiveMarker=null;roomSupplier=null;roomResultRecorded=false;
    if(dungeon&&SelectedArenaMode==3){runSeed=RoomTactics.NextSeed(runSeed,previousRoomSeed,beforePreviousRoomSeed);beforePreviousRoomSeed=previousRoomSeed;previousRoomSeed=runSeed;RoomChainRun=new RoomChainState(runSeed);DungeonLayout=RoomChainRun.Room.Layout;modeReceipt=System.Guid.NewGuid().ToString("N");}
   }
@@ -49,7 +50,7 @@ namespace Emberfall
   }
   public bool EnterNextRoom()
   {
-   if(RoomChainRun==null||!NearRoomExit||InputBlocked)return false;
+   if(RoomChainRun==null||!NearRoomExit||InputBlocked||pendingRoomChoice.Pending)return false;
    if(!SaveBeforeLeaving())return false;
    if(!RoomChainRun.Next(true,false))return false;
    SuspendInputs();changingZone=true;sideEventEnemies.Clear();sideEventStarted=false;sideCrystal=null;
@@ -75,6 +76,7 @@ namespace Emberfall
 
   private void FinalizeRoomChain()
   {
+   if(RoomChainRun!=null&&RoomChainRun.Finished)pendingRoomChoice.Cancel();
    if(RoomChainRun==null||!RoomChainRun.Finished||roomResultRecorded)return;
    roomResultRecorded=true;DungeonCleared=!RoomChainRun.Failed;
    if(DungeonCleared){TrySettleRoomReward();GameAudio.Play(SoundCue.Victory);}
