@@ -245,13 +245,10 @@ namespace Emberfall
 
         private void Circle(LineRenderer line, Vector3 center, float radius, bool respectCover = false)
         {
-            for (int i = 0; i < circle.Length; i++)
-            {
-                float a = i * Mathf.PI * 2 / circle.Length;
-                Vector3 edge=center+new Vector3(Mathf.Cos(a)*radius,0,Mathf.Sin(a)*radius);
-                bool groundSwing=(owner.HeroClass==HeroClass.Vanguard&&(skill==0||skill==1))||(owner.HeroClass==HeroClass.Summoner&&skill==0);
-                circle[i]=(respectCover?CombatSight.BoundaryPoint(groundSwing?CombatSightKind.Melee:CombatSightKind.Area,center,edge):edge)+Vector3.up*.12f;
-            }
+            bool groundSwing=(owner.HeroClass==HeroClass.Vanguard&&(skill==0||skill==1))||(owner.HeroClass==HeroClass.Summoner&&skill==0);
+            if(respectCover)CombatSight.FillAreaBoundary(circle,center,radius,groundSwing?CombatSightKind.Melee:CombatSightKind.Area);
+            else for(int i=0;i<circle.Length;i++)
+            {float a=i*Mathf.PI*2/circle.Length;circle[i]=center+new Vector3(Mathf.Cos(a)*radius,.12f,Mathf.Sin(a)*radius);}
             line.loop = true; line.positionCount = circle.Length; line.SetPositions(circle);
         }
 

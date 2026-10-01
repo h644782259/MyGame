@@ -125,6 +125,13 @@ namespace Emberfall
                 case 7: scale.x*=1-t*.75f;scale.z*=1-t*.75f;break;
             }
             p.Transform.localPosition=at;p.Transform.localScale=scale;p.Transform.localRotation=rotation;
+            if(kind==FilledVfxKind.Ice||kind==FilledVfxKind.Fire)
+            {
+                // Renderer bounds include tilt, growth and rotation of the whole mesh.
+                Bounds bounds=p.Renderer.bounds;
+                p.Renderer.enabled=CombatSight.VisualFootprint(transform.position,bounds.center,
+                    new Vector2(bounds.extents.x,bounds.extents.z).magnitude);
+            }
             Color color=tint;color.a*=f.Opacity*(kind==FilledVfxKind.Charge?.35f:.9f)*Mathf.Lerp(.55f,1,EffectPreferences.EffectsScale);
             block.SetColor("_Color",color);block.SetFloat("_Opacity",f.Opacity);block.SetFloat("_Progress",t);
             block.SetFloat("_Style",kind==FilledVfxKind.Fire||kind==FilledVfxKind.Summon?1:.35f);p.Renderer.SetPropertyBlock(block);

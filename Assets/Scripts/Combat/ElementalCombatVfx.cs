@@ -11,11 +11,13 @@ namespace Emberfall
             ParticleSystem particles = Create(parent, element == Element.Fire ? "Rising Flames" :
                 element == Element.Poison ? "Poison Bubbles" : "Storm Sparks", element,
                 Mathf.Clamp(radius * radius * 1.8f, 8f, 45f), radius);
+            if(particles==null)return;
             var shape = particles.shape;
             shape.shapeType = ParticleSystemShapeType.Circle;
             shape.radius = radius * .82f;
             shape.radiusThickness = 1f;
             particles.transform.localPosition = Vector3.up * .16f;
+            particles.gameObject.AddComponent<CoveredAreaParticles>();
             particles.Play();
             ElementalFieldVisual.Spawn(parent, element, radius, false);
         }
@@ -32,6 +34,7 @@ namespace Emberfall
         {
             GameObject obj = new GameObject(name);
             obj.transform.SetParent(parent, false);
+            if(!DecorationLease.Attach(obj,0)){Object.Destroy(obj);return null;}
             ParticleSystem particles = obj.AddComponent<ParticleSystem>();
             var main = particles.main;
             main.playOnAwake = false;
@@ -40,12 +43,13 @@ namespace Emberfall
             main.startLifetime = element == Element.Lightning ? .16f : element == Element.Poison ? .85f : .48f;
             main.startSpeed = element == Element.Lightning ? 2.4f : element == Element.Poison ? .8f : 1.7f;
             main.startSize = element == Element.Poison ? .2f : element == Element.Lightning ? .11f : .27f;
-            main.maxParticles = 90;
+            main.maxParticles = DecorationBudget.Particles(EffectPreferences.EffectsScale);
             main.gravityModifier = -.08f;
             main.startColor = element == Element.Fire ? new Color(1f, .46f, .08f, .85f) :
                 element == Element.Poison ? new Color(.48f, 1f, .22f, .7f) : new Color(.56f, .88f, 1f, .9f);
             var emission = particles.emission;
-            emission.rateOverTime = rate;
+            emission.rateOverTime = rate * EffectPreferences.EffectsScale;
+            if(particles==null)return;
             var shape = particles.shape;
             shape.shapeType = ParticleSystemShapeType.Sphere;
             shape.radius = radius;
@@ -64,19 +68,21 @@ namespace Emberfall
         public static void Lightning(Vector3 from, Vector3 to)
         {
             GameObject obj = new GameObject("Lightning Fork");
+            if(!DecorationLease.Attach(obj,1)){Object.Destroy(obj);return;}
             LineRenderer line = obj.AddComponent<LineRenderer>();
             line.useWorldSpace = true;
-            line.positionCount = 7;
+            int points=EffectPreferences.ReducedEffects?4:7;
+            line.positionCount = points;
             line.widthMultiplier = .095f;
             line.sharedMaterial = CombatFx.NewGlow();
             Color color = new Color(.55f, .89f, 1f, .95f);
             line.startColor = line.endColor = color;
             Vector3 tangent = Vector3.Cross((to - from).normalized, Vector3.up);
             if (tangent.sqrMagnitude < .01f) tangent = Vector3.right;
-            for (int i = 0; i < 7; i++)
+            for (int i = 0; i < points; i++)
             {
-                float t = i / 6f;
-                line.SetPosition(i, Vector3.Lerp(from, to, t) + tangent * (i == 0 || i == 6 ? 0 : Random.Range(-.3f, .3f)));
+                float t = i / (float)(points-1);
+                line.SetPosition(i, Vector3.Lerp(from, to, t) + tangent * (i == 0 || i == points-1 ? 0 : Random.Range(-.3f, .3f)));
             }
             obj.AddComponent<FadingCombatEffect>().Setup(line, color, 1f, .18f, false);
         }
@@ -97,6 +103,7 @@ namespace Emberfall
             {
                 particles = ElementalCombatVfx.Create(transform, burning ? "Burning Body" : "Poisoned Body",
                     element, burning ? 27f : 12f, .35f);
+                if(particles==null)return;
                 particles.transform.localPosition = Vector3.up * height;
                 ElementalFieldVisual shape = ElementalFieldVisual.Spawn(particles.transform, element, .48f, true);
                 if (burning) { fire = particles; fireShape = shape; }
@@ -104,15 +111,18 @@ namespace Emberfall
             }
             if (burning) fireUntil = Mathf.Max(fireUntil, Time.time + duration);
             else poisonUntil = Mathf.Max(poisonUntil, Time.time + duration);
-            if (!particles.isPlaying) particles.Play();
+            particles.gameObject.SetActive(true);
+            if (particles.gameObject.activeInHierarchy && !particles.isPlaying) particles.Play();
             ElementalFieldVisual activeShape = burning ? fireShape : poisonShape;
             if (activeShape != null) activeShape.gameObject.SetActive(true);
         }
 
         private void Update()
         {
-            if (fire != null && Time.time >= fireUntil && fire.isEmitting) fire.Stop(true, ParticleSystemStopBehavior.StopEmitting);
-            if (poison != null && Time.time >= poisonUntil && poison.isEmitting) poison.Stop(true, ParticleSystemStopBehavior.StopEmitting);
+            if (fire != null && Time.time >= fireUntil && fire.isEmitting) fire.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+            if (poison != null && Time.time >= poisonUntil && poison.isEmitting) poison.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+            if(fire!=null&&Time.time>=fireUntil)fire.gameObject.SetActive(false);
+            if(poison!=null&&Time.time>=poisonUntil)poison.gameObject.SetActive(false);
             if (fireShape != null && Time.time >= fireUntil) fireShape.gameObject.SetActive(false);
             if (poisonShape != null && Time.time >= poisonUntil) poisonShape.gameObject.SetActive(false);
         }

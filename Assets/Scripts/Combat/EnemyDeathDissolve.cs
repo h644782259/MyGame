@@ -30,20 +30,24 @@ namespace Emberfall
             model.BeginDeath();
             ash = ElementalCombatVfx.Create(transform, "Dissolving Ash", ElementalCombatVfx.Element.Fire,
                 boss ? 35f : 16f, boss ? 1.3f : .55f);
+            if(ash!=null){
             ash.transform.localPosition = Vector3.up * (boss ? 1.4f : isSlime ? .35f : .8f);
             var main = ash.main;
             main.startColor = new Color(.66f, .75f, .8f, .5f);
             main.startSpeed = .65f;
             var emission = ash.emission;
             emission.enabled = false;
+            }
             moteMaterial = new Material(Shader.Find("Unlit/Color"));
             moteMaterial.color = new Color(.7f, .78f, .84f);
-            motes = new Transform[boss ? 18 : 10];
+            var moteRoot=new GameObject("Bounded death motes");moteRoot.transform.SetParent(transform,false);
+            bool allowed=DecorationLease.Attach(moteRoot,2);
+            motes = new Transform[allowed?DecorationBudget.DeathMotes(boss,EffectPreferences.ReducedEffects):0];
             for (int i = 0; i < motes.Length; i++)
             {
                 GameObject mote = GameObject.CreatePrimitive(PrimitiveType.Sphere);
                 mote.name = "Evaporating Ash";
-                mote.transform.SetParent(transform, false);
+                mote.transform.SetParent(moteRoot.transform, false);
                 Collider collider = mote.GetComponent<Collider>();
                 if (collider != null) Destroy(collider);
                 mote.GetComponent<Renderer>().sharedMaterial = moteMaterial;

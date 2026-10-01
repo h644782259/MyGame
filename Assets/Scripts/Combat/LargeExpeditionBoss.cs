@@ -46,7 +46,7 @@ namespace Emberfall
                 startAngle = Mathf.Atan2(toward.x,toward.z)*Mathf.Rad2Deg + 35f;
                 CreateAnchors(); EnsureBeam();
                 game.SpawnFloatingText(transform.position+Vector3.up*3.6f,"断能蓄力 · 摧毁供能锚",new Color(.35f,.92f,1));
-                game.LogSystem("星环执政官 · 青色蓄力可打断，摧毁供能锚可中止扫射并暴露核心");
+                game.LogSystem("星环执政官 · 橙红边界表示危险，青色符号可打断，摧毁供能锚可中止扫射并暴露核心");
             }
             for (int i=0;i<anchors.Length;i++)
                 if ((State.LiveAnchorMask & (1<<i)) != 0 && (anchors[i]==null || anchors[i].Broken || !anchors[i].gameObject.activeInHierarchy))

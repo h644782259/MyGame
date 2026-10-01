@@ -5,7 +5,7 @@ namespace Emberfall
 {
     internal static class CombatFx
     {
-        public static GameObject Ring(Vector3 center, float radius, Color color, float lifetime, float width = .1f, bool expand = true)
+        public static GameObject Ring(Vector3 center, float radius, Color color, float lifetime, float width = .1f, bool expand = true, bool respectCover = false)
         {
             if (expand && FadingCombatEffect.ActiveCount >= (Application.isMobilePlatform ? 32 : 48)) return null;
             GameObject obj = new GameObject("Combat Ring");
@@ -28,7 +28,7 @@ namespace Emberfall
             line.numCapVertices = 2;
             line.sharedMaterial = NewGlow();
             line.startColor = line.endColor = color;
-            obj.AddComponent<FadingCombatEffect>().Setup(line, color, radius, lifetime, expand);
+            obj.AddComponent<FadingCombatEffect>().Setup(line, color, radius, lifetime, expand, respectCover: respectCover);
             return obj;
         }
 
@@ -61,17 +61,21 @@ namespace Emberfall
         private LineRenderer line;
         private Color color;
         private float radius, lifetime, age;
-        private bool expand, slash, registered;
+        private bool expand, slash, registered, respectCover;
+        private readonly Vector3[] boundary=new Vector3[64];
+        private int boundaryRevision=-1;private Vector3 boundaryCenter;
         public static int ActiveCount { get; private set; }
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetCount() { ActiveCount = 0; }
-        public void Setup(LineRenderer renderer, Color value, float size, float duration, bool growing, bool ribbon = false)
+        public void Setup(LineRenderer renderer, Color value, float size, float duration, bool growing, bool ribbon = false, bool respectCover = false)
         {
             line = renderer; color = value; radius = size; lifetime = Mathf.Max(.05f, duration); expand = growing; slash = ribbon;
             color.a *= growing ? Mathf.Lerp(.4f,1f,EffectPreferences.EffectsScale) : 1f;
-            registered = true; ActiveCount++;
+            this.respectCover=respectCover; registered = true; ActiveCount++;
             transform.localScale = Vector3.one * (expand ? radius * .4f : radius);
+            RefreshBoundary();
         }
+        private void LateUpdate(){RefreshBoundary();}
         private void Update()
         {
             age += Time.deltaTime;
@@ -83,7 +87,17 @@ namespace Emberfall
             faded.a *= Mathf.Clamp01((1f - fraction) * 2f);
             line.startColor = line.endColor = faded;
         }
-        private void OnDestroy() { if (registered) ActiveCount = Mathf.Max(0,ActiveCount-1); if (line != null && line.sharedMaterial != null) Destroy(line.sharedMaterial); }
+        private void RefreshBoundary()
+        {
+            if(!respectCover||line==null)return;
+            if(boundaryRevision==WorldTraversal.Revision&&(boundaryCenter-transform.position).sqrMagnitude<.000001f)return;
+            boundaryRevision=WorldTraversal.Revision;boundaryCenter=transform.position;line.useWorldSpace=true;
+            CombatSight.FillAreaBoundary(boundary,transform.position,radius);line.SetPositions(boundary);
+        }
+        private void Release(){if(!registered)return;registered=false;ActiveCount=Mathf.Max(0,ActiveCount-1);}
+        private void OnDisable(){Release();}
+        private void OnEnable(){if(line==null||registered)return;if(expand&&ActiveCount>=(Application.isMobilePlatform?32:48)){gameObject.SetActive(false);return;}registered=true;ActiveCount++;}
+        private void OnDestroy() { Release(); if (line != null && line.sharedMaterial != null) Destroy(line.sharedMaterial); }
     }
 
     internal sealed class CombatProjectile : MonoBehaviour
@@ -393,7 +407,7 @@ namespace Emberfall
             area.statusSkill = statusSkill; area.statusRank = statusRank; area.castId = castId==0?player.NewCastId():castId;
             area.nextTick = startup;
             if (startup > 0) FilledSkillVfx.Charge(obj.transform, player, obj.transform.position, size, tint, startup);
-            area.marker = CombatFx.Ring(at, size, tint, startup + activeTime + .2f, .075f, false);
+            area.marker = CombatFx.Ring(at, size, tint, startup + activeTime + .2f, .075f, false, respectCover:true);
             area.visualRecipe = visual;
             area.fireVisual = visual == SkillVisualRecipe.Fire;
             area.poisonVisual = visual == SkillVisualRecipe.Poison;

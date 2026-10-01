@@ -10,6 +10,10 @@ namespace Emberfall
         private Material material;
         private float progress;
         private bool interruptible;
+        private LineRenderer clock,interruptMark;
+        private Vector3 timingCenter;
+        private readonly Vector3[] timingPoints=new Vector3[33];
+        private static readonly Color Danger=new Color(1f,.22f,.1f,.95f);
 
         public static EnemyAttackTelegraph Circle(Vector3 center, float radius)
         {
@@ -21,6 +25,7 @@ namespace Emberfall
                 points[i] = center + new Vector3(Mathf.Sin(angle), 0, Mathf.Cos(angle)) * radius;
             }
             warning.Line(points, true, .11f);
+            warning.Timing(center);
             return warning;
         }
 
@@ -28,6 +33,7 @@ namespace Emberfall
         {
             EnemyAttackTelegraph warning = Create("Enemy Warning - Charge Corridor");
             warning.Lane(start, end, halfWidth, .1f);
+            warning.Timing(start);
             return warning;
         }
 
@@ -36,6 +42,7 @@ namespace Emberfall
             EnemyAttackTelegraph warning = Create("Enemy Warning - Projectile Lanes");
             for (int i = 0; i < directions.Length; i++)
                 if (lengths[i] > .05f) warning.Lane(muzzle, muzzle + directions[i] * lengths[i], halfWidth, .055f);
+            warning.Timing(muzzle);
             return warning;
         }
 
@@ -68,7 +75,7 @@ namespace Emberfall
             Line(new[] { end - forward * arrow + right * arrow * .6f, end, end - forward * arrow - right * arrow * .6f }, false, width * 1.4f);
         }
 
-        private void Line(Vector3[] points, bool loop, float width)
+        private LineRenderer Line(Vector3[] points, bool loop, float width)
         {
             var obj = new GameObject("Warning Geometry");
             obj.transform.SetParent(transform, false);
@@ -87,22 +94,31 @@ namespace Emberfall
             line.sharedMaterial = material;
             line.startColor = line.endColor = new Color(1f, .32f, .12f, .85f);
             lines.Add(line);
+            return line;
         }
 
-        public void SetInterruptible(bool value)
+        private void Timing(Vector3 center)
         {
-            if (interruptible == value) return;
-            interruptible = value;
-            SetProgress(progress);
+            timingCenter=CombatFx.Flat(center)+Vector3.up*.2f;
+            clock=Line(new[]{timingCenter,timingCenter},false,.10f);
+            interruptMark=Line(new[]{timingCenter+new Vector3(-.2f,0,.19f),timingCenter+new Vector3(.03f,0,-.19f),
+                timingCenter+new Vector3(.2f,0,.19f)},false,.09f);
+            interruptMark.startColor=interruptMark.endColor=new Color(.2f,1f,.9f,1f);
+            SetProgress(0);
         }
-
+        public void SetInterruptible(bool value)
+        {interruptible=value;if(interruptMark!=null)interruptMark.enabled=value;}
         public void SetProgress(float value)
         {
-            progress = Mathf.Clamp01(value);
-            Color color = interruptible
-                ? Color.Lerp(new Color(.15f, .72f, .85f, .8f), new Color(.45f, 1f, .8f, 1f), progress)
-                : Color.Lerp(new Color(1f, .46f, .12f, .75f), new Color(1f, .08f, .13f, 1f), progress);
-            foreach (LineRenderer line in lines) if (line != null) line.startColor = line.endColor = color;
+            progress=Mathf.Clamp01(value);
+            foreach(var line in lines)if(line!=null&&line!=interruptMark)line.startColor=line.endColor=Danger;
+            if(clock!=null)
+            {
+                int count=Mathf.Max(2,Mathf.CeilToInt(progress*32)+1);clock.positionCount=count;
+                for(int i=0;i<count;i++)
+                {float a=2*Mathf.PI*progress*i/(count-1);timingPoints[i]=timingCenter+new Vector3(Mathf.Sin(a),0,Mathf.Cos(a))*.52f;clock.SetPosition(i,timingPoints[i]);}
+            }
+            if(interruptMark!=null)interruptMark.enabled=interruptible;
         }
 
         private void OnDestroy() { if (material != null) Destroy(material); }

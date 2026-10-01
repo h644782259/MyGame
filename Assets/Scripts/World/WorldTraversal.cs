@@ -88,6 +88,8 @@ namespace Emberfall
             }
             return true;
         }
+        public static bool HasClearVisualFootprint(Vector3 origin, Vector3 point, float radius)
+        { return ClearSegment(origin, point, Mathf.Max(.04f,radius), true); }
         public static bool HasLineOfSight(Vector3 from, Vector3 to) { return ClearSegment(from, to, .04f, true); }
         public static bool HasGroundPath(Vector3 from, Vector3 to, float radius = .45f) { return ClearSegment(from, to, radius, false); }
         public static bool CanLeap(Vector3 from, Vector3 to, float radius = .45f)
