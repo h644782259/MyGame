@@ -228,7 +228,9 @@ namespace Emberfall.Editor
             {
                 game.Player.Teleport(new Vector3(0, 0, 11));
                 game.EnterDungeon();
-                if (!game.InDungeon || game.DungeonWave != 1) throw new InvalidOperationException("Ground-loot fixture could not re-enter a fresh dungeon.");
+                if (!game.DungeonSelectionOpen) throw new InvalidOperationException("Ground-loot fixture could not open the dungeon selector.");
+                game.ConfirmDungeonSelection();
+                if (!game.InDungeon || game.DungeonSelectionOpen || game.DungeonWave != 1) throw new InvalidOperationException("Ground-loot fixture could not re-enter a fresh dungeon.");
                 FreezeFixture();
             }
 

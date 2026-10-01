@@ -54,7 +54,8 @@ namespace Emberfall
                 if (delta.magnitude > Radius) continue;
                 enemy.Provoke();
                 if (delta.magnitude > .6f)
-                    enemy.transform.position += delta.normalized * Mathf.Min(delta.magnitude - .6f, Time.deltaTime * (3.5f + rank) * (enemy.IsBoss ? .25f : 1f));
+                    enemy.transform.position = WorldTraversal.Move(enemy.transform.position,
+                        delta.normalized * Mathf.Min(delta.magnitude - .6f, Time.deltaTime * (3.5f + rank) * (enemy.IsBoss ? .25f : 1f)), enemy.NavigationRadius);
                 if (age >= 2.6f)
                 {
                     enemy.TakeDamage(damage * 3.2f, -delta.normalized, .3f, .25f);

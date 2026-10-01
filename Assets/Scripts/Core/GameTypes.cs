@@ -8,6 +8,125 @@ namespace Emberfall
     public enum ItemSlot { Weapon, Armor, Relic }
     public enum Rarity { Common, Rare, Epic, Legendary }
     public enum FashionSlot { Wings, Weapon }
+    public enum ElementalistSpecialization { None, Shatter, Burn }
+    public enum EquipmentMechanic { None, FrostEcho, CinderTrail, ReturningBlade, VenomSpread, TwinSummonResonance }
+    public enum MasteryType { Offense, Vitality, Guard }
+
+    /// <summary>One source of truth for the build codex, acquisition routes and combat contracts.</summary>
+    public static class BuildCatalog
+    {
+        public static EquipmentMechanic[] MechanicsFor(HeroClass hero)
+        {
+            switch (hero)
+            {
+                case HeroClass.Arcanist: return new[] { EquipmentMechanic.FrostEcho, EquipmentMechanic.CinderTrail };
+                case HeroClass.Vanguard: return new[] { EquipmentMechanic.ReturningBlade };
+                case HeroClass.Ranger: return new[] { EquipmentMechanic.VenomSpread };
+                case HeroClass.Summoner: return new[] { EquipmentMechanic.TwinSummonResonance };
+                default: return new EquipmentMechanic[0];
+            }
+        }
+
+        public static HeroClass MechanicClass(EquipmentMechanic mechanic)
+        {
+            switch (mechanic)
+            {
+                case EquipmentMechanic.FrostEcho:
+                case EquipmentMechanic.CinderTrail: return HeroClass.Arcanist;
+                case EquipmentMechanic.VenomSpread: return HeroClass.Ranger;
+                case EquipmentMechanic.TwinSummonResonance: return HeroClass.Summoner;
+                default: return HeroClass.Vanguard;
+            }
+        }
+
+        public static ItemSlot MechanicSlot(EquipmentMechanic mechanic)
+        {
+            return mechanic == EquipmentMechanic.CinderTrail || mechanic == EquipmentMechanic.ReturningBlade ? ItemSlot.Weapon : ItemSlot.Relic;
+        }
+
+        public static string MechanicName(EquipmentMechanic mechanic)
+        {
+            switch (mechanic)
+            {
+                case EquipmentMechanic.FrostEcho: return "霜回护符";
+                case EquipmentMechanic.CinderTrail: return "余烬法杖";
+                case EquipmentMechanic.ReturningBlade: return "回刃长剑";
+                case EquipmentMechanic.VenomSpread: return "蔓毒护符";
+                case EquipmentMechanic.TwinSummonResonance: return "双契共鸣";
+                default: return "无机制";
+            }
+        }
+
+        public static string MechanicDescription(EquipmentMechanic mechanic)
+        {
+            switch (mechanic)
+            {
+                case EquipmentMechanic.FrostEcho: return "冰霜新星首击伤害 -20%；0.7秒后回响造成40%基础伤害并再次施加冰霜控制（灼燃专精仍只减速）。";
+                case EquipmentMechanic.CinderTrail: return "陨星直接伤害 -20%；落点留下2秒火场，总计40%基础伤害。每次陨星仅触发一次碎冰或灼燃。";
+                case EquipmentMechanic.ReturningBlade: return "普攻首击伤害 -15%；每1.5秒回刃弹向4米内另一个目标，造成55%基础伤害。";
+                case EquipmentMechanic.VenomSpread: return "毒素引爆加成伤害 -20%；每2秒向附近最多2个目标传播1层毒素。";
+                case EquipmentMechanic.TwinSummonResonance: return "普通召唤上限改为2；召唤物伤害 +35%、生命 -15%。两只伙伴存活时每3秒共鸣追加35%基础伤害。";
+                default: return "装备机制只在穿戴且职业匹配时生效。";
+            }
+        }
+
+        public static string MechanicSource(EquipmentMechanic mechanic)
+        {
+            if (mechanic == EquipmentMechanic.None || !Enum.IsDefined(typeof(EquipmentMechanic), mechanic)) return "无";
+            return "本职业首通自选；遗迹首领25%机制掉落；普通史诗/传说掉落12%机制概率；12枚星烬碎片定向兑换。每次通关获得3枚碎片。";
+        }
+
+        public static string SpecializationName(ElementalistSpecialization specialization)
+        {
+            return specialization == ElementalistSpecialization.Shatter ? "碎冰" : specialization == ElementalistSpecialization.Burn ? "灼燃" : "均衡";
+        }
+
+        public static string SpecializationDescription(ElementalistSpecialization specialization)
+        {
+            if (specialization == ElementalistSpecialization.Shatter) return "陨星直接伤害 -15%；消耗冰霜印记时碎冰追加100%基础伤害。与灼燃互斥，营地免费切换。";
+            if (specialization == ElementalistSpecialization.Burn) return "新星只减速、不冻结或施加冰霜印记；陨星直接伤害 -20%，附加3秒灼烧，总计90%基础伤害。营地免费切换。";
+            return "保留原有冰霜控制；陨星消耗冰霜印记，碎冰追加50%基础伤害。专精仅改变元素师，营地免费切换。";
+        }
+
+        public static string ClassSignatureDescription(HeroClass hero)
+        {
+            if (hero == HeroClass.Vanguard) return "完美闪避真正避开攻击时回复12能量；2秒内下一次普攻造成175%伤害。";
+            if (hero == HeroClass.Arcanist) return "未学习冰霜新星时，对同一目标连续命中3次普攻触发0.35秒霜冻与减速；切换目标重计，触发间隔1.2秒，首领抗性生效。";
+            if (hero == HeroClass.Ranger) return "普攻叠加最多3层毒素；扇形箭消耗3层引爆，每个目标每次施法仅触发一次。";
+            return "开局拥有持续陪伴的弱灵狼；死亡12秒后回归。普攻命中可指挥近处伙伴集火1.8秒，学习灵狼契约后由正式契约替代。";
+        }
+
+        public static string MasteryName(MasteryType mastery)
+        {
+            return mastery == MasteryType.Offense ? "破敌精通" : mastery == MasteryType.Vitality ? "生命精通" : "坚壁精通";
+        }
+
+        public static string MasteryDescription(MasteryType mastery)
+        {
+            return (mastery == MasteryType.Offense ? "每点攻击 +0.5%" : mastery == MasteryType.Vitality ? "每点生命 +0.75%" : "每点防御 +0.75") + "；上限23点。100级且十个技能全部觉醒后开放；营地可免费重置。";
+        }
+    }
+
+    /// <summary>Durable chest receipt. Unity serializes the fields; nullable view properties
+    /// let the reveal UI distinguish a gold-only reward without unsupported nullable fields.</summary>
+    [Serializable]
+    public class ChestReward
+    {
+        public string id;
+        public int choice;
+        public int gold;
+        public int rarityIndex = -1;
+        public int slotIndex = -1;
+        public string name;
+        public bool duplicate;
+        public string summary;
+        public string Id { get { return id; } }
+        public int Gold { get { return gold; } }
+        public Rarity? Rarity { get { return rarityIndex < 0 ? (Emberfall.Rarity?)null : (Emberfall.Rarity)rarityIndex; } }
+        public FashionSlot? Slot { get { return slotIndex < 0 ? (FashionSlot?)null : (FashionSlot)slotIndex; } }
+        public string Name { get { return name; } }
+        public bool Duplicate { get { return duplicate; } }
+    }
 
     [Serializable]
     public class FashionData
@@ -33,6 +152,8 @@ namespace Emberfall
         public int defense;
         public int health;
         public int upgradeLevel;
+        public EquipmentMechanic mechanic;
+        public bool locked;
         // Persistent origins make changing a rank reversible without repeatedly
         // rounding already-upgraded attributes. Legacy saves initialize these once.
         public bool upgradeBaseInitialized;
@@ -55,6 +176,22 @@ namespace Emberfall
         public int gold = 60;
         public int potions = 5;
         public int skillPoints;
+        public int tutorialMask;
+        public ElementalistSpecialization specialization;
+        public int[] masteryRanks = new int[3];
+        // Slot training is the sole enhancement authority. Item upgradeLevel is
+        // only the current equipped-stat cache; legacy anchors preserve item bases.
+        public int[] slotUpgradeRanks = new int[3];
+        public bool slotUpgradesInitialized;
+        public int mechanicMaterials;
+        public int materialRewardedClears;
+        public bool firstClearRewardClaimed;
+        public bool pendingFirstClearReward;
+        public List<EquipmentMechanic> discoveredMechanics = new List<EquipmentMechanic>();
+        public List<ItemData> pendingLoot = new List<ItemData>();
+        public List<ItemData> recoveryLoot = new List<ItemData>();
+        public bool autoSellCommon;
+        public bool autoSellRare;
         public int[] skillRanks = new int[GameBalance.SkillCount];
         public int[] equippedSkills = GameBalance.DefaultLoadout();
         public int hotbarPage;
@@ -70,6 +207,8 @@ namespace Emberfall
         public string wingsFashionId;
         public string weaponFashionId;
         public bool pendingFashionChest;
+        public ChestReward lastChestReward;
+        public bool pendingChestReveal;
     }
 
     public struct StatBlock
@@ -91,7 +230,7 @@ namespace Emberfall
         public static readonly string[] ClassNames = { "剑卫", "元素师", "游侠", "唤灵师" };
         public static readonly string[] ClassDescriptions = {
             "挥剑近战 · 旋风斩击 · 坚韧生存",
-            "法术远攻 · 冰霜控制 · 陨星爆发",
+            "连击霜印 · 冰霜控制 · 陨星爆发",
             "灵巧射击 · 散射箭雨 · 灵活游走",
             "契约召唤 · 灵狼星灵 · 协同作战"
         };

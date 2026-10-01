@@ -1,0 +1,163 @@
+using UnityEngine;
+
+namespace Emberfall
+{
+    public sealed partial class GameUI
+    {
+        private int selectedBlessing = -1, campTab;
+        private Vector2 pendingScroll;
+        private bool systemHistory;
+        public void CancelBackgroundInput() { CancelHotbarPointer(); rebindingSlot = -1; }
+
+        private void DrawDungeonSelection()
+        {
+            Rect w = Modal(700, 440, "沉星遗迹", "选择阶数与挑战规则");
+            Text(new Rect(w.x+32,w.y+120,440,31), "第 " + session.SelectedDungeonTier + " 阶", 26, gold, true);
+            if (Button(new Rect(w.x+478,w.y+116,76,43), "−", jade, session.SelectedDungeonTier > 1)) session.SelectedDungeonTier--;
+            if (Button(new Rect(w.x+566,w.y+116,76,43), "+", jade, session.SelectedDungeonTier < session.MaximumDungeonTier)) session.SelectedDungeonTier++;
+            Text(new Rect(w.x+32,w.y+168,610,47), "怪物等级 " + Mathf.Clamp(session.Progression.Profile.level + session.SelectedDungeonTier - 1,2,100) +
+                " · 三波 + 首领\n通关 " + (120+session.SelectedDungeonTier*30) + " 金币 · " + (100+session.SelectedDungeonTier*20) + " 经验 · 3 碎片 · 自选宝箱", 15, pale, false, true);
+            bool challenge = session.SelectedChallengeMode;
+            if (Button(new Rect(w.x+32,w.y+233,610,45), challenge ? "限疗挑战  ✓" : "普通模式", challenge ? gold : jade)) session.SelectedChallengeMode = !challenge;
+            Text(new Rect(w.x+32,w.y+289,610,59), challenge ? "共享治疗充能初始3次；药水不耗背包库存。治疗技能与药水消耗充能。波间、守卫目标和晶核补给可恢复，最多3次。" : "保留普通药水与技能治疗；每波后恢复25%生命。限疗挑战可选，不额外增加奖励。", 14, muted, false, true);
+            if (Button(new Rect(w.x+32,w.y+363,220,45), "返回", muted)) session.CancelDungeonSelection();
+            if (Button(new Rect(w.x+274,w.y+363,368,45), "进入遗迹", gold, true, null, true)) session.ConfirmDungeonSelection();
+        }
+
+        private void DrawBlessingChoice()
+        {
+            RunBlessing[] offer = session.RunChoices.Offer;
+            Rect w = Modal(1000, 470, "星烬祝福", "第 " + session.DungeonWave + " 波完成 · 选择一项，仅本局生效");
+            for (int i=0;i<offer.Length;i++)
+            {
+                Rect cardRect = new Rect(w.x+28+i*322,w.y+117,300,240);
+                bool chosen = i == selectedBlessing;
+                Fill(cardRect,chosen ? new Color(.12f,.2f,.21f):card); Border(cardRect,chosen?gold:jade*.5f);
+                Text(new Rect(cardRect.x+20,cardRect.y+23,260,28),RunChoices.Name(offer[i]),23,chosen?gold:pale,true);
+                bool compatible = RunChoices.IsCompatible(offer[i],session.Progression.Profile.heroClass,session.Progression.Profile.skillRanks);
+                Text(new Rect(cardRect.x+20,cardRect.y+63,260,21),compatible?"适合当前配置":"需要搭配对应技能",12,compatible?jade:muted);
+                Text(new Rect(cardRect.x+20,cardRect.y+102,260,93),RunChoices.Description(offer[i]),16,pale,false,true);
+                if(Button(new Rect(cardRect.x+20,cardRect.y+192,260,32),chosen?"已选择":"选择",chosen?gold:jade))selectedBlessing=i;
+            }
+            if(Button(new Rect(w.x+310,w.y+392,380,46),"确认并进入下一波",gold,selectedBlessing>=0&&selectedBlessing<offer.Length,null,true))
+            { if(session.ConfirmBlessing(selectedBlessing))selectedBlessing=-1; }
+        }
+
+        private void DrawCampWorkshop()
+        {
+            Rect w=Modal(980,620,"营地工坊",session.IsInCamp?"学徒 · 星核 · 图鉴 · 职业试炼":"返回营地可切换专精与重置精通");
+            if(Button(new Rect(w.xMax-69,w.y+20,44,32),"×",jade))ClosePanel();
+            string[] tabs={"战技","机制图鉴","待领取","实战试炼"};
+            for(int i=0;i<tabs.Length;i++)if(Button(new Rect(w.x+26+i*233,w.y+110,220,36),tabs[i],campTab==i?gold:jade))campTab=i;
+            ProgressionService p=session.Progression;
+            if(campTab==0)
+            {
+                Text(new Rect(w.x+32,w.y+167,880,30),GameBalance.ClassName(p.Profile.heroClass)+" · 职业能力",23,gold,true);
+                string[] signatures={"真正躲过攻击后，2秒内下一次普攻反击。","冰霜新星 → 陨星，消耗霜印碎冰。","普攻积累三层毒，以扇形箭引爆。","幼狼从开场协战；普攻让伙伴短时集火。"};
+                Text(new Rect(w.x+32,w.y+208,880,38),signatures[(int)p.Profile.heroClass],18,pale,false,true);
+                if(new Rect(w.x+32,w.y+167,880,81).Contains(Mouse))tooltip=BuildCatalog.ClassSignatureDescription(p.Profile.heroClass);
+                if(p.Profile.heroClass==HeroClass.Arcanist)
+                {
+                    for(int i=0;i<2;i++)
+                    {
+                        ElementalistSpecialization spec=i==0?ElementalistSpecialization.Shatter:ElementalistSpecialization.Burn;
+                        Rect c=new Rect(w.x+32+i*458,w.y+267,430,149);Fill(c,card);
+                        Text(new Rect(c.x+16,c.y+15,398,67),BuildCatalog.SpecializationDescription(spec),15,muted,false,true);
+                        if(Button(new Rect(c.x+16,c.y+96,398,36),BuildCatalog.SpecializationName(spec)+(p.Profile.specialization==spec?" ✓":""),gold,session.IsInCamp&&p.Profile.specialization!=spec))Feedback(p.SetSpecialization(spec,session.IsInCamp),"专精已切换");
+                    }
+                }
+                else Text(new Rect(w.x+32,w.y+268,884,112),"招牌能力从第一场战斗可用。将职业机制与图鉴装备、波间祝福组合，尝试不同打法。\n\n营地星核随已通关阶数点亮。",17,muted,false,true);
+                for(int i=0;i<3;i++)
+                {
+                    MasteryType mastery=(MasteryType)i;Rect c=new Rect(w.x+32+i*306,w.y+450,284,115);
+                    Text(new Rect(c.x,c.y,c.width,25),BuildCatalog.MasteryName(mastery)+"  "+p.Profile.masteryRanks[i]+"/23",17,pale,true);
+                    string reason=p.MasteryLockReason(mastery);
+                    if(Button(new Rect(c.x,c.y+39,c.width,35),"投入 1 点",jade,string.IsNullOrEmpty(reason),string.IsNullOrEmpty(reason)?BuildCatalog.MasteryDescription(mastery):reason))Feedback(p.LearnMastery(mastery),"精通已提高");
+                }
+                if(Button(new Rect(w.x+700,w.y+579,246,26),"营地免费重置精通",muted,session.IsInCamp))Feedback(p.ResetMastery(session.IsInCamp),"精通点已返还");
+            }
+            else if(campTab==1)
+            {
+                Text(new Rect(w.x+32,w.y+168,880,28),"星烬碎片  "+p.Profile.mechanicMaterials+" / 12",22,gold,true);
+                EquipmentMechanic[] all=BuildCatalog.MechanicsFor(p.Profile.heroClass);
+                for(int i=0;i<all.Length;i++)
+                {
+                    EquipmentMechanic mechanic=all[i];Rect c=new Rect(w.x+32,w.y+217+i*162,884,147);Fill(c,card);
+                    Text(new Rect(c.x+18,c.y+13,620,29),BuildCatalog.MechanicName(mechanic),21,pale,true);
+                    Text(new Rect(c.x+18,c.y+53,610,78),BuildCatalog.MechanicDescription(mechanic),15,muted,false,true);
+                    bool first=p.Profile.pendingFirstClearReward;
+                    if(Button(new Rect(c.x+660,c.y+55,205,40),first?"首通选取":"兑换 · 12 碎片",gold,session.IsInCamp&&(first||p.Profile.mechanicMaterials>=12),BuildCatalog.MechanicSource(mechanic),true))
+                        Feedback(first?p.ClaimFirstClearReward(mechanic):p.ExchangeMechanic(mechanic),"机制装备已领取");
+                    if(c.Contains(Mouse))tooltip=BuildCatalog.MechanicSource(mechanic);
+                }
+                Text(new Rect(w.x+32,w.y+566,884,30),"来源：首通自选 · 首领掉落 · 星烬兑换",14,jade);
+            }
+            else if(campTab==2)
+            {
+                if(Button(new Rect(w.x+32,w.y+165,278,38),"普通自动卖："+(p.Profile.autoSellCommon?"开":"关"),jade))p.SetAutoSell(Rarity.Common,!p.Profile.autoSellCommon);
+                if(Button(new Rect(w.x+322,w.y+165,278,38),"稀有自动卖："+(p.Profile.autoSellRare?"开":"关"),jade))p.SetAutoSell(Rarity.Rare,!p.Profile.autoSellRare);
+                if(Button(new Rect(w.x+612,w.y+165,304,38),"批量出售低品质",gold,true,"穿戴、锁定及机制装备受保护"))Feedback(true,"已出售 "+p.BulkSellLowQuality()+" 件");
+                Text(new Rect(w.x+32,w.y+216,884,24),"待领取 "+p.Profile.pendingLoot.Count+"/24 · 恢复栏 "+p.RecoveryLootCount+" · 锁定、穿戴和机制装备受保护",14,muted);
+                var mailbox=new System.Collections.Generic.List<ItemData>(p.Profile.pendingLoot); mailbox.AddRange(p.Profile.recoveryLoot);
+                Rect viewport=new Rect(w.x+32,w.y+254,884,280);
+                pendingScroll=GUI.BeginScrollView(viewport,pendingScroll,new Rect(0,0,865,Mathf.Max(280,mailbox.Count*58)),GUIStyle.none,scrollBar);
+                for(int i=0;i<mailbox.Count;i++)
+                { ItemData item=mailbox[i];Text(new Rect(12,i*58+8,660,28),item.name,18,GameBalance.RarityColor(item.rarity),true);
+                  if(Button(new Rect(702,i*58+4,145,38),"领取",jade,p.Profile.inventory.Count<ProgressionService.InventoryCapacity)) { Feedback(p.Profile.recoveryLoot.Exists(x=>x.id==item.id)?p.ClaimRecoveryLoot(item.id):p.ClaimPendingLoot(item.id),"已领取 "+item.name);break; } }
+                GUI.EndScrollView();
+                if(Button(new Rect(w.x+32,w.y+554,884,39),"领取可放入背包的装备",gold))Feedback(true,"领取 "+(p.ClaimAllPendingLoot()+p.ClaimAllRecoveryLoot())+" 件");
+            }
+            else
+            {
+                string[] actions={"① 普攻命中，回复能量","② 躲过一次即将命中的预警攻击","③ 使用一次职业能力","④ 在行囊换上一件装备"};
+                for(int i=0;i<actions.Length;i++)Text(new Rect(w.x+42,w.y+182+i*67,850,40),((p.Profile.tutorialMask&(1<<i))!=0?"✓ ":"○ ")+actions[i],22,(p.Profile.tutorialMask&(1<<i))!=0?jade:pale,true);
+                Text(new Rect(w.x+42,w.y+470,850,73),"在原野或遗迹里完成这些动作。先观察守卫蓄力，再尝试侧向闪现。进入遗迹前，可用图鉴首通奖励搭配新的专精。",16,muted,false,true);
+            }
+        }
+
+        private void DrawExpeditionHUD()
+        {
+            if(session.IsInCamp)
+            { Rect r=new Rect(16,height-(MobileControls.Active?425:223),212,36);blockedRects.Add(r);if(Button(r,"营地工坊",jade)) {panel=Panel.Camp;session.SetUIBlocking(true);} }
+            if(session.SideEventAvailable)
+            { Rect r=new Rect((width-410)*.5f,height-260,410,48);blockedRects.Add(r);
+              if(Button(r,"唤醒晶核守卫 · 碎片 + 补给",gold,true,"额外一名遗迹守卫与一名魔灵；全部击败才获得1碎片和补给。"))session.StartSideEvent(); }
+            if(session.InDungeon&&session.ChallengeRun)Text(new Rect(20,174,300,26),"治疗充能  "+session.HealingCharges+" / 3",17,gold,true);
+            DrawSystemLog();
+        }
+        private void DrawSystemLog()
+        {
+            var messages=session.SystemMessages;
+            if(messages.Count==0)return;
+            int show=systemHistory?Mathf.Min(8,messages.Count):Mathf.Min(3,messages.Count);
+            float panelHeight=show*39+34;
+            float bottom=height-(MobileControls.Active?220:16);
+            Rect r=new Rect(16,bottom-panelHeight,344,panelHeight);
+            Fill(r,new Color(.025f,.045f,.065f,.88f));
+            Text(new Rect(r.x+10,r.y+6,228,20),"系统信息",12,jade,true);
+            if(Button(new Rect(r.xMax-68,r.y+3,59,25),systemHistory?"收起":"记录",muted))systemHistory=!systemHistory;
+            for(int i=0;i<show;i++)
+            {
+                Rect row=new Rect(r.x+10,r.y+31+i*39,r.width-20,38);
+                Text(row,messages[messages.Count-show+i].Text,13,pale,false,true);
+                if(row.Contains(Mouse))tooltip=messages[messages.Count-show+i].Text;
+            }
+            blockedRects.Add(r);
+        }
+
+        private void DrawRunSummary()
+        {
+            Rect w=Modal(740,550,"战斗复盘",session.DungeonCleared?"再试一种打法":"重整旗鼓");
+            Text(new Rect(w.x+32,w.y+120,676,325),session.LastRunSummary,18,pale,false,true);
+            if(Button(new Rect(w.x+32,w.y+467,676,47),"返回冒险",jade))ClosePanel();
+        }
+
+        private void DrawAccessibilityStrip(Rect r)
+        {
+            if(Button(new Rect(r.x,r.y,145,35),"字号 "+EffectPreferences.CombatTextScale.ToString("0.00")+"×",jade))
+                EffectPreferences.CombatTextScale=EffectPreferences.CombatTextScale>=1.79f?1f:Mathf.Min(1.8f,EffectPreferences.CombatTextScale+.25f);
+            if(Button(new Rect(r.x+154,r.y,145,35),EffectPreferences.CameraShake?"镜头震动：开":"镜头震动：关",jade))EffectPreferences.CameraShake=!EffectPreferences.CameraShake;
+            if(Button(new Rect(r.x+308,r.y,145,35),EffectPreferences.ReducedEffects?"低动态效果":"完整效果",jade))EffectPreferences.EffectsScale=EffectPreferences.ReducedEffects?1f:.3f;
+        }
+    }
+}

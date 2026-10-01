@@ -295,7 +295,7 @@ public static class ProgressionTests
         Check(!service.Equip(highLevel.id), "high-level loot cannot be equipped early");
         int gold = service.Profile.gold;
         int price = service.SellValue(highLevel);
-        Check(service.Sell(highLevel.id) && service.Profile.gold == gold + price, "selling grants exact gold");
+        Check(service.SetItemLocked(highLevel.id, false) && service.Sell(highLevel.id) && service.Profile.gold == gold + price, "intentional unlock and selling grant exact gold");
         Check(!service.Sell(highLevel.id), "item cannot be sold twice");
         ItemData reward = service.CreateLoot(1, false);
         Check(service.Equip(reward.id) && service.Equipped(reward.slot).id == reward.id, "eligible loot can replace equipment");
@@ -303,7 +303,11 @@ public static class ProgressionTests
         gold = service.Profile.gold;
         ItemData overflow = service.CreateLoot(1, true);
         Check(service.Profile.inventory.Count == 72 && !service.Profile.inventory.Exists(item => item.id == overflow.id), "inventory is capped without losing existing gear");
-        Check(service.Profile.gold == gold + service.SellValue(overflow) && service.LastError.Contains("自动出售"), "overflow grants gold and a notification");
+        bool protectedOverflow = ProgressionService.IsProtectedLoot(overflow);
+        Check(protectedOverflow
+            ? service.Profile.gold == gold && service.Profile.pendingLoot.Exists(item => item.id == overflow.id) && service.LastError.Contains("待领取")
+            : service.Profile.gold == gold + service.SellValue(overflow) && service.LastError.Contains("自动出售"),
+            "protected overflow preserves the item for claiming; ordinary overflow grants gold and a notification");
         service.AddGold(100);
         gold = service.Profile.gold;
         int potions = service.Profile.potions;
@@ -320,6 +324,10 @@ public static class ProgressionTests
         string saved = File.ReadAllText(service.SaveFilePath);
         DateTime written = File.GetLastWriteTimeUtc(service.SaveFilePath);
         ItemData loot = service.RollLoot(0, false);
+        // This case exercises explicit ordinary item sale; mechanic protection is covered
+        // independently, so randomized mechanic rolls must not change its event contract.
+        loot.mechanic = EquipmentMechanic.None;
+        loot.locked = false;
         ItemData boss = service.RollLoot(int.MaxValue, true);
         Check(loot.id != boss.id && loot.level == 1 && boss.level == 100 && boss.rarity >= Rarity.Rare, "world loot has unique IDs, capped levels and guaranteed boss rarity");
         Check(loot.upgradeBaseInitialized && boss.upgradeBaseInitialized && loot.upgradeLevel == 0, "world loot initializes permanent upgrade metadata");
@@ -352,15 +360,16 @@ public static class ProgressionTests
         written = File.GetLastWriteTimeUtc(service.SaveFilePath);
         ItemData overflow = service.RollLoot(8, true);
         Check(service.Profile.inventory.Count == 72 && service.Profile.gold == gold && changed == 0 && File.ReadAllText(service.SaveFilePath) == saved && File.GetLastWriteTimeUtc(service.SaveFilePath) == written, "full bag still waits for actual pickup before converting a world drop");
-        int value = service.SellValue(overflow);
-        Check(service.CollectLoot(overflow) && service.Profile.inventory.Count == 72 && service.Profile.gold == gold + value && changed == 1 && service.LastError.Contains("自动出售"), "full-bag pickup converts exactly once to the advertised sale value");
-        Check(!service.Profile.inventory.Exists(item => item.id == overflow.id), "overflow sale does not insert or replace existing gear");
+        bool protectedOverflow = ProgressionService.IsProtectedLoot(overflow);
+        int value = protectedOverflow ? 0 : service.SellValue(overflow);
+        Check(service.CollectLoot(overflow) && service.Profile.inventory.Count == 72 && service.Profile.gold == gold + value && changed == 1 && service.LastError.Contains(protectedOverflow ? "待领取" : "自动出售"), "full-bag pickup either protects valuable loot or converts ordinary loot exactly once");
+        Check(!service.Profile.inventory.Exists(item => item.id == overflow.id) && (!protectedOverflow || service.Profile.pendingLoot.Exists(item => item.id == overflow.id)), "overflow does not replace existing gear and protected rewards remain claimable");
         saved = File.ReadAllText(service.SaveFilePath);
         written = File.GetLastWriteTimeUtc(service.SaveFilePath);
         Check(!service.CollectLoot(overflow) && !service.CollectLoot(UnityEngine.JsonUtility.FromJson<ItemData>(UnityEngine.JsonUtility.ToJson(overflow, true))), "overflow receipt blocks object and copied-ID duplicates");
         Check(service.Profile.gold == gold + value && changed == 1 && File.ReadAllText(service.SaveFilePath) == saved && File.GetLastWriteTimeUtc(service.SaveFilePath) == written, "repeated overflow pickup grants no gold, event or save write");
         restored = new ProgressionService(service.SaveDirectory);
-        Check(restored.Load() && restored.Profile.inventory.Count == 72 && restored.Profile.gold == gold + value, "full bag and overflow gold persist through reload");
+        Check(restored.Load() && restored.Profile.inventory.Count == 72 && restored.Profile.gold == gold + value && (!protectedOverflow || restored.Profile.pendingLoot.Exists(item => item.id == overflow.id)), "full bag and correct pending-item or gold outcome persist through reload");
     }
 
     private static void HotbarDragMovesAndSwaps()
@@ -488,92 +497,39 @@ public static class ProgressionTests
     {
         foreach (ItemSlot slot in new[] { ItemSlot.Weapon, ItemSlot.Armor, ItemSlot.Relic })
         {
-            var service = Fresh();
-            ReachLevel(service, 50);
-            service.AddGold(1000000);
-            ItemData source = service.Equipped(slot);
-            ItemData sourceZero = service.PreviewUpgrade(source, 0);
-            ItemData target = TransferFixture(service, slot);
-            ItemData targetZero = service.PreviewUpgrade(target, 0);
-            ItemData paidTarget = CloneEquipmentFixture(service, target);
-            ItemData paidSource = CloneEquipmentFixture(service, source);
+            var service = Fresh(); ReachLevel(service, 50); service.AddGold(1000000);
+            ItemData source = service.Equipped(slot), target = TransferFixture(service, slot);
             UpgradeTo(service, source, 5);
-            UpgradeTo(service, paidTarget, 5);
-            UpgradeTo(service, paidSource, 2);
-            ItemData sourceFive = service.PreviewUpgrade(source, 5);
-
-            int events = 0;
-            StatBlock observedStats = new StatBlock();
-            service.Changed += () => { events++; observedStats = service.GetStats(); };
-            string profileBeforePreview = UnityEngine.JsonUtility.ToJson(service.Profile, true);
-            string saveBeforePreview = File.ReadAllText(service.SaveFilePath);
+            ItemData targetFive = service.PreviewEquippedItem(target), sourceFive = service.PreviewEquippedItem(source);
+            ItemData sourceZero = service.PreviewUpgrade(source, 0);
+            Check(service.SlotUpgradeRank(slot) == 5 && source.upgradeLevel == 5 && target.upgradeLevel == 0, slot + " training belongs to slot while bag item keeps baseline cache");
+            string saved = File.ReadAllText(service.SaveFilePath), profile = UnityEngine.JsonUtility.ToJson(service.Profile, true);
+            int events = 0; service.Changed += () => events++;
             for (int rank = 0; rank <= 10; rank++)
             {
                 ItemData preview = service.PreviewUpgrade(target, rank);
-                Check(preview != null && !ReferenceEquals(preview, target) && preview.upgradeLevel == rank && preview.id == target.id && preview.level == target.level && preview.slot == slot && preview.rarity == target.rarity, slot + " preview returns an independent item at the requested legal rank");
-                Check(BoundedEquipment(preview), slot + " preview keeps all equipment attributes inside their caps");
-                preview.name = "edited preview only";
-                preview.attack = 9876;
+                Check(preview != null && !ReferenceEquals(preview, target) && preview.upgradeLevel == rank && preview.id == target.id && BoundedEquipment(preview), slot + " rank preview is independent, identified and bounded");
             }
-            Check(service.PreviewUpgrade(null, 0) == null && service.PreviewUpgrade(target, -1) == null && service.PreviewUpgrade(target, 11) == null && service.PreviewUpgrade(target, int.MaxValue) == null, slot + " preview rejects null and out-of-range ranks");
-            Check(UnityEngine.JsonUtility.ToJson(service.Profile, true) == profileBeforePreview && File.ReadAllText(service.SaveFilePath) == saveBeforePreview && events == 0, slot + " previews mutate neither profile, gold, save bytes nor events");
-            source.upgradeLevel = 11;
-            string malformed = UnityEngine.JsonUtility.ToJson(service.Profile, true);
-            Check(!service.TransferUpgrade(source.id, target.id) && UnityEngine.JsonUtility.ToJson(service.Profile, true) == malformed && events == 0, slot + " an out-of-range source rank is rejected without normalization or mutation");
-            source.upgradeLevel = 5;
-            foreach (int invalidRank in new[] { -1, 11 })
-            {
-                target.upgradeLevel = invalidRank;
-                malformed = UnityEngine.JsonUtility.ToJson(service.Profile, true);
-                Check(!service.TransferUpgrade(source.id, target.id) && UnityEngine.JsonUtility.ToJson(service.Profile, true) == malformed && events == 0, slot + " an out-of-range destination rank is rejected without mutating metadata");
-            }
-            target.upgradeLevel = 0;
-
-            service.AddGold(-service.Profile.gold);
-            events = 0;
-            StatBlock beforeTransfer = service.GetStats();
-            Check(service.TransferUpgrade(source.id, target.id), slot + " +5 transfers onto an unupgraded same-slot item with zero gold");
-            Check(SameEquipment(source, sourceZero) && SameEquipment(target, paidTarget) && source.upgradeLevel + target.upgradeLevel == 5, slot + " transfer removes the source rank and recomputes target from its own base exactly like paid upgrades");
-            Check(service.Profile.gold == 0 && events == 1 && service.Equipped(slot).id == source.id && source.level == 1 && target.level == 35, slot + " transfer is free, emits one refresh and preserves equipment identities across item levels");
-            StatBlock afterTransfer = service.GetStats();
-            Check(Near(afterTransfer.Damage, beforeTransfer.Damage - sourceFive.attack + sourceZero.attack) && Near(afterTransfer.Armor, beforeTransfer.Armor - sourceFive.defense + sourceZero.defense) && Near(afterTransfer.MaxHealth, beforeTransfer.MaxHealth - sourceFive.health + sourceZero.health), slot + " equipped totals immediately reflect the removed enhancement including maximum health");
-            Check(Near(observedStats.Damage, afterTransfer.Damage) && Near(observedStats.Armor, afterTransfer.Armor) && Near(observedStats.MaxHealth, afterTransfer.MaxHealth), slot + " Changed observers see the completed transfer totals");
-
-            string rejectedProfile = UnityEngine.JsonUtility.ToJson(service.Profile, true);
-            string rejectedSave = File.ReadAllText(service.SaveFilePath);
-            events = 0;
-            ItemData otherSlot = service.Equipped(slot == ItemSlot.Weapon ? ItemSlot.Armor : ItemSlot.Weapon);
-            Check(!service.TransferUpgrade(null, target.id) && !service.TransferUpgrade(target.id, "missing") && !service.TransferUpgrade("missing", source.id), slot + " missing transfer IDs are rejected");
-            Check(!service.TransferUpgrade(target.id, target.id) && !service.TransferUpgrade(target.id, otherSlot.id) && !service.TransferUpgrade(source.id, target.id), slot + " self, cross-slot and unupgraded-source transfers are rejected");
-            Check(UnityEngine.JsonUtility.ToJson(service.Profile, true) == rejectedProfile && File.ReadAllText(service.SaveFilePath) == rejectedSave && events == 0, slot + " rejected transfers cannot change either item, gold, disk or events");
-            Check(service.TransferUpgrade(target.id, source.id) && SameEquipment(source, sourceFive) && SameEquipment(target, targetZero), slot + " reverse transfer exactly restores both original stat sets");
-
-            service.AddGold(1000000);
-            UpgradeTo(service, target, 2);
-            ItemData targetTwo = service.PreviewUpgrade(target, 2);
+            Check(service.PreviewEquippedItem(null) == null && service.PreviewUpgrade(target, -1) == null && service.PreviewUpgrade(target, 11) == null, slot + " invalid preview inputs rejected");
+            Check(!service.TransferUpgrade(source.id, target.id) && service.LastError.Contains("自动继承"), slot + " obsolete transfer explains automatic inheritance");
+            Check(profile == UnityEngine.JsonUtility.ToJson(service.Profile, true) && saved == File.ReadAllText(service.SaveFilePath) && events == 0, slot + " preview and obsolete transfer do not mutate state or saves");
             int gold = service.Profile.gold;
-            Check(service.TransferUpgrade(source.id, target.id) && SameEquipment(source, paidSource) && SameEquipment(target, paidTarget), slot + " an existing +2 target swaps levels with +5 instead of adding or copying levels");
-            Check(service.Profile.gold == gold && source.upgradeLevel + target.upgradeLevel == 7, slot + " swapping conserves both seven ranks and gold");
-            string stableSource = UnityEngine.JsonUtility.ToJson(source, true);
-            string stableTarget = UnityEngine.JsonUtility.ToJson(target, true);
-            for (int repeat = 0; repeat < 10; repeat++)
-                Check(service.TransferUpgrade(source.id, target.id) && service.Profile.gold == gold && source.upgradeLevel + target.upgradeLevel == 7, slot + " repeated swaps neither mint ranks nor charge gold");
-            Check(UnityEngine.JsonUtility.ToJson(source, true) == stableSource && UnityEngine.JsonUtility.ToJson(target, true) == stableTarget, slot + " repeated integer recalculation cannot inflate stats or alter persistent bases");
+            Check(service.Equip(target.id) && SameEquipment(target, targetFive) && SameEquipment(source, sourceZero), slot + " equipping applies trained rank to candidate own baseline and releases old cache");
+            Check(service.Profile.gold == gold && events == 1 && service.SlotUpgradeRank(slot) == 5, slot + " automatic inheritance is free and does not change training");
+            for (int cycle = 0; cycle < 10; cycle++)
+                Check(service.Equip(source.id) && SameEquipment(source, sourceFive) && service.Equip(target.id) && SameEquipment(target, targetFive), slot + " repeated replacement cannot compound attributes");
+            ItemData next = service.PreviewUpgrade(target, 6);
+            int cost = service.UpgradeCost(source);
+            Check(service.Upgrade(source.id) && service.SlotUpgradeRank(slot) == 6 && SameEquipment(target, next) && source.upgradeLevel == 0 && service.Profile.gold == gold - cost, slot + " upgrading bag item trains its slot and improves currently worn item");
+            Check(service.Equip(source.id) && source.upgradeLevel == 6 && target.upgradeLevel == 0, slot + " old gear automatically receives newest slot rank");
             service.Save();
-            var restored = new ProgressionService();
-            Check(restored.Load(), slot + " transferred upgrades load from disk");
-            ItemData restoredSource = restored.Profile.inventory.Find(item => item.id == source.id);
-            ItemData restoredTarget = restored.Profile.inventory.Find(item => item.id == target.id);
-            Check(UnityEngine.JsonUtility.ToJson(restoredSource, true) == stableSource && UnityEngine.JsonUtility.ToJson(restoredTarget, true) == stableTarget, slot + " persistent bases and anchors round-trip exactly");
-            Check(restored.TransferUpgrade(restoredTarget.id, restoredSource.id) && SameEquipment(restoredSource, sourceFive) && SameEquipment(restoredTarget, targetTwo), slot + " loaded equipment remains reversibly transferable");
-            ItemData next = restored.PreviewUpgrade(restoredSource, 6);
-            int cost = restored.UpgradeCost(restoredSource);
-            gold = restored.Profile.gold;
-            Check(restored.Upgrade(restoredSource.id) && SameEquipment(restoredSource, next) && restored.Profile.gold == gold - cost, slot + " loaded transferred equipment can still upgrade with exact preview and normal cost");
+            var restored = new ProgressionService(); Check(restored.Load(), slot + " slot training persists");
+            ItemData restoredSource = restored.Profile.inventory.Find(item => item.id == source.id), restoredTarget = restored.Profile.inventory.Find(item => item.id == target.id);
+            Check(restored.SlotUpgradeRank(slot) == 6 && restoredSource.upgradeLevel == 6 && restoredTarget.upgradeLevel == 0, slot + " load reconstructs only worn enhancement cache");
             UpgradeTo(restored, restoredSource, 10);
             gold = restored.Profile.gold;
-            Check(!restored.Upgrade(restoredSource.id) && restoredSource.upgradeLevel == 10 && restored.Profile.gold == gold && restored.UpgradeCost(restoredSource) == 0, slot + " rank ten rejects further upgrades without a charge");
-            Check(restored.TransferUpgrade(restoredSource.id, restoredTarget.id) && restoredSource.upgradeLevel == 2 && restoredTarget.upgradeLevel == 10 && BoundedEquipment(restoredSource) && BoundedEquipment(restoredTarget) && restored.Profile.gold == gold, slot + " maximum-rank transfer stays capped and free");
+            Check(!restored.Upgrade(restoredTarget.id) && restored.UpgradeCost(restoredTarget) == 0 && restored.SlotUpgradeRank(slot) == 10 && restored.Profile.gold == gold, slot + " slot cap applies even to a fresh unenhanced bag item");
+            Check(restored.Equip(restoredTarget.id) && restoredTarget.upgradeLevel == 10 && BoundedEquipment(restoredTarget), slot + " any replacement inherits maximum slot rank safely");
         }
     }
 
@@ -594,6 +550,8 @@ public static class ProgressionTests
                 targetIds.Add(TransferFixture(service, slot).id);
             }
             JsonNode legacy = JsonNode.Parse(File.ReadAllText(service.SaveFilePath));
+            legacy["profile"].AsObject().Remove("slotUpgradeRanks");
+            legacy["profile"].AsObject().Remove("slotUpgradesInitialized");
             var expected = new Dictionary<string, ItemData>();
             foreach (JsonObject item in legacy["profile"]["inventory"].AsArray())
             {
@@ -631,7 +589,7 @@ public static class ProgressionTests
                 metadata[source.id] = stable;
                 int gold = migrated.Profile.gold;
                 for (int repeat = 0; repeat < 4; repeat++)
-                    Check(migrated.TransferUpgrade(source.id, target.id) && migrated.TransferUpgrade(target.id, source.id) && SameEquipment(source, original) && migrated.Profile.gold == gold, "legacy round-trip transfer preserves its anchored old stats and all gold");
+                    Check(migrated.Equip(target.id) && migrated.Equip(source.id) && SameEquipment(source, original) && migrated.Profile.gold == gold, "legacy equipment replacement preserves its anchored old stats and all gold");
                 Check(UnityEngine.JsonUtility.ToJson(source, true) == stable, "legacy anchors remain unchanged after repeated transfers");
             }
             migrated.Save();
@@ -641,11 +599,11 @@ public static class ProgressionTests
             {
                 for (int index = 0; index < sourceIds.Count; index++)
                 {
-                    Check(reloaded.TransferUpgrade(sourceIds[index], targetIds[index]), "legacy enhancement can move before an intervening save/load");
+                    Check(reloaded.Equip(targetIds[index]), "legacy slot enhancement applies on replacement before an intervening save/load");
                     var away = new ProgressionService();
-                    Check(away.Load() && away.TransferUpgrade(targetIds[index], sourceIds[index]), "legacy enhancement can move back after an intervening load");
+                    Check(away.Load() && away.Equip(sourceIds[index]), "legacy slot enhancement applies on replacement back after an intervening load");
                     reloaded = new ProgressionService();
-                    Check(reloaded.Load() && UnityEngine.JsonUtility.ToJson(reloaded.Profile.inventory.Find(item => item.id == sourceIds[index]), true) == metadata[sourceIds[index]], "interleaved transfers and reloads preserve all three stats and all eight base/anchor fields exactly");
+                    Check(reloaded.Load() && UnityEngine.JsonUtility.ToJson(reloaded.Profile.inventory.Find(item => item.id == sourceIds[index]), true) == metadata[sourceIds[index]], "interleaved equipment replacements and reloads preserve all three stats and all eight base/anchor fields exactly");
                 }
             }
             for (int index = 0; index < sourceIds.Count; index++)
@@ -654,7 +612,7 @@ public static class ProgressionTests
                 ItemData target = reloaded.Profile.inventory.Find(item => item.id == targetIds[index]);
                 ItemData original = expected[source.id];
                 Check(SameEquipment(source, original) && source.upgradeBaseInitialized, "reloading migrated equipment does not lower or inflate visible attributes");
-                Check(reloaded.TransferUpgrade(source.id, target.id) && reloaded.TransferUpgrade(target.id, source.id) && SameEquipment(source, original), "reloaded legacy equipment can still transfer both directions");
+                Check(reloaded.Equip(target.id) && reloaded.Equip(source.id) && SameEquipment(source, original), "reloaded legacy equipment can still be replaced in both directions");
                 ItemData next = reloaded.PreviewUpgrade(source, source.upgradeLevel + 1);
                 int cost = reloaded.UpgradeCost(source);
                 int gold = reloaded.Profile.gold;
@@ -687,7 +645,7 @@ public static class ProgressionTests
 
     private static void UpgradeTo(ProgressionService service, ItemData item, int rank)
     {
-        while (item.upgradeLevel < rank) Check(service.Upgrade(item.id), "fixture purchases an actual upgrade: " + item.slot + " +" + rank);
+        while (service.SlotUpgradeRank(item.slot) < rank) Check(service.Upgrade(item.id), "fixture purchases an actual upgrade: " + item.slot + " +" + rank);
     }
 
     private static bool SameEquipment(ItemData a, ItemData b)

@@ -6,7 +6,7 @@ namespace Emberfall
     // Entire prototype scene is authored here so a fresh checkout needs no imported art.
     public static class WorldBuilder
     {
-        public static GameObject Build(ZoneKind zone)
+        public static GameObject Build(ZoneKind zone, int dungeonLayout = 0, int campProgress = 0)
         {
             WorldTraversal.Reset(zone);
             GameObject root = new GameObject(zone == ZoneKind.Wilderness ? "Windwhisper Fields" : "Fallen Star Sanctum");
@@ -27,7 +27,7 @@ namespace Emberfall
             light.intensity = dungeon ? 1.1f : 1.35f;
             light.shadows = LightShadows.Soft;
             light.shadowStrength = .7f;
-            if (dungeon) BuildDungeon(root.transform, resources); else BuildWilderness(root.transform, resources);
+            if (dungeon) BuildDungeon(root.transform, resources, dungeonLayout); else { BuildWilderness(root.transform, resources); BuildCampFacilities(root.transform, resources, campProgress); }
             return root;
         }
 
@@ -142,7 +142,24 @@ namespace Emberfall
             }
         }
 
-        private static void BuildDungeon(Transform parent, WorldResources r)
+        private static void BuildCampFacilities(Transform parent, WorldResources r, int progress)
+        {
+            Transform facilities = Region(parent, "Camp progression facilities");
+            string[] names = { "STAR CORE", "APPRENTICE", "CODEX", "CLASS TRIAL" };
+            Color[] colors = { new Color(.4f,.85f,1), new Color(.8f,.6f,1), new Color(1,.77f,.4f), new Color(.4f,1,.7f) };
+            for (int i = 0; i < 4; i++)
+            {
+                Vector3 p = new Vector3(i % 2 == 0 ? -4.4f : 4.4f, 0, i < 2 ? -8 : -12);
+                Material stone = r.Material(new Color(.18f,.22f,.28f));
+                Material glow = r.Material(colors[i] * (progress > i ? 1f : .6f), true);
+                Primitive(facilities, names[i] + " plinth", PrimitiveType.Cylinder, p + Vector3.up*.35f, new Vector3(.9f,.35f,.9f), stone);
+                Crystal(facilities, r, p + Vector3.up * (1.1f + Mathf.Min(progress,5)*.06f), .35f + Mathf.Min(progress,5)*.025f, glow);
+                Label(facilities, names[i], p + Vector3.up*2.1f, .055f, colors[i], false);
+                WorldTraversal.AddCircle(p,.48f);
+            }
+        }
+
+        private static void BuildDungeon(Transform parent, WorldResources r, int layout)
         {
             Material baseStone = r.Material(new Color(.095f, .11f, .17f));
             Material slab = r.Material(new Color(.21f, .23f, .31f));
@@ -185,9 +202,10 @@ namespace Emberfall
                 Primitive(gallery, "Nave edge inlay", PrimitiveType.Cube, new Vector3(side*5.3f,.05f,-2), new Vector3(.075f,.014f,29), rune);
                 Pillar(gallery, r, new Vector3(side*7,0,-4), 2.5f, true);
                 Pillar(gallery, r, new Vector3(side*7,0,6), 2.9f, true);
-                Vector3 barricade = new Vector3(side*10.5f,0,-7.5f);
-                Primitive(gallery, "Collapsed gallery partition", PrimitiveType.Cube, barricade + Vector3.up*.65f, new Vector3(4.2f,1.3f,.9f), border);
-                WorldTraversal.AddBox(barricade, new Vector2(4.2f,.9f));
+                Vector3 barricade = layout % 2 == 0 ? new Vector3(side*10.5f,0,-7.5f) : new Vector3(side*5f,0,-1.5f);
+                Vector2 barrierSize = layout % 2 == 0 ? new Vector2(4.2f,.9f) : new Vector2(.9f,5.5f);
+                Primitive(gallery, "Collapsed gallery partition", PrimitiveType.Cube, barricade + Vector3.up*.65f, new Vector3(barrierSize.x,1.3f,barrierSize.y), border);
+                WorldTraversal.AddBox(barricade, barrierSize);
                 for (int i = 0; i < 5; i++)
                 {
                     Vector3 p = new Vector3(side*20.3f,0,-12+i*6);

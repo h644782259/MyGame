@@ -53,7 +53,7 @@ namespace Emberfall.Editor
                 check(mixedPeak > .000001f, "Audio: playing background source produces nonzero native output samples");
                 log("AUDIO Unity output: " + initial.OutputSampleRate + " Hz; background output peak=" + mixedPeak.ToString("G5") + ". This does not certify physical speakers.");
 
-                foreach (SoundCue cue in new[] { SoundCue.UI, SoundCue.Attack, SoundCue.Hit, SoundCue.Cast })
+                foreach (SoundCue cue in new[] { SoundCue.UI, SoundCue.Attack, SoundCue.Hit, SoundCue.Cast, SoundCue.CriticalHit })
                 {
                     GameAudio.Muted = true;
                     GameAudio.Muted = false;

@@ -276,23 +276,45 @@ namespace Emberfall
                     ResetPanels();
                     OpenPanel("Inventory");
                 }
-                ItemData transferSource = session.Progression.Equipped(ItemSlot.Weapon);
-                var transferTarget = new ItemData {
-                    id = "visual-transfer-target-" + hero, name = "传承试炼武器",
+                ItemData previousWeapon = session.Progression.Equipped(ItemSlot.Weapon);
+                var replacementWeapon = new ItemData {
+                    id = "visual-slot-target-" + hero, name = "部位强化试炼武器",
                     slot = ItemSlot.Weapon, rarity = Rarity.Epic, level = 10, attack = 40
                 };
-                session.Progression.Profile.inventory.Add(transferTarget);
+                session.Progression.Profile.inventory.Add(replacementWeapon);
                 session.Progression.Profile.gold = 100000;
-                while (transferSource.upgradeLevel < 3) Check(session.Progression.Upgrade(transferSource.id), "Prepare reinforced source for inheritance");
-                Check(session.Progression.Upgrade(transferTarget.id), "Prepare reinforced destination for exchange preview");
-                Invoke("OpenUpgradeTransfer", transferTarget);
-                SetField("transferSourceId", transferSource.id);
-                Check(GetField("panel").ToString() == "UpgradeTransfer", "Inheritance panel opens with the selected destination");
-                yield return Capture(label + "-upgrade-transfer-preview");
-                Invoke("ConfirmUpgradeTransfer");
-                Check(GetField("panel").ToString() == "Inventory" && transferSource.upgradeLevel == 1 && transferTarget.upgradeLevel == 3,
-                    "Inheritance confirmation returns to inventory and preserves both enhancement levels");
-                yield return Capture(label + "-upgrade-transfer-result");
+                while (session.Progression.SlotUpgradeRank(ItemSlot.Weapon) < 3)
+                    Check(session.Progression.Upgrade(previousWeapon.id), "Prepare permanent weapon-slot reinforcement");
+                Check(session.Progression.Upgrade(replacementWeapon.id) && session.Progression.SlotUpgradeRank(ItemSlot.Weapon) == 4 &&
+                    previousWeapon.upgradeLevel == 4 && replacementWeapon.upgradeLevel == 0,
+                    "Reinforcing a bag selection trains the slot and updates the currently worn weapon");
+                SetField("inventoryFilter", 0);
+                SetField("inventorySort", 0);
+                SetField("selectedItem", replacementWeapon.id);
+                Invoke("RebuildBagItems");
+                string candidateBefore = JsonUtility.ToJson(replacementWeapon);
+                ItemData replacementPreview = (ItemData)typeof(GameUI).GetMethod("EquipmentPreview", PrivateInstance).Invoke(ui, new object[] { replacementWeapon });
+                Check(replacementPreview.upgradeLevel == 4 && replacementPreview.attack > replacementWeapon.attack &&
+                    JsonUtility.ToJson(replacementWeapon) == candidateBefore,
+                    "Inventory comparison previews automatic slot inheritance without changing the bag item");
+                Check(GetField("panel").ToString() == "Inventory", "Automatic inheritance preview stays in the inventory");
+                yield return Capture(label + "-slot-reinforcement-preview");
+                Check(JsonUtility.ToJson(replacementWeapon) == candidateBefore, "Rendering the slot-enhanced preview leaves candidate attributes unchanged");
+                int goldBeforeEquip = session.Progression.Profile.gold;
+                int inventoryCountBeforeEquip = session.Progression.Profile.inventory.Count;
+                Check(session.Progression.Equip(replacementWeapon.id) && replacementWeapon.upgradeLevel == 4 && previousWeapon.upgradeLevel == 0 &&
+                    replacementWeapon.attack == replacementPreview.attack && replacementWeapon.defense == replacementPreview.defense && replacementWeapon.health == replacementPreview.health,
+                    "Equipping automatically matches the slot-enhanced preview and restores outgoing gear to its baseline");
+                Check(session.Progression.Equip(previousWeapon.id) && previousWeapon.upgradeLevel == 4 && replacementWeapon.upgradeLevel == 0 &&
+                    previousWeapon.attack != replacementPreview.attack,
+                    "Swapping back retains the same rank while each weapon uses its own baseline attributes");
+                Check(session.Progression.Equip(replacementWeapon.id) && session.Progression.Equip(replacementWeapon.id) &&
+                    replacementWeapon.attack == replacementPreview.attack && session.Progression.SlotUpgradeRank(ItemSlot.Weapon) == 4 &&
+                    session.Progression.Profile.gold == goldBeforeEquip && session.Progression.Profile.inventory.Count == inventoryCountBeforeEquip,
+                    "Repeated automatic inheritance is free, preserves items and cannot compound reinforcement");
+                Check(GetField("panel").ToString() == "Inventory" && (string)GetField("selectedItem") == replacementWeapon.id,
+                    "Automatic inheritance keeps the selected item visible in the inventory");
+                yield return Capture(label + "-slot-reinforcement-result");
                 ResetPanels();
                 OpenPanel("Skills");
                 Invoke("OpenBindings");
@@ -313,6 +335,12 @@ namespace Emberfall
                 ResetPanels();
                 session.Player.Teleport(new Vector3(0,0,11));
                 session.EnterDungeon();
+                Check(session.DungeonSelectionOpen && !session.InDungeon && session.InputBlocked,
+                    "Portal displays a blocking dungeon selector before entry");
+                yield return Capture(label + "-dungeon-selection");
+                session.ConfirmDungeonSelection();
+                Check(session.InDungeon && !session.DungeonSelectionOpen && session.DungeonWave == 1,
+                    "Confirming dungeon selection enters the first wave");
                 session.Player.enabled = false;
                 foreach(var enemy in session.Enemies) if(enemy!=null) enemy.enabled=false;
                 for(int i=0;i<3;i++) session.SpawnGroundLoot(new ItemData {
@@ -326,9 +354,18 @@ namespace Emberfall
                     yield return null;
                     Check(GetField("panel").ToString() == "Chests", "A pending clear opens the three-chest choice panel");
                     yield return Capture("dungeon-chest-choice");
-                    Check(session.Progression.OpenDungeonChest(1) != null && !session.Progression.Profile.pendingFashionChest,
-                        "Opening one visual-validation chest consumes the pending choice");
+                    Check(session.Progression.OpenDungeonChest(1) != null && !session.Progression.Profile.pendingFashionChest && session.Progression.Profile.pendingChestReveal,
+                        "Opening one visual-validation chest saves its receipt before presentation");
+                    string receiptId = session.Progression.LastChestReward.Id;
+                    int receiptGold = session.Progression.Profile.gold;
+                    var savedReward = new ProgressionService(session.Progression.SaveDirectory);
+                    Check(savedReward.Load() && savedReward.Profile.pendingChestReveal && savedReward.LastChestReward.Id == receiptId && savedReward.Profile.gold == receiptGold,
+                        "Reload preserves the same pending reward without granting it again");
+                    Invoke("ResetChestReveal");
+                    yield return Capture("dungeon-chest-receipt-restored");
                     ResetPanels();
+                    Check(!session.Progression.Profile.pendingChestReveal && GetField("panel").ToString() == "None" && session.Progression.Profile.gold == receiptGold,
+                        "Closing a restored receipt acknowledges it without regranting currency");
                 }
                 if (hero == 1 && session.Enemies.Count > 1)
                 {

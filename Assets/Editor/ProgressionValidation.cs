@@ -131,6 +131,9 @@ namespace Emberfall.Editor
             string saved = File.ReadAllText(service.SaveFilePath);
             DateTime written = File.GetLastWriteTimeUtc(service.SaveFilePath);
             ItemData loot = service.RollLoot(0, false);
+            // Explicit ordinary sale fixture; randomized mechanic locks have separate coverage.
+            loot.mechanic = EquipmentMechanic.None;
+            loot.locked = false;
             ItemData boss = service.RollLoot(int.MaxValue, true);
             Check(loot.id != boss.id && loot.level == 1 && boss.level == 100 && boss.rarity >= Rarity.Rare, "world loot: unique IDs, level caps and boss rarity");
             Check(loot.upgradeBaseInitialized && boss.upgradeBaseInitialized && loot.upgradeLevel == 0, "world loot: initialized permanent upgrade metadata");
@@ -161,16 +164,17 @@ namespace Emberfall.Editor
             written = File.GetLastWriteTimeUtc(service.SaveFilePath);
             ItemData overflow = service.RollLoot(8, true);
             Check(service.Profile.inventory.Count == 72 && service.Profile.gold == gold && changed == 0 && File.ReadAllText(service.SaveFilePath) == saved && File.GetLastWriteTimeUtc(service.SaveFilePath) == written, "world loot: full bag does not convert an uncollected drop");
-            int value = service.SellValue(overflow);
-            Check(service.CollectLoot(overflow) && service.Profile.inventory.Count == 72 && service.Profile.gold == gold + value && changed == 1 && service.LastError.Contains("自动出售"), "world loot: full-bag pickup converts once to exact sale value");
-            Check(!service.Profile.inventory.Exists(item => item.id == overflow.id), "world loot: overflow preserves existing equipment");
+            bool protectedOverflow = ProgressionService.IsProtectedLoot(overflow);
+            int value = protectedOverflow ? 0 : service.SellValue(overflow);
+            Check(service.CollectLoot(overflow) && service.Profile.inventory.Count == 72 && service.Profile.gold == gold + value && changed == 1 && service.LastError.Contains(protectedOverflow ? "待领取" : "自动出售"), "world loot: full-bag pickup protects valuable drops or sells ordinary ones exactly once");
+            Check(!service.Profile.inventory.Exists(item => item.id == overflow.id) && (!protectedOverflow || service.Profile.pendingLoot.Exists(item => item.id == overflow.id)), "world loot: overflow preserves existing equipment and protected rewards");
             saved = File.ReadAllText(service.SaveFilePath);
             written = File.GetLastWriteTimeUtc(service.SaveFilePath);
             Check(!service.CollectLoot(overflow) && !service.CollectLoot(JsonUtility.FromJson<ItemData>(JsonUtility.ToJson(overflow, true))), "world loot: overflow receipt rejects object and copied-ID duplicates");
             Check(service.Profile.gold == gold + value && changed == 1 && File.ReadAllText(service.SaveFilePath) == saved && File.GetLastWriteTimeUtc(service.SaveFilePath) == written, "world loot: duplicate overflow cannot grant more gold or write saves");
             restored = new ProgressionService(service.SaveDirectory);
-            Check(restored.Load() && restored.Profile.inventory.Count == 72 && restored.Profile.gold == gold + value, "world loot: full bag and converted gold persist");
-            report.passedStages.Add("world loot: delayed collection, identity deduplication, full-bag sale and real JSON persistence");
+            Check(restored.Load() && restored.Profile.inventory.Count == 72 && restored.Profile.gold == gold + value && (!protectedOverflow || restored.Profile.pendingLoot.Exists(item => item.id == overflow.id)), "world loot: full bag and pending reward or ordinary sale persist");
+            report.passedStages.Add("world loot: delayed collection, identity deduplication, protected overflow and real JSON persistence");
         }
 
         private static void ValidateMultipleSaveSlots()
@@ -646,91 +650,34 @@ namespace Emberfall.Editor
             report.passedStages.Add("portable primary-JSON-only transfer, complete profile equality and independent clean installation");
         }
 
-        private static void ValidateUpgradeTransfers()
+            private static void ValidateUpgradeTransfers()
         {
             foreach (ItemSlot slot in new[] { ItemSlot.Weapon, ItemSlot.Armor, ItemSlot.Relic })
             {
-                string name = "equipment-transfer-" + slot;
-                var service = Fresh(name);
-                ReachLevel(service, 50);
-                service.AddGold(1000000);
-                ItemData source = service.Equipped(slot);
-                ItemData zeroSource = service.PreviewUpgrade(source, 0);
-                ItemData target = TransferItem(service, slot);
-                ItemData zeroTarget = service.PreviewUpgrade(target, 0);
-                ItemData paidSource = CloneEquipment(service, source);
-                ItemData paidTarget = CloneEquipment(service, target);
+                string name = "slot-upgrade-" + slot;
+                var service = Fresh(name); ReachLevel(service, 50); service.AddGold(1000000);
+                ItemData source = service.Equipped(slot), target = TransferItem(service, slot);
                 UpgradeTo(service, source, 5);
-                UpgradeTo(service, paidSource, 2);
-                UpgradeTo(service, paidTarget, 5);
-                ItemData fiveSource = service.PreviewUpgrade(source, 5);
-                int events = 0;
-                StatBlock observed = new StatBlock();
-                service.Changed += () => { events++; observed = service.GetStats(); };
-                string profile = JsonUtility.ToJson(service.Profile, true);
-                string saved = File.ReadAllText(service.SaveFilePath);
+                ItemData sourceFive = service.PreviewEquippedItem(source), targetFive = service.PreviewEquippedItem(target);
+                string before = JsonUtility.ToJson(service.Profile, true), saved = File.ReadAllText(service.SaveFilePath);
+                int events = 0; service.Changed += () => events++;
                 for (int rank = 0; rank <= 10; rank++)
-                {
-                    ItemData preview = service.PreviewUpgrade(target, rank);
-                    Check(preview != null && !ReferenceEquals(preview, target) && preview.upgradeLevel == rank && BoundedEquipment(preview) && preview.id == target.id && preview.slot == slot && preview.level == 35, name + ": independent bounded preview at rank " + rank);
-                    preview.name = "preview-only mutation";
-                    preview.attack = 9999;
-                }
-                Check(service.PreviewUpgrade(null, 1) == null && service.PreviewUpgrade(target, -1) == null && service.PreviewUpgrade(target, 11) == null, name + ": null and out-of-range previews rejected");
-                Check(JsonUtility.ToJson(service.Profile, true) == profile && File.ReadAllText(service.SaveFilePath) == saved && events == 0, name + ": preview changes no profile, resource, event or actual JSON bytes");
-                source.upgradeLevel = 11;
-                string malformed = JsonUtility.ToJson(service.Profile, true);
-                Check(!service.TransferUpgrade(source.id, target.id) && JsonUtility.ToJson(service.Profile, true) == malformed && events == 0, name + ": source rank outside cap is rejected without mutation");
-                source.upgradeLevel = 5;
-                foreach (int invalidRank in new[] { -1, 11 })
-                {
-                    target.upgradeLevel = invalidRank;
-                    malformed = JsonUtility.ToJson(service.Profile, true);
-                    Check(!service.TransferUpgrade(source.id, target.id) && JsonUtility.ToJson(service.Profile, true) == malformed && events == 0, name + ": target rank outside range is rejected without mutation");
-                }
-                target.upgradeLevel = 0;
-
-                service.AddGold(-service.Profile.gold);
-                events = 0;
-                StatBlock before = service.GetStats();
-                Check(service.TransferUpgrade(source.id, target.id) && SameEquipment(source, zeroSource) && SameEquipment(target, paidTarget), name + ": +5 moves to a different base exactly like five paid target upgrades");
-                Check(service.Profile.gold == 0 && events == 1 && source.upgradeLevel + target.upgradeLevel == 5 && service.Equipped(slot).id == source.id && source.level == 1 && target.level == 35, name + ": transfer works without gold, preserves ranks and equipped IDs across item levels");
-                StatBlock after = service.GetStats();
-                Check(Near(after.Damage, before.Damage - fiveSource.attack + zeroSource.attack) && Near(after.Armor, before.Armor - fiveSource.defense + zeroSource.defense) && Near(after.MaxHealth, before.MaxHealth - fiveSource.health + zeroSource.health) && SameStats(observed, after), name + ": one Changed event exposes final equipped totals including reduced maximum health");
-                profile = JsonUtility.ToJson(service.Profile, true);
-                saved = File.ReadAllText(service.SaveFilePath);
-                events = 0;
-                ItemData wrongSlot = service.Equipped(slot == ItemSlot.Weapon ? ItemSlot.Armor : ItemSlot.Weapon);
-                Check(!service.TransferUpgrade(null, target.id) && !service.TransferUpgrade(target.id, "missing") && !service.TransferUpgrade("missing", target.id), name + ": absent transfer items rejected");
-                Check(!service.TransferUpgrade(target.id, target.id) && !service.TransferUpgrade(target.id, wrongSlot.id) && !service.TransferUpgrade(source.id, target.id), name + ": identical IDs, different slots and +0 sources rejected");
-                Check(JsonUtility.ToJson(service.Profile, true) == profile && File.ReadAllText(service.SaveFilePath) == saved && events == 0, name + ": rejected requests preserve the entire profile and persisted file");
-                Check(service.TransferUpgrade(target.id, source.id) && SameEquipment(source, fiveSource) && SameEquipment(target, zeroTarget), name + ": reversal exactly restores both original attribute sets");
-                service.AddGold(1000000);
-                UpgradeTo(service, target, 2);
-                ItemData twoTarget = service.PreviewUpgrade(target, 2);
+                    Check(service.PreviewUpgrade(target, rank).upgradeLevel == rank, name + ": preview supports every valid rank");
+                Check(!service.TransferUpgrade(source.id, target.id) && service.LastError.Contains("自动继承"), name + ": obsolete manual transfer reports automatic inheritance");
+                Check(before == JsonUtility.ToJson(service.Profile, true) && saved == File.ReadAllText(service.SaveFilePath) && events == 0, name + ": previews and obsolete transfer mutate nothing");
                 int gold = service.Profile.gold;
-                Check(service.TransferUpgrade(source.id, target.id) && SameEquipment(source, paidSource) && SameEquipment(target, paidTarget) && source.upgradeLevel + target.upgradeLevel == 7 && service.Profile.gold == gold, name + ": +5 and +2 swap instead of stacking or copying");
-                string sourceSnapshot = JsonUtility.ToJson(source, true);
-                string targetSnapshot = JsonUtility.ToJson(target, true);
-                for (int cycle = 0; cycle < 6; cycle++) Check(service.TransferUpgrade(source.id, target.id) && service.Profile.gold == gold && source.upgradeLevel + target.upgradeLevel == 7, name + ": repeated swap conserves ranks and gold");
-                Check(JsonUtility.ToJson(source, true) == sourceSnapshot && JsonUtility.ToJson(target, true) == targetSnapshot, name + ": repeated swaps preserve all stats and persistent metadata without inflation");
-                service.Save();
+                for (int cycle = 0; cycle < 6; cycle++)
+                    Check(service.Equip(target.id) && SameEquipment(target, targetFive) && source.upgradeLevel == 0 && service.Equip(source.id) && SameEquipment(source, sourceFive) && target.upgradeLevel == 0 && service.Profile.gold == gold, name + ": automatic replacement preserves individual baseline without compounding");
+                ItemData next = service.PreviewUpgrade(source, 6);
+                int cost = service.UpgradeCost(target);
+                Check(service.Upgrade(target.id) && SameEquipment(source, next) && service.SlotUpgradeRank(slot) == 6 && target.upgradeLevel == 0 && service.Profile.gold == gold - cost, name + ": bag item trains same slot and updates worn item");
                 var restored = new ProgressionService(CaseDirectory(name));
-                Check(restored.Load(), name + ": transferred equipment loads through real JsonUtility");
-                ItemData restoredSource = restored.Profile.inventory.Find(item => item.id == source.id);
-                ItemData restoredTarget = restored.Profile.inventory.Find(item => item.id == target.id);
-                Check(JsonUtility.ToJson(restoredSource, true) == sourceSnapshot && JsonUtility.ToJson(restoredTarget, true) == targetSnapshot, name + ": all base and anchor metadata survive JSON round trip");
-                Check(restored.TransferUpgrade(restoredTarget.id, restoredSource.id) && SameEquipment(restoredSource, fiveSource) && SameEquipment(restoredTarget, twoTarget), name + ": loaded upgrades remain fully reversible");
-                ItemData next = restored.PreviewUpgrade(restoredSource, 6);
-                int cost = restored.UpgradeCost(restoredSource);
-                gold = restored.Profile.gold;
-                Check(restored.Upgrade(restoredSource.id) && SameEquipment(restoredSource, next) && restored.Profile.gold == gold - cost, name + ": loaded transferred equipment still upgrades with exact preview and normal price");
-                UpgradeTo(restored, restoredSource, 10);
-                gold = restored.Profile.gold;
-                Check(!restored.Upgrade(restoredSource.id) && restoredSource.upgradeLevel == 10 && restored.UpgradeCost(restoredSource) == 0 && restored.Profile.gold == gold, name + ": maximum upgrade cap prevents a further charge");
-                Check(restored.TransferUpgrade(restoredSource.id, restoredTarget.id) && restoredSource.upgradeLevel == 2 && restoredTarget.upgradeLevel == 10 && BoundedEquipment(restoredSource) && BoundedEquipment(restoredTarget) && restored.Profile.gold == gold, name + ": capped upgrades transfer safely and for free");
+                Check(restored.Load() && restored.SlotUpgradeRank(slot) == 6 && restored.Equip(target.id), name + ": slot rank survives real JSON and applies on equip");
+                ItemData equipped = restored.Equipped(slot);
+                UpgradeTo(restored, equipped, 10);
+                Check(!restored.Upgrade(source.id) && restored.UpgradeCost(restored.Profile.inventory.Find(item => item.id == source.id)) == 0, name + ": fresh bag item cannot bypass slot cap");
+                report.passedStages.Add(name + ": slot-bound training, automatic replacement, preview, repeat stability and real JSON persistence");
             }
-            report.passedStages.Add("three equipment slots: free movement and swaps, exact attributes, refresh events, immutable previews and persisted upgrade bases");
         }
 
         private static void ValidateLegacyEquipment()
@@ -790,11 +737,11 @@ namespace Emberfall.Editor
                     for (int i = 0; i < sources.Count; i++)
                     {
                         int gold = restored.Profile.gold;
-                        Check(restored.TransferUpgrade(sources[i], targets[i]), name + ": legacy rank transfers before reload");
+                        Check(restored.Equip(targets[i]), name + ": legacy slot rank applies on equipment replacement before reload");
                         var away = new ProgressionService(CaseDirectory(name));
-                        Check(away.Load() && away.TransferUpgrade(targets[i], sources[i]), name + ": legacy rank returns after an intervening save/load");
+                        Check(away.Load() && away.Equip(sources[i]), name + ": legacy slot rank returns to original equipment after an intervening save/load");
                         restored = new ProgressionService(CaseDirectory(name));
-                        Check(restored.Load() && restored.Profile.gold == gold && JsonUtility.ToJson(restored.Profile.inventory.Find(entry => entry.id == sources[i]), true) == metadata[sources[i]], name + ": repeated reload and transfer preserve all three stats and all eight metadata fields");
+                        Check(restored.Load() && restored.Profile.gold == gold && JsonUtility.ToJson(restored.Profile.inventory.Find(entry => entry.id == sources[i]), true) == metadata[sources[i]], name + ": repeated reload and equipment replacement preserve all three stats and all eight metadata fields");
                     }
                 for (int i = 0; i < sources.Count; i++)
                 {
@@ -805,7 +752,7 @@ namespace Emberfall.Editor
                     int gold = restored.Profile.gold;
                     Check(restored.Upgrade(item.id) && SameEquipment(item, next) && item.attack >= before.attack && item.defense >= before.defense && item.health >= before.health && BoundedEquipment(item) && restored.Profile.gold == gold - cost, name + ": migrated anchors support continued paid upgrades without decreases or overflow");
                 }
-                report.passedStages.Add(name + ": missing base fields, exact anchored legacy values, immutable preview and repeated reversible JSON transfers");
+                report.passedStages.Add(name + ": missing base fields, exact anchored legacy values, immutable preview and repeated automatic-inheritance JSON replacements");
             }
         }
 
@@ -832,7 +779,7 @@ namespace Emberfall.Editor
 
         private static void UpgradeTo(ProgressionService service, ItemData item, int rank)
         {
-            while (item.upgradeLevel < rank) Check(service.Upgrade(item.id), "fixture purchases an actual upgrade: " + item.slot + " +" + rank);
+            while (service.SlotUpgradeRank(item.slot) < rank) Check(service.Upgrade(item.id), "fixture purchases an actual upgrade: " + item.slot + " +" + rank);
         }
 
         private static bool SameEquipment(ItemData a, ItemData b)

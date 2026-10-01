@@ -9,13 +9,14 @@ namespace Emberfall
         private static readonly List<SummonedCompanion> active = new List<SummonedCompanion>();
         public PlayerController Owner { get; private set; }
         public Kind Form { get; private set; }
+        public bool IsStarter { get; private set; }
         public float Health { get; private set; }
         public float MaxHealth { get; private set; }
         public float RemainingLifetime { get; private set; }
         public bool IsAlive { get { return Health > 0 && Owner != null && !Owner.IsDead && Owner.gameObject.activeInHierarchy && gameObject.activeInHierarchy && session != null && session.HasStarted && session.Player == Owner && Owner.CombatEpoch == epoch; } }
         private GameSession session;
         private int epoch, rank;
-        private float damage, cooldown, attackPose;
+        private float damage, cooldown, attackPose, baseMaxHealth;
         private CombatModel model;
         private EnemyController target;
         private Transform healthBar;
@@ -34,7 +35,8 @@ namespace Emberfall
 
         public static SummonedCompanion Summon(PlayerController owner, GameSession game, Kind form, int rank, Vector3 at, float strength)
         {
-            int cap = form == Kind.Treant ? 1 : 4;
+            if (form == Kind.Wolf && rank > 0) DismissStarters(owner);
+            int cap = form == Kind.Treant ? 1 : owner.HasMechanic(EquipmentMechanic.TwinSummonResonance) ? 2 : 4;
             while (Count(owner, form == Kind.Treant) >= cap)
             {
                 var oldest = active.Find(pet => pet != null && pet.IsAlive && pet.Owner == owner && (pet.Form == Kind.Treant) == (form == Kind.Treant));
@@ -46,14 +48,47 @@ namespace Emberfall
             var companion = obj.AddComponent<SummonedCompanion>();
             companion.Owner = owner; companion.session = game; companion.Form = form;
             companion.rank = rank; companion.epoch = owner.CombatEpoch; companion.damage = strength;
-            companion.MaxHealth = game.Progression.GetStats().MaxHealth * (form == Kind.Treant ? 1.2f : .42f + rank * .08f);
+            companion.IsStarter = rank == 0;
+            companion.baseMaxHealth = game.Progression.GetStats().MaxHealth * (companion.IsStarter ? .25f : form == Kind.Treant ? 1.2f : .42f + rank * .08f);
+            companion.MaxHealth = companion.baseMaxHealth * (owner.HasMechanic(EquipmentMechanic.TwinSummonResonance) ? .85f : 1f);
             companion.Health = companion.MaxHealth;
-            companion.RemainingLifetime = form == Kind.Treant ? 10 + rank * 2 : 15 + rank * 3;
+            companion.RemainingLifetime = companion.IsStarter ? float.PositiveInfinity : form == Kind.Treant ? 10 + rank * 2 : 15 + rank * 3;
             companion.model = CombatModel.Companion(obj.transform, form);
             companion.BuildHealthBar();
             active.Add(companion);
             AdvancedSkillVfx.Rune(owner, obj.transform.position, form == Kind.Treant ? 2.6f : 1.3f, GameBalance.ClassColor(HeroClass.Summoner), .7f, rank);
             return companion;
+        }
+
+        public static bool HasStarter(PlayerController owner)
+        {
+            return active.Exists(pet => pet != null && pet.IsAlive && pet.Owner == owner && pet.IsStarter);
+        }
+
+        public static SummonedCompanion SummonStarter(PlayerController owner, GameSession game, float strength)
+        {
+            if (owner == null || owner.IsDead || owner.HeroClass != HeroClass.Summoner || game.Progression.Profile.skillRanks[2] > 0 || HasStarter(owner)) return null;
+            SummonedCompanion companion = Summon(owner, game, Kind.Wolf, 0,
+                owner.transform.position - owner.transform.forward * 1.2f, strength * .45f);
+            companion.gameObject.name = "幼年灵狼 · 基础伙伴";
+            return companion;
+        }
+
+        public static void DismissStarters(PlayerController owner)
+        {
+            foreach (SummonedCompanion pet in active.ToArray())
+                if (pet != null && pet.Owner == owner && pet.IsStarter) pet.Dismiss();
+        }
+
+        public static void EnforceCapacity(PlayerController owner)
+        {
+            int cap = owner.HasMechanic(EquipmentMechanic.TwinSummonResonance) ? 2 : 4;
+            while (Count(owner) > cap)
+            {
+                SummonedCompanion oldest = active.Find(pet => pet != null && pet.Owner == owner && pet.IsAlive && pet.Form != Kind.Treant);
+                if (oldest == null) break;
+                oldest.Dismiss();
+            }
         }
 
         public static void HealAll(PlayerController owner, float fraction)
@@ -98,6 +133,7 @@ namespace Emberfall
         {
             if (!IsAlive || amount <= 0) return;
             Health = Mathf.Max(0, Health - amount);
+            if (Health <= 0 && IsStarter && Owner != null) Owner.OnStarterCompanionDefeated();
             model.Recoil(-transform.forward, .7f);
             HitFeedback.Spawn(transform.position + Vector3.up, -transform.forward, .6f);
             if (Health <= 0) Dismiss();
@@ -117,6 +153,8 @@ namespace Emberfall
 
         private EnemyController AcquireTarget()
         {
+            EnemyController focused = Owner.FocusTarget;
+            if (focused != null) return focused;
             EnemyController chosen = null;
             float nearest = 14f;
             foreach (var enemy in session.Enemies)
@@ -133,6 +171,13 @@ namespace Emberfall
             if (Owner == null || Owner.IsDead || session == null || session.Player != Owner || !session.HasStarted || Owner.CombatEpoch != epoch) { Dismiss(); return; }
             if (session.InputBlocked) return;
             float dt = Time.deltaTime;
+            if (dt <= 0) return;
+            float healthMaximum = baseMaxHealth * (Owner.HasMechanic(EquipmentMechanic.TwinSummonResonance) ? .85f : 1f);
+            if (Mathf.Abs(healthMaximum - MaxHealth) > .01f)
+            {
+                Health = healthMaximum * Mathf.Clamp01(Health / Mathf.Max(1f, MaxHealth));
+                MaxHealth = healthMaximum;
+            }
             RemainingLifetime -= dt;
             if (RemainingLifetime <= 0) { Dismiss(); return; }
             cooldown -= dt;
@@ -165,9 +210,10 @@ namespace Emberfall
             if (target != null && delta.magnitude <= attackRange && cooldown <= 0 && CanReachTarget(target.transform.position))
             {
                 attackPose = 1;
+                float attackDamage = damage * (Owner.HasMechanic(EquipmentMechanic.TwinSummonResonance) ? 1.35f : 1f);
                 cooldown = Form == Kind.Treant ? 2.2f : Form == Kind.Spirit ? 1.2f : .85f;
                 if (Form == Kind.Spirit)
-                    CombatProjectile.Friendly(Owner, session, transform.position, delta.normalized, damage * .72f, GameBalance.ClassColor(HeroClass.Summoner), tracking: target);
+                    CombatProjectile.Friendly(Owner, session, transform.position, delta.normalized, attackDamage * .72f, GameBalance.ClassColor(HeroClass.Summoner), tracking: target);
                 else if (Form == Kind.Treant)
                 {
                     CombatFx.Ring(transform.position, 3.3f * GameBalance.SkillRangeMultiplier(rank), new Color(.48f, 1f, .63f), .4f, .2f);
@@ -175,15 +221,16 @@ namespace Emberfall
                         if (enemy != null && !enemy.IsDead && CombatFx.Flat(enemy.transform.position - transform.position).magnitude < 3.3f * GameBalance.SkillRangeMultiplier(rank)
                             && WorldTraversal.HasGroundPath(transform.position, enemy.transform.position, .12f))
                         {
-                            enemy.TakeDamage(damage * 1.45f, enemy.transform.position - transform.position, .55f, .3f);
+                            enemy.TakeDamage(attackDamage * 1.45f, enemy.transform.position - transform.position, .55f, .3f);
                             if (!enemy.IsDead) enemy.StatusEffects.Knockdown(.45f + rank * .12f);
                         }
                 }
                 else
                 {
                     CombatFx.Slash(transform.position, delta.normalized, 1.25f, new Color(.55f, 1f, .87f));
-                    target.TakeDamage(damage * .65f, delta.normalized, .13f, .05f);
+                    target.TakeDamage(attackDamage * .65f, delta.normalized, .13f, .05f);
                 }
+                Owner.OnCompanionAttack(target, transform.position, damage);
             }
         }
 

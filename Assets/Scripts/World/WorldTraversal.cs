@@ -64,6 +64,31 @@ namespace Emberfall
         {
             return IsWalkable(from, radius) && IsWalkable(to, radius) && ClearSegment(from, to, radius, true);
         }
+        // Water may be crossed, but solids and arena edges stop the entire path.
+        // Keep the furthest safe landing before that stop rather than reject a
+        // useful shorter blink just because the requested endpoint is unsafe.
+        public static bool TryResolveBlink(Vector3 from, Vector3 direction, float distance, float radius, float bound, out Vector3 landing)
+        {
+            landing = CombatFx.Flat(from);
+            direction = CombatFx.Flat(direction);
+            if (!Finite(landing.x) || !Finite(landing.z) || !Finite(direction.x) || !Finite(direction.z) ||
+                !Finite(distance) || !Finite(radius) || !Finite(bound) || distance <= 0 || radius <= 0 || bound <= radius ||
+                direction.sqrMagnitude < .0001f || !IsWalkable(landing, radius)) return false;
+            Vector3 origin = landing;
+            direction.Normalize();
+            float safeDistance = PlayerUpgradeRules.FindSafeBlinkDistance(distance,
+                travelled =>
+                {
+                    Vector3 point = origin + direction * travelled;
+                    return point.sqrMagnitude <= bound * bound && ClearOfSolids(point, radius);
+                },
+                travelled => IsWalkable(origin + direction * travelled, radius));
+            landing = origin + direction * safeDistance;
+            return safeDistance >= .35f;
+        }
+
+        private static bool Finite(float value) { return !float.IsNaN(value) && !float.IsInfinity(value); }
+
         private static bool ClearSegment(Vector3 from, Vector3 to, float radius, bool ignoreWater)
         {
             int samples = Mathf.Max(1, Mathf.CeilToInt(CombatFx.Flat(to - from).magnitude / .18f));

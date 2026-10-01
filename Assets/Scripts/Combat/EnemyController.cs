@@ -14,9 +14,12 @@ namespace Emberfall
         public bool IsDead { get { return Health <= 0; } }
         public EnemyKind Kind { get; private set; }
         public bool IsBoss { get; private set; }
+        public bool IsEnraged { get { return IsBoss && BossAttackPolicy.IsEnraged(Health, MaxHealth); } }
+        public bool IsPreparingAttack { get { return preparing; } }
+        public float AttackWindupRemaining { get { return preparing ? windup : 0; } }
         public float NavigationRadius { get { return IsBoss ? .9f : Kind == EnemyKind.Guardian ? .6f : .45f; } }
         public string DisplayName { get; private set; }
-        public string TraitDescription { get { return IsBoss ? "首领：扇形弹幕、范围震地与直线冲锋轮换；抵抗控制。" : Kind == EnemyKind.Slime ? "跳扑近身，黏液命中使你暂时减速。" : Kind == EnemyKind.Goblin ? "绕侧接近，近身后快速出刀并侧移。" : Kind == EnemyKind.Wisp ? "保持远距离游走，发射双重灵弹。" : "正面石甲减伤35%；重击蓄力时护甲失效。"; } }
+        public string TraitDescription { get { return IsBoss ? "首领：近身震地、中距冲锋、远距扇形弹幕；半血后两段连招，每段独立预警。" : Kind == EnemyKind.Slime ? "跳扑近身，黏液命中使你暂时减速。" : Kind == EnemyKind.Goblin ? "绕侧接近，近身后快速出刀并侧移。" : Kind == EnemyKind.Wisp ? "保持远距离游走，发射双重灵弹。" : "正面石甲减伤35%；重击蓄力时护甲失效。"; } }
 
         private enum AttackType { Melee, Bolt, Slam, Charge, Fan }
         private GameSession session;
@@ -24,7 +27,14 @@ namespace Emberfall
         private float speed, damage, attackCooldown, windup, stunTime, hurtTime, attackAnimation, patrolPhase;
         private int attackNumber;
         private Vector3 origin, targetPoint, knockVelocity, chargeDirection;
-        private float chargeTime;
+        private float chargeTime, totalWindup, comboDelay;
+        private int comboRemaining;
+        private Vector3 attackOrigin, attackForward, chargeEnd;
+        private EnemyAttackTelegraph telegraph;
+        private bool dodgeRegistered, dodgePending;
+        private Vector3 dodgeOrigin;
+        private PlayerController dodgePlayer;
+        private int dodgeEpoch;
         private float flinchUntil, nextImpactTime;
         private SummonedCompanion companionTarget;
         private float sidestepTime;
@@ -90,7 +100,7 @@ namespace Emberfall
             return obj.transform;
         }
 
-        public void TakeDamage(float amount, Vector3 direction, float knockback = 0f, float stun = 0f, bool impact = true)
+        public void TakeDamage(float amount, Vector3 direction, float knockback = 0f, float stun = 0f, bool impact = true, bool critical = false)
         {
             if (session == null || IsDead || amount <= 0) return;
             amount *= StatusEffects == null ? 1 : StatusEffects.DamageMultiplier;
@@ -100,21 +110,21 @@ namespace Emberfall
             aggro = true;
             hurtTime = .15f;
             float resistance = IsBoss ? .24f : 1f;
-            if (impact && Time.time >= nextImpactTime)
+            if (impact && (critical || Time.time >= nextImpactTime))
             {
                 nextImpactTime = Time.time + .10f;
                 Vector3 push = CombatFx.Flat(direction).normalized;
                 if (push.sqrMagnitude < .01f) push = -transform.forward;
-                float strength = Mathf.Clamp(amount / Mathf.Max(1f, session.Progression.GetStats().Damage), .55f, 2f);
+                float strength = Mathf.Clamp(amount / Mathf.Max(1f, session.Progression.GetStats().Damage), critical ? 1.6f : .55f, critical ? 2.5f : 2f);
                 model.Recoil(push, strength * (IsBoss ? .5f : 1f));
                 flinchUntil = Time.time + (IsBoss ? .018f : Mathf.Lerp(.035f, .065f, strength / 2f));
-                HitFeedback.Spawn(transform.position + Vector3.up * (IsBoss ? 2f : Kind == EnemyKind.Slime ? .65f : 1.25f), push, strength);
-                GameAudio.Play(SoundCue.Hit);
+                HitFeedback.Spawn(transform.position + Vector3.up * (IsBoss ? 2f : Kind == EnemyKind.Slime ? .65f : 1.25f), push, strength, critical);
+                GameAudio.Play(critical ? SoundCue.CriticalHit : SoundCue.Hit);
             }
             knockVelocity += CombatFx.Flat(direction).normalized * knockback * 7f * resistance;
             stunTime = Mathf.Max(stunTime,stun*resistance);
-            if (stun >= .45f && !IsBoss) CancelAttack();
-            session.SpawnFloatingText(transform.position+Vector3.up*(IsBoss?3.6f:1.9f),Mathf.CeilToInt(amount).ToString(),new Color(1f,.86f,.48f));
+            if (stun >= .45f && !IsBoss) CancelAttack(true);
+            session.SpawnCombatDamage(transform.position+Vector3.up*(IsBoss?3.6f:1.9f),Mathf.CeilToInt(amount).ToString(),critical);
             if (Health <= 0 && !deathReported)
             {
                 deathReported = true;
@@ -129,7 +139,7 @@ namespace Emberfall
             if(IsDead || duration<=0) return;
             aggro=true;
             stunTime=Mathf.Max(stunTime,duration*(IsBoss?.24f:1f));
-            if(duration>=.45f && !IsBoss) CancelAttack();
+            if(duration>=.45f && !IsBoss) CancelAttack(true);
         }
 
         internal void Provoke() { if (!IsDead) aggro = true; }
@@ -151,9 +161,13 @@ namespace Emberfall
             attackAnimation = Mathf.Max(0,attackAnimation-dt*3f);
             attackCooldown = Mathf.Max(0,attackCooldown-dt);
             stunTime = Mathf.Max(0,stunTime-dt);
-            transform.position = WorldTraversal.Move(transform.position, knockVelocity * dt, NavigationRadius);
+            // A charging boss follows the warned straight corridor instead of sliding sideways.
+            if (chargeTime <= 0) transform.position = WorldTraversal.Move(transform.position, knockVelocity * dt, NavigationRadius);
             knockVelocity = Vector3.Lerp(knockVelocity,Vector3.zero,Mathf.Min(1,dt*12f));
-            companionTarget = aggro || Tier != ThreatTier.Normal ? SummonedCompanion.ThreatTarget(this, session.Player.transform.position) : null;
+            if (!preparing && chargeTime <= 0)
+                companionTarget = aggro || Tier != ThreatTier.Normal ? SummonedCompanion.ThreatTarget(this, session.Player.transform.position) : null;
+            if (companionTarget != null && !companionTarget.IsAlive) companionTarget = null;
+            if (preparing && CombatFx.Flat(transform.position - attackOrigin).sqrMagnitude > .0001f) CreateWarning();
             Vector3 combatTargetPosition = companionTarget != null ? companionTarget.transform.position : session.Player.transform.position;
             Vector3 delta = CombatFx.Flat(combatTargetPosition-transform.position);
             float distance = delta.magnitude;
@@ -178,27 +192,45 @@ namespace Emberfall
             }
             if (chargeTime > 0)
             {
-                chargeTime -= dt;
                 Vector3 previous = transform.position;
-                transform.position = WorldTraversal.Move(previous, chargeDirection * 11f * dt, NavigationRadius);
-                if (!chargeHit && CombatFx.SegmentDistance(combatTargetPosition,previous,transform.position) < 1.3f && WorldTraversal.HasGroundPath(transform.position, combatTargetPosition, .12f))
+                Vector3 next = Vector3.MoveTowards(previous, chargeEnd, BossAttackPolicy.ChargeSpeed * dt);
+                // Never use sliding movement here: the visible corridor is the entire attack path.
+                if (WorldTraversal.HasGroundPath(previous, next, NavigationRadius)) transform.position = next;
+                else chargeEnd = previous;
+                chargeTime = CombatFx.Flat(chargeEnd - transform.position).magnitude / BossAttackPolicy.ChargeSpeed;
+                if (!chargeHit && CombatFx.SegmentDistance(combatTargetPosition,previous,transform.position) < BossAttackPolicy.ChargeHalfWidth && WorldTraversal.HasGroundPath(transform.position, combatTargetPosition, .12f))
                 {
                     DamageTarget(damage*1.35f);
                     chargeHit = true;
+                    dodgePending = false;
                 }
+                ConfirmChargeDodge(previous, transform.position);
                 model.Animate(1,.6f,hurtTime>0);
+                if (chargeTime <= .001f)
+                {
+                    chargeTime = 0;
+                    dodgePending = false;
+                    FinishAttack();
+                }
             }
             else if (preparing)
             {
                 windup -= dt;
+                if (telegraph != null) telegraph.SetProgress(1f - windup / Mathf.Max(.01f, totalWindup));
                 model.Animate(0,.95f,hurtTime>0);
                 if (windup <= 0) ResolveAttack();
+            }
+            else if (comboDelay > 0)
+            {
+                comboDelay = Mathf.Max(0, comboDelay - dt);
+                model.Animate(0, attackAnimation, hurtTime > 0);
+                if (comboDelay <= 0) BeginComboAttack(distance, combatTargetPosition);
             }
             else if (aggro)
             {
                 if (delta.sqrMagnitude>.01f) transform.rotation=Quaternion.Slerp(transform.rotation,Quaternion.LookRotation(delta),dt*9f);
-                float range = Kind==EnemyKind.Wisp ? 7.5f : IsBoss ? 3.5f : Kind==EnemyKind.Guardian ? 2.5f : 1.8f;
-                bool attackPath = Kind == EnemyKind.Wisp ? WorldTraversal.HasLineOfSight(transform.position, combatTargetPosition) : WorldTraversal.HasGroundPath(transform.position, combatTargetPosition, .12f);
+                float range = IsBoss ? BossAttackPolicy.EngageRange : Kind==EnemyKind.Wisp ? 7.5f : Kind==EnemyKind.Guardian ? 2.5f : 1.8f;
+                bool attackPath = IsBoss ? CanUseBossAttack(BossAttackPolicy.Select(distance), combatTargetPosition) : Kind == EnemyKind.Wisp ? WorldTraversal.HasLineOfSight(transform.position, combatTargetPosition) : WorldTraversal.HasGroundPath(transform.position, combatTargetPosition, .12f);
                 if (distance <= range && attackCooldown <= 0 && attackPath) BeginAttack();
                 else if (Kind==EnemyKind.Wisp && distance<4.5f && attackPath)
                 {
@@ -249,80 +281,149 @@ namespace Emberfall
             return aggro ? new Color(1f, .46f, .27f) : new Color(.4f, .87f, .6f);
         }
 
+        private static AttackType ToAttack(BossAttackPolicy.Move move)
+        {
+            return move == BossAttackPolicy.Move.Slam ? AttackType.Slam : move == BossAttackPolicy.Move.Charge ? AttackType.Charge : AttackType.Fan;
+        }
+
+        private static BossAttackPolicy.Move ToMove(AttackType type)
+        {
+            return type == AttackType.Slam ? BossAttackPolicy.Move.Slam : type == AttackType.Charge ? BossAttackPolicy.Move.Charge : BossAttackPolicy.Move.Fan;
+        }
+
+        private bool CanUseBossAttack(BossAttackPolicy.Move move, Vector3 target)
+        {
+            if (move == BossAttackPolicy.Move.Fan) return WorldTraversal.HasLineOfSight(transform.position, target);
+            if (!WorldTraversal.HasGroundPath(transform.position, target, .12f)) return false;
+            if (move != BossAttackPolicy.Move.Charge) return true;
+            Vector3 forward = CombatFx.Flat(target - transform.position).normalized;
+            Vector3 end = ClipPath(transform.position, target + forward, true);
+            return CombatFx.SegmentDistance(target, transform.position, end) < BossAttackPolicy.ChargeHalfWidth;
+        }
+
         private void BeginAttack()
         {
-            targetPoint=companionTarget != null ? companionTarget.transform.position : session.Player.transform.position;
+            Vector3 target = companionTarget != null ? companionTarget.transform.position : session.Player.transform.position;
+            comboRemaining = IsEnraged ? 1 : 0;
+            AttackType next = IsBoss ? ToAttack(BossAttackPolicy.Select(CombatFx.Flat(target - transform.position).magnitude)) : Kind == EnemyKind.Wisp ? AttackType.Bolt : Kind == EnemyKind.Guardian ? AttackType.Slam : AttackType.Melee;
+            PrepareAttack(next, false, target);
+        }
+
+        private void BeginComboAttack(float distance, Vector3 target)
+        {
+            BossAttackPolicy.Move next = BossAttackPolicy.FollowUp(ToMove(attackType), distance);
+            comboRemaining = 0;
+            if (!aggro || !BossAttackPolicy.CanEngage(distance) || !CanUseBossAttack(next, target))
+            {
+                attackCooldown = BossAttackPolicy.Recovery(true);
+                return;
+            }
+            PrepareAttack(ToAttack(next), true, target);
+        }
+
+        private void PrepareAttack(AttackType type, bool followUp, Vector3 target)
+        {
             attackNumber++;
-            preparing=true;
-            Color warningColor=new Color(1f,.24f,.29f,.9f);
-            if(IsBoss)
+            attackType = type;
+            preparing = true;
+            dodgeRegistered = dodgePending = false;
+            chargeHit = false;
+            dodgePlayer = null;
+            targetPoint = type == AttackType.Slam ? transform.position : target;
+            windup = IsBoss ? BossAttackPolicy.Windup(ToMove(type), followUp) : Kind == EnemyKind.Wisp ? .72f : Kind == EnemyKind.Guardian ? .85f : Kind == EnemyKind.Slime ? .6f : .48f;
+            totalWindup = windup;
+            CreateWarning();
+        }
+
+        private float ImpactRadius { get { return attackType == AttackType.Slam ? (IsBoss ? BossAttackPolicy.SlamRadius : 3f) : 1.55f; } }
+
+        private void CreateWarning()
+        {
+            ClearWarning();
+            attackOrigin = transform.position;
+            attackForward = CombatFx.Flat(targetPoint - attackOrigin).normalized;
+            if (attackForward.sqrMagnitude < .01f) attackForward = transform.forward;
+            if (attackType == AttackType.Charge)
             {
-                int pattern=attackNumber%3;
-                attackType=pattern==0?AttackType.Fan:pattern==1?AttackType.Slam:AttackType.Charge;
-                windup=attackType==AttackType.Charge?1.05f:.95f;
-                float radius=attackType==AttackType.Slam?3.7f:attackType==AttackType.Fan?1.2f:1.5f;
-                if(attackType==AttackType.Slam) targetPoint=transform.position;
-                warning=CombatFx.Ring(targetPoint,radius,warningColor,windup+.1f,.14f,false);
-                if(attackType==AttackType.Charge)
+                chargeDirection = attackForward;
+                float length = Mathf.Clamp(CombatFx.Flat(targetPoint - attackOrigin).magnitude + 1f, 2.2f, 9.5f);
+                chargeEnd = ClipPath(attackOrigin, attackOrigin + chargeDirection * length, true);
+                telegraph = EnemyAttackTelegraph.Charge(attackOrigin, chargeEnd, BossAttackPolicy.ChargeHalfWidth);
+            }
+            else if (attackType == AttackType.Fan || attackType == AttackType.Bolt)
+            {
+                int count = attackType == AttackType.Fan ? 5 : 2;
+                var directions = new Vector3[count];
+                var lengths = new float[count];
+                Vector3 muzzle = attackOrigin + attackForward * (attackType == AttackType.Fan ? 1f : .7f);
+                float range = attackType == AttackType.Fan ? 21f : 22.5f;
+                for (int i = 0; i < count; i++)
                 {
-                    chargeDirection=CombatFx.Flat(targetPoint-transform.position).normalized;
-                    CombatFx.Slash(transform.position,chargeDirection,3.7f,warningColor);
+                    float angle = attackType == AttackType.Fan ? (i - 2) * 17f : i == 0 ? -7f : 7f;
+                    directions[i] = Quaternion.Euler(0, angle, 0) * attackForward;
+                    lengths[i] = WorldTraversal.HasLineOfSight(attackOrigin, muzzle) ? CombatFx.Flat(ClipPath(muzzle, muzzle + directions[i] * range, false) - muzzle).magnitude : 0;
                 }
+                telegraph = EnemyAttackTelegraph.Fan(muzzle, directions, lengths, .78f);
             }
-            else if(Kind==EnemyKind.Wisp)
+            else telegraph = EnemyAttackTelegraph.Circle(targetPoint, ImpactRadius);
+            warning = telegraph.gameObject;
+            telegraph.SetProgress(1f - windup / Mathf.Max(.01f, totalWindup));
+        }
+
+        private Vector3 ClipPath(Vector3 start, Vector3 end, bool ground)
+        {
+            bool clear = ground ? WorldTraversal.HasGroundPath(start, end, NavigationRadius) : WorldTraversal.HasLineOfSight(start, end);
+            if (clear) return end;
+            float low = 0, high = 1;
+            for (int i = 0; i < 12; i++)
             {
-                attackType=AttackType.Bolt;
-                windup=.72f;
-                warning=CombatFx.Ring(transform.position,1.0f,new Color(.9f,.35f,1f),windup+.1f,.09f,false);
+                float middle = (low + high) * .5f;
+                Vector3 point = Vector3.Lerp(start, end, middle);
+                if (ground ? WorldTraversal.HasGroundPath(start, point, NavigationRadius) : WorldTraversal.HasLineOfSight(start, point)) low = middle;
+                else high = middle;
             }
-            else
-            {
-                attackType=Kind==EnemyKind.Guardian?AttackType.Slam:AttackType.Melee;
-                windup=Kind==EnemyKind.Guardian?.85f:Kind==EnemyKind.Slime?.6f:.48f;
-                if(attackType==AttackType.Slam) targetPoint=transform.position;
-                warning=CombatFx.Ring(targetPoint,attackType==AttackType.Slam?2.65f:1.2f,warningColor,windup+.12f,.08f,false);
-            }
+            return Vector3.Lerp(start, end, low);
         }
 
         private void ResolveAttack()
         {
-            preparing=false;
-            if(warning!=null) Destroy(warning);
-            warning=null;
-            attackAnimation=1f;
-            attackCooldown=IsBoss?1.15f:Kind==EnemyKind.Wisp?1.55f:1.3f;
-            if(attackType==AttackType.Charge)
+            preparing = false;
+            ClearWarning();
+            attackAnimation = 1f;
+            if (attackType == AttackType.Charge)
             {
-                chargeHit=false;
-                chargeTime=Mathf.Clamp(Vector3.Distance(transform.position,targetPoint)/11f+.1f,.2f,.7f);
+                chargeHit = false;
+                chargeTime = CombatFx.Flat(chargeEnd - transform.position).magnitude / BossAttackPolicy.ChargeSpeed;
+                if (chargeTime <= .001f) { dodgePending = false; FinishAttack(); }
+                return;
             }
-            else if(attackType==AttackType.Bolt || attackType==AttackType.Fan)
+            if (attackType == AttackType.Bolt || attackType == AttackType.Fan)
             {
-                Vector3 forward=CombatFx.Flat(targetPoint-transform.position).normalized;
-                if(forward.sqrMagnitude<.1f) forward=transform.forward;
-                if(attackType==AttackType.Fan)
+                Vector3 muzzle = transform.position + attackForward * (attackType == AttackType.Fan ? 1f : .7f);
+                if (WorldTraversal.HasLineOfSight(transform.position, muzzle))
                 {
-                    if (!WorldTraversal.HasLineOfSight(transform.position, transform.position + forward)) return;
-                    for(int i=-2;i<=2;i++) CombatProjectile.Hostile(session,transform.position+forward,Quaternion.Euler(0,i*17,0)*forward,damage,7f);
-                }
-                else
-                {
-                    if (!WorldTraversal.HasLineOfSight(transform.position, transform.position + forward * .7f)) return;
-                    CombatProjectile.Hostile(session,transform.position+forward*.7f,Quaternion.Euler(0,-7,0)*forward,damage*.75f,7.5f);
-                    CombatProjectile.Hostile(session,transform.position+forward*.7f,Quaternion.Euler(0,7,0)*forward,damage*.75f,7.5f);
+                    if (attackType == AttackType.Fan)
+                    {
+                        for (int i = -2; i <= 2; i++) CombatProjectile.Hostile(session, muzzle, Quaternion.Euler(0, i * 17, 0) * attackForward, damage, 7f, sourceName: DisplayName);
+                    }
+                    else
+                    {
+                        CombatProjectile.Hostile(session, muzzle, Quaternion.Euler(0, -7, 0) * attackForward, damage * .75f, 7.5f, sourceName: DisplayName);
+                        CombatProjectile.Hostile(session, muzzle, Quaternion.Euler(0, 7, 0) * attackForward, damage * .75f, 7.5f, sourceName: DisplayName);
+                    }
                 }
             }
             else
             {
-                float radius=attackType==AttackType.Slam?(IsBoss?3.7f:2.65f):1.2f;
-                if(attackType==AttackType.Melee && Kind==EnemyKind.Slime)
+                if (attackType == AttackType.Melee && Kind == EnemyKind.Slime)
                     transform.position = WorldTraversal.Move(transform.position, Vector3.ClampMagnitude(CombatFx.Flat(targetPoint - transform.position), 1.25f), NavigationRadius);
-                CombatFx.Ring(targetPoint,radius,new Color(1f,.45f,.25f),.32f,.15f);
-                Vector3 victim = companionTarget != null ? companionTarget.transform.position : session.Player.transform.position;
-                if(CombatFx.Flat(victim-targetPoint).magnitude<radius+.35f && WorldTraversal.HasGroundPath(transform.position, victim, .12f))
+                CombatFx.Ring(targetPoint, ImpactRadius, new Color(1f,.45f,.25f), .32f, .15f);
+                ConfirmImpactDodge();
+                Vector3 victim = companionTarget != null && companionTarget.IsAlive ? companionTarget.transform.position : session.Player.transform.position;
+                if (InsideImpact(victim))
                 {
                     float previousHealth = session.Player.Health;
-                    DamageTarget(damage*(attackType==AttackType.Slam?1.4f:1f));
+                    DamageTarget(damage * (attackType == AttackType.Slam ? 1.4f : 1f));
                     if (Kind == EnemyKind.Slime && companionTarget == null && session.Player.Health < previousHealth) session.Player.ApplySlow(1.8f, .35f);
                 }
                 if (Kind == EnemyKind.Goblin)
@@ -331,6 +432,73 @@ namespace Emberfall
                     sidestepDirection = Vector3.Cross(Vector3.up, transform.forward) * (attackNumber % 2 == 0 ? 1f : -1f);
                 }
             }
+            dodgePending = false;
+            FinishAttack();
+        }
+
+        private void FinishAttack()
+        {
+            if (IsBoss && comboRemaining > 0) { comboDelay = BossAttackPolicy.ComboGap; attackCooldown = 0; }
+            else attackCooldown = IsBoss ? BossAttackPolicy.Recovery(IsEnraged) : Kind == EnemyKind.Wisp ? 1.55f : 1.3f;
+        }
+
+        private bool InsideImpact(Vector3 point)
+        {
+            return CombatFx.Flat(point - targetPoint).magnitude < ImpactRadius && WorldTraversal.HasGroundPath(transform.position, point, .12f);
+        }
+
+        /// <summary>Register only a successful blink out of an imminent actual hit. Resolution confirms the reward.</summary>
+        public bool TryRegisterPerfectDodge(Vector3 origin, Vector3 destination, float timingWindow = .22f)
+        {
+            if (session == null || session.Player == null || session.Player.IsDead || IsDead || !enabled || !gameObject.activeInHierarchy || !session.HasStarted || session.Paused || session.IsDead || dodgeRegistered || stunTime > 0 || Time.time < flinchUntil || timingWindow <= 0 || float.IsNaN(timingWindow) || float.IsInfinity(timingWindow)) return false;
+            if (companionTarget != null && companionTarget.IsAlive) return false;
+            if (!FinitePoint(origin) || !FinitePoint(destination) || CombatFx.Flat(destination - origin).sqrMagnitude < .01f) return false;
+            timingWindow = Mathf.Min(.3f, timingWindow);
+            if (attackType == AttackType.Charge)
+            {
+                if ((!preparing && chargeTime <= 0) || chargeHit) return false;
+                if (CombatFx.SegmentDistance(origin, transform.position, chargeEnd) >= BossAttackPolicy.ChargeHalfWidth || CombatFx.SegmentDistance(destination, transform.position, chargeEnd) < BossAttackPolicy.ChargeHalfWidth + .05f) return false;
+                Vector3 relative = CombatFx.Flat(origin - transform.position);
+                float along = Vector3.Dot(relative, chargeDirection);
+                float lateral = Vector3.Cross(relative, chargeDirection).magnitude;
+                float untilContact = BossAttackPolicy.ChargeContactDelay(along, lateral, preparing ? windup : 0);
+                if (!BossAttackPolicy.IsPerfectDodgeTiming(untilContact, timingWindow) || !WorldTraversal.HasGroundPath(transform.position, origin, .12f)) return false;
+            }
+            else
+            {
+                if (!preparing || !BossAttackPolicy.IsPerfectDodgeTiming(windup, timingWindow) || (attackType != AttackType.Melee && attackType != AttackType.Slam) || !InsideImpact(origin) || InsideImpact(destination)) return false;
+            }
+            dodgeRegistered = dodgePending = true;
+            dodgeOrigin = origin;
+            dodgePlayer = session.Player;
+            dodgeEpoch = dodgePlayer.CombatEpoch;
+            return true;
+        }
+
+        private static bool FinitePoint(Vector3 point)
+        {
+            return !float.IsNaN(point.x) && !float.IsInfinity(point.x) && !float.IsNaN(point.z) && !float.IsInfinity(point.z);
+        }
+
+        private bool PendingDodgeIsValid()
+        {
+            return dodgePending && dodgePlayer != null && session.Player == dodgePlayer && !dodgePlayer.IsDead && dodgePlayer.CombatEpoch == dodgeEpoch && (companionTarget == null || !companionTarget.IsAlive);
+        }
+
+        private void ConfirmImpactDodge()
+        {
+            if (PendingDodgeIsValid() && InsideImpact(dodgeOrigin) && !InsideImpact(dodgePlayer.transform.position))
+                dodgePlayer.NotifyPerfectDodge();
+            dodgePending = false;
+        }
+
+        private void ConfirmChargeDodge(Vector3 previous, Vector3 current)
+        {
+            if (!PendingDodgeIsValid() || chargeHit) return;
+            if (CombatFx.SegmentDistance(dodgeOrigin, previous, current) >= BossAttackPolicy.ChargeHalfWidth || !WorldTraversal.HasGroundPath(previous, dodgeOrigin, .12f)) return;
+            if (CombatFx.SegmentDistance(dodgePlayer.transform.position, previous, chargeEnd) >= BossAttackPolicy.ChargeHalfWidth)
+                dodgePlayer.NotifyPerfectDodge();
+            dodgePending = false;
         }
 
         private void DamageTarget(float amount)
@@ -338,16 +506,27 @@ namespace Emberfall
             Vector3 victim = companionTarget != null && companionTarget.IsAlive ? companionTarget.transform.position : session.Player.transform.position;
             if (!WorldTraversal.HasGroundPath(transform.position, victim, .12f)) return;
             if (companionTarget != null && companionTarget.IsAlive) companionTarget.TakeDamage(amount);
-            else session.Player.TakeDamage(amount);
+            else session.Player.TakeDamageFrom(amount, DisplayName);
         }
 
-        private void CancelAttack()
+        private void ClearWarning()
         {
-            preparing=false;
-            chargeTime=0;
-            attackCooldown=Mathf.Max(attackCooldown,.55f);
-            if(warning!=null) Destroy(warning);
-            warning=null;
+            if (warning != null) Destroy(warning);
+            warning = null;
+            telegraph = null;
+        }
+
+        private void CancelAttack(bool interrupted = false)
+        {
+            bool activeAttack = preparing || chargeTime > 0;
+            preparing = false;
+            chargeTime = comboDelay = 0;
+            comboRemaining = 0;
+            dodgePending = false;
+            dodgePlayer = null;
+            attackCooldown = Mathf.Max(attackCooldown,.55f);
+            ClearWarning();
+            if (interrupted && activeAttack && session != null && !IsDead) session.OnEnemyInterrupted(this);
         }
 
         private void ClampPosition()

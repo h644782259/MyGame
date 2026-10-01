@@ -118,7 +118,6 @@ namespace Emberfall.Editor
             private readonly float originalMaxHealth;
             private readonly Dictionary<string, object> originalFields = new Dictionary<string, object>();
             private readonly ItemData[] originalBag;
-            private readonly ItemData[] originalTransferSources;
             private readonly ItemData[] equipped = new ItemData[3];
             private readonly SavedFile[] files;
             public int Assertions { get; private set; }
@@ -139,10 +138,9 @@ namespace Emberfall.Editor
                 originalPlayerStats = Field(typeof(PlayerController), "stats").GetValue(game.Player);
                 originalHealth = game.Player.Health;
                 originalMaxHealth = game.Player.MaxHealth;
-                foreach (string name in new[] { "inventoryFilter", "inventorySort", "inventoryScroll", "selectedItem", "unequippedCount", "panel", "transferTargetId", "transferSourceId", "transferScroll", "hotbarPointerSlot", "hotbarPointerPage", "hotbarPointerSkill", "hotbarPointerConfiguring", "hotbarDragging", "hotbarPointerOrigin", "hotbarPointerControl", "hotbarReleaseFrame", "suppressHotbarMouse", "scale" })
+                foreach (string name in new[] { "inventoryFilter", "inventorySort", "inventoryScroll", "selectedItem", "unequippedCount", "panel", "hotbarPointerSlot", "hotbarPointerPage", "hotbarPointerSkill", "hotbarPointerConfiguring", "hotbarDragging", "hotbarPointerOrigin", "hotbarPointerControl", "hotbarReleaseFrame", "suppressHotbarMouse", "scale" })
                     originalFields[name] = Get(name);
                 originalBag = Bag.ToArray();
-                originalTransferSources = ((List<ItemData>)Get("transferSources")).ToArray();
                 for (int i = 0; i < equipped.Length; i++)
                 {
                     ItemData item = progression.Equipped((ItemSlot)i);
@@ -161,7 +159,7 @@ namespace Emberfall.Editor
                 ValidateUpgradeTags();
                 ValidateSalesAndScrolling();
                 ValidateUpgradeReordering();
-                ValidateUpgradeTransferUI();
+                ValidateSlotUpgradeUI();
                 ValidateGoldCapAndEmptyInventory();
                 ValidateHotbarMappingAndDragging();
             }
@@ -380,83 +378,96 @@ namespace Emberfall.Editor
 
             private void ValidateUpgradeReordering()
             {
-                ResetItems(Item("leader", ItemSlot.Weapon, 1, Rarity.Common, 21), Item("upgrade-me", ItemSlot.Weapon, 1, Rarity.Common, 20));
+                ResetItems(Item("leader", ItemSlot.Weapon, 1, Rarity.Common, 21), Item("upgrade-me", ItemSlot.Armor, 1, Rarity.Common, 0, 34));
                 Set("selectedItem", "upgrade-me");
                 Order("score order before enhancement", "leader", "upgrade-me");
                 Check(progression.Upgrade("upgrade-me"), "fixture enhancement succeeds through production economy");
                 Rebuild();
-                Order("score order updates after actual enhancement", "upgrade-me", "leader");
+                Order("score order updates using prospective slot enhancement", "upgrade-me", "leader");
                 Check(Resolve().id == "upgrade-me", "enhancement reordering preserves item selection");
+                Check(Resolve().upgradeLevel == 0 && progression.SlotUpgradeRank(ItemSlot.Armor) == 1, "upgrading a bag selection trains its slot without mutating the bag item");
             }
 
-            private void ValidateUpgradeTransferUI()
+            private void ValidateSlotUpgradeUI()
             {
-                ItemData worn = Item("transfer-worn", ItemSlot.Armor, 1, Rarity.Common, 0, 20, 100);
-                ItemData target = Item("transfer-target", ItemSlot.Armor, 1, Rarity.Rare, 0, 25, 200);
-                ItemData alternate = progression.PreviewUpgrade(Item("transfer-alternate", ItemSlot.Armor, 1, Rarity.Common, 0, 10, 80), 6);
-                ItemData wrongSlot = progression.PreviewUpgrade(Item("transfer-wrong-slot", ItemSlot.Weapon, 1, Rarity.Common, 30), 7);
-                ResetItems(worn, target, alternate, wrongSlot);
+                ItemData worn = Item("slot-worn", ItemSlot.Armor, 1, Rarity.Common, 0, 20, 100);
+                ItemData target = Item("slot-target", ItemSlot.Armor, 1, Rarity.Rare, 0, 25, 200);
+                ItemData weaker = Item("slot-weaker", ItemSlot.Armor, 1, Rarity.Common, 0, 10, 80);
+                ResetItems(worn, target, weaker);
                 Profile.armorId = worn.id;
                 Profile.inventory.RemoveAll(item => item.id == equipped[1].id);
-                for (int i = 0; i < 5; i++) Check(progression.Upgrade(worn.id), "prepare worn armor through real upgrade " + (i + 1));
+                for (int i = 0; i < 5; i++) Check(progression.Upgrade(worn.id), "prepare persistent armor slot through real upgrade " + (i + 1));
                 Set("inventoryFilter", 1);
                 Set("inventorySort", 0);
-                Rebuild();
                 Set("selectedItem", target.id);
+                Call(ui, "ReturnToInventory");
                 int gold = Profile.gold;
                 int itemCount = Profile.inventory.Count;
-                string wornBefore = JsonUtility.ToJson(worn);
                 string targetBefore = JsonUtility.ToJson(target);
-                Call(ui, "OpenUpgradeTransfer", target);
-                var sources = (List<ItemData>)Get("transferSources");
-                Check(Get("panel").ToString() == "UpgradeTransfer" && game.InputBlocked, "transfer panel pauses combat");
-                Check((string)Get("transferTargetId") == target.id && (string)Get("transferSourceId") == worn.id, "selected target is retained and currently equipped source takes priority");
-                Check(sources.Count == 2 && sources[0].id == worn.id && sources.Exists(item => item.id == alternate.id), "transfer candidates exclude target, other slots and unupgraded items");
-                Check(Profile.gold == gold && JsonUtility.ToJson(worn) == wornBefore && JsonUtility.ToJson(target) == targetBefore, "opening the preview changes neither equipment nor gold");
-                ItemData expectedSource = progression.PreviewUpgrade(worn, 0);
-                ItemData expectedTarget = progression.PreviewUpgrade(target, 5);
+                ItemData preview = (ItemData)Call(ui, "EquipmentPreview", target);
+                ItemData expected = progression.PreviewUpgrade(target, 5);
+                Check(progression.SlotUpgradeRank(ItemSlot.Armor) == 5 && preview.upgradeLevel == 5 &&
+                    preview.attack == expected.attack && preview.defense == expected.defense && preview.health == expected.health,
+                    "candidate detail uses its own attributes at the persistent slot rank");
+                Check(JsonUtility.ToJson(target) == targetBefore && Profile.gold == gold, "comparison preview does not change source equipment or gold");
+                Check(ProgressionService.EquipmentScore(target) < ProgressionService.EquipmentScore(worn) && (bool)Call(ui, "IsEquipmentUpgrade", target),
+                    "upgrade badge compares post-inheritance candidate even when its unenhanced score is lower");
+                Check(!(bool)Call(ui, "IsEquipmentUpgrade", weaker), "inferior baseline stays inferior after inheriting the same rank");
+                ItemData staleRank = progression.PreviewUpgrade(Item("stale-item-rank", ItemSlot.Armor, 1, Rarity.Common, 0, 14, 80), 9);
+                string staleBefore = JsonUtility.ToJson(staleRank);
+                Check(ProgressionService.EquipmentScore(staleRank) > ProgressionService.EquipmentScore(worn) &&
+                    !(bool)Call(ui, "IsEquipmentUpgrade", staleRank) && (int)Call(ui, "CompareInventoryItems", target, staleRank) < 0,
+                    "stale per-item rank cannot inflate upgrade badges or prospective score ordering");
+                Check(JsonUtility.ToJson(staleRank) == staleBefore, "badge and score sorting previews leave legacy candidate metadata untouched");
+                Check(!(bool)Call(ui, "IsEquipmentUpgrade", Item("equal-slot-baseline", ItemSlot.Armor, 1, Rarity.Legendary, 0, 20, 100)),
+                    "equal post-inheritance score never gains an upgrade badge from rarity alone");
+                Check(Mathf.Approximately((float)Call(ui, "EquipmentPreviewScore", target), ProgressionService.EquipmentScore(preview)),
+                    "score sorting and detail share the same prospective enhancement basis");
+                Order("same-slot candidates sort by prospective score", target.id, weaker.id);
+                Check(Get("panel").ToString() == "Inventory" && game.InputBlocked, "slot upgrades stay in the paused inventory without a transfer workflow");
+                Check(Array.IndexOf(Enum.GetNames(Field(typeof(GameUI), "panel").FieldType), "UpgradeTransfer") < 0 &&
+                    typeof(GameUI).GetMethod("OpenUpgradeTransfer", PrivateInstance) == null,
+                    "manual transfer panel and entry point are removed");
+
+                float healthBefore = game.Player.MaxHealth * .5f;
+                SetProperty(game.Player, "Health", healthBefore);
                 float maximumBefore = game.Player.MaxHealth;
-                float injuredHealth = maximumBefore - 1;
-                SetProperty(game.Player, "Health", injuredHealth);
-                Call(ui, "ConfirmUpgradeTransfer");
-                Check(worn.upgradeLevel == 0 && target.upgradeLevel == 5 && worn.health == expectedSource.health && target.health == expectedTarget.health, "confirmation applies both independent preview results");
-                Check(Profile.gold == gold && Profile.inventory.Count == itemCount && Profile.armorId == worn.id, "free transfer preserves both items and does not automatically equip target");
-                Check(Get("panel").ToString() == "Inventory" && (string)Get("selectedItem") == target.id, "successful transfer returns to inventory with target selected");
-                Check((int)Get("inventoryFilter") == 1 && (int)Get("inventorySort") == 0 && Bag.Exists(item => item.id == target.id), "transfer refreshes inventory while preserving filter and sort");
-                Check(game.Player.MaxHealth < maximumBefore && Mathf.Approximately(game.Player.MaxHealth, progression.GetStats().MaxHealth), "removing worn armor upgrades immediately lowers actual player maximum health");
-                Check(game.Player.Health <= injuredHealth && Mathf.Approximately(game.Player.Health, Mathf.Min(injuredHealth, game.Player.MaxHealth)), "injured player health only clamps down during transfer and never increases");
+                Check(progression.Equip(target.id), "equipping replacement succeeds without a separate inheritance action");
+                Rebuild();
+                Check(target.upgradeLevel == 5 && target.defense == preview.defense && target.health == preview.health && worn.upgradeLevel == 0,
+                    "equipped replacement matches the preview and outgoing gear returns to its own baseline");
+                Check(Profile.gold == gold && Profile.inventory.Count == itemCount && progression.SlotUpgradeRank(ItemSlot.Armor) == 5,
+                    "automatic inheritance is free and preserves the slot rank and item count");
+                Check((int)Get("inventoryFilter") == 1 && (int)Get("inventorySort") == 0 && Resolve().id == target.id,
+                    "automatic inheritance preserves filter, sort and selected equipment");
+                Check(game.Player.MaxHealth > maximumBefore && Mathf.Approximately(game.Player.MaxHealth, progression.GetStats().MaxHealth) && Mathf.Approximately(game.Player.Health, healthBefore),
+                    "stronger inherited equipment raises maximum health without healing");
+                SetProperty(game.Player, "Health", game.Player.MaxHealth - 1);
+                float injuredHealth = game.Player.Health;
+                Check(progression.Equip(worn.id), "previous equipment can be re-equipped with the persistent rank");
+                Check(worn.upgradeLevel == 5 && target.upgradeLevel == 0 && progression.SlotUpgradeRank(ItemSlot.Armor) == 5 &&
+                    Mathf.Approximately(game.Player.Health, Mathf.Min(injuredHealth, game.Player.MaxHealth)),
+                    "swapping back keeps enhancement and only clamps health downward");
+                Check(progression.Equip(target.id), "replacement can be equipped repeatedly");
+                string repeatBefore = JsonUtility.ToJson(target);
+                Check(progression.Equip(target.id) && JsonUtility.ToJson(target) == repeatBefore && Profile.gold == gold,
+                    "repeated equip cannot compound inherited attributes or charge gold");
 
-                // Reversing the transfer increases maximum health, but must still not heal the player.
-                float healthBeforeReturn = game.Player.MaxHealth * .5f;
-                SetProperty(game.Player, "Health", healthBeforeReturn);
-                float loweredMaximum = game.Player.MaxHealth;
-                Call(ui, "OpenUpgradeTransfer", worn);
-                Set("transferSourceId", target.id);
-                Call(ui, "ConfirmUpgradeTransfer");
-                Check(game.Player.MaxHealth > loweredMaximum && Mathf.Approximately(game.Player.Health, healthBeforeReturn), "returning upgrades to worn armor raises maximum health without healing");
-
-                ItemData swapSource = progression.PreviewUpgrade(Item("transfer-swap-source", ItemSlot.Weapon, 1, Rarity.Common, 20), 5);
-                ItemData swapTarget = progression.PreviewUpgrade(Item("transfer-swap-target", ItemSlot.Weapon, 1, Rarity.Common, 10), 2);
-                ResetItems(swapSource, swapTarget);
-                game.Player.RefreshStats(false);
+                int cost = progression.UpgradeCost(weaker);
+                Check(cost == progression.UpgradeCost(target), "upgrade price depends on slot rank rather than selected item rank");
+                Check(progression.Upgrade(weaker.id) && progression.SlotUpgradeRank(ItemSlot.Armor) == 6 && target.upgradeLevel == 6 && weaker.upgradeLevel == 0 && Profile.gold == gold - cost,
+                    "upgrading any selected bag item trains its slot and improves the worn item immediately");
+                Check(progression.SlotUpgradeRank(ItemSlot.Weapon) == 0 && progression.SlotUpgradeRank(ItemSlot.Relic) == 0,
+                    "slot training leaves other equipment slots unchanged");
+                Rebuild();
+                Call(ui, "SellInventoryItem", worn.id);
+                Check(!Profile.inventory.Exists(item => item.id == worn.id) && progression.SlotUpgradeRank(ItemSlot.Armor) == 6 && target.upgradeLevel == 6,
+                    "selling old equipment cannot remove the slot's accumulated reinforcement");
+                for (int rank = 6; rank < ProgressionService.MaximumUpgrade; rank++) Check(progression.Upgrade(weaker.id), "train slot to cap " + (rank + 1));
                 gold = Profile.gold;
-                Call(ui, "OpenUpgradeTransfer", swapTarget);
-                Set("transferSourceId", swapSource.id);
-                Call(ui, "ConfirmUpgradeTransfer");
-                Check(swapSource.upgradeLevel == 2 && swapTarget.upgradeLevel == 5 && Profile.gold == gold, "UI confirms exchange when the target already has its own upgrades");
-                string targetId = swapTarget.id;
-                Call(ui, "OpenUpgradeTransfer", swapTarget);
-                Set("transferSourceId", targetId);
-                Call(ui, "ConfirmUpgradeTransfer");
-                Check(swapTarget.upgradeLevel == 5 && swapSource.upgradeLevel == 2 && Profile.gold == gold, "invalid self-source confirmation cannot change items or gold");
-                Call(ui, "ReturnToInventory");
-                ResetItems(Item("transfer-no-source", ItemSlot.Relic, 1, Rarity.Common, 1));
-                ItemData noSource = Profile.inventory.Find(item => item.id == "transfer-no-source");
-                Profile.inventory.RemoveAll(item => item.slot == ItemSlot.Relic && item.id != noSource.id);
-                Profile.relicId = noSource.id;
-                Check(!(bool)Call(ui, "HasUpgradeTransferSource", noSource), "entry is disabled when no same-slot upgraded source exists");
-                Call(ui, "OpenUpgradeTransfer", noSource);
-                Check(Get("panel").ToString() == "Inventory", "missing source cannot open a misleading empty transfer confirmation");
+                Check(progression.UpgradeCost(weaker) == 0 && !progression.Upgrade(weaker.id) && Profile.gold == gold &&
+                    ((ItemData)Call(ui, "EquipmentPreview", weaker)).upgradeLevel == ProgressionService.MaximumUpgrade,
+                    "bag selection uses persistent slot cap for cost, action and preview");
             }
 
             private void ValidateGoldCapAndEmptyInventory()
@@ -475,7 +486,8 @@ namespace Emberfall.Editor
             private void ResetItems(params ItemData[] items)
             {
                 Profile.inventory = new List<ItemData>();
-                foreach (ItemData item in equipped) Profile.inventory.Add(Clone(item));
+                Profile.slotUpgradeRanks = new int[3];
+                foreach (ItemData item in equipped) Profile.inventory.Add(progression.PreviewUpgrade(item, 0));
                 foreach (ItemData item in items) Profile.inventory.Add(item);
                 Profile.weaponId = equipped[0].id;
                 Profile.armorId = equipped[1].id;
@@ -516,9 +528,6 @@ namespace Emberfall.Editor
                 foreach (KeyValuePair<string, object> pair in originalFields) Set(pair.Key, pair.Value);
                 Bag.Clear();
                 Bag.AddRange(originalBag);
-                var sourceList = (List<ItemData>)Get("transferSources");
-                sourceList.Clear();
-                sourceList.AddRange(originalTransferSources);
                 Field(typeof(PlayerController), "stats").SetValue(game.Player, originalPlayerStats);
                 SetProperty(game.Player, "MaxHealth", originalMaxHealth);
                 SetProperty(game.Player, "Health", originalHealth);

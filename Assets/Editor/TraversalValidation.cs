@@ -79,9 +79,18 @@ namespace Emberfall.Editor
             typeof(PlayerController).GetField("dodgeCooldown", Hidden).SetValue(player, 0f);
             typeof(PlayerController).GetField("traversalFrame", Hidden).SetValue(player, -1);
             player.Teleport(new Vector3(5,0,-8));
+            Vector3 beforeBoulder = player.transform.position;
+            check((bool)blink.Invoke(player, new object[] { Vector3.right }) && player.BlinkCooldown > 2 &&
+                player.transform.position.x > beforeBoulder.x + .35f && player.transform.position.x < beforeBoulder.x + 4.8f &&
+                WorldTraversal.CanLeap(beforeBoulder, player.transform.position),
+                "A full-distance blocked blink shortens to a safe landing before the boulder and starts cooldown");
+            typeof(PlayerController).GetField("dodgeCooldown", Hidden).SetValue(player, 0f);
+            typeof(PlayerController).GetField("traversalFrame", Hidden).SetValue(player, -1);
             check(!(bool)blink.Invoke(player, new object[] { Vector3.right }) && player.BlinkCooldown == 0,
-                "A blocked blink cannot cross a boulder or consume its cooldown");
+                "Blink flush against a boulder has no useful landing and consumes no cooldown");
             player.Teleport(bank);
+            typeof(PlayerController).GetField("dodgeCooldown", Hidden).SetValue(player, 0f);
+            typeof(PlayerController).GetField("traversalFrame", Hidden).SetValue(player, -1);
             check((bool)blink.Invoke(player, new object[] { Vector3.forward }) && Vector3.Distance(player.transform.position, landing) < .1f && player.BlinkCooldown > 2,
                 "A valid blink crosses the river immediately and starts its cooldown");
             player.Teleport(original);

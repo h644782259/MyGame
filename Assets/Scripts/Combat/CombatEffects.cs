@@ -83,11 +83,19 @@ namespace Emberfall
 
     internal sealed class CombatProjectile : MonoBehaviour
     {
+        private static readonly List<CombatProjectile> hostileProjectiles = new List<CombatProjectile>();
+        private Vector3 dodgeOrigin;
+        private float dodgeDeadline;
+        private int dodgeEpoch;
+        private bool pendingDodge;
+        private int skillIndex = -1, castId;
+        private string damageSource = "敌方弹幕";
         private GameSession session;
         private PlayerController owner;
         private PlayerController playerGeneration;
         private Vector3 direction;
-        private float speed, damage, radius, age, lifetime, explosionDamage, explosionRadius;
+        private float speed, radius, age, lifetime, explosionRadius;
+        private CombatDamage damage, explosionDamage;
         private bool hostile, pierce, basicAttack, energyAwarded, arrowShape;
         private EnemyController homingTarget;
         private EnemyController basicAimTarget;
@@ -98,7 +106,7 @@ namespace Emberfall
         private Material bodyMaterial, trailMaterial;
         private Color color;
 
-        public static void Friendly(PlayerController player, GameSession game, Vector3 at, Vector3 forward, float amount, Color tint, bool piercing = false, bool arrow = false, bool basic = false, float size = 1f, float velocity = 0f, EnemyController tracking = null, float blastDamage = 0f, float blastRadius = 0f)
+        public static void Friendly(PlayerController player, GameSession game, Vector3 at, Vector3 forward, CombatDamage amount, Color tint, bool piercing = false, bool arrow = false, bool basic = false, float size = 1f, float velocity = 0f, EnemyController tracking = null, CombatDamage blastDamage = default(CombatDamage), float blastRadius = 0f, int skillIndex = -1, int castId = 0)
         {
             CombatProjectile projectile = Make(at, forward, tint, arrow);
             projectile.owner = player;
@@ -115,6 +123,7 @@ namespace Emberfall
             projectile.arrowShape = arrow;
             projectile.explosionDamage = blastDamage;
             projectile.explosionRadius = blastRadius;
+            projectile.skillIndex = skillIndex; projectile.castId = castId;
             projectile.transform.localScale *= size;
             projectile.radius *= Mathf.Min(2f,size);
             if (velocity > 0) projectile.speed = velocity;
@@ -123,7 +132,7 @@ namespace Emberfall
 
         // Ordinary shots keep their original range. A mage locks only the target
         // chosen at cast time; an arrow gets a very short, bounded correction.
-        public static void BasicShot(PlayerController player,GameSession game,Vector3 muzzle,Vector3 target,float amount,Color tint,bool arrow,EnemyController selected)
+        public static void BasicShot(PlayerController player,GameSession game,Vector3 muzzle,Vector3 target,CombatDamage amount,Color tint,bool arrow,EnemyController selected)
         {
             if (!WorldTraversal.HasLineOfSight(player.transform.position, muzzle))
             { CombatFx.Ring(player.transform.position, .4f, tint, .15f); return; }
@@ -150,17 +159,36 @@ namespace Emberfall
             projectile.AlignBodyFlight();
         }
 
-        public static void Hostile(GameSession game, Vector3 at, Vector3 forward, float amount, float velocity = 8f)
+        public static void Hostile(GameSession game, Vector3 at, Vector3 forward, float amount, float velocity = 8f, string sourceName = "敌方弹幕")
         {
             CombatProjectile projectile = Make(at, forward, new Color(1f,.31f,.48f), false);
             projectile.session = game;
             projectile.playerGeneration = game.Player;
             projectile.epoch = game.Player.CombatEpoch;
             projectile.hostile = true;
+            projectile.damageSource = sourceName;
             projectile.damage = amount;
             projectile.speed = velocity;
             projectile.lifetime = 3f;
             projectile.radius = .32f;
+            hostileProjectiles.Add(projectile);
+        }
+
+        internal static void RegisterDodge(PlayerController player, Vector3 origin, Vector3 destination)
+        {
+            foreach (CombatProjectile projectile in hostileProjectiles)
+            {
+                if (projectile == null || projectile.playerGeneration != player || projectile.epoch != player.CombatEpoch || projectile.speed <= 0) continue;
+                Vector3 end = projectile.transform.position + projectile.direction * projectile.speed * .18f;
+                float hitRadius = projectile.radius + .46f;
+                if (CombatFx.SegmentDistance(origin, projectile.transform.position, end) >= hitRadius ||
+                    CombatFx.SegmentDistance(destination, projectile.transform.position, end) <= hitRadius ||
+                    !WorldTraversal.HasLineOfSight(projectile.transform.position, origin)) continue;
+                projectile.pendingDodge = true;
+                projectile.dodgeOrigin = origin;
+                projectile.dodgeDeadline = projectile.age + .25f;
+                projectile.dodgeEpoch = player.CombatEpoch;
+            }
         }
 
         private static CombatProjectile Make(Vector3 at, Vector3 forward, Color tint, bool arrow)
@@ -241,11 +269,18 @@ namespace Emberfall
                 bool strikesPlayer = CombatFx.SegmentDistance(session.Player.transform.position, previous, transform.position) < radius + .46f && WorldTraversal.HasLineOfSight(previous, session.Player.transform.position);
                 Vector3 segment = CombatFx.Flat(transform.position - previous);
                 float playerFraction = !strikesPlayer ? 1f : segment.sqrMagnitude < .00001f ? 0 : Mathf.Clamp01(Vector3.Dot(CombatFx.Flat(session.Player.transform.position - previous), segment) / segment.sqrMagnitude);
-                if (SummonedCompanion.HitHostileProjectile(previous, transform.position, damage, playerFraction))
+                if (SummonedCompanion.HitHostileProjectile(previous, transform.position, damage.Amount, playerFraction))
                 { CombatFx.Ring(transform.position, .65f, color, .18f); Destroy(gameObject); return; }
+                if (pendingDodge)
+                {
+                    if (age > dodgeDeadline || session.Player.CombatEpoch != dodgeEpoch) pendingDodge = false;
+                    else if (!strikesPlayer && CombatFx.SegmentDistance(dodgeOrigin, previous, transform.position) < radius + .46f &&
+                        WorldTraversal.HasLineOfSight(previous, dodgeOrigin))
+                    { pendingDodge = false; session.Player.NotifyPerfectDodge(); }
+                }
                 if (strikesPlayer)
                 {
-                    session.Player.TakeDamage(damage);
+                    session.Player.TakeDamageFrom(damage.Amount, damageSource);
                     CombatFx.Ring(transform.position, .65f, color, .18f);
                     Destroy(gameObject);
                     return;
@@ -262,14 +297,14 @@ namespace Emberfall
                     if (!WorldTraversal.HasLineOfSight(previous, enemy.transform.position)) continue;
                     hitTargets.Add(enemy);
                     Vector3 hitPosition = enemy.transform.position;
-                    enemy.TakeDamage(damage, direction, .18f);
+                    enemy.TakeDamage(owner.ResolveSkillImpact(enemy, skillIndex, castId, damage.Amount), direction, .18f, critical:damage.IsCritical);
                     CombatFx.Ring(hitPosition, .7f, color, .2f);
                     if (basicAttack && !energyAwarded)
                     {
                         energyAwarded = true;
-                        owner.OnBasicAttackHit(hitPosition);
+                        owner.OnBasicAttackHitTarget(hitPosition, enemy, true);
                     }
-                    if(explosionDamage>0)
+                    if(explosionDamage.Amount>0)
                     {
                         owner.HitArea(hitPosition,explosionRadius,explosionDamage,.15f,.15f);
                         CombatFx.Ring(hitPosition,explosionRadius,color,.3f,.11f);
@@ -285,6 +320,7 @@ namespace Emberfall
 
         private void OnDestroy()
         {
+            hostileProjectiles.Remove(this);
             if (bodyMaterial != null) Destroy(bodyMaterial);
             if (trailMaterial != null) Destroy(trailMaterial);
         }
@@ -301,17 +337,18 @@ namespace Emberfall
     {
         private PlayerController owner;
         private GameSession session;
-        private float radius, damage, stun, delay, duration, interval, age, nextTick, pullStrength, finalDamage;
+        private float radius, stun, delay, duration, interval, age, nextTick, pullStrength;
+        private CombatDamage damage, finalDamage;
         private bool follow, meteor, finished;
-        private int statusSkill = -1, statusRank = 1;
+        private int statusSkill = -1, statusRank = 1, castId;
         private int epoch;
         private Color color;
         private GameObject marker, fallingOrb;
         private Material orbMaterial;
         private bool fireVisual, poisonVisual, lightningVisual;
 
-        public static void Spawn(PlayerController player, GameSession game, Vector3 at, float size, float amount, float disable,
-            float startup, float activeTime, float tickInterval, Color tint, bool followPlayer = false, bool fallingMeteor = false, float pulling = 0f, float finisher = 0f, int statusSkill = -1, int statusRank = 1)
+        public static void Spawn(PlayerController player, GameSession game, Vector3 at, float size, CombatDamage amount, float disable,
+            float startup, float activeTime, float tickInterval, Color tint, bool followPlayer = false, bool fallingMeteor = false, float pulling = 0f, CombatDamage finisher = default(CombatDamage), int statusSkill = -1, int statusRank = 1, int castId = 0)
         {
             GameObject obj = new GameObject("Skill Area");
             obj.transform.position = new Vector3(at.x,0,at.z);
@@ -321,7 +358,7 @@ namespace Emberfall
             area.delay = startup; area.duration = activeTime; area.interval = Mathf.Max(.1f,tickInterval);
             area.color = tint; area.follow = followPlayer; area.meteor = fallingMeteor;
             area.pullStrength = pulling; area.finalDamage = finisher;
-            area.statusSkill = statusSkill; area.statusRank = statusRank;
+            area.statusSkill = statusSkill; area.statusRank = statusRank; area.castId = castId;
             area.nextTick = startup;
             area.marker = CombatFx.Ring(at, size, tint, startup + activeTime + .2f, .075f, false);
             area.fireVisual = fallingMeteor || (player.HeroClass == HeroClass.Arcanist && tint.r > .8f && tint.g < .7f);
@@ -402,21 +439,21 @@ namespace Emberfall
                             ElementalCombatVfx.OnEnemy(enemy, ElementalCombatVfx.Element.Fire, 2.5f);
                         if (poisonVisual)
                             ElementalCombatVfx.OnEnemy(enemy, ElementalCombatVfx.Element.Poison, 2f);
-                        enemy.TakeDamage(damage,delta.normalized,.3f,stun);
+                        enemy.TakeDamage(owner.ResolveSkillImpact(enemy, statusSkill, castId, damage.Amount),delta.normalized,.3f,stun,critical:damage.IsCritical);
                         if (lightningVisual)
                             ElementalCombatVfx.Lightning(transform.position + Vector3.up * 2f,
                                 enemy.transform.position + Vector3.up * (enemy.IsBoss ? 2f : 1f));
                         if (enemy.StatusEffects != null && statusSkill == 0 && owner.HeroClass == HeroClass.Arcanist)
-                            enemy.StatusEffects.Freeze(1.5f + statusRank * .25f);
+                            owner.ApplyNovaStatus(enemy, statusRank);
                         if (enemy.StatusEffects != null && ((statusSkill == 5 && owner.HeroClass == HeroClass.Ranger) || (statusSkill == 1 && owner.HeroClass == HeroClass.Summoner)))
                         {
                             enemy.StatusEffects.Slow(3f, .3f + statusRank * .07f);
-                            enemy.StatusEffects.Poison(owner, 3.5f + statusRank * .5f, damage * .2f);
+                            enemy.StatusEffects.Poison(owner, 3.5f + statusRank * .5f, damage.Amount * .2f);
                         }
                     }
                 }
             }
-            if (!finished && finalDamage>0 && age>=delay+duration)
+            if (!finished && finalDamage.Amount>0 && age>=delay+duration)
             {
                 finished=true;
                 AdvancedSkillVfx.Rune(owner,transform.position,radius*1.1f,color,.65f,3);

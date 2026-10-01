@@ -324,20 +324,39 @@ namespace Emberfall.Editor
             Append("DUNGEON — portal, three real waves, boss, loot, death, respawn and persisted reload");
             game.Player.Teleport(new Vector3(0, 0, 11));
             game.EnterDungeon();
-            Check(game.InDungeon && game.DungeonWave == 1 && game.Enemies.Count > 0, "Portal creates dungeon wave one");
+            Check(game.DungeonSelectionOpen && !game.InDungeon && game.InputBlocked && Time.timeScale == 0,
+                "Portal opens a blocking tier selector without entering early");
+            game.ConfirmDungeonSelection();
+            Check(game.InDungeon && !game.DungeonSelectionOpen && game.DungeonWave == 1 && game.Enemies.Count > 0, "Confirming the selector creates dungeon wave one");
             IEnumerator groundLootValidation = GroundLootValidation.Validate(game, Check, Append);
             while (groundLootValidation.MoveNext()) yield return groundLootValidation.Current;
             game.Player.enabled = true;
             CaptureWorld("Dungeon-wave-one.png", true);
             int originalClears = game.Progression.Profile.clearedRuns;
             int originalItems = game.Progression.Profile.inventory.Count;
-            int lastWave = 0;
+            int lastWave = 0, blessingCount = 0;
+            double dungeonDeadline = EditorApplication.timeSinceStartup + 35;
             while (!game.DungeonCleared)
             {
+                if (EditorApplication.timeSinceStartup > dungeonDeadline)
+                    throw new TimeoutException("Dungeon validation stalled at wave " + game.DungeonWave + "; enemies=" + game.Enemies.Count + "; choice=" + game.RunChoices.AwaitingChoice);
                 game.SetPaused(false);
+                if (game.RunChoices.AwaitingChoice)
+                {
+                    int completedWave = game.DungeonWave;
+                    Check(game.Enemies.Count == 0 && game.InputBlocked && Time.timeScale == 0,
+                        "Completed wave " + completedWave + " pauses for a blessing after every reinforcement is defeated");
+                    Check(game.ConfirmBlessing(0), "A blessing explicitly advances wave " + completedWave);
+                    blessingCount++;
+                    Check(game.DungeonWave == completedWave + 1 && !game.RunChoices.AwaitingChoice && !game.ConfirmBlessing(0),
+                        "Repeated blessing confirmation cannot grant or advance twice");
+                }
                 if (game.Enemies.Count > 0)
                 {
-                    Check(game.DungeonWave > lastWave, "Dungeon advances to distinct wave " + game.DungeonWave);
+                    Check(game.DungeonWave == lastWave || game.DungeonWave == lastWave + 1,
+                        "Enemy batch belongs to the current wave or its immediate successor");
+                    if (game.DungeonWave != lastWave) Append("Dungeon advances to distinct wave " + game.DungeonWave);
+                    else Append("Dungeon reinforcement batch remains in wave " + game.DungeonWave);
                     lastWave = game.DungeonWave;
                     FreezeEnemies(game);
                     if (lastWave == game.TotalWaves)
@@ -349,10 +368,25 @@ namespace Emberfall.Editor
                     EnemyController[] victims = game.Enemies.ToArray();
                     foreach (EnemyController enemy in victims) enemy.TakeDamage(100000000f, Vector3.forward);
                 }
-                yield return new Delay(.15f);
+                // Modal selection stops game time; the harness must retain an independent deadline.
+                yield return new Delay(.15f, false);
             }
-            Check(lastWave == 3 && game.Progression.Profile.clearedRuns == originalClears + 1, "All three dungeon waves award exactly one clear");
+            Check(lastWave == 3 && blessingCount == 2 && game.Progression.Profile.clearedRuns == originalClears + 1,
+                "Three waves and two explicit blessings award exactly one clear");
             Check(game.PendingLootCount > 0, "Dungeon rewards remain visibly on the ground until pickup");
+            Check(game.Progression.Profile.pendingFashionChest && game.Progression.OpenDungeonChest(1) != null,
+                "The completed run offers exactly one chest");
+            int chestGold = game.Progression.Profile.gold;
+            string chestReceipt = game.Progression.LastChestReward.Id;
+            Check(game.Progression.Profile.pendingChestReveal && !game.Progression.Profile.pendingFashionChest &&
+                game.Progression.OpenDungeonChest(2) == null && game.Progression.Profile.gold == chestGold,
+                "Opening again cannot reroll or grant another reward during the reveal");
+            var savedReward = new ProgressionService(game.Progression.SaveDirectory);
+            Check(savedReward.Load() && savedReward.Profile.pendingChestReveal && savedReward.LastChestReward.Id == chestReceipt && savedReward.Profile.gold == chestGold,
+                "The saved chest receipt survives reload without granting again");
+            Check(game.Progression.AcknowledgeChestReward() && !game.Progression.Profile.pendingChestReveal,
+                "Acknowledging the receipt clears only the reveal state");
+            Call(game.GetComponent<GameUI>(), "ClosePanel");
             game.ReturnToCamp();
             Check(game.PendingLootCount == 0 && game.Progression.Profile.inventory.Count > originalItems, "Dungeon exit automatically collects remaining equipment exactly once");
             Check(!game.InDungeon && game.Player.Health == game.Player.MaxHealth, "Dungeon exit returns to camp and heals");

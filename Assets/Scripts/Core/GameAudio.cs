@@ -3,19 +3,19 @@ using UnityEngine;
 
 namespace Emberfall
 {
-    public enum SoundCue { Attack, Cast, Hit, Dodge, Loot, LevelUp, Victory, Death, UI }
+    public enum SoundCue { Attack, Cast, Hit, Dodge, Loot, LevelUp, Victory, Death, UI, CriticalHit }
 
     /// <summary>Eight bounded effect voices plus one quiet, seamless background loop.</summary>
     public sealed class GameAudio : MonoBehaviour
     {
         private const int VoiceCount = 8;
-        private const int CueCount = 9;
+        private const int CueCount = 10;
         private const int SampleRate = 22050;
         private const float DefaultVolume = .5f;
         private const float BackgroundVolume = .14f;
         private const double Tau = Math.PI * 2.0;
-        private static readonly float[] Durations = { .16f, .34f, .13f, .22f, .38f, .64f, .95f, .65f, .09f };
-        private static readonly float[] MinimumIntervals = { .075f, .12f, .075f, .15f, .16f, .25f, .5f, .5f, .055f };
+        private static readonly float[] Durations = { .16f, .34f, .13f, .22f, .38f, .64f, .95f, .65f, .09f, .17f };
+        private static readonly float[] MinimumIntervals = { .075f, .12f, .075f, .15f, .16f, .25f, .5f, .5f, .055f, .085f };
         private static GameAudio instance;
         private static bool muted;
         private static bool quitting;
@@ -295,6 +295,16 @@ namespace Emberfall
                         double edge = Math.Sin(Tau * 2700 * time) * .19 * Math.Exp(-time * 110);
                         value = impactBody + contact + edge;
                         break;
+                    case SoundCue.CriticalHit:
+                        // An actual critical impact has a short bright crack and metallic ring.
+                        // It shares the bounded voice pool but never aliases the ordinary Hit clip.
+                        frequency = 82 + 230 * Math.Exp(-time * 65);
+                        phase += Tau * frequency / SampleRate;
+                        double criticalBody = Math.Sin(phase) * .9 * Math.Exp(-time * 29);
+                        double criticalCrack = (noise - smoothedNoise) * .85 * Math.Exp(-time * 170);
+                        double criticalRing = (Math.Sin(Tau * 1680 * time) + Math.Sin(Tau * 2520 * time) * .4) * .3 * Math.Exp(-time * 39);
+                        value = criticalBody + criticalCrack + criticalRing;
+                        break;
                     case SoundCue.Dodge:
                         value = (noise - smoothedNoise) * Math.Sin(Math.PI * progress) * Math.Exp(-progress * 1.5);
                         break;
@@ -318,7 +328,7 @@ namespace Emberfall
                         break;
                 }
                 // Short ramps eliminate discontinuities at both ends of every clip.
-                double attackRamp = cue == SoundCue.Hit ? .0014 : .004;
+                double attackRamp = (cue == SoundCue.Hit || cue == SoundCue.CriticalHit) ? .0014 : .004;
                 double envelope = Math.Min(1, time / attackRamp) * Math.Min(1, (duration - time) / .025);
                 samples[i] = (float)(value * Math.Max(0, envelope));
                 peak = Math.Max(peak, Math.Abs(samples[i]));
