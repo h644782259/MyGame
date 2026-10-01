@@ -29,8 +29,8 @@ namespace Emberfall
    for(int index=0;index<3;index++)
    {
     Vector3 p=GameSession.HubNpcPosition(index);Transform npc=Region(parent,index==0?"Camp Merchant":index==1?"Camp Blacksmith":"Star Exchange Steward");
-    Material cloth=r.Material(index==0?new Color(.58f,.35f,.16f):index==1?new Color(.32f,.37f,.44f):new Color(.22f,.48f,.53f));
-    Material skin=r.Material(new Color(.76f,.57f,.42f)),dark=r.Material(new Color(.12f,.16f,.2f));
+    Material cloth=r.Material(index==0?new Color(.58f,.35f,.16f):index==1?new Color(.32f,.37f,.44f):new Color(.22f,.48f,.53f),false,VisualSurface.Cloth);
+    Material skin=r.Material(new Color(.76f,.57f,.42f),false,VisualSurface.Skin),dark=r.Material(new Color(.12f,.16f,.2f),false,VisualSurface.Cloth);
     Primitive(npc,"NPC tunic",PrimitiveType.Capsule,p+Vector3.up*.85f,new Vector3(.7f,.58f,.5f),cloth);
     Primitive(npc,"NPC head",PrimitiveType.Sphere,p+Vector3.up*1.66f,Vector3.one*.47f,skin);
     for(int side=-1;side<=1;side+=2){Primitive(npc,"NPC boots",PrimitiveType.Capsule,p+new Vector3(side*.19f,.29f,0),new Vector3(.21f,.26f,.24f),dark);Primitive(npc,"NPC sleeves",PrimitiveType.Capsule,p+new Vector3(side*.45f,1.01f,0),new Vector3(.23f,.35f,.24f),cloth);}

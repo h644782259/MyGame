@@ -43,7 +43,7 @@ namespace Emberfall
                 }
             }
             else if (skill == 1)
-                CombatArea.Spawn(player, game, target, 3.2f * range, damage * SummonerDamageRules.ThornTickCoefficient, 0, SummonerDamageRules.ThornStartup, SummonerDamageRules.ThornDuration(rank), SummonerDamageRules.ThornInterval, color, statusSkill: 1, statusRank: rank,castId:propCast);
+                CombatArea.Spawn(player, game, target, 3.2f * range, damage * SummonerDamageRules.ThornTickCoefficient, 0, SummonerDamageRules.ThornStartup, SummonerDamageRules.ThornDuration(rank), SummonerDamageRules.ThornInterval, color, statusSkill: 1, statusRank: rank,castId:propCast,visual:SkillVisualRecipe.Poison);
             else if (skill == 6)
                 AdvancedSkillSequence.Spawn(player, game, skill, rank, target, player.transform.forward, damage, color,propCast);
             else if (skill == 7)

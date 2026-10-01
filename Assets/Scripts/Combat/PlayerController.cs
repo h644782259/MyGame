@@ -304,7 +304,7 @@ namespace Emberfall
                 {
                     guardPulseTimer = guardRank==3?1f:guardRank==2?1.2f:1.5f;
                     if (Specialization == ElementalistSpecialization.Burn)
-                        CombatArea.Spawn(this, session, transform.position, guardRadius, CombatAttack * .18f, 0, 0, 1.5f, .5f, new Color(1f,.5f,.25f),castId:guardCastId);
+                        CombatArea.Spawn(this, session, transform.position, guardRadius, CombatAttack * .18f, 0, 0, 1.5f, .5f, new Color(1f,.5f,.25f),castId:guardCastId,visual:SkillVisualRecipe.Fire);
                     else
                     {
                         ControlArea(transform.position,guardRadius,.25f);
@@ -1159,20 +1159,20 @@ namespace Emberfall
                 {
                     CombatFx.Ring(transform.position,3.4f*range,color,.45f,.2f);
                     Melee(3.4f*range,360,Damage(SkillDamageBudgets.OpeningImpact(HeroClass,slot,rank)),.75f,.3f,skillIndex:slot,castId:castId);
-                    if(rank>=2) CombatArea.Spawn(this,session,transform.position,3.4f*range,Damage(SkillDamageBudgets.OpeningImpact(HeroClass,slot,rank,1)),.25f,.18f,rank==3?.22f:0,.22f,color,true,false,rank==3?5f:0,rank==3?Damage(SkillDamageBudgets.OpeningImpact(HeroClass,slot,rank,2)):0,castId:castId);
+                    if(rank>=2) CombatArea.Spawn(this,session,transform.position,3.4f*range,Damage(SkillDamageBudgets.OpeningImpact(HeroClass,slot,rank,1)),.25f,.18f,rank==3?.22f:0,.22f,color,true,false,rank==3?5f:0,rank==3?Damage(SkillDamageBudgets.OpeningImpact(HeroClass,slot,rank,2)):0,castId:castId,visual:SkillVisualRecipe.Steel);
                 }
                 else if (slot == 1)
                 {
                     CombatFx.Slash(transform.position,transform.forward,4.8f*range,new Color(1f,.85f,.4f));
                     Melee(4.8f*range,90+(rank-1)*10,Damage(SkillDamageBudgets.OpeningImpact(HeroClass,slot,rank)),1.9f,1.3f+(rank-1)*.3f,1.3f+(rank-1)*.3f,skillIndex:slot,castId:castId);
                     CombatFx.Ring(transform.position+transform.forward*2.5f*range,2.1f*range,color,.4f,.16f);
-                    if(rank>=2) CombatArea.Spawn(this,session,CombatSight.GroundPoint(transform.position,transform.position+transform.forward*3f*range),2.3f*range,Damage(SkillDamageBudgets.OpeningImpact(HeroClass,slot,rank,1)),.6f,.25f,0,1,color,false,false,0,rank==3?Damage(SkillDamageBudgets.OpeningImpact(HeroClass,slot,rank,2)):0,castId:castId);
+                    if(rank>=2) CombatArea.Spawn(this,session,CombatSight.GroundPoint(transform.position,transform.position+transform.forward*3f*range),2.3f*range,Damage(SkillDamageBudgets.OpeningImpact(HeroClass,slot,rank,1)),.6f,.25f,0,1,color,false,false,0,rank==3?Damage(SkillDamageBudgets.OpeningImpact(HeroClass,slot,rank,2)):0,castId:castId,visual:SkillVisualRecipe.Steel);
                 }
                 else
                 {
                     invulnerability = Mathf.Max(invulnerability,.5f);
                     PeriodicSkillBudget field=SkillDamageBudgets.EarlyField(HeroClass,rank);
-                    CombatArea.Spawn(this,session,transform.position,4.1f*range,Damage(field.TickCoefficient),.14f,field.Startup,field.Duration,field.Interval,color,true,false,rank==3?2.5f:0,Damage(field.FinisherCoefficient),castId:castId);
+                    CombatArea.Spawn(this,session,transform.position,4.1f*range,Damage(field.TickCoefficient),.14f,field.Startup,field.Duration,field.Interval,color,true,false,rank==3?2.5f:0,Damage(field.FinisherCoefficient),castId:castId,visual:SkillVisualRecipe.Steel);
                 }
             }
             else if (HeroClass == HeroClass.Arcanist)
@@ -1182,13 +1182,13 @@ namespace Emberfall
                     bool frostEcho = HasMechanic(EquipmentMechanic.FrostEcho);
                     bool wideEcho = MechanicVariant(EquipmentMechanic.FrostEcho) == 1;
                     float novaPower = frostEcho ? (wideEcho ? .65f : .8f) : 1f;
-                    CombatArea.Spawn(this,session,transform.position,3.7f*range,Damage(SkillDamageBudgets.OpeningImpact(HeroClass,slot,rank)*novaPower),0,0,0,1f,new Color(.51f,.92f,1f),statusSkill:0,statusRank:rank,castId:castId);
+                    CombatArea.Spawn(this,session,transform.position,3.7f*range,Damage(SkillDamageBudgets.OpeningImpact(HeroClass,slot,rank)*novaPower),0,0,0,1f,new Color(.51f,.92f,1f),statusSkill:0,statusRank:rank,castId:castId,visual:SkillVisualRecipe.Ice);
                     if (frostEcho)
                     {
-                        CombatArea.Spawn(this,session,transform.position,3.7f*range*(wideEcho?1.35f:1f),Damage((wideEcho?.45f:.6f)*power),0,.7f,0,1f,new Color(.51f,.92f,1f),statusSkill:0,statusRank:rank,castId:castId);
+                        CombatArea.Spawn(this,session,transform.position,3.7f*range*(wideEcho?1.35f:1f),Damage((wideEcho?.45f:.6f)*power),0,.7f,0,1f,new Color(.51f,.92f,1f),statusSkill:0,statusRank:rank,castId:castId,visual:SkillVisualRecipe.Ice);
                         session.RecordCombatAction("霜环回响");
                     }
-                    if(rank>=2) CombatArea.Spawn(this,session,transform.position,3.7f*range,Damage(SkillDamageBudgets.OpeningImpact(HeroClass,slot,rank,1)),0,.5f,0,1f,new Color(.51f,.92f,1f),statusSkill:0,statusRank:rank,castId:castId);
+                    if(rank>=2) CombatArea.Spawn(this,session,transform.position,3.7f*range,Damage(SkillDamageBudgets.OpeningImpact(HeroClass,slot,rank,1)),0,.5f,0,1f,new Color(.51f,.92f,1f),statusSkill:0,statusRank:rank,castId:castId,visual:SkillVisualRecipe.Ice);
                     if(rank==3)
                     {
                         var shards=new ProjectileVolleyBudget<EnemyController>(CombatAttack,1.8f);
@@ -1203,17 +1203,17 @@ namespace Emberfall
                 }
                 else if (slot == 1)
                 {
-                    CombatArea.Spawn(this,session,target,3f*range,Damage(SkillDamageBudgets.OpeningImpact(HeroClass,slot,rank)),.7f,.7f,0,1f,new Color(1f,.59f,.28f),false,true,statusSkill:1,statusRank:rank,castId:castId);
-                    if(rank>=2) CombatArea.Spawn(this,session,target,3f*range,Damage(SkillDamageBudgets.OpeningImpact(HeroClass,slot,rank,1)),.3f,1.1f,0,1,new Color(1f,.59f,.28f),false,true,statusSkill:1,statusRank:rank,castId:castId);
-                    if(rank==3){var field=SkillDamageBudgets.MeteorAftermath(rank);CombatArea.Spawn(this,session,target,3.2f*range,Damage(field.TickCoefficient),.1f,field.Startup,field.Duration,field.Interval,new Color(1f,.43f,.22f),castId:castId);}
+                    CombatArea.Spawn(this,session,target,3f*range,Damage(SkillDamageBudgets.OpeningImpact(HeroClass,slot,rank)),.7f,.7f,0,1f,new Color(1f,.59f,.28f),false,true,statusSkill:1,statusRank:rank,castId:castId,visual:SkillVisualRecipe.Fire);
+                    if(rank>=2) CombatArea.Spawn(this,session,target,3f*range,Damage(SkillDamageBudgets.OpeningImpact(HeroClass,slot,rank,1)),.3f,1.1f,0,1,new Color(1f,.59f,.28f),false,true,statusSkill:1,statusRank:rank,castId:castId,visual:SkillVisualRecipe.Fire);
+                    if(rank==3){var field=SkillDamageBudgets.MeteorAftermath(rank);CombatArea.Spawn(this,session,target,3.2f*range,Damage(field.TickCoefficient),.1f,field.Startup,field.Duration,field.Interval,new Color(1f,.43f,.22f),castId:castId,visual:SkillVisualRecipe.Fire);}
                     if (HasMechanic(EquipmentMechanic.CinderTrail))
                     {
                         // Four ticks total 40% of the base first meteor impact.
-                        CombatArea.Spawn(this,session,target,3f*range*(MechanicVariant(EquipmentMechanic.CinderTrail)==1?.7f:1f),CombatAttack*SkillDamageBudgets.MeteorTrailTick(rank,MechanicVariant(EquipmentMechanic.CinderTrail)==1),0,1.2f,1.5f,.5f,new Color(1f,.43f,.22f),castId:castId);
+                        CombatArea.Spawn(this,session,target,3f*range*(MechanicVariant(EquipmentMechanic.CinderTrail)==1?.7f:1f),CombatAttack*SkillDamageBudgets.MeteorTrailTick(rank,MechanicVariant(EquipmentMechanic.CinderTrail)==1),0,1.2f,1.5f,.5f,new Color(1f,.43f,.22f),castId:castId,visual:SkillVisualRecipe.Fire);
                         session.RecordCombatAction("余烬地带");
                     }
                 }
-                else {var field=SkillDamageBudgets.EarlyField(HeroClass,rank);CombatArea.Spawn(this,session,target,3.9f*range,Damage(field.TickCoefficient),.22f,field.Startup,field.Duration,field.Interval,new Color(.65f,.5f,1f),false,false,rank==3?3.5f:0,Damage(field.FinisherCoefficient),castId:castId);}
+                else {var field=SkillDamageBudgets.EarlyField(HeroClass,rank);CombatArea.Spawn(this,session,target,3.9f*range,Damage(field.TickCoefficient),.22f,field.Startup,field.Duration,field.Interval,new Color(.65f,.5f,1f),false,false,rank==3?3.5f:0,Damage(field.FinisherCoefficient),castId:castId,visual:SkillVisualRecipe.Lightning);}
             }
             else
             {
@@ -1231,10 +1231,10 @@ namespace Emberfall
                 }
                 else if (slot == 1)
                 {
-                    CombatArea.Spawn(this,session,target,3f*range,Damage(SkillDamageBudgets.OpeningImpact(HeroClass,slot,rank)),2.3f+(rank-1)*.4f,.4f,0,1f,color,false,false,rank==3?5f:0,statusSkill:1,statusRank:rank,castId:castId);
-                    if(rank>=2) CombatArea.Spawn(this,session,target,3f*range,Damage(SkillDamageBudgets.OpeningImpact(HeroClass,slot,rank,1)),.5f,.8f,0,1,color,castId:castId);
+                    CombatArea.Spawn(this,session,target,3f*range,Damage(SkillDamageBudgets.OpeningImpact(HeroClass,slot,rank)),2.3f+(rank-1)*.4f,.4f,0,1f,color,false,false,rank==3?5f:0,statusSkill:1,statusRank:rank,castId:castId,visual:SkillVisualRecipe.Neutral);
+                    if(rank>=2) CombatArea.Spawn(this,session,target,3f*range,Damage(SkillDamageBudgets.OpeningImpact(HeroClass,slot,rank,1)),.5f,.8f,0,1,color,castId:castId,visual:SkillVisualRecipe.Neutral);
                 }
-                else {var field=SkillDamageBudgets.EarlyField(HeroClass,rank);CombatArea.Spawn(this,session,target,4.3f*range,Damage(field.TickCoefficient),.08f,field.Startup,field.Duration,field.Interval,new Color(.7f,1f,.59f),false,false,0,Damage(field.FinisherCoefficient),castId:castId);}
+                else {var field=SkillDamageBudgets.EarlyField(HeroClass,rank);CombatArea.Spawn(this,session,target,4.3f*range,Damage(field.TickCoefficient),.08f,field.Startup,field.Duration,field.Interval,new Color(.7f,1f,.59f),false,false,0,Damage(field.FinisherCoefficient),castId:castId,visual:SkillVisualRecipe.Poison);}
             }
         }
 

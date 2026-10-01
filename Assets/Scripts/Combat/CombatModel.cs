@@ -349,7 +349,7 @@ namespace Emberfall
                 if (side < 0) equipmentLeftShoulder = shoulder;
                 else equipmentRightShoulder = shoulder;
                 Part("Shoulder shell", PrimitiveType.Sphere, new Vector3(0, 0, .05f),
-                    new Vector3(.3f + look.Tier * .04f, .23f + look.Tier * .025f, .38f), look.Metal, shoulder);
+                    new Vector3(.3f + look.Tier * .04f, .23f + look.Tier * .025f, .38f), look.Metal, shoulder, VisualSurface.Metal);
                 if (look.Tier >= 2)
                     Part("Layered pauldron", PrimitiveType.Cube, new Vector3(side * .13f, -.12f, .12f),
                         new Vector3(.3f, .17f + look.Tier * .03f, .3f), look.Accent, shoulder)
@@ -438,7 +438,7 @@ namespace Emberfall
                 model.Humanoid(new Color(.35f,.26f,.15f), new Color(.28f,.32f,.14f), new Color(.4f,.69f,.32f), 1.6f);
                 model.transform.localScale = Vector3.one * 1.3f;
                 for (int i = -1; i <= 1; i++)
-                    model.Part("Leaf crown", PrimitiveType.Sphere, new Vector3(i * .35f, 2.23f, -.08f), new Vector3(.75f,.65f,.65f), new Color(.35f,.69f,.37f));
+                    model.Part("Leaf crown", PrimitiveType.Sphere, new Vector3(i * .35f, 2.23f, -.08f), new Vector3(.75f,.65f,.65f), new Color(.35f,.69f,.37f), surface: VisualSurface.Foliage);
             }
             else
             {
@@ -505,9 +505,9 @@ namespace Emberfall
             return material;
         }
 
-        private Transform Part(string name, PrimitiveType shape, Vector3 position, Vector3 size, Color color, Transform parent = null)
+        private Transform Part(string name, PrimitiveType shape, Vector3 position, Vector3 size, Color color, Transform parent = null, VisualSurface? surface = null)
         {
-            GameObject obj = ProceduralVisuals.Create(name, shape, Mat(color, ProceduralVisuals.SurfaceFor(name)));
+            GameObject obj = ProceduralVisuals.Create(name, shape, Mat(color, surface ?? ProceduralVisuals.SurfaceFor(name)));
             obj.transform.SetParent(parent == null ? transform : parent, false);
             obj.transform.localPosition = position;
             obj.transform.localScale = size;
@@ -599,7 +599,7 @@ namespace Emberfall
                 for (int i=0; i<9; i++)
                 {
                     float a = (-80f+i*20f)*Mathf.Deg2Rad;
-                    Transform wood = Part("Bow Limb", PrimitiveType.Capsule, new Vector3(0,Mathf.Sin(a)*.59f,Mathf.Cos(a)*.28f), new Vector3(.075f,.115f,.07f), new Color(.73f,.47f,.22f), bow);
+                    Transform wood = Part("Bow Limb", PrimitiveType.Capsule, new Vector3(0,Mathf.Sin(a)*.59f,Mathf.Cos(a)*.28f), new Vector3(.075f,.115f,.07f), new Color(.73f,.47f,.22f), bow, VisualSurface.Wood);
                     wood.localRotation=Quaternion.Euler(i*20-80,0,0);
                 }
                 Part("Bowstring",PrimitiveType.Cylinder,new Vector3(0,0,.05f),new Vector3(.014f,.6f,.014f),steel,bow);
@@ -632,7 +632,7 @@ namespace Emberfall
             if (hero == HeroClass.Vanguard)
             {
                 Transform chest = Part("Cuirass", PrimitiveType.Cube, new Vector3(0, 1.35f, .235f),
-                    new Vector3(.64f, .44f, .15f), steel);
+                    new Vector3(.64f, .44f, .15f), steel, surface: VisualSurface.Metal);
                 chest.localRotation = Quaternion.Euler(-8f, 0, 0);
                 for (int i = 0; i < 3; i++)
                     Part("Overlapping Armor", PrimitiveType.Cube, new Vector3(0, 1.13f - i * .11f, .255f),
@@ -805,14 +805,14 @@ namespace Emberfall
             return knee;
         }
 
-        private Transform MeshPart(string name, Transform parent, Vector3 at, Vector3[] vertices, int[] triangles, Color color)
+        private Transform MeshPart(string name, Transform parent, Vector3 at, Vector3[] vertices, int[] triangles, Color color, VisualSurface? surface = null)
         {
             Transform part = NewJoint(name, parent, at);
             Mesh mesh = new Mesh { name = name, vertices = vertices, triangles = triangles };
             mesh.RecalculateNormals();
             mesh.RecalculateBounds();
             part.gameObject.AddComponent<MeshFilter>().sharedMesh = mesh;
-            part.gameObject.AddComponent<MeshRenderer>().sharedMaterial = Mat(color, ProceduralVisuals.SurfaceFor(name));
+            part.gameObject.AddComponent<MeshRenderer>().sharedMaterial = Mat(color, surface ?? ProceduralVisuals.SurfaceFor(name));
             part.gameObject.AddComponent<OwnedCombatMesh>().Value = mesh;
             return part;
         }
@@ -826,7 +826,7 @@ namespace Emberfall
                 new Vector3(0,0,d),new Vector3(0,length*.78f,d),
                 new Vector3(0,0,-d),new Vector3(0,length*.78f,-d)
             }, new[] { 0,6,5,0,2,6,2,4,6,4,3,6,3,1,6,1,5,6,
-                0,7,8,0,8,2,2,8,4,4,8,3,3,8,1,1,8,7,0,5,1,0,1,7 }, color);
+                0,7,8,0,8,2,2,8,4,4,8,3,3,8,1,1,8,7,0,5,1,0,1,7 }, color, VisualSurface.Metal);
         }
 
         private Transform Tapered(string name, Transform parent, Vector3 at, float bottom, float top, float height,

@@ -375,11 +375,12 @@ namespace Emberfall
         private GameObject marker, fallingOrb;
         private Material orbMaterial;
         private bool fireVisual, poisonVisual, lightningVisual, solidImpactSpawned;
+        private SkillVisualRecipe visualRecipe;
         private readonly ScheduledImpactBatch<EnemyController> pendingTickTargets = new ScheduledImpactBatch<EnemyController>();
         private bool IsCurrentCast { get { return owner != null && session != null && session.Player == owner && !owner.IsDead && session.HasStarted && !session.CombatEnded && owner.CombatEpoch == epoch; } }
 
         public static void Spawn(PlayerController player, GameSession game, Vector3 at, float size, CombatDamage amount, float disable,
-            float startup, float activeTime, float tickInterval, Color tint, bool followPlayer = false, bool fallingMeteor = false, float pulling = 0f, CombatDamage finisher = default(CombatDamage), int statusSkill = -1, int statusRank = 1, int castId = 0)
+            float startup, float activeTime, float tickInterval, Color tint, bool followPlayer = false, bool fallingMeteor = false, float pulling = 0f, CombatDamage finisher = default(CombatDamage), int statusSkill = -1, int statusRank = 1, int castId = 0, SkillVisualRecipe visual = SkillVisualRecipe.Neutral)
         {
             GameObject obj = new GameObject("Skill Area");
             obj.transform.position = new Vector3(at.x,0,at.z);
@@ -393,12 +394,10 @@ namespace Emberfall
             area.nextTick = startup;
             if (startup > 0) FilledSkillVfx.Charge(obj.transform, player, obj.transform.position, size, tint, startup);
             area.marker = CombatFx.Ring(at, size, tint, startup + activeTime + .2f, .075f, false);
-            area.fireVisual = fallingMeteor || (player.HeroClass == HeroClass.Arcanist && tint.r > .8f && tint.g < .7f);
-            area.poisonVisual = !area.fireVisual &&
-                ((tint.g > .9f && tint.r < .8f && tint.b < .8f) ||
-                 (statusSkill == 5 && player.HeroClass == HeroClass.Ranger) ||
-                 (statusSkill == 1 && player.HeroClass == HeroClass.Summoner));
-            area.lightningVisual = player.HeroClass == HeroClass.Arcanist && tint.b > .9f && tint.r > .55f && tint.g < .7f;
+            area.visualRecipe = visual;
+            area.fireVisual = visual == SkillVisualRecipe.Fire;
+            area.poisonVisual = visual == SkillVisualRecipe.Poison;
+            area.lightningVisual = visual == SkillVisualRecipe.Lightning;
             if (fallingMeteor)
             {
                 area.orbMaterial = new Material(Shader.Find("Standard")) { color = new Color(.64f,.19f,.075f) };
@@ -454,11 +453,11 @@ namespace Emberfall
                             ElementalCombatVfx.Area(transform, radius, fireVisual ? ElementalCombatVfx.Element.Fire :
                                 poisonVisual ? ElementalCombatVfx.Element.Poison : ElementalCombatVfx.Element.Lightning);
                         if (fireVisual) FilledSkillVfx.Impact(owner, transform.position, radius, FilledVfxKind.Fire, new Color(1f,.43f,.12f));
-                        else if (owner.HeroClass == HeroClass.Arcanist && statusSkill == 0)
+                        else if (visualRecipe == SkillVisualRecipe.Ice)
                             FilledSkillVfx.Impact(owner, transform.position, radius, FilledVfxKind.Ice, new Color(.2f,.75f,1f));
-                        else if (owner.HeroClass == HeroClass.Summoner)
+                        else if (visualRecipe == SkillVisualRecipe.Spirit || visualRecipe == SkillVisualRecipe.Arcane)
                             FilledSkillVfx.Impact(owner, transform.position, radius, FilledVfxKind.Summon, color);
-                        else if (owner.HeroClass == HeroClass.Vanguard)
+                        else if (visualRecipe == SkillVisualRecipe.Steel)
                             FilledSkillVfx.Crescent(owner, transform.position, owner.transform.forward, radius, color);
                     }
                     if (tick == 0)
