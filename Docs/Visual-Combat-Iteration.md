@@ -1,6 +1,6 @@
 # 战斗识别与成长迭代（PR5 后续独立分支）
 
-PR5 固定基线：Windows `0aa197a2da8f06cdd08c2a1a92df767d58b563ca`，iOS `67540fc57231e2cac6889bdf78c1021e5ad8b08f`。本分支不移动这两个审阅头，不合并 main。
+PR5 固定基线：Windows `0aa197a2da8f06cdd08c2a1a92df767d58b563ca`，iOS `67540fc57231e2cac6889bdf78c1021e5ad8b08f`。PR5 已由父任务获授权合并；本分支已合入最新 main（Windows `abe5ef06`、iOS `f83b7d28`），PR6 改以 main 为 base，仍保持 draft，不自动合并后续工作。
 
 ## 实施顺序
 

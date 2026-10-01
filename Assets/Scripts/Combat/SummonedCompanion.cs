@@ -257,7 +257,7 @@ namespace Emberfall
             if (owner == null || owner.IsDead || owner.HeroClass != HeroClass.Summoner || game == null || game.InputBlocked || game.CombatEnded || enemy == null || enemy.IsDead || !enemy.gameObject.activeInHierarchy ||
                 CombatFx.Flat(enemy.transform.position - owner.transform.position).sqrMagnitude > 196f) return false;
             State(owner).Directive.Focus(enemy);
-            foreach (var pet in Snapshot(owner)) { pet.commandedTarget = enemy; pet.hasCommandPoint = false; }
+            foreach (var pet in Snapshot(owner)) { pet.commandedTarget = enemy; pet.hasCommandPoint = false; pet.recallTime = 0; }
             return true;
         }
         public static bool FreeRecall(PlayerController owner)

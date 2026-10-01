@@ -230,6 +230,8 @@ def main():
             ("decoration-budget", "DecorationBudgetTests", ["Core/DecorationBudget"]),
             ("mobile-combat-feedback", "MobileCombatFeedbackTests", ["UI/MobileCombatPresentation"]),
             ("combat-text-layout", "CombatTextLayoutTests", ["Combat/CombatTextLayout"]),
+            ("combat-opportunity", "CombatOpportunityTests", ["UI/CombatOpportunityPresentation"]),
+            ("large-boss-motion", "LargeBossMotionTests", ["Core/LargeBossMotion", "Core/LargeBossPhaseState"]),
             ("companion-directive", "CompanionDirectiveTests", ["Combat/CompanionDirective"]),
         ]:
             checks.append((name,[ROOT/("Assets/Scripts/"+helper+".cs") for helper in helpers]+[ROOT/("Tests/"+test+".cs")],

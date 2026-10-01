@@ -46,3 +46,5 @@ python3 Tools/summarize-combat-review.py Tests/TestResults/CombatReview-<id>/eve
 ```
 
 The summary counts raw kinds and adds only `damage` callbacks for damage totals (not projectilehit or sampled HP a second time). `derived_projectile_no_enemy_hit` counts `projectileend` with `expired`/`terrain` and `hits=0`; retired/disposed projectiles are excluded. This is the transparent ranged-miss proxy, may include projectiles that struck props, and is not whole-attack/melee/skill miss rate. `projectilehit` details retain projectile IDs. `enemydeath` and player `death` are separate. Unobserved event kinds are listed as missing evidence, not zero failures. No synthetic parser test output is a gameplay report.
+
+`basicmiss` / `spellmiss` 来自已释放近战在该次直接伤害检查中没有造成敌人生命损失，或已尝试射击但枪口受阻；不统计可破坏物，不代表所有持续领域/后续命中都落空。汇总保留事件类别，不将其与投射物到期代理合成统一命中率。
