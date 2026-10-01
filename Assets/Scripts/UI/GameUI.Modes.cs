@@ -34,9 +34,19 @@ namespace Emberfall
   private void DrawMobileModeStatus(Rect r)
   {
    blockedRects.Add(r);Box(r,jade,false);float u=TouchRatio;
+   if(session.RoomChainRun!=null)
+   {
+    var objective=RoomObjectivePresentation.Create(session.RoomChainRun,session.RoomCaptureInside,session.RoomCaptureContested,session.InputBlocked,session.RoomSupplyActive);
+    Text(new Rect(r.x+6*u,r.y+4*u,r.width-12*u,16*u),objective.Title,TouchFont(13),gold,true,false,TextAnchor.MiddleCenter);
+    Text(new Rect(r.x+6*u,r.y+21*u,r.width-12*u,15*u),objective.ProgressText,TouchFont(11),pale,false,false,TextAnchor.MiddleCenter);
+    Text(new Rect(r.x+6*u,r.y+37*u,r.width-12*u,14*u),objective.Hint,TouchFont(10),session.RoomCaptureContested?gold:jade,false,false,TextAnchor.MiddleCenter);
+    Text(new Rect(r.x+6*u,r.y+52*u,r.width-12*u,14*u),objective.SupportHint,TouchFont(10),muted,false,false,TextAnchor.MiddleCenter);
+    Bar(new Rect(r.x+8*u,r.yMax-7*u,r.width-16*u,3*u),objective.Fraction,jade);
+    return;
+   }
    Text(new Rect(r.x+6*u,r.y+5*u,r.width-12*u,20*u),session.ModeName,TouchFont(14),gold,true,false,TextAnchor.MiddleCenter);
-   Text(new Rect(r.x+6*u,r.y+27*u,r.width-12*u,20*u),session.RoomChainRun!=null?"房间 "+session.DungeonWave+" / 5  ·  "+(session.RoomChainRun.DoorUnlocked?"北门已开":"探索中"):"阶段 "+session.DungeonWave+" / 3  ·  "+Mathf.CeilToInt(session.ModeRun.RemainingSeconds)+"秒",TouchFont(11),pale,false,false,TextAnchor.MiddleCenter);
-   Bar(new Rect(r.x+8*u,r.yMax-7*u,r.width-16*u,3*u),session.RoomChainRun!=null?(session.DungeonWave-1)/4f:session.ModeRun.ObjectiveProgress,jade);
+   Text(new Rect(r.x+6*u,r.y+27*u,r.width-12*u,20*u),"阶段 "+session.DungeonWave+" / 3  ·  "+Mathf.CeilToInt(session.ModeRun.RemainingSeconds)+"秒",TouchFont(11),pale,false,false,TextAnchor.MiddleCenter);
+   Bar(new Rect(r.x+8*u,r.yMax-7*u,r.width-16*u,3*u),session.ModeRun.ObjectiveProgress,jade);
   }
  }
 }

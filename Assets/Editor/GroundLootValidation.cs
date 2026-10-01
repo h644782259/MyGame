@@ -179,6 +179,7 @@ namespace Emberfall.Editor
         {
             var run = new RoomChainState(); RoomChainPlan first = run.Room;
             for (int i = 0; i < first.EnemyCount; i++) { run.Register(first, i); run.Defeat(first, i); }
+            for(int tick=0;tick<24;tick++)run.Advance(.25f,true,true,false);
             SetProperty(game, "RoomChainRun", run);
             ItemData item = fixture.Roll();
             game.SpawnGroundLoot(item, game.Player.transform.position);

@@ -108,6 +108,7 @@ namespace Emberfall.Editor
                 var roomRun = new RoomChainState();
                 RoomChainPlan room = roomRun.Room;
                 for (int i = 0; i < room.EnemyCount; i++) { roomRun.Register(room, i); roomRun.Defeat(room, i); }
+                for(int tick=0;tick<24;tick++)roomRun.Advance(.25f,true,true,false);
                 check(roomRun.DoorUnlocked, "Room transition fixture has a genuinely unlocked first door");
                 Set(game, "RoomChainRun", roomRun); Set(game, "InDungeon", true);
                 game.SetPaused(false); player.transform.position = new Vector3(0, 0, 14);

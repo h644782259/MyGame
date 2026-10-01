@@ -25,7 +25,7 @@ namespace Emberfall
         public float ProjectileHitRadius { get { return largeBoss != null ? 1.3f : IsBoss ? 1.05f : .6f; } }
         internal float AttackDamage { get { return damage; } }
         public string DisplayName { get; private set; }
-        public string TraitDescription { get { return largeBoss != null ? "大型远征首领：70%与35%生命召唤供能锚；青色蓄力可打断，红色扫射期间摧毁锚点。断能后核心暴露6秒，受到伤害增加35%。" : IsBoss ? "首领：青色预警可用控制技能打断；红色为霸体恢复。打断后5秒免疫再次打断，击退大幅衰减。近身震地、中距冲锋、远距弹幕。" : Kind == EnemyKind.Slime ? "跳扑近身，黏液命中使你暂时减速。" : Kind == EnemyKind.Goblin ? "绕侧接近，近身后快速出刀并侧移。" : Kind == EnemyKind.Wisp ? "保持远距离游走，发射双重灵弹。" : "正面石甲减伤35%；重击蓄力时护甲失效。"; } }
+        public string TraitDescription { get { return session!=null&&session.IsRoomSupplier(this)?"护援者：6米内可见同伴减伤30%；引开、遮挡或击杀可解除。" : largeBoss != null ? "大型远征首领：70%与35%生命召唤供能锚；青色蓄力可打断，红色扫射期间摧毁锚点。断能后核心暴露6秒，受到伤害增加35%。" : IsBoss ? "首领：青色预警可用控制技能打断；红色为霸体恢复。打断后5秒免疫再次打断，击退大幅衰减。近身震地、中距冲锋、远距弹幕。" : Kind == EnemyKind.Slime ? "跳扑近身，黏液命中使你暂时减速。" : Kind == EnemyKind.Goblin ? "绕侧接近，近身后快速出刀并侧移。" : Kind == EnemyKind.Wisp ? "保持远距离游走，发射双重灵弹。" : "正面石甲减伤35%；重击蓄力时护甲失效。"; } }
 
         private enum AttackType { Melee, Bolt, Slam, Charge, Fan }
         private GameSession session;
@@ -151,6 +151,7 @@ namespace Emberfall
         public void TakeDamage(float amount, Vector3 direction, float knockback = 0f, float stun = 0f, bool impact = true, bool critical = false)
         {
             if (session == null || !AdventureResultPolicy.AcceptsDamage(session.HasStarted,session.CombatEnded) || IsDead || amount <= 0 || float.IsNaN(amount) || float.IsInfinity(amount)) return;
+            amount *= session.RoomSupportMultiplier(this);
             amount *= StatusEffects == null ? 1 : StatusEffects.DamageMultiplier;
             if (largeBoss != null) amount *= largeBoss.State.IncomingMultiplier;
             if (Kind == EnemyKind.Guardian && !IsBoss && !preparing && CombatFx.Flat(direction).sqrMagnitude > .01f && Vector3.Dot(transform.forward, -CombatFx.Flat(direction).normalized) > .45f)

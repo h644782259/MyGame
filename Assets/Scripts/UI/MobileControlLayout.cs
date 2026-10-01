@@ -15,7 +15,7 @@ namespace Emberfall
         public readonly float Scale, Width, Height;
         public readonly bool Tablet;
         public readonly Area Joystick, MoveZone, Attack, Dodge, Potion, Jump, Cancel, Menu, Inventory, SkillsMenu, Interact;
-        public readonly Area EncounterText, BossHealth, Notice;
+        public readonly Area EncounterText, BossHealth, Notice, AdventureStatus;
         public readonly Area[] Skills = new Area[10];
         public MobileControlLayout(float pixelWidth,float pixelHeight,float dpi)
         {
@@ -44,6 +44,10 @@ namespace Emberfall
             // A centered bar at y=98 crosses the first skill row on 320-unit phones.
             EncounterText=new Area(Width-184,62,172,18);
             BossHealth=new Area(Width-184,83,172,5);
+            // Four short objective lines + a real capture bar. At 568x320 the
+            // card ends at y=84, above interaction and the first skill row.
+            float objectiveWidth=Math.Min(236,Width-380);
+            AdventureStatus=new Area((Width-objectiveWidth)/2,8,objectiveWidth,76);
             // The short feedback card uses the gap between the movement zone and
             // jump button, below the skill strip, never covering an action target.
             Notice=new Area(198,Height-106,Math.Min(320,Jump.X-210),94);

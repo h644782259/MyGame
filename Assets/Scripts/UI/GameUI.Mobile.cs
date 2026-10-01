@@ -69,7 +69,7 @@ namespace Emberfall
             if(MobileIcon(l.SkillsMenu,"skills",p.skillPoints>0?gold:jade))TogglePanel(Panel.Skills);
             if(MobileIcon(l.Menu,"pause",muted))session.SetPaused(true);
             Rect map=TouchRect(l.Width*.5f-44,12,88,60);
-            if(session.SpecialAdventure)DrawMobileModeStatus(TouchRect(l.Width*.5f-86,12,172,58));
+            if(session.SpecialAdventure)DrawMobileModeStatus(session.RoomChainRun!=null?TouchRect(l.AdventureStatus):TouchRect(l.Width*.5f-86,12,172,58));
             else
             {
                 blockedRects.Add(map);Box(map,jade,false);DrawMinimapTerrain(map);

@@ -38,7 +38,7 @@ namespace Emberfall
     Crystal(parent,r,new Vector3(0,1.1f,2),.9f,glow);
     for(int side=-1;side<=1;side+=2)Primitive(parent,"Rest chamber bench",PrimitiveType.Cube,new Vector3(side*7,.45f,0),new Vector3(1.5f,.9f,5),wall);
    }
-   else
+   else if(room==4)
    {
     for(int side=-1;side<=1;side+=2){Pillar(parent,r,new Vector3(side*8,0,-2),3.3f,true);Pillar(parent,r,new Vector3(side*8,0,7),4.1f,true);}
     Primitive(parent,"Throne battle seal",PrimitiveType.Cylinder,new Vector3(0,.024f,5),new Vector3(10,.02f,10),trim);
