@@ -8,11 +8,12 @@ namespace Emberfall
         private Font occlusionFont;
         private void UpdateVisibility()
         {
+            var game=GameSession.Instance;
             if(viewCamera==null)viewCamera=GetComponent<Camera>();
             if(viewCamera!=null)
             {
                 viewCamera.ResetProjectionMatrix();
-                if(MobileControls.Active)
+                if(MobileControls.Active&&game!=null&&game.HasStarted)
                 {
                     var layout=MobileControls.Layout;var clear=layout.CombatView;var safe=MobileControls.SafeArea;
                     // The camera continues looking at the hero; a finite off-axis
@@ -23,7 +24,6 @@ namespace Emberfall
                     projection.m02=CameraVisibilityRules.Projection(x);projection.m12=CameraVisibilityRules.Projection(y);viewCamera.projectionMatrix=projection;
                 }
             }
-            var game=GameSession.Instance;
             if(game==null||game.Player==null||!game.HasStarted||game.IsDead){CameraOcclusionSurface.RestoreAll();return;}
             CameraOcclusionSurface.Advance(transform.position,game.Player.transform.position+Vector3.up,Time.unscaledDeltaTime);
         }

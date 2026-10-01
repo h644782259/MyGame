@@ -20,6 +20,7 @@ check('private void OnDestroy(){surfaces.Remove(this);Restore();}' in fade, 'Des
 check('original.color=' not in fade and 'FindObjects' not in fade, 'No mutation of shared world material and no global renderer scan')
 check('CameraOcclusionSurface.LastOccluders==0' in camera and 'GUI.Label(marker,"角色"' in camera, 'Independent player-position fallback marker')
 check('EffectPreferences.TouchOpacity' not in camera, 'Occlusion marker cannot be hidden by button-opacity setting')
+check('MobileControls.Active&&game!=null&&game.HasStarted' in camera, 'Title/character selection retains its original camera framing')
 check('ResetProjectionMatrix()' in camera and 'layout.CombatView' in camera, 'Projection uses verified clear region and resets on teardown')
 check('ScreenPointToRay' not in camera and 'Physics.' not in camera and 'Input.' not in camera, 'Visibility adjustment does not replace aiming or touch input')
 check('Rect hit=hotbarSlots[i];blockedRects.Add(hit);Rect r=MobileVisualRect(hit)' in hud, 'Visual size and interaction size remain separate')
