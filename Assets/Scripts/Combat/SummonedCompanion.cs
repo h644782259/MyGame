@@ -10,6 +10,7 @@ namespace Emberfall
         private sealed class BondState
         {
             public int Epoch;
+            public readonly CompanionDirective<EnemyController> Directive = new CompanionDirective<EnemyController>();
             public readonly CompanionCommandOpportunity Commands = new CompanionCommandOpportunity();
             public readonly CompanionCooperationTracker<EnemyController> Cooperation = new CompanionCooperationTracker<EnemyController>();
         }
@@ -240,8 +241,35 @@ namespace Emberfall
         public static float CommandOpportunityRemaining(PlayerController owner)
         {return owner==null||owner.IsDead?0:State(owner).Commands.Remaining(Time.time);}
 
+        // Free orders change only navigation/target choice. They never invoke a
+        // contract, reset recovery, consume a dodge opportunity or grant protection.
+        public static bool SetFreeFocus(PlayerController owner, EnemyController enemy)
+        {
+            var game = GameSession.Instance;
+            if (owner == null || owner.IsDead || owner.HeroClass != HeroClass.Summoner || game == null || game.InputBlocked || game.CombatEnded || enemy == null || enemy.IsDead || !enemy.gameObject.activeInHierarchy ||
+                CombatFx.Flat(enemy.transform.position - owner.transform.position).sqrMagnitude > 196f) return false;
+            State(owner).Directive.Focus(enemy);
+            foreach (var pet in Snapshot(owner)) { pet.commandedTarget = enemy; pet.hasCommandPoint = false; }
+            return true;
+        }
+        public static bool FreeRecall(PlayerController owner)
+        {
+            var game = GameSession.Instance;
+            if (owner == null || owner.IsDead || owner.HeroClass != HeroClass.Summoner || game == null || game.InputBlocked || game.CombatEnded) return false;
+            State(owner).Directive.Recall();
+            foreach (var pet in Snapshot(owner)) { pet.commandedTarget = pet.target = null; pet.hasCommandPoint = false; }
+            return true;
+        }
+        public static EnemyController ExplicitFocus(PlayerController owner)
+        {
+            if (owner == null || owner.IsDead) return null;
+            var directive = State(owner).Directive;
+            return directive.Resolve(e => e != null && !e.IsDead && e.gameObject.activeInHierarchy && CombatFx.Flat(e.transform.position-owner.transform.position).sqrMagnitude <= 196f);
+        }
+
         public static void RecallAll(PlayerController owner)
         {
+            if (owner != null) State(owner).Directive.Clear();
             foreach (SummonedCompanion pet in Snapshot(owner))
             {
                 pet.recallTime = CompanionRules.RecallDuration;
@@ -264,6 +292,7 @@ namespace Emberfall
             partner.RefreshContractPower(rank);
             if (!partner.IsPermanent) partner.RemainingLifetime = Mathf.Max(partner.RemainingLifetime, CompanionRules.ContractLifetime((int)form,rank,false));
             BondState state = State(owner);
+            state.Directive.Clear();
             bool empowered = state.Commands.TryConsume(Time.time);
             partner.Command(focus, empowered, at, preserveTargetPoint);
             if (timedPackRoute && form == Kind.Wolf)
@@ -349,7 +378,8 @@ namespace Emberfall
 
         public void OnConfirmedHit(EnemyController enemy)
         {
-            if (!IsAlive || !ValidTarget(enemy) || !Owner.HasMechanic(EquipmentMechanic.TwinSummonResonance)) return;
+            if (!IsAlive || !ValidTarget(enemy)) return;
+            if (!Owner.HasMechanic(EquipmentMechanic.TwinSummonResonance)) return;
             bool commandedFocus = false;
             foreach (SummonedCompanion partner in active)
                 if (partner != null && partner.Owner == Owner && partner.IsAlive && partner.commandTime > 0 && partner.commandedTarget == enemy)
@@ -427,7 +457,11 @@ namespace Emberfall
         private EnemyController AcquireTarget()
         {
             if (recallTime > 0) return null;
-            if (commandTime > 0 && ValidTarget(commandedTarget)) return commandedTarget;
+            var directive = State(Owner).Directive;
+            EnemyController explicitTarget = directive.Resolve(ValidTarget);
+            if (directive.Recalling) return null;
+            if (explicitTarget != null) return explicitTarget;
+            if (ValidTarget(commandedTarget)) return commandedTarget;
             if (commandTime > 0 && hasCommandPoint) return null;
             EnemyController focused = Owner.FocusTarget;
             if (focused != null) return focused;
@@ -450,7 +484,7 @@ namespace Emberfall
             if (dt <= 0) return;
             recallTime = Mathf.Max(0, recallTime - dt);
             commandTime = Mathf.Max(0, commandTime - dt);
-            if (commandTime <= 0 || !ValidTarget(commandedTarget)) commandedTarget = null;
+            if (!ValidTarget(commandedTarget)) commandedTarget = null;
             if (commandTime <= 0) hasCommandPoint = false;
             statRefresh -= dt;
             if (statRefresh <= 0) { statRefresh = .5f; RefreshPower(false); }
