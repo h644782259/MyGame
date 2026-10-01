@@ -167,6 +167,7 @@ namespace Emberfall
             ReconcileMobileScroll();
             if (session == null || session.BackgroundPaused) return;
             ReconcileBuildPlanSurface();
+            ReconcileProgressionGoalSurface();
             if(exitRequest.Open){if(Input.GetKeyDown(KeyCode.Escape)){exitRequest.Cancel();exitError=null;BlockUITransition();}return;}
             if(mobileCastFinger!=-1000&&(session.InputBlocked||panel!=Panel.None))CancelMobileCast();
             if (suppressHotbarMouse && !Input.GetMouseButton(0)) suppressHotbarMouse = false;
@@ -1795,6 +1796,7 @@ namespace Emberfall
 
         private void ClosePanel()
         {
+            if(CloseProgressionGoalSurface())return;
             if(CloseBuildPlanSurface())return;
             if(CloseTravelMap())return;
             if(CancelSaveDeletion())return;

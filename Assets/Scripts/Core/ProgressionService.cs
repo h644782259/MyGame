@@ -1460,10 +1460,10 @@ namespace Emberfall
                     requirement=Profile.pendingFirstClearReward?"首通自选可领取":"首通任一冒险，或收集12碎片";break;
                 case ProgressionGoalKind.Variant:
                     title="解锁装备变体";cost=VariantCost;done=item!=null&&item.mechanicVariantUnlocked;
-                    requirement=item==null?"目标装备不在背包":item.name+" · 营地解锁";break;
+                    requirement=item==null?"目标装备不在背包":"持有目标装备 · 营地解锁";break;
                 case ProgressionGoalKind.Ascension:
                     title="装备升华";cost=AscensionCost;done=item!=null&&item.rarity==Rarity.Legendary;
-                    requirement=item==null?"目标装备不在背包":"冒险5阶 "+Math.Min(5,HighestAdventureTier)+"/5 · "+item.name;break;
+                    requirement=item==null?"目标装备不在背包":"冒险5阶 "+Math.Min(5,HighestAdventureTier)+"/5"+(item.rarity!=Rarity.Epic&&item.rarity!=Rarity.Legendary?" · 需要史诗品质":"");break;
                 case ProgressionGoalKind.SecondPreset:
                     title="第二套配装";done=HasBuildPreset(1);requirement="营地保存方案 B";break;
                 case ProgressionGoalKind.Tier:

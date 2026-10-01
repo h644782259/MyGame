@@ -21,6 +21,10 @@ namespace Emberfall
     Text(new Rect(r.x+10*u,r.y+28*u,r.width-20*u,17*u),types[i],Mathf.RoundToInt(12*u),muted);
     if(GUI.Button(r,GUIContent.none,invisibleButton))session.SelectedArenaMode=i-1;
    }
+   // The spare sixth cell carries the same selected goal as camp and results.
+   Rect goal=new Rect((x+266)*u,(y+142)*u,254*u,50*u);
+   Fill(goal,card);
+   Text(new Rect(goal.x+8*u,goal.y+3*u,goal.width-16*u,44*u),session.Progression.ProgressionGoalStatus(),Mathf.RoundToInt(10*u),jade,false,true);
    float options=layout.OptionsY;
    Text(new Rect(x*u,options*u,180*u,25*u),"第 "+session.SelectedDungeonTier+" 阶",Mathf.RoundToInt(18*u),gold,true,false,TextAnchor.MiddleLeft);
    int materialBase=session.SelectedArenaMode<0?3:session.SelectedArenaMode==3?4:session.SelectedArenaMode+1;

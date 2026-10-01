@@ -37,10 +37,11 @@ public static class AdventureProgressionTests
     }
     static void VariantRoundTrip(string root)
     {
-        var p=Fresh(root);p.Profile.level=100;p.Profile.mechanicMaterials=200;p.Save();Check(p.ExchangeMechanic(EquipmentMechanic.FrostEcho),"get variant item");
+        var p=Fresh(root);p.Profile.level=50;p.Profile.mechanicMaterials=200;p.Save();Check(p.ExchangeMechanic(EquipmentMechanic.FrostEcho),"get variant item");
         var item=p.Profile.inventory.Find(x=>x.mechanic==EquipmentMechanic.FrostEcho);string id=item.id;Check(p.Equip(id),"equip variant");
         Check(p.ToggleMechanicVariant(id,true)&&p.SaveBuildPreset(0,true),"capture unlocked B");
         Check(p.ToggleMechanicVariant(id,true)&&p.SaveBuildPreset(1,true),"capture A");
+        p.Profile.level=100;p.Save();Check(p.ReforgeMechanic(id,true),"reforge after capture");
         p.Profile.bestFloor=5;p.Profile.slotUpgradeRanks[(int)ItemSlot.Relic]=6;p.Save();Check(p.AscendMechanic(id,true),"ascend after capture");
         var grown=p.Profile.inventory.Find(x=>x.id==id);int atk=grown.attack,hp=grown.health;
         Check(p.ApplyBuildPreset(0,true)&&p.Profile.inventory.Find(x=>x.id==id).mechanicVariant==1,"restore B");

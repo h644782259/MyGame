@@ -33,9 +33,11 @@ namespace Emberfall
 
         private void DrawCampWorkshop()
         {
+            if(DrawProgressionGoalSurface())return;
             if(DrawBuildPlanSurface())return;
             if(MobileControls.Active){DrawMobileCampWorkshop();return;}
-            Rect w=Modal(980,620,"营地工坊",session.IsInCamp?"学徒 · 星核 · 图鉴 · 职业试炼":"返回营地可切换专精与重置精通");
+            Rect w=Modal(980,620,"营地工坊",session.Progression.ProgressionGoalStatus());
+            if(Button(new Rect(w.xMax-255,w.y+20,170,36),"成长目标",jade))OpenProgressionGoals();
             if(Button(new Rect(w.xMax-69,w.y+20,44,32),"×",jade))ClosePanel();
             string[] tabs={"战技","机制图鉴","待领取","实战试炼"};
             for(int i=0;i<tabs.Length;i++){Rect tabRect=new Rect(w.x+26+i*233,w.y+110,220,36);if(Button(tabRect,tabs[i],campTab==i?gold:jade))campTab=i;Badge(tabRect,i==1?Attention.FirstClearClaimable:i==2?Attention.LootClaimable:false);}
@@ -114,9 +116,21 @@ namespace Emberfall
             }
             else
             {
-                string[] actions={"① 普攻命中，回复能量","② 躲过一次即将命中的预警攻击","③ 使用一次职业能力","④ 在行囊换上一件装备"};
-                for(int i=0;i<actions.Length;i++)Text(new Rect(w.x+42,w.y+182+i*67,850,40),((p.Profile.tutorialMask&(1<<i))!=0?"✓ ":"○ ")+actions[i],22,(p.Profile.tutorialMask&(1<<i))!=0?jade:pale,true);
-                Text(new Rect(w.x+42,w.y+470,850,73),"在原野或遗迹里完成这些动作。先观察守卫蓄力，再尝试侧向闪现。进入遗迹前，可用图鉴首通奖励搭配新的专精。",16,muted,false,true);
+                string[] actions={"普攻命中，回复能量","躲过一次即将命中的预警攻击",p.ClassTutorialText,"在行囊换上一件装备"};
+                float line=w.y+174;
+                for(int i=0;i<actions.Length;i++)
+                {
+                    if(i==2&&!session.ClassTutorialVisible)continue;
+                    bool done=i==2?p.Profile.classTutorialCompleted:(p.Profile.tutorialMask&(1<<i))!=0;
+                    Text(new Rect(w.x+42,line,850,38),(done?"✓ ":"○ ")+actions[i],20,done?jade:pale,true);line+=56;
+                }
+                if(p.HighestAdventureTier>0||p.Profile.clearedRuns>0)
+                {
+                    Text(new Rect(w.x+42,w.y+435,850,40),"首通整备 · 领取核心、检查路线，再保存一套配装",16,jade);
+                    if(Button(new Rect(w.x+42,w.y+493,260,48),"机制与核心",gold))campTab=1;
+                    if(Button(new Rect(w.x+326,w.y+493,260,48),"配装方案",jade))OpenBuildPlans();
+                    if(Button(new Rect(w.x+610,w.y+493,260,48),"选择下一目标",jade))OpenProgressionGoals();
+                }
             }
         }
 

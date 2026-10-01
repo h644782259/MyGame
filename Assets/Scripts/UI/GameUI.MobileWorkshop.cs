@@ -22,8 +22,7 @@ namespace Emberfall
             }
             var layout = MobilePanelGeometry();
             campTab = Mathf.Clamp(campTab, 0, 3);
-            if (DrawMobilePanelChrome(layout, "营地工坊", "技能点 " + p.Profile.skillPoints + " · 碎片 " + p.Profile.mechanicMaterials +
-                (session.IsInCamp ? " · 营地整备" : " · 部分操作需返回营地"))) return;
+            if (DrawMobilePanelChrome(layout, "营地工坊", p.ProgressionGoalStatus())) return;
             string[] tabs = { "战技", "机制图鉴", "待领取", "实战试炼" };
             for (int i = 0; i < tabs.Length; i++)
             {
@@ -38,12 +37,13 @@ namespace Emberfall
                 mobileWorkshopScroll[campTab], new Rect(0, 0, contentWidth * TouchRatio, Mathf.Max(contentHeight, layout.TabbedBody.Height) * TouchRatio));
             DrawMobileWorkshopContent(contentWidth, true);
             EndTouchScroll();
-            if (Button(MobilePanelRect(layout.FooterButton(0, 3)), "返回冒险", jade))
+            if (Button(MobilePanelRect(layout.FooterButton(0, 4)), "返回冒险", jade))
             { ClosePanel(); BlockUITransition(); return; }
-            if (Button(MobilePanelRect(layout.FooterButton(1, 3)), "技能树", jade))
+            if (Button(MobilePanelRect(layout.FooterButton(1, 4)), "技能树", jade))
             { panel = Panel.Skills; CancelMobileScroll(); BlockUITransition(); return; }
-            if (Button(MobilePanelRect(layout.FooterButton(2, 3)), "行囊", jade))
+            if (Button(MobilePanelRect(layout.FooterButton(2, 4)), "行囊", jade))
             { panel = Panel.Inventory; CancelMobileScroll(); BlockUITransition(); }
+            if (Button(MobilePanelRect(layout.FooterButton(3, 4)), "目标", jade))OpenProgressionGoals();
         }
 
         private float DrawMobileWorkshopContent(float width, bool draw)
@@ -217,14 +217,20 @@ namespace Emberfall
 
         private void DrawMobileWorkshopTutorial(ref float y, float width, bool draw)
         {
-            string[] actions = { "普攻命中，回复能量", "躲过一次即将命中的预警攻击", "使用一次职业能力", "在行囊换上一件装备" };
+            string[] actions = { "普攻命中，回复能量", "躲过一次即将命中的预警攻击", session.Progression.ClassTutorialText, "在行囊换上一件装备" };
             for (int i = 0; i < actions.Length; i++)
             {
-                bool done = (session.Progression.Profile.tutorialMask & (1 << i)) != 0;
+                if(i==2&&!session.ClassTutorialVisible)continue;
+                bool done = i==2?session.Progression.Profile.classTutorialCompleted:(session.Progression.Profile.tutorialMask & (1 << i)) != 0;
                 MobileWorkshopParagraph(ref y, width, (done ? "✓ 已完成 · " : "○ 待完成 · ") + actions[i], done ? jade : pale, draw, true, 16);
             }
-            MobileWorkshopParagraph(ref y, width, "在原野或遗迹完成这些动作。先观察守卫蓄力，再侧向闪避。底部可进入技能树或行囊；返回冒险后用左手移动、右手攻击。", muted, draw);
-            MobileWorkshopParagraph(ref y, width, BuildCatalog.ClassSignatureDescription(session.Progression.Profile.heroClass), pale, draw);
+            if(session.Progression.HighestAdventureTier>0||session.Progression.Profile.clearedRuns>0)
+            {
+                MobileWorkshopParagraph(ref y,width,"首通整备 · 领取核心、检查路线，再保存配装",jade,draw);
+                MobileWorkshopAction(ref y,width,"机制与核心",gold,true,draw,()=>{campTab=1;CancelMobileScroll();BlockUITransition();});
+                MobileWorkshopAction(ref y,width,"配装方案",jade,true,draw,OpenBuildPlans);
+                MobileWorkshopAction(ref y,width,"选择下一目标",jade,true,draw,OpenProgressionGoals);
+            }
         }
     }
 }
