@@ -35,6 +35,7 @@ namespace Emberfall
         private int attackNumber, repeatedMove, arenaBossPattern, pullBudgetFrame = -1;
         private float pullUsedThisFrame;
         private BossAttackPolicy.Move previousMove;
+        private Vector3 walkingDisplacement;
         private readonly BossAdvanceBudget advanceBudget = new BossAdvanceBudget();
         private Vector3 origin, targetPoint, knockVelocity, chargeDirection;
         private float chargeTime, totalWindup, comboDelay;
@@ -243,11 +244,12 @@ namespace Emberfall
             if (largeBoss != null && (session.InputBlocked || largeBoss.State.Phase == LargeBossPhase.Finished)) return;
             float dt = Time.deltaTime;
             if (dt <= 0) return;
+            walkingDisplacement = Vector3.zero;
             controlPolicy.Advance(dt);
             if (largeBoss != null && largeBoss.Tick(dt))
             {
                 stunTime = Mathf.Max(0, stunTime - dt); hurtTime = Mathf.Max(0, hurtTime - dt);
-                model.Animate(0, largeBoss.State.Interruptible ? .95f : 0, hurtTime > 0);
+                AnimateModel(0, largeBoss.State.Interruptible ? .95f : 0, hurtTime > 0);
                 return;
             }
             if (telegraph != null) telegraph.SetInterruptible(CanBeSkillInterrupted);
@@ -273,15 +275,15 @@ namespace Emberfall
             healthFillMaterial.color = ThreatColor();
             if (stunTime > 0 || Time.time < flinchUntil)
             {
-                model.Animate(0,attackAnimation,hurtTime>0);
+                AnimateModel(0,attackAnimation,hurtTime>0);
                 ClampPosition();
                 return;
             }
             if (sidestepTime > 0)
             {
                 sidestepTime -= dt;
-                transform.position = WorldTraversal.Move(transform.position, sidestepDirection * effectiveSpeed * 1.6f * dt, NavigationRadius);
-                model.Animate(1, attackAnimation, hurtTime > 0);
+                transform.position = WalkForAnimation(sidestepDirection * effectiveSpeed * 1.6f * dt);
+                AnimateModel(1, attackAnimation, hurtTime > 0);
                 ClampPosition(); return;
             }
             if (chargeTime > 0)
@@ -299,7 +301,7 @@ namespace Emberfall
                     dodgePending = false;
                 }
                 ConfirmChargeDodge(previous, transform.position);
-                model.Animate(1,.6f,hurtTime>0);
+                AnimateModel(1,.6f,hurtTime>0);
                 if (chargeTime <= .001f)
                 {
                     chargeTime = 0;
@@ -311,13 +313,13 @@ namespace Emberfall
             {
                 windup -= dt;
                 if (telegraph != null) telegraph.SetProgress(1f - windup / Mathf.Max(.01f, totalWindup));
-                model.Animate(0,.95f,hurtTime>0);
                 if (windup <= 0) ResolveAttack();
+                AnimateModel(0,preparing?.95f:attackAnimation,hurtTime>0);
             }
             else if (comboDelay > 0)
             {
                 comboDelay = Mathf.Max(0, comboDelay - dt);
-                model.Animate(0, attackAnimation, hurtTime > 0);
+                AnimateModel(0, attackAnimation, hurtTime > 0);
                 if (comboDelay <= 0) BeginComboAttack(distance, combatTargetPosition);
             }
             else if (aggro)
@@ -330,8 +332,8 @@ namespace Emberfall
                 if (distance <= range && attackCooldown <= 0 && attackPath) BeginAttack();
                 else if (Kind==EnemyKind.Wisp && distance<4.5f && attackPath)
                 {
-                    transform.position = WorldTraversal.Move(transform.position, -delta.normalized * effectiveSpeed * dt, NavigationRadius);
-                    model.Animate(.7f,attackAnimation,hurtTime>0);
+                    transform.position = WalkForAnimation(-delta.normalized * effectiveSpeed * dt);
+                    AnimateModel(.7f,attackAnimation,hurtTime>0);
                 }
                 else if (distance > range*.82f || !attackPath)
                 {
@@ -339,21 +341,35 @@ namespace Emberfall
                     Vector3 step = route.Direction(transform.position, combatTargetPosition, NavigationRadius) + Separation() * (directGround ? 1f : .15f);
                     if (directGround && Kind == EnemyKind.Goblin && distance > 2.5f && distance < 9f)
                         step += Vector3.Cross(Vector3.up, delta.normalized) * Mathf.Sin(patrolPhase + Time.time * .8f) * .8f;
-                    transform.position = WorldTraversal.Move(transform.position, Vector3.ClampMagnitude(step, 1.2f) * effectiveSpeed * dt, NavigationRadius);
-                    model.Animate(1,attackAnimation,hurtTime>0);
+                    transform.position = WalkForAnimation(Vector3.ClampMagnitude(step, 1.2f) * effectiveSpeed * dt);
+                    AnimateModel(1,attackAnimation,hurtTime>0);
                 }
-                else model.Animate(0,attackAnimation,hurtTime>0);
+                else AnimateModel(0,attackAnimation,hurtTime>0);
             }
             else
             {
                 Vector3 patrol = origin + new Vector3(Mathf.Sin(Time.time*.28f+patrolPhase),0,Mathf.Cos(Time.time*.28f+patrolPhase)) * 1.4f;
                 Vector3 toPatrol = CombatFx.Flat(patrol-transform.position);
                 Vector3 patrolDirection = route.Direction(transform.position, patrol, NavigationRadius);
-                transform.position = WorldTraversal.Move(transform.position, patrolDirection * Mathf.Min(1, toPatrol.magnitude) * effectiveSpeed * .22f * dt, NavigationRadius);
+                transform.position = WalkForAnimation(patrolDirection * Mathf.Min(1, toPatrol.magnitude) * effectiveSpeed * .22f * dt);
                 if(toPatrol.sqrMagnitude>.1f) transform.rotation=Quaternion.Slerp(transform.rotation,Quaternion.LookRotation(toPatrol),dt*2f);
-                model.Animate(.2f,0,false);
+                AnimateModel(.2f,0,false);
             }
             ClampPosition();
+        }
+
+        private Vector3 WalkForAnimation(Vector3 displacement)
+        {
+            Vector3 next = WorldTraversal.Move(transform.position,displacement,NavigationRadius);
+            walkingDisplacement += CombatFx.Flat(next-transform.position);
+            return next;
+        }
+        private void AnimateModel(float speedHint,float attack,bool hurt)
+        {
+            model.SetLocomotion(transform.InverseTransformDirection(walkingDisplacement),Time.deltaTime,Mathf.Max(.1f,speed),true);
+            model.SetEnemyAttackPose(preparing?EnemyPosePhase.Windup:attackAnimation>0?EnemyPosePhase.Recovery:EnemyPosePhase.Idle,
+                preparing?1-windup/Mathf.Max(.01f,totalWindup):1-attackAnimation);
+            model.Animate(speedHint,attack,hurt);
         }
 
         private Vector3 Separation()

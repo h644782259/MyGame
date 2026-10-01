@@ -9,7 +9,8 @@ namespace Emberfall
         private const int Columns = 7, Rows = 7, SideCount = Columns * Rows;
         private Mesh mesh;
         private Vector3[] vertices;
-        private float motion, targetMotion, phase;
+        private float motion, targetMotion, phase, inertiaPitch, inertiaSide;
+        public void SetInertia(float pitch,float side) { inertiaPitch=Mathf.Clamp(pitch,-14,22);inertiaSide=Mathf.Clamp(side,-12,12); }
         public void SetMotion(float speed, float action) { targetMotion = Mathf.Clamp01(speed * .7f + action * .4f); }
         public void Initialize(Material material)
         {
@@ -48,6 +49,7 @@ namespace Emberfall
                 float length = y / (float)(Rows - 1), across = x / (float)(Columns - 1) * 2f - 1f;
                 Vector3 p = VisualMeshRecipes.DrapePoint(across,length,time,motion,phase);
                 int index = y * Columns + x;
+                p += new Vector3(inertiaSide*.004f,0,-inertiaPitch*.004f)*length*length;
                 vertices[index] = p; vertices[index + SideCount] = p + Vector3.back * .018f;
             }
         }

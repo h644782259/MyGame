@@ -143,6 +143,7 @@ namespace Emberfall
             aimGeometry.Clear();
             position = WorldTraversal.NearestWalkable(position, .45f);
             transform.position = position;
+            if (model != null) model.ResetLocomotion();
             jumping = false;
             jumpAge = movementSkillLock = 0;
             aimPoint = position+transform.forward*5f;
@@ -328,9 +329,11 @@ namespace Emberfall
             model.transform.localRotation = Quaternion.identity;
             if (session.InputBlocked)
             {
+                model.SetLocomotion(Vector3.zero,dt,stats.MoveSpeed,false,jumping,jumpAge/.55f);
                 model.Animate(0,attackAnimation,hurtTimer > 0);
                 return;
             }
+            Vector3 walkingDisplacement = Vector3.zero;
             MaintainStarterCompanion(dt);
             bool mobile = MobileControls.Active;
             Vector2 moveInput = mobile ? MobileControls.Move : new Vector2(Input.GetAxisRaw("Horizontal"), Input.GetAxisRaw("Vertical"));
@@ -353,11 +356,14 @@ namespace Emberfall
                 if (mobilityTime>0) movementBonus += .1f+mobilityRank*.05f;
                 if (pursuitTime > 0) movementBonus += .2f;
                 if (burnStrideTime > 0) movementBonus += .2f;
+                Vector3 walkingStart = transform.position;
                 transform.position = WorldTraversal.Move(transform.position, movement * stats.MoveSpeed * (1f+movementBonus) * MovementMultiplier * dt, .45f);
+                walkingDisplacement = CombatFx.Flat(transform.position - walkingStart);
             }
             // Readiness and landing are checked before expiring an older input,
             // so a buffer at the exact cooldown boundary is not lost to frame order.
             if (!wantsBlink) blinkBufferTime = Mathf.Max(0, blinkBufferTime - dt);
+            Vector3 beforeBoundary = transform.position;
             Vector3 bounded = transform.position;
             float bound = Mathf.Max(1,session.ArenaRadius - .65f);
             float airborneHeight = jumping ? bounded.y : 0;
@@ -365,6 +371,7 @@ namespace Emberfall
             bounded = Vector3.ClampMagnitude(bounded,bound);
             bounded.y = airborneHeight;
             transform.position = bounded;
+            if (walkingDisplacement.sqrMagnitude > 0) walkingDisplacement += CombatFx.Flat(bounded-beforeBoundary);
             // Mouse selection uses this frame's final position. Walking only turns
             // the model; it never overwrites the independent mouse aim point.
             if ((charge == null || !charge.IsCharging) && (mobile || !session.PointerOverUI))
@@ -391,6 +398,7 @@ namespace Emberfall
                 FaceAim();
                 if (attackCooldown <= 0) BasicAttack();
             }
+            model.SetLocomotion(transform.InverseTransformDirection(walkingDisplacement),dt,stats.MoveSpeed,!TraversalStartedThisFrame,jumping,jumpAge/.55f);
             model.Animate(movement.magnitude,attackAnimation,hurtTimer > 0);
             if (charge != null && charge.IsCharging) model.AnimateCharge(charge.Progress);
         }
@@ -977,6 +985,7 @@ namespace Emberfall
             { TraversalFailure(); return false; }
             if (charge != null) charge.Cancel();
             model.CancelAction();
+            model.ResetLocomotion();
             transform.position = destination;
             dodgeCooldown = 2.1f;
             invulnerability = Mathf.Max(invulnerability, .38f);

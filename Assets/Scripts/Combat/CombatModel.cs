@@ -19,7 +19,7 @@ namespace Emberfall
         private Transform tailRig;
         private readonly Transform[] paws = new Transform[4];
         private Vector3[] pawOrigins;
-        private float smoothedSpeed, enemyPose;
+        private float smoothedSpeed;
         private Transform leftLeg, rightLeg, leftArm, rightArm, body, decoration;
         private Transform spine, pelvis, headRig, leftElbow, rightElbow, leftKnee, rightKnee, cloak;
         private Transform swordRig, staffRig, bowRig, arrowRig, castingOrb;
@@ -884,10 +884,9 @@ namespace Emberfall
         private void AnimateHero(float speed, float attack, bool hurt)
         {
             float dt = Time.deltaTime;
-            smoothedSpeed = Mathf.Lerp(smoothedSpeed, Mathf.Clamp01(speed), 1f - Mathf.Exp(-dt * 12f));
-            speed = smoothedSpeed;
+            speed = smoothedSpeed = locomotion.Speed;
             if (tailoredCloth != null) tailoredCloth.SetMotion(speed, actionDuration > 0 && actionAge < actionDuration ? 1 : 0);
-            gaitPhase += dt * (speed > .03f ? 10.5f : 2f);
+            gaitPhase = locomotion.Phase;
             if (actionDuration > 0 && (!actionBasic || Time.frameCount != actionStartedFrame)) actionAge = Mathf.Min(actionAge + dt, actionDuration);
             float t = actionDuration > 0 ? actionAge / actionDuration : 1f;
             bool acting = t < 1f;
@@ -910,6 +909,7 @@ namespace Emberfall
             leftElbow.localRotation = Quaternion.Euler(-12f, 0, 0);
             rightElbow.localRotation = Quaternion.Euler(-16f, 0, 0);
             cloak.localRotation = Quaternion.Euler(8f + speed * 13f + Mathf.Sin(gaitPhase * .5f) * 4f, stride * -5f, stride * 3f);
+            ApplyHeroLocomotion();
 
             if (heroClass == HeroClass.Vanguard)
             {
@@ -1133,7 +1133,8 @@ namespace Emberfall
             if (largeBossRig != null) { transform.localPosition = Vector3.zero; largeBossRig.Animate(speed, attack); ApplyRecoil(); return; }
             float dt = Time.deltaTime;
             smoothedSpeed = Mathf.Lerp(smoothedSpeed, Mathf.Clamp01(speed), 1f-Mathf.Exp(-dt*10f));
-            gaitPhase += dt * Mathf.Lerp(2.2f,10.2f,smoothedSpeed);
+            if (articulatedEnemy) { gaitPhase=locomotion.Phase;smoothedSpeed=locomotion.Speed; }
+            else gaitPhase += dt * Mathf.Lerp(2.2f,10.2f,smoothedSpeed);
             float stride = Mathf.Sin(gaitPhase), walk = stride * smoothedSpeed * 27f;
             if (slime)
             {
@@ -1172,11 +1173,13 @@ namespace Emberfall
                 if (leftArm != null) leftArm.localRotation=Quaternion.Euler(-walk*.6f,0,-8f);
                 if (articulatedEnemy)
                 {
-                    // Controller supplies .95 while anticipating, then 1 -> 0 at release.
-                    // Smooth transitions do not modify its actual warning or damage timing.
-                    enemyPose = Mathf.Lerp(enemyPose,attack,1f-Mathf.Exp(-dt*24f));
-                    float release = Mathf.Sin(Mathf.Clamp01((.94f-enemyPose)/.7f)*Mathf.PI);
-                    float windup = Mathf.SmoothStep(0,1,Mathf.Clamp01((enemyPose-.4f)/.5f));
+                    // Explicit controller phase: the contact pose appears on the real impact frame.
+                    float signedStride = Mathf.Sin(gaitPhase)*locomotion.Forward;
+                    float sideStride = Mathf.Sin(gaitPhase)*locomotion.Side;
+                    leftLeg.localRotation=Quaternion.Euler(signedStride*27,0,-2+sideStride*22);
+                    rightLeg.localRotation=Quaternion.Euler(-signedStride*27,0,2-sideStride*22);
+                    float release = EnemyActionPose.Contact(enemyActionPhase,enemyActionProgress);
+                    float windup = EnemyActionPose.Windup(enemyActionPhase,enemyActionProgress);
                     spine.localRotation=Quaternion.Euler(smoothedSpeed*6f-windup*12f+release*13f,windup*-18f+release*19f, -stride*2f*smoothedSpeed);
                     headRig.localRotation=Quaternion.Euler(windup*8f,windup*10f,-stride*1.5f*smoothedSpeed);
                     pelvis.localRotation=Quaternion.Euler(0,stride*-4f*smoothedSpeed,stride*2f*smoothedSpeed);

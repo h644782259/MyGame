@@ -141,7 +141,11 @@ namespace Emberfall
             {
                 CombatModel model = session.Player.GetComponentInChildren<CombatModel>();
                 if (movingPreview) session.Player.transform.position += Vector3.right * Time.deltaTime * 4f;
-                if (model != null) model.Animate(movingPreview ? 1 : 0, 0, false);
+                if (model != null)
+                {
+                    model.SetLocomotion(session.Player.transform.InverseTransformDirection(movingPreview?Vector3.right*Time.deltaTime*4f:Vector3.zero),Time.deltaTime,4f,movingPreview);
+                    model.Animate(movingPreview ? 1 : 0, 0, false);
+                }
                 var charge = session.Player.GetComponent<SkillChargeController>();
                 if (charge != null && charge.IsCharging && model != null) model.AnimateCharge(charge.Progress);
             }
