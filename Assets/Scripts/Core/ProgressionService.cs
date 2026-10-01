@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Security.Cryptography;
 using System.Text;
 using UnityEngine;
 
@@ -12,13 +13,35 @@ namespace Emberfall
         public HeroClass HeroClass;
         public int Level;
         public DateTime SavedAtUtc;
-        public bool CanLoad, RecoveredFromBackup, IsCurrent;
+        public bool CanLoad, RecoveredFromBackup, IsCurrent, DeletionPending;
+    }
+
+    /// <summary>A read-only identity snapshot. Creating it never changes files; only an explicit
+    /// confirmation should pass it to DeleteSaveSlot. A changed save requires a fresh confirmation.</summary>
+    public sealed class SaveDeletionRequest
+    {
+        public string Id { get; private set; }
+        public string DisplayName { get; private set; }
+        public DateTime SavedAtUtc { get; private set; }
+        public bool WasCurrent { get; private set; }
+        internal string Directory, Fingerprint;
+        internal SaveDeletionRequest(SaveSlotInfo slot, string directory, string fingerprint)
+        {
+            Id = slot.Id; DisplayName = slot.DisplayName; SavedAtUtc = slot.SavedAtUtc;
+            WasCurrent = slot.IsCurrent; Directory = directory; Fingerprint = fingerprint;
+        }
     }
 
     /// <summary>Owns the character's persistent progression. It has no scene dependencies.</summary>
     public class ProgressionService
     {
         public const int MaximumLevel = 100;
+        // Limits stop new writes instead of evicting existing characters or equipment.
+        public const int MaximumSaveSlots = 64;
+        public const int MaximumSaveBytes = 4 * 1024 * 1024;
+        private const string DeletionSuffix = ".delete-pending";
+        private const string DeletionMarker = "Emberfall confirmed character deletion v1\n";
+        private static readonly object StorageGate = new object();
         public const int InventoryCapacity = 72;
         public const int MaximumUpgrade = 10;
         public const int PotionPrice = 20;
@@ -26,8 +49,11 @@ namespace Emberfall
         public const int RecoveryLootCapacity = 256;
         public const int MechanicExchangeCost = 12;
         public const int MaximumMasteryRank = 35;
+        public const int BuildPresetCount = 2;
         public const int FashionChoiceCost = 30;
         public const int ReforgeCost = 6;
+        public const int AscensionCost = 24;
+        public const int AscensionMilestone = 5;
         public const int VariantCost = 4;
         private static readonly int[] WingHealthPercents = { 3, 5, 8, 12 };
         private static readonly int[] WingArmorPercents = { 2, 3, 5, 8 };
@@ -66,8 +92,8 @@ namespace Emberfall
         private const string SaveFormat = "emberfall-character";
         private readonly string saveDirectory;
         private string savePath;
-        private string backupPath;
-        private string temporaryPath;
+        private bool attachedSaveExists, activeSlotDeleted;
+        private string lastLoggedSaveError;
         private string currentSlotId = "legacy";
         private readonly System.Random random = new System.Random();
         private readonly HashSet<string> collectedLootIds = new HashSet<string>(StringComparer.Ordinal);
@@ -89,12 +115,14 @@ namespace Emberfall
         public string LastError { get; private set; }
         public string SaveDirectory { get { return saveDirectory; } }
         public string SaveFilePath { get { return savePath; } }
+        public string CurrentSlotId { get { return activeSlotDeleted ? null : currentSlotId; } }
+        public bool HasActiveSave { get { return !activeSlotDeleted && attachedSaveExists; } }
         public bool HasSave { get { return DiscoverSlotIds().Count > 0; } }
 
         public ProgressionService(string saveDirectory = null)
         {
             string directory = string.IsNullOrWhiteSpace(saveDirectory) ? Application.persistentDataPath : saveDirectory;
-            this.saveDirectory = directory;
+            this.saveDirectory = Path.GetFullPath(directory);
             SelectSlotPath("legacy");
             Profile = CreateProfile(HeroClass.Vanguard);
             LastError = string.Empty;
@@ -103,6 +131,9 @@ namespace Emberfall
         public void NewGame(HeroClass heroClass)
         {
             if (!Enum.IsDefined(typeof(HeroClass), heroClass)) heroClass = HeroClass.Vanguard;
+            // A deleted character has no autosave destination. An explicit new game
+            // gets a fresh ID rather than recycling its deleted filename.
+            if (activeSlotDeleted || File.Exists(savePath + DeletionSuffix)) { CreateNewSlot(heroClass); return; }
             Profile = CreateProfile(heroClass);
             collectedLootIds.Clear();
             Commit();
@@ -120,6 +151,7 @@ namespace Emberfall
             string normalized;
             if (!TryNormalizeSlotId(id, out normalized)) return Fail("无效的存档编号。");
             string candidatePath = SlotPath(normalized);
+            if (File.Exists(candidatePath + DeletionSuffix)) return Fail("该存档删除未完成，请在存档列表重新确认清理剩余文件。");
             GameProfile loaded;
             string failure;
             bool recovered;
@@ -127,6 +159,7 @@ namespace Emberfall
             {
                 if (currentSlotId != normalized) collectedLootIds.Clear();
                 SelectSlotPath(normalized);
+                attachedSaveExists = true;
                 Profile = loaded;
                 LastError = failure;
                 RaiseChanged();
@@ -146,23 +179,142 @@ namespace Emberfall
                 string error;
                 bool recovered;
                 bool readable = TryReadSlot(path, out loaded, out error, out recovered);
+                bool deletionPending = File.Exists(path + DeletionSuffix);
                 DateTime written = SafeWriteTime(path);
                 DateTime backupWritten = SafeWriteTime(path + ".bak");
                 if (backupWritten > written) written = backupWritten;
                 slots.Add(new SaveSlotInfo
                 {
                     Id = id,
-                    DisplayName = readable ? GameBalance.ClassName(loaded.heroClass) + " · " + loaded.level + "级" + (id == "legacy" ? " · 旧存档" : "") : (id == "legacy" ? "旧存档 · 无法读取" : "存档 " + id.Substring(0, 6) + " · 无法读取"),
+                    DisplayName = deletionPending ? "存档 " + (id == "legacy" ? "legacy" : id.Substring(0, 6)) + " · 删除未完成" : readable ? GameBalance.ClassName(loaded.heroClass) + " · " + loaded.level + "级" + (id == "legacy" ? " · 旧存档" : "") : (id == "legacy" ? "旧存档 · 无法读取" : "存档 " + id.Substring(0, 6) + " · 无法读取"),
                     HeroClass = readable ? loaded.heroClass : HeroClass.Vanguard,
                     Level = readable ? loaded.level : 0,
                     SavedAtUtc = written,
                     CanLoad = readable,
                     RecoveredFromBackup = recovered,
-                    IsCurrent = string.Equals(currentSlotId, id, StringComparison.Ordinal)
+                    IsCurrent = !activeSlotDeleted && string.Equals(currentSlotId, id, StringComparison.Ordinal),
+                    DeletionPending = deletionPending
                 });
             }
             slots.Sort((a, b) => { int time = b.SavedAtUtc.CompareTo(a.SavedAtUtc); return time != 0 ? time : string.CompareOrdinal(a.Id, b.Id); });
             return slots;
+        }
+
+        public bool PrepareSaveDeletion(string id, out SaveDeletionRequest request)
+        {
+            request = null;
+            string normalized;
+            if (!TryNormalizeSlotId(id, out normalized)) return Fail("无效的存档编号。");
+            lock (StorageGate)
+            {
+                try
+                {
+                    string before = SlotFingerprint(SlotPath(normalized));
+                    SaveSlotInfo slot = GetSaveSlots().Find(value => value.Id == normalized);
+                    if (slot == null) return Fail("找不到这个存档，请刷新列表。");
+                    string after = SlotFingerprint(SlotPath(normalized));
+                    if (before != after) return Fail("存档正在改变，请刷新后重新选择角色。");
+                    request = new SaveDeletionRequest(slot, saveDirectory, after);
+                    LastError = string.Empty;
+                    return true;
+                }
+                catch (Exception exception) when (IsStorageException(exception))
+                { return Fail("无法准备删除：" + exception.Message); }
+            }
+        }
+
+        /// <summary>Only call after showing the request's identity and obtaining confirmation.
+        /// Normal success removes exactly four known paths; no wildcard or directory deletion.
+        /// An interrupted deletion remains visible, cannot load from backup, and requires
+        /// another explicit confirmation to finish. Existing unrelated files stay untouched.</summary>
+        public bool DeleteSaveSlot(SaveDeletionRequest request)
+        {
+            if (request == null || !string.Equals(request.Directory, saveDirectory, StringComparison.Ordinal))
+                return Fail("删除确认无效，请重新选择存档。");
+            string id;
+            if (!TryNormalizeSlotId(request.Id, out id)) return Fail("无效的存档编号。");
+            lock (StorageGate)
+            {
+                string primary = SlotPath(id), marker = primary + DeletionSuffix;
+                try
+                {
+                    if (request.Fingerprint == null) { LastError = string.Empty; return true; } // This exact request already completed.
+                    if (SlotFingerprint(primary) != request.Fingerprint)
+                        return Fail("存档内容已改变，未删除任何文件。请刷新并重新确认角色。");
+                    // The durable marker is committed before any save content is removed.
+                    // It survives partial failure and blocks both backup recovery and writes.
+                    if (!File.Exists(marker))
+                    {
+                        using (var stream = new FileStream(marker, FileMode.CreateNew, FileAccess.Write, FileShare.None))
+                        {
+                            byte[] bytes = Encoding.UTF8.GetBytes(DeletionMarker);
+                            stream.Write(bytes, 0, bytes.Length);
+                            stream.Flush(true);
+                        }
+                    }
+                    if (currentSlotId == id)
+                    {
+                        activeSlotDeleted = true;
+                        attachedSaveExists = false;
+                        collectedLootIds.Clear();
+                    }
+                    File.Delete(primary + ".tmp");
+                    File.Delete(primary + ".bak");
+                    File.Delete(primary);
+                    File.Delete(marker);
+                    request.Fingerprint = null;
+                    LastError = string.Empty;
+                    RaiseChanged();
+                    return true;
+                }
+                catch (Exception exception) when (IsStorageException(exception))
+                {
+                    // Do not rollback by restoring a backup: a confirmed deletion must
+                    // never resurrect as a playable character after a partial failure.
+                    if (File.Exists(marker) && currentSlotId == id) activeSlotDeleted = true;
+                    return Fail("删除未完成：" + exception.Message + " 请刷新并重新确认清理；剩余文件不会作为存档读取。");
+                }
+            }
+        }
+
+        private static bool IsStorageException(Exception exception)
+        {
+            return exception is IOException || exception is UnauthorizedAccessException ||
+                exception is ArgumentException || exception is NotSupportedException;
+        }
+
+        private static string SlotFingerprint(string primary)
+        {
+            var identity = new StringBuilder();
+            foreach (string suffix in new[] { "", ".bak", ".tmp", DeletionSuffix })
+            {
+                string path = primary + suffix;
+                if (Directory.Exists(path)) throw new IOException("存档路径被同名目录占用，未删除目录。");
+                identity.Append(suffix).Append(':');
+                if (!File.Exists(path)) { identity.Append("missing;"); continue; }
+                var info = new FileInfo(path);
+                if ((info.Attributes & FileAttributes.ReparsePoint) != 0)
+                    throw new IOException("存档路径是链接，未修改其目标。");
+                identity.Append(info.Length).Append(':').Append(info.LastWriteTimeUtc.Ticks).Append(':');
+                // Hash only recognised files, with a bounded read for oversized damaged
+                // files. Length/time plus head/tail still identify those for confirmation.
+                using (var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read))
+                using (SHA256 hash = SHA256.Create())
+                {
+                    byte[] digest;
+                    if (stream.Length <= MaximumSaveBytes) digest = hash.ComputeHash(stream);
+                    else
+                    {
+                        byte[] sample = new byte[8192];
+                        int first = stream.Read(sample, 0, 4096);
+                        stream.Seek(-4096, SeekOrigin.End);
+                        int last = stream.Read(sample, first, 4096);
+                        digest = hash.ComputeHash(sample, 0, first + last);
+                    }
+                    identity.Append(Convert.ToBase64String(digest)).Append(';');
+                }
+            }
+            return identity.ToString();
         }
 
         public bool CreateNewSlot(HeroClass hero)
@@ -173,6 +325,7 @@ namespace Emberfall
 
         public bool SaveAsNewSlot()
         {
+            if (activeSlotDeleted) return Fail("当前角色已删除，请读取其他存档或创建新角色。");
             try
             {
                 // Validate/write a deep snapshot, never mutate the current profile
@@ -189,26 +342,32 @@ namespace Emberfall
 
         private bool CreateSlot(GameProfile candidate, bool newCharacter)
         {
-            string id = Guid.NewGuid().ToString("N");
-            string path = SlotPath(id);
-            string failure;
-            if (!TryWriteProfile(candidate, path, true, out failure)) return Fail(failure);
-            // Both primary and backup are now durably written. Only then publish
-            // the new active profile/path and notify the UI.
-            SelectSlotPath(id);
-            Profile = candidate;
-            if (newCharacter) collectedLootIds.Clear();
-            LastError = string.Empty;
-            RaiseChanged();
-            return true;
+            lock (StorageGate)
+            {
+                if (DiscoverSlotIds(true).Count >= MaximumSaveSlots)
+                    return Fail("已达到 " + MaximumSaveSlots + " 份存档/临时恢复文件上限。请先备份整个存档目录并处理恢复文件，或手动删除不需要的角色；现有文件不会自动清理。");
+                string id = Guid.NewGuid().ToString("N");
+                string path = SlotPath(id);
+                string failure;
+                if (!TryWriteProfile(candidate, path, true, out failure)) return Fail(failure);
+                // Both primary and backup are now durably written. Only then publish
+                // the new active profile/path and notify the UI.
+                SelectSlotPath(id);
+                attachedSaveExists = true;
+                Profile = candidate;
+                if (newCharacter) collectedLootIds.Clear();
+                LastError = string.Empty;
+                RaiseChanged();
+                return true;
+            }
         }
 
         private void SelectSlotPath(string id)
         {
             currentSlotId = id;
             savePath = SlotPath(id);
-            backupPath = savePath + ".bak";
-            temporaryPath = savePath + ".tmp";
+            activeSlotDeleted = false;
+            lastLoggedSaveError = null;
         }
 
         private string SlotPath(string id)
@@ -226,7 +385,7 @@ namespace Emberfall
             return true;
         }
 
-        private List<string> DiscoverSlotIds()
+        private List<string> DiscoverSlotIds(bool includeTemporaryReservations = false)
         {
             var ids = new HashSet<string>(StringComparer.Ordinal);
             try
@@ -235,6 +394,13 @@ namespace Emberfall
                 foreach (string file in Directory.EnumerateFiles(saveDirectory, "emberfall-save*.json*", SearchOption.TopDirectoryOnly))
                 {
                     string name = Path.GetFileName(file);
+                    // A process interrupted before publishing a new primary can
+                    // leave only its canonical .tmp path. Reserve capacity for
+                    // that identity without exposing it as a playable character
+                    // or deleting potentially recoverable progress.
+                    if (includeTemporaryReservations && name.EndsWith(".json.tmp", StringComparison.Ordinal))
+                        name = name.Substring(0, name.Length - 4);
+                    if (name.EndsWith(DeletionSuffix, StringComparison.Ordinal)) name = name.Substring(0, name.Length - DeletionSuffix.Length);
                     if (name.EndsWith(".bak", StringComparison.Ordinal)) name = name.Substring(0, name.Length - 4);
                     if (name == "emberfall-save.json") { ids.Add("legacy"); continue; }
                     const string prefix = "emberfall-save-", suffix = ".json";
@@ -242,7 +408,8 @@ namespace Emberfall
                     string raw = name.Substring(prefix.Length, name.Length - prefix.Length - suffix.Length);
                     string id;
                     // Generated filenames are canonical lowercase GuidN. Unknown
-                    // files, temp writes and subdirectories are never save slots.
+                    // files and subdirectories are never save slots. Temporary
+                    // writes are counted only by the new-slot capacity guards.
                     if (raw.Length == 32 && TryNormalizeSlotId(raw, out id) && raw == id) ids.Add(id);
                 }
             }
@@ -260,6 +427,9 @@ namespace Emberfall
         private static bool TryReadSlot(string primary, out GameProfile profile, out string error, out bool recovered)
         {
             recovered = false;
+            profile = null;
+            error = "该存档的删除尚未完成，请在存档列表确认清理剩余文件。";
+            if (File.Exists(primary + DeletionSuffix)) return false;
             if (TryReadProfile(primary, out profile, out error)) return true;
             if (!TryReadProfile(primary + ".bak", out profile, out error)) return false;
             recovered = true;
@@ -270,8 +440,44 @@ namespace Emberfall
         public void Save()
         {
             string failure;
-            if (TryWriteProfile(Profile, savePath, false, out failure)) LastError = string.Empty;
-            else { LastError = failure; Debug.LogWarning("Emberfall: " + failure); }
+            if (TryWriteAttachedProfile(Profile, out failure))
+            {
+                LastError = string.Empty;
+                lastLoggedSaveError = null;
+            }
+            else
+            {
+                LastError = failure;
+                // A full/readonly disk should not grow Player.log every autosave tick.
+                if (lastLoggedSaveError != failure) Debug.LogWarning("Emberfall: " + failure);
+                lastLoggedSaveError = failure;
+            }
+        }
+
+        private bool TryWriteAttachedProfile(GameProfile profile, out string failure)
+        {
+            lock (StorageGate)
+            {
+                if (activeSlotDeleted || File.Exists(savePath + DeletionSuffix) ||
+                    (attachedSaveExists && !File.Exists(savePath) && !File.Exists(savePath + ".bak")))
+                {
+                    activeSlotDeleted = true;
+                    failure = "保存失败：当前存档已删除或移走。请读取其他存档或创建新角色。";
+                    return false;
+                }
+                if (!attachedSaveExists && !File.Exists(savePath) && !File.Exists(savePath + ".bak") &&
+                    DiscoverSlotIds(true).Count >= MaximumSaveSlots)
+                {
+                    failure = "保存失败：已达到 " + MaximumSaveSlots + " 份存档/临时恢复文件上限。请先备份目录并处理恢复文件；未覆盖或清理现有文件。";
+                    return false;
+                }
+                // A first legacy save uses the same collision-safe creation path
+                // as a new slot. Existing attached slots never become new again.
+                bool createOnly = !attachedSaveExists && !File.Exists(savePath) && !File.Exists(savePath + ".bak");
+                bool result = TryWriteProfile(profile, savePath, createOnly, out failure);
+                if (result) attachedSaveExists = true;
+                return result;
+            }
         }
 
         private static bool TryWriteProfile(GameProfile profile, string primary, bool createOnly, out string failure)
@@ -281,12 +487,45 @@ namespace Emberfall
             failure = string.Empty;
             try
             {
+                // Never follow a temporary-file link (FileMode.Create would
+                // truncate its target), or replace linked recovery artifacts.
+                // Attribute checks also catch dangling links, which Exists may miss.
+                RejectLinkedStoragePath(primary);
+                RejectLinkedStoragePath(backup);
+                RejectLinkedStoragePath(temporary);
+                RejectLinkedStoragePath(primary + DeletionSuffix);
+                if (File.Exists(primary + DeletionSuffix)) throw new IOException("该角色正在删除，已停止写入。");
                 ValidateProfile(profile);
                 Directory.CreateDirectory(Path.GetDirectoryName(primary));
-                if (createOnly && (File.Exists(primary) || File.Exists(backup) || File.Exists(temporary)))
+                if (createOnly && (File.Exists(primary) || File.Exists(backup) || File.Exists(temporary) || File.Exists(primary + DeletionSuffix)))
                     throw new IOException("新存档文件名已被占用，请重试。");
+                GameProfile pendingWrite;
+                string pendingError;
+                if (Directory.Exists(temporary)) throw new IOException("临时存档路径被目录占用，未覆盖原文件或备份。");
+                if (File.Exists(temporary) && TryReadProfile(temporary, out pendingWrite, out pendingError))
+                    throw new IOException("发现可恢复的临时存档，已保留且未覆盖。请先备份整个存档目录，再处理临时存档恢复。");
                 var save = new SaveFile { format = SaveFormat, version = 1, profile = profile };
                 string json = JsonUtility.ToJson(save, true);
+                if (Encoding.UTF8.GetByteCount(json) > MaximumSaveBytes)
+                    throw new IOException("存档超过 4 MiB 安全大小，未覆盖原文件或备份。请保留现有文件。");
+                // Compare the actual bounded document, never a dirty flag or file
+                // timestamp: callers may mutate Profile directly or replace files.
+                // An unchanged primary alone is insufficient; saving must also
+                // retain a usable recovery backup. All refusal guards run first.
+                if (!createOnly)
+                {
+                    string existingDocument, readError;
+                    GameProfile recovery;
+                    bool samePrimary = TryReadSaveDocument(primary, out existingDocument, out readError) &&
+                        string.Equals(existingDocument, json, StringComparison.Ordinal);
+                    bool usableBackup = TryReadProfile(backup, out recovery, out readError);
+                    if (samePrimary && usableBackup) return true;
+                    bool usablePrimary = samePrimary || TryReadProfile(primary, out recovery, out readError);
+                    // Do not expose an uncommitted candidate in a newly repaired
+                    // backup or overwrite both damaged originals to manufacture one.
+                    if (!usablePrimary && !usableBackup)
+                        throw new IOException("主存档与备份均无法验证，当前进度尚未保存。原文件已保留，请先备份整个目录并恢复可用存档。");
+                }
                 // Flush the complete new document before atomically replacing the old one.
                 using (var stream = new FileStream(temporary, createOnly ? FileMode.CreateNew : FileMode.Create, FileAccess.Write, FileShare.None))
                 {
@@ -318,21 +557,32 @@ namespace Emberfall
                 }
                 else
                 {
+                    // Non-create-only saves reach this branch only with a usable
+                    // recovery backup. There must be no fallible second write
+                    // after the candidate has become the durable primary.
                     File.Move(temporary, primary);
-                    if (!File.Exists(backup)) File.Copy(primary, backup);
                 }
                 return true;
             }
             catch (Exception exception) when (exception is IOException || exception is UnauthorizedAccessException || exception is ArgumentException || exception is NotSupportedException)
             {
                 failure = "保存失败：" + exception.Message;
-                if (createOnly)
-                {
-                    if (ownsTemporary) DeleteFailedSlotFile(temporary);
-                    if (ownsBackup) DeleteFailedSlotFile(backup);
-                }
+                // Only a temporary file written by this attempt is disposable. Never
+                // sweep the directory or remove an existing recovery backup.
+                if (ownsTemporary) DeleteFailedSlotFile(temporary);
+                if (createOnly && ownsBackup) DeleteFailedSlotFile(backup);
                 return false;
             }
+        }
+
+        private static void RejectLinkedStoragePath(string path)
+        {
+            FileAttributes attributes;
+            try { attributes = File.GetAttributes(path); }
+            catch (FileNotFoundException) { return; }
+            catch (DirectoryNotFoundException) { return; }
+            if ((attributes & FileAttributes.ReparsePoint) != 0)
+                throw new IOException("存档路径是链接，未修改该路径或其目标。请保留原文件并检查存档目录。");
         }
 
         private static void DeleteFailedSlotFile(string path)
@@ -426,19 +676,19 @@ namespace Emberfall
         {
             FashionData fashion = Profile.fashions == null ? null : Profile.fashions.Find(value => value != null && value.id == id);
             if (fashion == null) return Fail("尚未获得这件时装。");
-            if (fashion.slot == FashionSlot.Wings) Profile.wingsFashionId = id;
-            else Profile.weaponFashionId = id;
-            Commit();
-            return true;
+            GameProfile candidate=Snapshot();
+            if (fashion.slot == FashionSlot.Wings) candidate.wingsFashionId = id;
+            else candidate.weaponFashionId = id;
+            return CommitCandidate(candidate);
         }
 
         public bool UnequipFashion(FashionSlot slot)
         {
-            if (slot == FashionSlot.Wings) Profile.wingsFashionId = null;
-            else if (slot == FashionSlot.Weapon) Profile.weaponFashionId = null;
+            GameProfile candidate=Snapshot();
+            if (slot == FashionSlot.Wings) candidate.wingsFashionId = null;
+            else if (slot == FashionSlot.Weapon) candidate.weaponFashionId = null;
             else return Fail("无效的时装部位。");
-            Commit();
-            return true;
+            return CommitCandidate(candidate);
         }
 
         public bool SetSpecialization(ElementalistSpecialization specialization, bool inCamp)
@@ -446,15 +696,24 @@ namespace Emberfall
             if (!inCamp) return Fail("只能在营地免费切换专精。");
             if (Profile.heroClass != HeroClass.Arcanist) return Fail("只有元素师可切换冰火专精。");
             if (!Enum.IsDefined(typeof(ElementalistSpecialization), specialization)) return Fail("无效的专精。");
-            Profile.specialization = specialization;
-            Commit();
-            return true;
+            GameProfile candidate=Snapshot();candidate.specialization=specialization;
+            return CommitCandidate(candidate);
         }
 
         public bool HasMechanic(EquipmentMechanic mechanic)
         {
-            if (mechanic == EquipmentMechanic.None || !Enum.IsDefined(typeof(EquipmentMechanic), mechanic) ||
-                BuildCatalog.MechanicClass(mechanic) != Profile.heroClass) return false;
+            // This is queried by combat/companion updates. Keep the closed catalog
+            // check allocation-free instead of boxing an enum for reflection.
+            switch (mechanic)
+            {
+                case EquipmentMechanic.FrostEcho:
+                case EquipmentMechanic.CinderTrail:
+                case EquipmentMechanic.ReturningBlade:
+                case EquipmentMechanic.VenomSpread:
+                case EquipmentMechanic.TwinSummonResonance: break;
+                default: return false;
+            }
+            if (BuildCatalog.MechanicClass(mechanic) != Profile.heroClass) return false;
             ItemData equipped = Equipped(BuildCatalog.MechanicSlot(mechanic));
             return equipped != null && equipped.mechanic == mechanic;
         }
@@ -466,38 +725,43 @@ namespace Emberfall
 
         public bool SetItemLocked(string id, bool locked)
         {
-            ItemData item = FindItem(id);
-            if (item == null && Profile.pendingLoot != null) item = Profile.pendingLoot.Find(value => value != null && value.id == id);
-            if (item == null && Profile.recoveryLoot != null) item = Profile.recoveryLoot.Find(value => value != null && value.id == id);
+            GameProfile candidate=Snapshot();
+            ItemData item = candidate.inventory.Find(value=>value!=null&&value.id==id);
+            if (item == null && candidate.pendingLoot != null) item = candidate.pendingLoot.Find(value => value != null && value.id == id);
+            if (item == null && candidate.recoveryLoot != null) item = candidate.recoveryLoot.Find(value => value != null && value.id == id);
             if (item == null) return Fail("找不到这件装备。");
             item.locked = locked;
-            Commit();
-            return true;
+            return CommitCandidate(candidate);
         }
 
         public bool SetAutoSell(Rarity rarity, bool enabled)
         {
-            if (rarity == Rarity.Common) Profile.autoSellCommon = enabled;
-            else if (rarity == Rarity.Rare) Profile.autoSellRare = enabled;
+            GameProfile candidate=Snapshot();
+            if (rarity == Rarity.Common) candidate.autoSellCommon = enabled;
+            else if (rarity == Rarity.Rare) candidate.autoSellRare = enabled;
             else return Fail("只可自动出售普通或稀有装备；机制、锁定和已强化装备始终受保护。");
-            Commit();
-            return true;
+            return CommitCandidate(candidate);
         }
 
         public int BulkSellLowQuality()
         {
+            GameProfile candidate = Snapshot();
             int sold = 0;
-            for (int index = Profile.inventory.Count - 1; index >= 0; index--)
+            for (int index = candidate.inventory.Count - 1; index >= 0; index--)
             {
-                ItemData item = Profile.inventory[index];
-                if (item == null || IsEquipped(Profile, item.id) || IsProtectedLoot(item) || item.rarity > Rarity.Rare) continue;
-                Profile.gold = (int)Math.Min(MaximumGold, (long)Profile.gold + SellValue(item));
-                Profile.inventory.RemoveAt(index);
+                ItemData item = candidate.inventory[index];
+                if (item == null || IsEquipped(candidate, item.id) || IsProtectedLoot(item) || item.rarity > Rarity.Rare) continue;
+                candidate.gold = (int)Math.Max(0L, Math.Min(MaximumGold, (long)candidate.gold + SellValue(item)));
+                candidate.inventory.RemoveAt(index);
                 sold++;
             }
-            if (sold > 0) Commit();
-            else Fail("没有可批量出售的普通/稀有装备；穿戴、锁定、机制和强化装备受保护。");
-            return sold;
+            if (sold == 0)
+            {
+                Fail("没有可批量出售的普通/稀有装备；穿戴、锁定、机制和强化装备受保护。");
+                return 0;
+            }
+            // Publish inventory and proceeds together, only after the slot write succeeds.
+            return CommitCandidate(candidate) ? sold : 0;
         }
 
         public static bool IsProtectedLoot(ItemData item)
@@ -520,7 +784,7 @@ namespace Emberfall
             Profile.pendingLoot.Remove(item);
             Profile.inventory.Add(item);
             string failure;
-            if (!TryWriteProfile(Profile, savePath, false, out failure))
+            if (!TryWriteAttachedProfile(Profile, out failure))
             {
                 Profile.inventory.Remove(item);
                 Profile.pendingLoot.Insert(Math.Min(pendingIndex, Profile.pendingLoot.Count), item);
@@ -546,7 +810,7 @@ namespace Emberfall
             if (claimed > 0)
             {
                 string failure;
-                if (!TryWriteProfile(Profile, savePath, false, out failure))
+                if (!TryWriteAttachedProfile(Profile, out failure))
                 {
                     foreach (ItemData item in moved) Profile.inventory.Remove(item);
                     Profile.pendingLoot.InsertRange(0, moved);
@@ -584,11 +848,22 @@ namespace Emberfall
             foreach (ItemData item in incoming)
                 candidate.recoveryLoot.Add(JsonUtility.FromJson<ItemData>(JsonUtility.ToJson(item, true)));
             string failure;
-            if (!TryWriteProfile(candidate, savePath, false, out failure)) return Fail(failure);
+            if (!TryWriteAttachedProfile(candidate, out failure)) return Fail(failure);
             Profile = candidate;
             foreach (ItemData item in incoming) collectedLootIds.Add(item.id);
             LastError = string.Empty;
             RaiseChanged();
+            return true;
+        }
+
+        // Only the world-transition adapter may release these session receipts.
+        // Inventory/mailbox identity checks remain authoritative across worlds.
+        // A save, sale, wave change or failed transition is never a boundary.
+        internal bool TryRetireWorldLootReceipts(bool transitionCommitted, int pendingGroundLoot,
+            bool oldProducersRetired, bool combatEpochRetired)
+        {
+            if (!transitionCommitted || pendingGroundLoot != 0 || !oldProducersRetired || !combatEpochRetired) return false;
+            collectedLootIds.Clear();
             return true;
         }
 
@@ -601,7 +876,7 @@ namespace Emberfall
             candidate.recoveryLoot.Remove(item);
             candidate.inventory.Add(item);
             string failure;
-            if (!TryWriteProfile(candidate, savePath, false, out failure)) return Fail(failure);
+            if (!TryWriteAttachedProfile(candidate, out failure)) return Fail(failure);
             Profile = candidate;
             LastError = string.Empty;
             RaiseChanged();
@@ -620,7 +895,7 @@ namespace Emberfall
             candidate.inventory.AddRange(candidate.recoveryLoot.GetRange(0, count));
             candidate.recoveryLoot.RemoveRange(0, count);
             string failure;
-            if (!TryWriteProfile(candidate, savePath, false, out failure)) { Fail(failure); return 0; }
+            if (!TryWriteAttachedProfile(candidate, out failure)) { Fail(failure); return 0; }
             Profile = candidate;
             LastError = string.Empty;
             RaiseChanged();
@@ -657,7 +932,7 @@ namespace Emberfall
         {
             if (mechanic == EquipmentMechanic.None || !Enum.IsDefined(typeof(EquipmentMechanic), mechanic) ||
                 BuildCatalog.MechanicClass(mechanic) != Profile.heroClass) return Fail("只能兑换本职业的机制装备。");
-            if (Profile.mechanicMaterials < MechanicExchangeCost) return Fail("需要12枚星烬碎片；每次遗迹通关获得3枚。");
+            if (Profile.mechanicMaterials < MechanicExchangeCost) return Fail("需要12枚星烬碎片；遗迹通关按阶数获得3至7枚。");
             if (!CanReceiveProtectedLoot) return Fail("背包与待领取栏均已满，请先腾出位置；尚未扣除碎片。");
             Profile.mechanicMaterials -= MechanicExchangeCost;
             if (CollectLoot(CreateMechanicItem(mechanic))) return true;
@@ -668,8 +943,25 @@ namespace Emberfall
         public static int MasteryCap(int level)
         { return level < 50 ? 0 : level < 65 ? 10 : level < 80 ? 20 : level < 95 ? 30 : MaximumMasteryRank; }
 
-        public bool HasMasteryCore(MasteryType mastery)
-        { return Profile.masteryCore == (int)mastery && Profile.masteryRanks[(int)mastery] >= 20; }
+        public int MasteryCoreTier(MasteryType mastery)
+        {
+            return Enum.IsDefined(typeof(MasteryType), mastery) && Profile.masteryCore == (int)mastery
+                ? MasteryCoreRules.Tier(Profile.masteryRanks[(int)mastery]) : 0;
+        }
+        public bool HasMasteryCore(MasteryType mastery) { return MasteryCoreTier(mastery) > 0; }
+        public int RefundableSkillRanks
+        {
+            get { int points = 0; foreach (int rank in Profile.skillRanks) points += Math.Max(0, rank - 1); return points; }
+        }
+        public bool RefundSkillRanks(bool inCamp)
+        {
+            if (!inCamp) return Fail("只能在营地退还技能进阶点。");
+            if (RefundableSkillRanks == 0) return Fail("没有可退还的2/3阶；已学1阶技能保留。");
+            GameProfile candidate = Snapshot();
+            for (int i = 0; i < candidate.skillRanks.Length; i++) candidate.skillRanks[i] = Math.Min(1, candidate.skillRanks[i]);
+            // Validation recalculates the shared point budget from level and ranks.
+            return CommitCandidate(candidate);
+        }
 
         public string MasteryLockReason(MasteryType mastery)
         {
@@ -693,8 +985,8 @@ namespace Emberfall
         public bool SelectMasteryCore(MasteryType mastery, bool inCamp)
         {
             if (!inCamp) return Fail("只能在营地切换精通核心。");
-            if (!Enum.IsDefined(typeof(MasteryType), mastery) || Profile.masteryRanks[(int)mastery] < 20)
-                return Fail("该方向投入20点后可启用核心；只能启用一个。");
+            if (!Enum.IsDefined(typeof(MasteryType), mastery) || Profile.masteryRanks[(int)mastery] < MasteryCoreRules.InitialInvestment)
+                return Fail("该方向投入10点启用初阶核心，20点增强；只能启用一个。");
             GameProfile candidate = Snapshot(); candidate.masteryCore = (int)mastery;
             return CommitCandidate(candidate);
         }
@@ -706,11 +998,202 @@ namespace Emberfall
             return CommitCandidate(candidate);
         }
 
+        public int RefundableMasteryPoints
+        {
+            get { int points = 0; foreach (int rank in Profile.masteryRanks) points += Math.Max(0, rank); return points; }
+        }
+        public int RefundableBuildPoints { get { return RefundableSkillRanks + RefundableMasteryPoints; } }
+
+        /// <summary>One transaction, rather than two independently fallible refunds.
+        /// Learned first ranks, prerequisites, equipment and hotbar identity remain.</summary>
+        public bool ResetBuild(bool inCamp)
+        {
+            if (!inCamp) return Fail("只能在营地联合退点。");
+            if (RefundableBuildPoints == 0) return Fail("没有可退还的技能进阶或精通投入；已学1阶技能保留。");
+            GameProfile candidate = Snapshot();
+            for (int i = 0; i < candidate.skillRanks.Length; i++) candidate.skillRanks[i] = Math.Min(1, candidate.skillRanks[i]);
+            candidate.masteryRanks = new int[4]; candidate.masteryCore = -1;
+            return CommitCandidate(candidate);
+        }
+
+        public bool HasBuildPreset(int slot)
+        {
+            return slot >= 0 && slot < BuildPresetCount && Profile.buildPresets != null &&
+                slot < Profile.buildPresets.Length && Profile.buildPresets[slot] != null && Profile.buildPresets[slot].populated;
+        }
+
+        private BuildPreset CaptureBuild()
+        {
+            return new BuildPreset
+            {
+                version = 1, populated = true, heroClass = Profile.heroClass,
+                skillRanks = (int[])Profile.skillRanks.Clone(), masteryRanks = (int[])Profile.masteryRanks.Clone(),
+                masteryCore = Profile.masteryCore, specialization = Profile.specialization, summonerRoute = Profile.summonerRoute,
+                equippedSkills = (int[])Profile.equippedSkills.Clone(), hotbarKeys = (int[])Profile.hotbarKeys.Clone(), hotbarPage = Profile.hotbarPage,
+                weaponId = Profile.weaponId, armorId = Profile.armorId, relicId = Profile.relicId
+            };
+        }
+
+        public string CurrentBuildSummary() { return DescribeBuild(CaptureBuild()); }
+        public string BuildPresetSummary(int slot)
+        { return HasBuildPreset(slot) ? DescribeBuild(Profile.buildPresets[slot]) : "空方案 · 可保存当前技能、精通、专精、快捷栏与穿戴装备"; }
+
+        private string DescribeBuild(BuildPreset preset)
+        {
+            if (preset.version != 1 || preset.skillRanks == null || preset.skillRanks.Length != GameBalance.SkillCount ||
+                preset.masteryRanks == null || preset.masteryRanks.Length != 4 || !Enum.IsDefined(typeof(HeroClass), preset.heroClass))
+                return "方案数据无效或版本不兼容；可用当前配装覆盖。";
+            int skills = 0, mastery = 0;
+            var learned = new List<string>(); var tracks = new List<string>();
+            for (int i = 0; i < preset.skillRanks.Length; i++)
+            {
+                int rank = Clamp(preset.skillRanks[i], 0, 3); skills += rank;
+                if (rank > 0) learned.Add(GameBalance.SkillName(preset.heroClass, i) + " " + rank + "阶");
+            }
+            for (int i = 0; i < preset.masteryRanks.Length; i++)
+            {
+                int rank = Clamp(preset.masteryRanks[i], 0, MaximumMasteryRank); mastery += rank;
+                if (rank > 0) tracks.Add(BuildCatalog.MasteryName((MasteryType)i) + " " + rank + "点");
+            }
+            string core = preset.masteryCore >= 0 && preset.masteryCore < 4 ? BuildCatalog.MasteryName((MasteryType)preset.masteryCore) : "无核心";
+            string classChoice = preset.heroClass == HeroClass.Arcanist ? " · " + BuildCatalog.SpecializationName(preset.specialization) :
+                preset.heroClass == HeroClass.Summoner ? (preset.summonerRoute == SummonerRoute.Bonded ? " · 双契" : " · 群契") : "";
+            var equipment = new List<string>();
+            foreach (string id in new[] { preset.weaponId, preset.armorId, preset.relicId })
+            {
+                ItemData item = Profile.inventory.Find(value => value != null && value.id == id);
+                equipment.Add(item == null ? "装备缺失" : item.name);
+            }
+            return GameBalance.ClassName(preset.heroClass) + classChoice + " · 技能 " + skills + " 点 · 精通 " + mastery + " 点 · " + core +
+                "\n技能：" + (learned.Count == 0 ? "尚未学习" : string.Join("、", learned.ToArray())) +
+                "\n精通：" + (tracks.Count == 0 ? "尚未投入" : string.Join("、", tracks.ToArray())) +
+                "\n装备：" + string.Join(" / ", equipment.ToArray());
+        }
+
+        public string BuildPresetLockReason(int slot, bool inCamp)
+        {
+            if (!inCamp) return "只能在营地应用配装方案。";
+            if (slot < 0 || slot >= BuildPresetCount) return "无效的配装方案位置。";
+            if (!HasBuildPreset(slot)) return "这个位置还没有保存配装方案。";
+            return ValidateBuildPreset(Profile.buildPresets[slot]);
+        }
+
+        public bool SaveBuildPreset(int slot, bool inCamp)
+        {
+            if (!inCamp) return Fail("只能在营地保存配装方案。");
+            if (slot < 0 || slot >= BuildPresetCount) return Fail("无效的配装方案位置。");
+            BuildPreset preset = CaptureBuild();
+            string reason = ValidateBuildPreset(preset);
+            if (!string.IsNullOrEmpty(reason)) return Fail(reason);
+            GameProfile candidate = Snapshot();
+            EnsureBuildPresetSlots(candidate);
+            candidate.buildPresets[slot] = preset;
+            return CommitCandidate(candidate);
+        }
+
+        public bool ApplyBuildPreset(int slot, bool inCamp)
+        {
+            string reason = BuildPresetLockReason(slot, inCamp);
+            if (!string.IsNullOrEmpty(reason)) return Fail(reason);
+            GameProfile candidate = Snapshot();
+            BuildPreset preset = candidate.buildPresets[slot];
+            // A preset saved before a new first-rank unlock cannot unlearn it or
+            // return its point. The combined current cost was checked above.
+            for (int i = 0; i < GameBalance.SkillCount; i++)
+                candidate.skillRanks[i] = Math.Max(candidate.skillRanks[i] > 0 ? 1 : 0, preset.skillRanks[i]);
+            candidate.masteryRanks = (int[])preset.masteryRanks.Clone(); candidate.masteryCore = preset.masteryCore;
+            candidate.specialization = preset.specialization; candidate.summonerRoute = preset.summonerRoute;
+            candidate.equippedSkills = (int[])preset.equippedSkills.Clone(); candidate.hotbarKeys = (int[])preset.hotbarKeys.Clone();
+            candidate.hotbarPage = preset.hotbarPage;
+            candidate.weaponId = preset.weaponId; candidate.armorId = preset.armorId; candidate.relicId = preset.relicId;
+            return CommitCandidate(candidate);
+        }
+
+        private string ValidateBuildPreset(BuildPreset preset)
+        {
+            if (preset == null || !preset.populated || preset.version != 1 || preset.heroClass != Profile.heroClass)
+                return "配装方案无效、职业不符或版本不兼容；未改变当前配装。";
+            if (preset.skillRanks == null || preset.skillRanks.Length != GameBalance.SkillCount ||
+                preset.masteryRanks == null || preset.masteryRanks.Length != 4)
+                return "配装方案的技能或精通数据无效。";
+            int spent = 0;
+            for (int i = 0; i < GameBalance.SkillCount; i++)
+            {
+                int rank = preset.skillRanks[i];
+                if (rank < 0 || rank > 3 || (rank > 0 && Profile.level < GameBalance.SkillRankRequiredLevel(i, rank)))
+                    return "当前等级不足以应用方案中的技能进阶，或技能阶数无效。";
+                // Only restore investment in this character's existing unlocks.
+                // Grandfathered first ranks in imported saves remain grandfathered.
+                if (rank > 0 && Profile.skillRanks[i] < 1) return "方案引用了当前角色尚未学习的技能；请先学习其前置与1阶。";
+                spent += Math.Max(Profile.skillRanks[i] > 0 ? 1 : 0, rank);
+            }
+            foreach (int rank in preset.masteryRanks)
+            {
+                if (rank < 0 || rank > MasteryCap(Profile.level)) return "当前等级不足以应用方案中的精通投入，或精通点数无效。";
+                spent += rank;
+            }
+            if (spent > Profile.level - 1) return "当前技能点不足；方案还会保留保存后新学的1阶技能，未退点或改变配装。";
+            if (preset.masteryCore < -1 || preset.masteryCore >= 4 ||
+                (preset.masteryCore >= 0 && preset.masteryRanks[preset.masteryCore] < MasteryCoreRules.InitialInvestment))
+                return "方案核心无效或该方向未投入10点。";
+            if (!Enum.IsDefined(typeof(ElementalistSpecialization), preset.specialization) ||
+                (Profile.heroClass != HeroClass.Arcanist && preset.specialization != ElementalistSpecialization.None) ||
+                !Enum.IsDefined(typeof(SummonerRoute), preset.summonerRoute)) return "方案专精或契约路线无效。";
+            if (preset.equippedSkills == null || preset.equippedSkills.Length != GameBalance.HotbarSize * GameBalance.HotbarPages ||
+                preset.hotbarKeys == null || preset.hotbarKeys.Length != GameBalance.HotbarSize || preset.hotbarPage < 0 || preset.hotbarPage >= GameBalance.HotbarPages)
+                return "方案快捷栏数据无效。";
+            for (int page = 0; page < GameBalance.HotbarPages; page++)
+            {
+                var used = new HashSet<int>();
+                for (int slot = 0; slot < GameBalance.HotbarSize; slot++)
+                {
+                    int entry = preset.equippedSkills[page * GameBalance.HotbarSize + slot];
+                    // Locked default placeholders remain mapped; they never grant
+                    // an unlock or permit casting an unlearned skill.
+                    if (entry == -1) continue;
+                    if ((entry != GameBalance.HotbarPotion && (entry < 0 || entry >= GameBalance.SkillCount || GameBalance.IsPassive(entry))) || !used.Add(entry))
+                        return "方案快捷栏包含无效、重复或被动技能。";
+                }
+            }
+            var keys = new HashSet<int>();
+            foreach (int key in preset.hotbarKeys)
+                if (!GameBalance.IsBindableKey(key) || !keys.Add(key)) return "方案快捷键无效或重复。";
+            string[] ids = { preset.weaponId, preset.armorId, preset.relicId };
+            for (int slot = 0; slot < ids.Length; slot++)
+            {
+                if (string.IsNullOrEmpty(ids[slot]) || ids[slot].Length > 80) return "方案装备编号无效。";
+                ItemData item = Profile.inventory.Find(value => value != null && value.id == ids[slot]);
+                if (item == null || item.slot != (ItemSlot)slot || item.level > Profile.level)
+                    return "方案装备已不在背包、部位不符或等级不足；请找回装备或重新保存方案。";
+            }
+            return string.Empty;
+        }
+
+        private static void EnsureBuildPresetSlots(GameProfile profile)
+        {
+            // Added fields in older saves start empty. Reject excess populated
+            // slots rather than silently discarding a hand-edited/imported build.
+            if (profile.buildPresets != null && profile.buildPresets.Length > BuildPresetCount)
+                for (int i = BuildPresetCount; i < profile.buildPresets.Length; i++)
+                    if (profile.buildPresets[i] != null && profile.buildPresets[i].populated)
+                        throw new ArgumentException("配装方案超过2份安全容量；保留原存档，请从备份恢复。");
+            if (profile.buildPresets == null || profile.buildPresets.Length != BuildPresetCount)
+            {
+                var slots = new BuildPreset[BuildPresetCount];
+                if (profile.buildPresets != null) Array.Copy(profile.buildPresets, slots, Math.Min(BuildPresetCount, profile.buildPresets.Length));
+                profile.buildPresets = slots;
+            }
+            // Explicit empty objects keep inline Unity serialization independent
+            // of its null-element behavior. The populated bit owns slot identity.
+            for (int i = 0; i < BuildPresetCount; i++)
+                if (profile.buildPresets[i] == null) profile.buildPresets[i] = new BuildPreset();
+        }
+
         private GameProfile Snapshot() { return JsonUtility.FromJson<GameProfile>(JsonUtility.ToJson(Profile, true)); }
         private bool CommitCandidate(GameProfile candidate)
         {
             string failure;
-            if (!TryWriteProfile(candidate, savePath, false, out failure)) return Fail(failure);
+            if (!TryWriteAttachedProfile(candidate, out failure)) return Fail(failure);
             Profile = candidate; LastError = string.Empty; RaiseChanged(); return true;
         }
 
@@ -754,6 +1237,35 @@ namespace Emberfall
             return CommitCandidate(candidate);
         }
 
+        public string AscensionLockReason(string id, bool inCamp)
+        {
+            ItemData item = FindItem(id);
+            if (!inCamp) return "只能在营地升华机制装备。";
+            if (item == null || item.mechanic == EquipmentMechanic.None || !HasDiscoveredMechanic(item.mechanic) ||
+                BuildCatalog.MechanicClass(item.mechanic) != Profile.heroClass) return "请选择本职业已发现配方的机制装备。";
+            if (item.rarity != Rarity.Epic) return item.rarity == Rarity.Legendary ? "已是传说品质，不会重复升华。" : "升华需要史诗品质机制装备。";
+            if (Profile.bestFloor < AscensionMilestone) return "通关沉星遗迹第5阶后开放传说升华。";
+            if (Profile.mechanicMaterials < AscensionCost) return "升华需要24枚星烬碎片。";
+            return string.Empty;
+        }
+        public bool AscendMechanic(string id, bool inCamp)
+        {
+            string reason = AscensionLockReason(id, inCamp);
+            if (!string.IsNullOrEmpty(reason)) return Fail(reason);
+            GameProfile candidate = Snapshot();
+            ItemData item = candidate.inventory.Find(value => value.id == id);
+            EnsureUpgradeBasis(item);
+            item.rarity = Rarity.Legendary;
+            item.baseAttack = (int)Math.Min(MaximumEquipmentStat, ((long)item.baseAttack * 25 + 17) / 18);
+            item.baseDefense = (int)Math.Min(MaximumEquipmentStat, ((long)item.baseDefense * 25 + 17) / 18);
+            item.baseHealth = (int)Math.Min(MaximumEquipmentHealth, ((long)item.baseHealth * 25 + 17) / 18);
+            item.upgradeAnchorLevel = 0;
+            item.upgradeAnchorAttack = item.baseAttack; item.upgradeAnchorDefense = item.baseDefense; item.upgradeAnchorHealth = item.baseHealth;
+            ApplyUpgradeRank(item, IsEquipped(candidate, id) ? candidate.slotUpgradeRanks[(int)item.slot] : 0);
+            candidate.mechanicMaterials -= AscensionCost;
+            return CommitCandidate(candidate);
+        }
+
         public bool ToggleMechanicVariant(string id, bool inCamp)
         {
             ItemData existing = FindItem(id);
@@ -766,16 +1278,20 @@ namespace Emberfall
             return CommitCandidate(candidate);
         }
 
-        public void PrepareDungeonChest()
+        public bool PrepareDungeonChest(int tier = 1)
         {
-            Profile.pendingFashionChest = true;
-            if (Profile.clearedRuns > Profile.materialRewardedClears)
+            if (Profile.pendingFashionChest && Profile.clearedRuns <= Profile.materialRewardedClears)
+            { LastError = string.Empty; return true; }
+            GameProfile candidate = Snapshot();
+            if (!candidate.pendingFashionChest) candidate.pendingChestTier = TierRewardRules.ClampTier(tier);
+            candidate.pendingFashionChest = true;
+            if (candidate.clearedRuns > candidate.materialRewardedClears)
             {
-                Profile.mechanicMaterials = Clamp(Profile.mechanicMaterials + 3, 0, 999999);
-                Profile.materialRewardedClears = Profile.clearedRuns;
+                candidate.mechanicMaterials = Clamp(candidate.mechanicMaterials + TierRewardRules.ClearMaterials(tier), 0, 999999);
+                candidate.materialRewardedClears = candidate.clearedRuns;
             }
-            if (!Profile.firstClearRewardClaimed && Profile.clearedRuns > 0) Profile.pendingFirstClearReward = true;
-            Commit();
+            if (!candidate.firstClearRewardClaimed && candidate.clearedRuns > 0) candidate.pendingFirstClearReward = true;
+            return CommitCandidate(candidate);
         }
 
         // Exactly-once reward transaction: roll and grant in a detached snapshot,
@@ -796,7 +1312,7 @@ namespace Emberfall
             GameProfile candidate = JsonUtility.FromJson<GameProfile>(JsonUtility.ToJson(Profile, true));
             candidate.pendingFashionChest = false;
             candidate.fashionThreads = Clamp(candidate.fashionThreads + 1, 0, 999999);
-            var receipt = new ChestReward { id = Guid.NewGuid().ToString("N"), choice = choice, gold = 60 + random.Next(41), name = "金币" };
+            var receipt = new ChestReward { id = Guid.NewGuid().ToString("N"), choice = choice, gold = TierRewardRules.ChestGoldMinimum(candidate.pendingChestTier) + random.Next(41), name = "金币" };
             Rarity? rarity = RollFashionRarity(random.Next(100));
             if (!rarity.HasValue) receipt.summary = "宝箱 " + (choice + 1) + "：获得 " + receipt.gold + " 金币";
             else
@@ -826,7 +1342,7 @@ namespace Emberfall
             candidate.lastChestReward = receipt;
             candidate.pendingChestReveal = true;
             string failure;
-            if (!TryWriteProfile(candidate, savePath, false, out failure))
+            if (!TryWriteAttachedProfile(candidate, out failure))
             {
                 Fail(failure);
                 return null;
@@ -843,11 +1359,92 @@ namespace Emberfall
             GameProfile candidate = JsonUtility.FromJson<GameProfile>(JsonUtility.ToJson(Profile, true));
             candidate.pendingChestReveal = false;
             string failure;
-            if (!TryWriteProfile(candidate, savePath, false, out failure)) return Fail(failure);
+            if (!TryWriteAttachedProfile(candidate, out failure)) return Fail(failure);
             Profile = candidate;
             LastError = string.Empty;
             RaiseChanged();
             return true;
+        }
+
+        public bool TravelToHub(int hub)
+        {
+            int mask=HubTravelRules.UnlockedMask(Profile.unlockedHubMask,Profile.level,Profile.clearedRuns);
+            if(!HubTravelRules.IsUnlocked(mask,hub))return Fail("城镇尚未解锁："+HubTravelRules.UnlockHint(hub));
+            GameProfile candidate=Snapshot();candidate.currentHub=hub;candidate.unlockedHubMask=mask;return CommitCandidate(candidate);
+        }
+
+        public bool TryCompleteDungeonRun(string rewardId, int tier, int gold, int experience)
+        {
+            Guid receipt;
+            if (rewardId == null || !Guid.TryParseExact(rewardId, "N", out receipt) || tier < 1 || tier > 100 ||
+                gold < 0 || gold > 10000 || experience < 0 || experience > 10000) return Fail("遗迹通关奖励无效。");
+            rewardId = receipt.ToString("N");
+            if (Profile.lastDungeonRewardId == rewardId) { LastError = string.Empty; return true; }
+            if (Profile.pendingFashionChest || Profile.pendingChestReveal) return Fail("请先开启并收起已有通关宝箱，再结算下一次遗迹。");
+            GameProfile candidate = Snapshot();
+            int oldLevel = candidate.level;
+            candidate.clearedRuns = Math.Min(999999, candidate.clearedRuns + 1);
+            candidate.bestFloor = Math.Max(candidate.bestFloor, tier);
+            candidate.gold = (int)Math.Min(MaximumGold, (long)candidate.gold + gold);
+            long xp = (long)candidate.xp + experience;
+            while (candidate.level < MaximumLevel && xp >= GameBalance.XpToNext(candidate.level))
+            { xp -= GameBalance.XpToNext(candidate.level); candidate.level++; candidate.skillPoints++; }
+            candidate.xp = candidate.level >= MaximumLevel ? 0 : (int)xp;
+            candidate.mechanicMaterials = Math.Min(999999, candidate.mechanicMaterials + TierRewardRules.ClearMaterials(tier));
+            candidate.materialRewardedClears = candidate.clearedRuns;
+            candidate.pendingFashionChest = true; candidate.pendingChestTier = tier;
+            candidate.pendingFirstClearReward = !candidate.firstClearRewardClaimed;
+            candidate.lastDungeonRewardId = rewardId;
+            if (!CommitCandidate(candidate)) return false;
+            for (int level = oldLevel + 1; level <= candidate.level; level++) if (LeveledUp != null) LeveledUp(level);
+            return true;
+        }
+
+        public bool TryGrantModeReward(string receipt,int gold,int experience,int materials)
+        {
+            Guid id;if(receipt==null||!Guid.TryParseExact(receipt,"N",out id)||gold<0||gold>10000||experience<0||experience>10000||materials<0||materials>10)return Fail("挑战奖励无效。");
+            receipt=id.ToString("N");
+            if(Profile.lastModeRewardId==receipt){LastError=string.Empty;return true;}
+            GameProfile candidate=Snapshot();int oldLevel=candidate.level;
+            candidate.gold=(int)Math.Min(MaximumGold,(long)candidate.gold+gold);
+            candidate.mechanicMaterials=Math.Min(999999,candidate.mechanicMaterials+materials);
+            long xp=(long)candidate.xp+experience;
+            while(candidate.level<MaximumLevel&&xp>=GameBalance.XpToNext(candidate.level)){xp-=GameBalance.XpToNext(candidate.level);candidate.level++;candidate.skillPoints++;}
+            candidate.xp=candidate.level>=MaximumLevel?0:(int)xp;candidate.lastModeRewardId=receipt;
+            if(!CommitCandidate(candidate))return false;
+            for(int level=oldLevel+1;level<=candidate.level;level++)if(LeveledUp!=null)LeveledUp(level);
+            return true;
+        }
+
+        /// <summary>
+        /// Apply one already-admitted enemy kill to the live character and save its
+        /// complete earned reward once. A failed save keeps the reward live: retry
+        /// Save(), never this grant. Enemy identity admission belongs to the session.
+        /// </summary>
+        public void GrantEnemyKillReward(int gold, int experience)
+        {
+            if (gold < 0 || experience < 0) { Fail("击败敌人奖励无效。"); return; }
+            Profile.kills = (int)Math.Min(int.MaxValue, (long)Profile.kills + 1);
+            Profile.gold = (int)Math.Max(0L, Math.Min(MaximumGold, (long)Profile.gold + gold));
+            int oldLevel = Profile.level;
+            if (experience > 0 && Profile.level < MaximumLevel)
+            {
+                long totalExperience = (long)Profile.xp + experience;
+                while (Profile.level < MaximumLevel && totalExperience >= GameBalance.XpToNext(Profile.level))
+                {
+                    totalExperience -= GameBalance.XpToNext(Profile.level);
+                    Profile.level++;
+                    Profile.skillPoints++;
+                }
+                Profile.xp = Profile.level == MaximumLevel ? 0 : (int)totalExperience;
+            }
+            // Capture the earned range before callbacks can mutate the profile.
+            int earnedLevel = Profile.level;
+            Commit();
+            // As with GrantExperience, failure keeps live progress and LastError;
+            // Changed runs once before level notifications, all seeing final stats.
+            for (int level = oldLevel + 1; level <= earnedLevel; level++)
+                if (LeveledUp != null) LeveledUp(level);
         }
 
         public void GrantExperience(int amount)
@@ -864,7 +1461,8 @@ namespace Emberfall
             }
             Profile.xp = Profile.level == MaximumLevel ? 0 : (int)experience;
             Commit();
-            // Subscribers observe the final, fully saved profile even for multiple level-ups.
+            // Earned progress remains live after a storage failure; LastError stays visible.
+            // Subscribers observe the final in-memory level, including multiple gains.
             foreach (int level in gainedLevels)
                 if (LeveledUp != null) LeveledUp(level);
         }
@@ -883,13 +1481,11 @@ namespace Emberfall
         }
 
         /// <summary>Generate an identified drop without putting it into the bag or saving.</summary>
-        public ItemData RollLoot(int level, bool boss)
+        public ItemData RollLoot(int level, bool boss, int dungeonTier = 0)
         {
             level = Clamp(level, 1, MaximumLevel);
             int roll = random.Next(100);
-            Rarity rarity = boss
-                ? (roll < 55 ? Rarity.Rare : roll < 92 ? Rarity.Epic : Rarity.Legendary)
-                : (roll < 54 ? Rarity.Common : roll < 85 ? Rarity.Rare : roll < 98 ? Rarity.Epic : Rarity.Legendary);
+            Rarity rarity = TierRewardRules.DropRarity(boss, dungeonTier, roll);
             ItemSlot slot = (ItemSlot)random.Next(3);
             var item = new ItemData
             {
@@ -900,7 +1496,7 @@ namespace Emberfall
                 name = new[] { "旅者", "苍蓝", "星辉", "烬王" }[(int)rarity] + ItemBaseName(slot, Profile.heroClass)
             };
             EquipmentMechanic[] mechanics = BuildCatalog.MechanicsFor(Profile.heroClass);
-            if (mechanics.Length > 0 && ((boss && random.Next(100) < 25) || (!boss && rarity >= Rarity.Epic && random.Next(100) < 12)))
+            if (mechanics.Length > 0 && ((boss && random.Next(100) < TierRewardRules.BossMechanicChance(dungeonTier)) || (!boss && rarity >= Rarity.Epic && random.Next(100) < TierRewardRules.OrdinaryMechanicChance(dungeonTier))))
             {
                 item.mechanic = mechanics[random.Next(mechanics.Length)];
                 item.slot = BuildCatalog.MechanicSlot(item.mechanic);
@@ -952,7 +1548,7 @@ namespace Emberfall
             else Profile.inventory.Add(item);
             if (newlyDiscovered) Profile.discoveredMechanics.Add(item.mechanic);
             string failure;
-            if (!TryWriteProfile(Profile, savePath, false, out failure))
+            if (!TryWriteAttachedProfile(Profile, out failure))
             {
                 Profile.gold = previousGold;
                 Profile.inventory.Remove(item);
@@ -989,7 +1585,7 @@ namespace Emberfall
             ApplyUpgradeRank(item, SlotUpgradeRank(item.slot));
             SetEquipped(Profile, item);
             string failure;
-            if (!TryWriteProfile(Profile, savePath, false, out failure))
+            if (!TryWriteAttachedProfile(Profile, out failure))
             {
                 RestoreUpgradeState(item, itemState);
                 if (previous != null) RestoreUpgradeState(previous, previousState);
@@ -1023,10 +1619,11 @@ namespace Emberfall
             if (item == null) return Fail("找不到这件装备。");
             if (IsEquipped(Profile, item.id)) return Fail("请先替换身上的装备，再出售。");
             if (item.locked) return Fail("装备已锁定，请先手动解锁再出售。");
-            Profile.gold = (int)Math.Min(MaximumGold, (long)Profile.gold + SellValue(item));
-            Profile.inventory.Remove(item);
-            Commit();
-            return true;
+            GameProfile candidate = Snapshot();
+            ItemData sale = candidate.inventory.Find(value => value != null && value.id == id);
+            candidate.gold = (int)Math.Max(0L, Math.Min(MaximumGold, (long)candidate.gold + SellValue(sale)));
+            candidate.inventory.Remove(sale);
+            return CommitCandidate(candidate);
         }
 
         public bool Upgrade(string id)
@@ -1044,7 +1641,7 @@ namespace Emberfall
             Profile.slotUpgradeRanks[(int)item.slot] = rank + 1;
             if (equipped != null) { EnsureUpgradeBasis(equipped); ApplyUpgradeRank(equipped, rank + 1); }
             string failure;
-            if (!TryWriteProfile(Profile, savePath, false, out failure))
+            if (!TryWriteAttachedProfile(Profile, out failure))
             {
                 Profile.gold = oldGold;
                 Profile.slotUpgradeRanks[(int)item.slot] = rank;
@@ -1208,10 +1805,8 @@ namespace Emberfall
         {
             string reason = SkillLockReason(slot);
             if (!string.IsNullOrEmpty(reason)) return Fail(reason);
-            Profile.skillRanks[slot]++;
-            Profile.skillPoints--;
-            Commit();
-            return true;
+            GameProfile candidate=Snapshot();candidate.skillRanks[slot]++;candidate.skillPoints--;
+            return CommitCandidate(candidate);
         }
 
         public string SkillLockReason(int slot)
@@ -1240,39 +1835,40 @@ namespace Emberfall
             if (skillIndex < -1 || skillIndex >= GameBalance.SkillCount) return Fail("无效的技能。");
             if (skillIndex >= 0 && GameBalance.IsPassive(skillIndex)) return Fail("被动技能学习后自动生效，无需装备到快捷栏。");
             if (skillIndex >= 0 && Profile.skillRanks[skillIndex] < 1) return Fail("请先学习这个技能，再装备到快捷栏。");
-            int pageStart = Profile.hotbarPage * GameBalance.HotbarSize;
+            if (!HasValidHotbarData()) return Fail("快捷栏数据无效。");
+            GameProfile candidate=Snapshot();
+            int pageStart = candidate.hotbarPage * GameBalance.HotbarSize;
             int target = pageStart + hotbarSlot;
             if (skillIndex >= 0)
             {
                 for (int slot = pageStart; slot < pageStart + GameBalance.HotbarSize; slot++)
                 {
-                    if (slot == target || Profile.equippedSkills[slot] != skillIndex) continue;
-                    Profile.equippedSkills[slot] = Profile.equippedSkills[target];
+                    if (slot == target || candidate.equippedSkills[slot] != skillIndex) continue;
+                    candidate.equippedSkills[slot] = candidate.equippedSkills[target];
                     break;
                 }
             }
-            Profile.equippedSkills[target] = skillIndex;
-            Commit();
-            return true;
+            candidate.equippedSkills[target] = skillIndex;
+            return CommitCandidate(candidate);
         }
 
         public bool AssignConsumable(int hotbarSlot)
         {
             if (hotbarSlot < 0 || hotbarSlot >= GameBalance.HotbarSize) return Fail("无效的快捷栏位置。");
             if (!HasValidHotbarData()) return Fail("快捷栏数据无效。");
-            int pageStart = Profile.hotbarPage * GameBalance.HotbarSize;
+            GameProfile candidate=Snapshot();
+            int pageStart = candidate.hotbarPage * GameBalance.HotbarSize;
             int target = pageStart + hotbarSlot;
-            if (Profile.equippedSkills[target] == GameBalance.HotbarPotion) return Fail("生命药水已经位于这个快捷栏位置。");
+            if (candidate.equippedSkills[target] == GameBalance.HotbarPotion) return Fail("生命药水已经位于这个快捷栏位置。");
             for (int slot = pageStart; slot < pageStart + GameBalance.HotbarSize; slot++)
             {
-                if (Profile.equippedSkills[slot] != GameBalance.HotbarPotion) continue;
-                int displaced = Profile.equippedSkills[target];
-                Profile.equippedSkills[slot] = IsUsableHotbarEntry(displaced) ? displaced : -1;
+                if (candidate.equippedSkills[slot] != GameBalance.HotbarPotion) continue;
+                int displaced = candidate.equippedSkills[target];
+                candidate.equippedSkills[slot] = IsUsableHotbarEntry(displaced) ? displaced : -1;
                 break;
             }
-            Profile.equippedSkills[target] = GameBalance.HotbarPotion;
-            Commit();
-            return true;
+            candidate.equippedSkills[target] = GameBalance.HotbarPotion;
+            return CommitCandidate(candidate);
         }
 
         private bool HasValidHotbarData()
@@ -1294,55 +1890,53 @@ namespace Emberfall
                 return Fail("无效的快捷栏位置。");
             if (sourceSlot == targetSlot) return Fail("已经位于这个快捷栏位置。");
             if (!HasValidHotbarData()) return Fail("快捷栏数据无效。");
-            int pageStart = Profile.hotbarPage * GameBalance.HotbarSize;
+            GameProfile candidate=Snapshot();
+            int pageStart = candidate.hotbarPage * GameBalance.HotbarSize;
             int source = pageStart + sourceSlot;
             int target = pageStart + targetSlot;
-            int skill = Profile.equippedSkills[source];
+            int skill = candidate.equippedSkills[source];
             if (!IsUsableHotbarEntry(skill)) return Fail("只能拖动已学习的主动技能或可使用物品。");
-            int displaced = Profile.equippedSkills[target];
+            int displaced = candidate.equippedSkills[target];
             if (!IsUsableHotbarEntry(displaced)) displaced = -1;
             if (skill == displaced) return Fail("已经位于目标位置。");
-            Profile.equippedSkills[target] = skill;
-            Profile.equippedSkills[source] = displaced;
-            Commit();
-            return true;
+            candidate.equippedSkills[target] = skill;
+            candidate.equippedSkills[source] = displaced;
+            return CommitCandidate(candidate);
         }
 
         public bool SetHotbarPage(int page)
         {
             if (page < 0 || page >= GameBalance.HotbarPages) return Fail("无效的快捷栏页面。");
-            Profile.hotbarPage = page;
-            Commit();
-            return true;
+            GameProfile candidate=Snapshot();candidate.hotbarPage=page;
+            return CommitCandidate(candidate);
         }
 
         public bool SetHotbarKey(int slot, int keyCode)
         {
             if (slot < 0 || slot >= GameBalance.HotbarSize) return Fail("无效的快捷栏位置。");
             if (!GameBalance.IsBindableKey(keyCode)) return Fail("请选择字母、数字或 F1–F12；移动、药水和面板按键不能绑定。");
-            int otherSlot = Array.IndexOf(Profile.hotbarKeys, keyCode);
-            if (otherSlot >= 0 && otherSlot != slot) Profile.hotbarKeys[otherSlot] = Profile.hotbarKeys[slot];
-            Profile.hotbarKeys[slot] = keyCode;
-            Commit();
-            return true;
+            GameProfile candidate=Snapshot();
+            int otherSlot = Array.IndexOf(candidate.hotbarKeys, keyCode);
+            if (otherSlot >= 0 && otherSlot != slot) candidate.hotbarKeys[otherSlot] = candidate.hotbarKeys[slot];
+            candidate.hotbarKeys[slot] = keyCode;
+            return CommitCandidate(candidate);
         }
 
         public bool UsePotion()
         {
             if (Profile.potions <= 0) return Fail("治疗药水已用尽，返回营地购买。");
-            Profile.potions--;
-            Commit();
-            return true;
+            GameProfile candidate=Snapshot();candidate.potions--;
+            return CommitCandidate(candidate);
         }
 
         public bool BuyPotion()
         {
             if (Profile.potions >= 99) return Fail("药水已达到携带上限 99。");
             if (Profile.gold < PotionPrice) return Fail("购买药水需要 " + PotionPrice + " 金币。");
-            Profile.gold -= PotionPrice;
-            Profile.potions++;
-            Commit();
-            return true;
+            GameProfile candidate = Snapshot();
+            candidate.gold = Math.Min(MaximumGold, candidate.gold - PotionPrice);
+            candidate.potions = Math.Max(0, candidate.potions) + 1;
+            return CommitCandidate(candidate);
         }
 
         private void Commit()
@@ -1356,8 +1950,15 @@ namespace Emberfall
 
         private ItemData FindItem(string id)
         {
-            if (string.IsNullOrEmpty(id)) return null;
-            return Profile.inventory.Find(item => item != null && item.id == id);
+            if (string.IsNullOrEmpty(id) || Profile.inventory == null) return null;
+            // Do not cache mutable inventory references: load, equip, sale and
+            // candidate commits can replace the profile or its contents.
+            for (int i = 0; i < Profile.inventory.Count; i++)
+            {
+                ItemData item = Profile.inventory[i];
+                if (item != null && item.id == id) return item;
+            }
+            return null;
         }
 
         private static GameProfile CreateProfile(HeroClass heroClass)
@@ -1407,10 +2008,9 @@ namespace Emberfall
             error = string.Empty;
             try
             {
-                if (!File.Exists(path)) { error = "missing"; return false; }
-                var info = new FileInfo(path);
-                if (info.Length == 0 || info.Length > 4 * 1024 * 1024) { error = "invalid size"; return false; }
-                SaveFile data = JsonUtility.FromJson<SaveFile>(File.ReadAllText(path, Encoding.UTF8));
+                string document;
+                if (!TryReadSaveDocument(path, out document, out error, true)) return false;
+                SaveFile data = JsonUtility.FromJson<SaveFile>(document);
                 if (data == null || data.format != SaveFormat || data.version != 1 || data.profile == null || data.profile.version != 1)
                 { error = "unsupported format"; return false; }
                 bool balanceChanged = HasLegacyEnhancement(data.profile.inventory) || HasLegacyEnhancement(data.profile.pendingLoot) || HasLegacyEnhancement(data.profile.recoveryLoot);
@@ -1428,12 +2028,52 @@ namespace Emberfall
             }
         }
 
+        private static bool TryReadSaveDocument(string path, out string document, out string error, bool acceptImportedEncoding = false)
+        {
+            document = null;
+            error = string.Empty;
+            try
+            {
+                // Read through one handle with a fixed allocation bounded by the
+                // opened file's length; metadata from an earlier lookup is not proof.
+                using (var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read))
+                {
+                    long length = stream.Length;
+                    if (length <= 0 || length > MaximumSaveBytes) { error = "invalid size"; return false; }
+                    var bytes = new byte[(int)length];
+                    int offset = 0;
+                    while (offset < bytes.Length)
+                    {
+                        int read = stream.Read(bytes, offset, bytes.Length - offset);
+                        if (read == 0) { error = "save changed while reading"; return false; }
+                        offset += read;
+                    }
+                    if (stream.ReadByte() != -1) { error = "save changed while reading"; return false; }
+                    if (acceptImportedEncoding)
+                    {
+                        // Preserve ReadAllText's prior BOM import compatibility,
+                        // but only after the complete byte input has been capped.
+                        using (var reader = new StreamReader(new MemoryStream(bytes, false), new UTF8Encoding(false, true), true))
+                            document = reader.ReadToEnd();
+                    }
+                    else document = new UTF8Encoding(false, true).GetString(bytes);
+                    return true;
+                }
+            }
+            catch (Exception exception) when (exception is IOException || exception is UnauthorizedAccessException || exception is ArgumentException || exception is NotSupportedException)
+            {
+                error = exception.Message;
+                return false;
+            }
+        }
+
         private static bool HasLegacyEnhancement(List<ItemData> items)
         { return items != null && items.Exists(item => item != null && item.balanceRevision < 1 && item.upgradeLevel > 0); }
 
         private static int ValidateProfile(GameProfile profile)
         {
             int refundedRanks = 0;
+            EnsureBuildPresetSlots(profile);
             if (!Enum.IsDefined(typeof(HeroClass), profile.heroClass)) profile.heroClass = HeroClass.Vanguard;
             profile.version = 1;
             profile.level = Clamp(profile.level, 1, MaximumLevel);
@@ -1443,15 +2083,20 @@ namespace Emberfall
             profile.kills = Clamp(profile.kills, 0, int.MaxValue);
             profile.clearedRuns = Clamp(profile.clearedRuns, 0, 999999);
             profile.bestFloor = Clamp(profile.bestFloor, 0, 999999);
+            profile.unlockedHubMask=HubTravelRules.UnlockedMask(profile.unlockedHubMask,profile.level,profile.clearedRuns);
+            profile.currentHub=HubTravelRules.SafeCurrent(profile.currentHub,profile.unlockedHubMask);
+            Guid modeReceipt;profile.lastModeRewardId=Guid.TryParseExact(profile.lastModeRewardId,"N",out modeReceipt)?modeReceipt.ToString("N"):null;
+            Guid dungeonReceipt;profile.lastDungeonRewardId=Guid.TryParseExact(profile.lastDungeonRewardId,"N",out dungeonReceipt)?dungeonReceipt.ToString("N"):null;
             profile.tutorialMask = Math.Max(0, profile.tutorialMask) & 15;
             if (profile.heroClass != HeroClass.Arcanist || !Enum.IsDefined(typeof(ElementalistSpecialization), profile.specialization))
                 profile.specialization = ElementalistSpecialization.None;
             profile.mechanicMaterials = Clamp(profile.mechanicMaterials, 0, 999999);
             profile.materialRewardedClears = Clamp(profile.materialRewardedClears, 0, profile.clearedRuns);
             profile.pendingFirstClearReward = profile.clearedRuns > 0 && !profile.firstClearRewardClaimed;
+            profile.pendingChestTier = TierRewardRules.ClampTier(profile.pendingChestTier);
             ChestReward receipt = profile.lastChestReward;
             if (receipt == null || string.IsNullOrWhiteSpace(receipt.id) || receipt.id.Length > 80 ||
-                receipt.gold < 60 || receipt.gold > 900 || receipt.rarityIndex < -1 || receipt.rarityIndex > 3 ||
+                receipt.gold < 60 || receipt.gold > 1000 || receipt.rarityIndex < -1 || receipt.rarityIndex > 3 ||
                 (receipt.rarityIndex >= 0 && (receipt.slotIndex < 0 || receipt.slotIndex > 1)))
             {
                 profile.lastChestReward = null;
@@ -1490,7 +2135,7 @@ namespace Emberfall
                     remaining -= mastery[track];
                 }
             profile.masteryRanks = mastery;
-            if (profile.masteryRevision < 1 || profile.masteryCore < 0 || profile.masteryCore >= mastery.Length || mastery[profile.masteryCore] < 20)
+            if (profile.masteryRevision < 1 || profile.masteryCore < 0 || profile.masteryCore >= mastery.Length || mastery[profile.masteryCore] < MasteryCoreRules.InitialInvestment)
                 profile.masteryCore = -1;
             profile.masteryRevision = 1;
             profile.fashionThreads = Clamp(profile.fashionThreads, 0, 999999);

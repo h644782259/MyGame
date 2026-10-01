@@ -13,9 +13,10 @@ namespace Emberfall
         public bool ChallengeRun { get; private set; }
         public int HealingCharges { get; private set; }
         public int DungeonLayout { get; private set; }
+        public int DungeonEntryLevel { get; private set; } = 2;
         public string LastRunSummary { get; private set; } = "";
-        public bool IsInCamp { get { return HasStarted && !InDungeon && !IsDead && Player != null && Vector3.Distance(Player.transform.position, new Vector3(0,0,-10)) < 7f; } }
-        public bool SideEventAvailable { get { return InDungeon && !DungeonCleared && !sideEventStarted && Player != null && Vector3.Distance(Player.transform.position, sideEventPosition) < 3.5f; } }
+        public bool IsInCamp { get { return HasStarted && !InDungeon && !IsDead && Player != null && (Vector3.Distance(Player.transform.position, new Vector3(0,0,-10)) < 7f || NearbyHubNpc!=HubNpcKind.None); } }
+        public bool SideEventAvailable { get { return InDungeon && ModeRun==null && (RoomChainRun==null || RoomChainRun.Room.Index==1&&RoomChainRun.DoorUnlocked&&!RoomChainRun.Finished) && !DungeonCleared && !sideEventStarted && Player != null && Vector3.Distance(Player.transform.position, sideEventPosition) < 3.5f; } }
         private int runSeed, wavePopulation;
         private readonly Queue<EncounterSpawn> reinforcementQueue=new Queue<EncounterSpawn>();
         private float nextReinforcementAt;
@@ -34,23 +35,28 @@ namespace Emberfall
             if (!DungeonSelectionOpen || InDungeon || IsDead || !NearPortal()) return;
             SelectedDungeonTier = Mathf.Clamp(SelectedDungeonTier, 1, MaximumDungeonTier);
             DungeonSelectionOpen = false;
+            bool previousChallengeRun = ChallengeRun;
             ChallengeRun = SelectedChallengeMode;
-            ChangeZone(true);
+            if(!ChangeZone(true)){ChallengeRun=previousChallengeRun;DungeonSelectionOpen=true;UpdateTimeScale();Notify(Progression.LastError);return;}
             UpdateTimeScale();
-            Notify("沉星遗迹 · " + DungeonTier + " 阶 · " + (DungeonLayout == 0 ? "双廊" : "断柱") + (ChallengeRun ? " · 限疗挑战" : " · 普通模式"));
+            Notify(ModeName+" · " + DungeonTier + " 阶 · " + (DungeonLayout == 0 ? "双廊" : "断柱") + (ChallengeRun ? " · 限疗挑战" : " · 普通模式"));
         }
 
         private void ResetExpedition(bool dungeon)
         {
+            ClearDungeonSettlement();
             RunChoices.Reset(); reinforcementQueue.Clear(); nextReinforcementAt=0; DungeonSelectionOpen = false; sideEventEnemies.Clear(); sideEventStarted = false; sideCrystal = null;
+            combatActions.Clear(); lastDamageSource = "未记录"; lastDamageAmount = 0; lastInterruptAt = -10; recapGoldLost = 0;
             if (dungeon)
             {
+                DungeonEntryLevel = Mathf.Clamp(Progression.Profile.level,2,100);
                 runSeed = Random.Range(0, 1000000);
                 DungeonLayout = runSeed % 2;
                 HealingCharges = 3;
-                combatActions.Clear(); lastDamageSource = "未记录"; lastDamageAmount = 0; lastInterruptAt = -10;
+
             }
             else { ChallengeRun = false; HealingCharges = 0; }
+            ResetArenaMode(dungeon);
         }
 
         private void TrySpawnReinforcements()
@@ -62,13 +68,15 @@ namespace Emberfall
             {
                 EncounterSpawn next=reinforcementQueue.Peek(); Vector3 position;
                 if(!TrySafeSpawn(new Vector3(next.X,0,next.Z),next.Kind==EnemyKind.Guardian?.65f:.5f,7f,out position))break;
-                reinforcementQueue.Dequeue(); SpawnEnemy(next.Kind,Mathf.Clamp(Progression.Profile.level,2,100),position,false); spawned++;
+                reinforcementQueue.Dequeue(); SpawnEnemy(next.Kind,DungeonEntryLevel,position,false); spawned++;
             }
             if(spawned>0)Notify("遗迹援军接近 · "+spawned+" 名");
         }
 
         public bool ConfirmBlessing(int index)
         {
+            if(RoomChainRun!=null)return ConfirmRoomInterlude(index);
+            if(ModeRun!=null)return ConfirmArenaBlessing(index);
             if (!InDungeon || IsDead || DungeonCleared || Enemies.Count > 0 || reinforcementQueue.Count>0 || !RunChoices.Choose(index)) return false;
             DungeonWave++; SpawnDungeonWave(); UpdateTimeScale();
             Notify(DungeonWave == TotalWaves ? "最终波 · 星蚀巨像" : "第 " + DungeonWave + " 波");
@@ -98,7 +106,7 @@ namespace Emberfall
         }
         public void OnEnemyInterrupted(EnemyController enemy)
         {
-            if (enemy == null || enemy.IsBoss || Player == null) return;
+            if (enemy == null || Player == null) return;
             RecordCombatAction("打断");
             if (HasBlessing(RunBlessing.InterruptFlow) && Time.time - lastInterruptAt >= 1f)
             {
@@ -140,7 +148,7 @@ namespace Emberfall
             { Notify("晶核附近暂时没有安全来袭位置，请拉开距离后重试。"); return false; }
             sideEventStarted = true;
             if (sideCrystal != null) { Destroy(sideCrystal); sideCrystal = null; }
-            int level = Mathf.Clamp(Progression.Profile.level + DungeonTier, 2, 100);
+            int level = DungeonEntryLevel; // Entry level and tier each scale once.
             SpawnEnemy(EnemyKind.Guardian, level, guardPosition, false);
             sideEventEnemies.Add(Enemies[Enemies.Count - 1]);
             SpawnEnemy(EnemyKind.Wisp, level, wispPosition, false);
@@ -148,20 +156,6 @@ namespace Emberfall
             Notify("晶核守卫来袭 · 击败两名守卫获得碎片与补给"); return true;
         }
 
-        private string BuildRunSummary(bool won)
-        {
-            var entries = new List<string>();
-            foreach (var entry in combatActions) entries.Add(entry.Key + " " + entry.Value);
-            string blessings = "";
-            foreach (RunBlessing blessing in RunChoices.Active) blessings += (blessings.Length == 0 ? "" : "、") + Emberfall.RunChoices.Name(blessing);
-            string mechanics = "";
-            foreach (EquipmentMechanic mechanic in BuildCatalog.MechanicsFor(Progression.Profile.heroClass))
-                if (Progression.HasMechanic(mechanic)) mechanics += (mechanics.Length == 0 ? "" : "、") + BuildCatalog.MechanicName(mechanic);
-            return (won ? "通关 · 种子 " + runSeed : "最后受击：" + lastDamageSource + " · " + Mathf.CeilToInt(lastDamageAmount)) +
-                "\n成功操作：" + (entries.Count == 0 ? "尚无记录" : string.Join(" · ", entries.ToArray())) +
-                "\n机制装备：" + (mechanics.Length == 0 ? "未装备" : mechanics) + "\n祝福：" + (blessings.Length == 0 ? "无" : blessings) +
-                "\n星烬碎片 " + Progression.Profile.mechanicMaterials + "/" + ProgressionService.MechanicExchangeCost +
-                (won ? " · 下次可自由选择已通关阶数或挑战下一阶" : "\n再试建议：先以守卫蓄力练习侧向闪现，再从侧后方输出；可降低到已通关阶数。");
-        }
+
     }
 }

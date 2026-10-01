@@ -12,10 +12,10 @@ bash Tests/Run-CloudValidation.sh --dotnet /path/to/dotnet --compile
 bash Tests/Run-CloudValidation.sh --unity-editor /path/to/Editor/Unity
 ```
 
-The first command runs the existing `ProgressionTests.cs` and `SkillRuntimeTests.cs`
-against the actual production source, in separate temporary projects. Saves and
+The first command runs the registered standalone suites against actual production source,
+in separate temporary projects. Saves and
 generated build files are isolated and removed afterward. Logs and a JSON report
-remain under the ignored `Tests/TestResults/Cloud-*` directory.
+remain under the ignored fixed `Tests/TestResults/Cloud-Latest` directory.
 
 `--download-references` also compiles every `Assets/Scripts/**/*.cs` file with C# 9
 against the same pinned `UnityEngine.Modules` 2021.3.33 package used by
@@ -42,3 +42,6 @@ These checks use .NET 8 and the standalone tests' existing Unity shims. They do
 not validate Unity's real JsonUtility, Editor-driven compilation/import, physics,
 rendering, shaders, GUI, audio, or Windows/iOS builds. Run the repository's real
 Unity validation and platform builds separately before release.
+
+
+0.4.0 adds isolated save/delete/load/exit, mobile layout and gesture, progression reminders, town economy, trial/room/large-boss rules, destructible navigation, recap and procedural/filled-volume geometry checks. The report lists each executed check and rejects source changes during a run. Five optional compilation configurations cover legacy API references and installed Unity runtime/editor branches. Python source contracts remain separate from these managed tests. Fixed `Cloud-Latest` logs replace only the previous generated latest report; historical reports are preserved.

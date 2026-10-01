@@ -5,38 +5,40 @@ namespace Emberfall
     public sealed partial class GameUI
     {
         private Texture2D terrainMap;
-        private string terrainMapKey;
+        private int terrainMapRevision = int.MinValue;
+        private float terrainMapRadius;
+        private const int TerrainMapSize = 96;
+        private readonly Color[] terrainMapPixels = new Color[TerrainMapSize * TerrainMapSize];
         private void DrawMinimapTerrain(Rect r)
         {
-            string key=(session.InDungeon?"d":"w")+session.DungeonLayout;
-            if(terrainMap==null||terrainMapKey!=key)
+            float radius = session.ArenaRadius;
+            if (terrainMap == null || terrainMapRevision != WorldTraversal.Revision || terrainMapRadius != radius)
             {
-                if(terrainMap!=null)Destroy(terrainMap);
-                terrainMapKey=key;
-                const int size=64;
-                terrainMap=new Texture2D(size,size,TextureFormat.RGBA32,false){hideFlags=HideFlags.HideAndDontSave,filterMode=FilterMode.Point};
-                float radius=session.ArenaRadius;
-                for(int y=0;y<size;y++)for(int x=0;x<size;x++)
+                if (terrainMap == null)
+                    terrainMap = new Texture2D(TerrainMapSize, TerrainMapSize, TextureFormat.RGBA32, false)
+                    { hideFlags = HideFlags.HideAndDontSave, filterMode = FilterMode.Bilinear, wrapMode = TextureWrapMode.Clamp };
+                for (int y = 0; y < TerrainMapSize; y++) for (int x = 0; x < TerrainMapSize; x++)
                 {
-                    Vector3 point=new Vector3(((x+.5f)/size*2-1)*radius,0,((y+.5f)/size*2-1)*radius);
-                    terrainMap.SetPixel(x,y,WorldTraversal.IsWalkable(point,.16f)?new Color(.14f,.22f,.23f,.65f):new Color(.38f,.43f,.48f,.95f));
+                    Vector3 point = new Vector3(((x + .5f) / TerrainMapSize * 2 - 1) * radius, 0,
+                        ((y + .5f) / TerrainMapSize * 2 - 1) * radius);
+                    terrainMapPixels[y * TerrainMapSize + x] = WorldTraversal.IsWalkable(point, .16f)
+                        ? new Color(.14f, .22f, .23f, .65f)
+                        : WorldTraversal.IsOpenWater(point, .16f) ? new Color(.13f, .39f, .58f, .95f)
+                        : new Color(.38f, .43f, .48f, .95f);
                 }
-                terrainMap.Apply(false,true);
+                terrainMap.SetPixels(terrainMapPixels);
+                terrainMap.Apply(false, false); // One reusable texture; future broken props update its pixels.
+                terrainMapRevision = WorldTraversal.Revision;
+                terrainMapRadius = radius;
             }
-            GUI.DrawTexture(r,terrainMap,ScaleMode.StretchToFill,true);
-            if(!session.InDungeon)
+            GUI.DrawTexture(r, terrainMap, ScaleMode.StretchToFill, true);
+            // Only the original forest actually has these road/bridge landmarks.
+            // Other hubs, arenas and linked rooms derive their map from geometry.
+            if (!session.InDungeon && session.CurrentHub == 0)
             {
-                Vector3[] river={new Vector3(-22,0,4.7f),new Vector3(-11,0,2),new Vector3(0,0,-1),new Vector3(7,0,-2),new Vector3(14,0,-5),new Vector3(21,0,-7)};
-                for(int i=1;i<river.Length;i++)MapLine(r,river[i-1],river[i],new Color(.21f,.47f,.66f),5);
-                MapLine(r,new Vector3(0,0,-16),new Vector3(0,0,11),new Color(.55f,.46f,.3f),3);
-                MapLine(r,new Vector3(-1.2f,0,-3.2f),new Vector3(-1.2f,0,1.6f),gold,2);
-                MapLine(r,new Vector3(1.2f,0,-3.2f),new Vector3(1.2f,0,1.6f),gold,2);
-            }
-            else
-            {
-                MapLine(r,new Vector3(0,0,-15),new Vector3(0,0,13),new Color(.29f,.38f,.42f),3);
-                MapLine(r,new Vector3(-14,0,1),new Vector3(14,0,1),new Color(.29f,.38f,.42f),3);
-                MapDot(r,new Vector3(12,0,-3),new Color(.33f,.85f,1),4);
+                MapLine(r, new Vector3(0, 0, -16), new Vector3(0, 0, 11), new Color(.55f, .46f, .3f), 3);
+                MapLine(r, new Vector3(-1.2f, 0, -3.2f), new Vector3(-1.2f, 0, 1.6f), gold, 2);
+                MapLine(r, new Vector3(1.2f, 0, -3.2f), new Vector3(1.2f, 0, 1.6f), gold, 2);
             }
             Text(new Rect(r.xMax-17,r.y+1,16,15),"N",10,pale,true,false,TextAnchor.MiddleCenter);
             if(session.Player!=null)MapLine(r,session.Player.transform.position,session.Player.transform.position+session.Player.transform.forward*2.8f,Color.white,2);

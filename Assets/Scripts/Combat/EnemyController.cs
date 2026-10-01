@@ -8,6 +8,7 @@ namespace Emberfall
         public ThreatTier Tier { get; private set; }
         public bool IsAggro { get { return aggro; } }
         public bool IsStunned { get { return stunTime > 0; } }
+        public float ControlStunRemaining { get { return stunTime; } }
         public EnemyStatusEffects StatusEffects { get; private set; }
         public float Health { get; private set; }
         public float MaxHealth { get; private set; }
@@ -15,18 +16,26 @@ namespace Emberfall
         public EnemyKind Kind { get; private set; }
         public bool IsBoss { get; private set; }
         public bool IsEnraged { get { return IsBoss && BossAttackPolicy.IsEnraged(Health, MaxHealth); } }
-        public bool IsPreparingAttack { get { return preparing; } }
-        public float AttackWindupRemaining { get { return preparing ? windup : 0; } }
-        public float NavigationRadius { get { return IsBoss ? .9f : Kind == EnemyKind.Guardian ? .6f : .45f; } }
+        public bool IsPreparingAttack { get { return preparing || largeBoss != null && largeBoss.State.Interruptible; } }
+        public bool CanBeSkillInterrupted { get { return IsPreparingAttack && controlPolicy != null && controlPolicy.CanInterruptWindup; } }
+        public float ControlRecoveryRemaining { get { return controlPolicy == null ? 0 : controlPolicy.InterruptRecovery; } }
+        public float AttackWindupRemaining { get { return largeBoss != null && largeBoss.State.Interruptible ? largeBoss.State.Remaining : preparing ? windup : 0; } }
+        public float NavigationRadius { get { return largeBoss != null ? 1.25f : IsBoss ? .9f : Kind == EnemyKind.Guardian ? .6f : .45f; } }
+        public float HitFootprintBonus { get { return largeBoss != null ? .45f : 0f; } }
+        public float ProjectileHitRadius { get { return largeBoss != null ? 1.3f : IsBoss ? 1.05f : .6f; } }
+        internal float AttackDamage { get { return damage; } }
         public string DisplayName { get; private set; }
-        public string TraitDescription { get { return IsBoss ? "首领：近身震地、中距冲锋、远距扇形弹幕；半血后两段连招，每段独立预警。" : Kind == EnemyKind.Slime ? "跳扑近身，黏液命中使你暂时减速。" : Kind == EnemyKind.Goblin ? "绕侧接近，近身后快速出刀并侧移。" : Kind == EnemyKind.Wisp ? "保持远距离游走，发射双重灵弹。" : "正面石甲减伤35%；重击蓄力时护甲失效。"; } }
+        public string TraitDescription { get { return largeBoss != null ? "大型远征首领：70%与35%生命召唤供能锚；青色蓄力可打断，红色扫射期间摧毁锚点。断能后核心暴露6秒，受到伤害增加35%。" : IsBoss ? "首领：青色预警可用控制技能打断；红色为霸体恢复。打断后5秒免疫再次打断，击退大幅衰减。近身震地、中距冲锋、远距弹幕。" : Kind == EnemyKind.Slime ? "跳扑近身，黏液命中使你暂时减速。" : Kind == EnemyKind.Goblin ? "绕侧接近，近身后快速出刀并侧移。" : Kind == EnemyKind.Wisp ? "保持远距离游走，发射双重灵弹。" : "正面石甲减伤35%；重击蓄力时护甲失效。"; } }
 
         private enum AttackType { Melee, Bolt, Slam, Charge, Fan }
         private GameSession session;
         private CombatModel model;
+        private LargeExpeditionBoss largeBoss;
         private float speed, damage, attackCooldown, windup, stunTime, hurtTime, attackAnimation, patrolPhase;
-        private int attackNumber, repeatedMove;
+        private int attackNumber, repeatedMove, arenaBossPattern, pullBudgetFrame = -1;
+        private float pullUsedThisFrame;
         private BossAttackPolicy.Move previousMove;
+        private readonly BossAdvanceBudget advanceBudget = new BossAdvanceBudget();
         private Vector3 origin, targetPoint, knockVelocity, chargeDirection;
         private float chargeTime, totalWindup, comboDelay;
         private int comboRemaining;
@@ -36,7 +45,10 @@ namespace Emberfall
         private Vector3 dodgeOrigin;
         private PlayerController dodgePlayer;
         private int dodgeEpoch;
-        private float flinchUntil, nextImpactTime;
+        private float flinchUntil, nextImpactTime, nextFlinchAllowed;
+        private EnemyControlPolicy controlPolicy;
+        private PlayerController controlOwner;
+        private int controlOwnerEpoch;
         private SummonedCompanion companionTarget;
         private float sidestepTime;
         private Vector3 sidestepDirection;
@@ -53,6 +65,7 @@ namespace Emberfall
             Kind = kind;
             IsBoss = boss;
             Tier = boss ? ThreatTier.Boss : game.InDungeon ? ThreatTier.Elite : ThreatTier.Normal;
+            controlPolicy = new EnemyControlPolicy((EnemyControlTier)(int)Tier);
             level = Mathf.Max(1,level);
             DisplayName = (Tier == ThreatTier.Boss ? "首领 · " : Tier == ThreatTier.Elite ? "精英 · " : "普通 · ") +
                 (boss ? "星蚀巨像" : new[] { "森林史莱姆", "盗宝哥布林", "幽光魔灵", "遗迹守卫" }[(int)kind]);
@@ -70,6 +83,41 @@ namespace Emberfall
             model = CombatModel.Enemy(transform,kind,boss);
             StatusEffects = gameObject.AddComponent<EnemyStatusEffects>();
             BuildHealthBar();
+        }
+
+        public void ConfigureArenaBoss(int pattern)
+        {
+            // A preference only: health/damage, navigation, windup and ordinary
+            // pattern zero are unchanged. Call after spawning a Guardian boss.
+            arenaBossPattern = IsBoss && pattern >= 1 && pattern <= 3 ? pattern : 0;
+        }
+
+        internal void ConfigureLargeExpedition(LargeExpeditionBoss encounter)
+        {
+            if (!IsBoss || largeBoss != null || encounter == null) return;
+            largeBoss = encounter;
+            DisplayName = "大型首领 · 星环执政官"; gameObject.name = DisplayName;
+            if (model != null) { model.gameObject.SetActive(false); Destroy(model.gameObject); }
+            model = CombatModel.LargeExpedition(transform);
+            transform.position = WorldTraversal.NearestWalkable(transform.position, NavigationRadius);
+            if (healthRoot != null) healthRoot.localPosition = Vector3.up * 4f;
+        }
+        internal void BeginLargeBossMechanic()
+        {
+            CancelAttack(); attackNumber++; aggro = true; knockVelocity = Vector3.zero;
+        }
+
+        internal void ApplyPull(Vector3 displacement)
+        {
+            if (session == null || !session.HasStarted || session.InputBlocked || IsDead || chargeTime > 0 || largeBoss != null && largeBoss.State.OwnsAttacks ||
+                controlPolicy == null || !FinitePoint(displacement) || Time.deltaTime <= 0) return;
+            if (pullBudgetFrame != Time.frameCount) { pullBudgetFrame = Time.frameCount; pullUsedThisFrame = 0; }
+            Vector3 flat = CombatFx.Flat(displacement);
+            float budget = controlPolicy.MaximumPullSpeed * Mathf.Min(.1f, Time.deltaTime);
+            float distance = Mathf.Min(controlPolicy.PullDistance(flat.magnitude, Time.deltaTime), Mathf.Max(0, budget - pullUsedThisFrame));
+            if (distance <= 0 || flat.sqrMagnitude < .000001f) return;
+            pullUsedThisFrame += distance;
+            transform.position = WorldTraversal.Move(transform.position, flat.normalized * distance, NavigationRadius);
         }
 
         private void BuildHealthBar()
@@ -102,14 +150,14 @@ namespace Emberfall
 
         public void TakeDamage(float amount, Vector3 direction, float knockback = 0f, float stun = 0f, bool impact = true, bool critical = false)
         {
-            if (session == null || IsDead || amount <= 0) return;
+            if (session == null || !AdventureResultPolicy.AcceptsDamage(session.HasStarted,session.CombatEnded) || IsDead || amount <= 0 || float.IsNaN(amount) || float.IsInfinity(amount)) return;
             amount *= StatusEffects == null ? 1 : StatusEffects.DamageMultiplier;
+            if (largeBoss != null) amount *= largeBoss.State.IncomingMultiplier;
             if (Kind == EnemyKind.Guardian && !IsBoss && !preparing && CombatFx.Flat(direction).sqrMagnitude > .01f && Vector3.Dot(transform.forward, -CombatFx.Flat(direction).normalized) > .45f)
                 amount *= .65f;
             Health = Mathf.Max(0,Health-amount);
             aggro = true;
             hurtTime = .15f;
-            float resistance = IsBoss ? .24f : 1f;
             if (impact && (critical || Time.time >= nextImpactTime))
             {
                 nextImpactTime = Time.time + .10f;
@@ -117,29 +165,62 @@ namespace Emberfall
                 if (push.sqrMagnitude < .01f) push = -transform.forward;
                 float strength = Mathf.Clamp(amount / Mathf.Max(1f, session.Progression.GetStats().Damage), critical ? 1.6f : .55f, critical ? 2.5f : 2f);
                 model.Recoil(push, strength * (IsBoss ? .5f : 1f));
-                flinchUntil = Time.time + (IsBoss ? .018f : Mathf.Lerp(.035f, .065f, strength / 2f));
+                if (Time.time >= nextFlinchAllowed)
+                {
+                    flinchUntil = Time.time + (IsBoss ? .018f : Mathf.Lerp(.035f, .065f, strength / 2f));
+                    nextFlinchAllowed = Time.time + (IsBoss ? .8f : Tier == ThreatTier.Elite ? .35f : .22f);
+                }
                 HitFeedback.Spawn(transform.position + Vector3.up * (IsBoss ? 2f : Kind == EnemyKind.Slime ? .65f : 1.25f), push, strength, critical);
                 GameAudio.Play(critical ? SoundCue.CriticalHit : SoundCue.Hit);
             }
-            knockVelocity += CombatFx.Flat(direction).normalized * knockback * 7f * resistance;
-            stunTime = Mathf.Max(stunTime,stun*resistance);
-            if (stun >= .45f && !IsBoss) CancelAttack(true);
+            float impulse = chargeTime > 0 || largeBoss != null && largeBoss.State.OwnsAttacks ? 0 : controlPolicy.ApplyKnockback(knockback);
+            if (FinitePoint(direction)) knockVelocity = Vector3.ClampMagnitude(knockVelocity + CombatFx.Flat(direction).normalized * impulse, controlPolicy.MaximumImpulse);
+            float grantedStun = controlPolicy.ApplyStun(stun);
+            stunTime = Mathf.Max(stunTime, grantedStun);
+            if (grantedStun > 0 && stun >= .45f) CancelAttack(true);
             session.SpawnCombatDamage(transform.position+Vector3.up*(IsBoss?3.6f:1.9f),Mathf.CeilToInt(amount).ToString(),critical);
             if (Health <= 0 && !deathReported)
             {
                 deathReported = true;
+                if (largeBoss != null) largeBoss.StopEncounter();
                 CancelAttack();
                 CombatFx.Ring(transform.position,IsBoss?2.5f:1.1f,new Color(1f,.77f,.35f),.45f,.13f);
                 session.OnEnemyKilled(this);
             }
         }
 
-        internal void ApplyControl(float duration)
+        internal float ApplyControl(float duration)
         {
-            if(IsDead || duration<=0) return;
-            aggro=true;
-            stunTime=Mathf.Max(stunTime,duration*(IsBoss?.24f:1f));
-            if(duration>=.45f && !IsBoss) CancelAttack(true);
+            if (IsDead || duration <= 0 || controlPolicy == null) return 0;
+            aggro = true;
+            float granted = controlPolicy.ApplyStun(duration);
+            stunTime = Mathf.Max(stunTime, granted);
+            if (granted > 0 && duration >= .45f) CancelAttack(true);
+            return granted;
+        }
+
+        internal bool TrySkillInterrupt(PlayerController source, int skill, int castId)
+        {
+            if (source == null || source.IsDead || session == null || source != session.Player || !session.HasStarted ||
+                session.InputBlocked || IsDead || !enabled || !gameObject.activeInHierarchy || controlPolicy == null ||
+                !EnemyControlPolicy.IsInterruptSkill(source.HeroClass, skill) ||
+                !WorldTraversal.HasLineOfSight(source.transform.position, transform.position)) return false;
+            if (controlOwner != source || controlOwnerEpoch != source.CombatEpoch)
+            {
+                controlOwner = source; controlOwnerEpoch = source.CombatEpoch;
+                controlPolicy.ResetCastOwner();
+            }
+            float stagger;
+            if (!controlPolicy.TryInterrupt(castId, attackNumber, IsPreparingAttack,
+                EnemyControlPolicy.IsInterruptSkill(source.HeroClass, skill), out stagger)) return false;
+            stunTime = Mathf.Max(stunTime, stagger);
+            bool specialWindup = largeBoss != null && largeBoss.State.Interruptible;
+            CancelAttack(true);
+            if (specialWindup) largeBoss.InterruptWindup();
+            attackCooldown = Mathf.Max(attackCooldown, IsBoss ? 1.3f : .8f);
+            session.SpawnFloatingText(transform.position + Vector3.up * (IsBoss ? 3.2f : 2f),
+                "打断！", new Color(.35f, 1f, .85f));
+            return true;
         }
 
         internal void Provoke() { if (!IsDead) aggro = true; }
@@ -155,8 +236,17 @@ namespace Emberfall
         private void Update()
         {
             if (session == null || session.Player == null || IsDead || !session.HasStarted || session.Paused || session.IsDead) return;
+            if (largeBoss != null && (session.InputBlocked || largeBoss.State.Phase == LargeBossPhase.Finished)) return;
             float dt = Time.deltaTime;
             if (dt <= 0) return;
+            controlPolicy.Advance(dt);
+            if (largeBoss != null && largeBoss.Tick(dt))
+            {
+                stunTime = Mathf.Max(0, stunTime - dt); hurtTime = Mathf.Max(0, hurtTime - dt);
+                model.Animate(0, largeBoss.State.Interruptible ? .95f : 0, hurtTime > 0);
+                return;
+            }
+            if (telegraph != null) telegraph.SetInterruptible(CanBeSkillInterrupted);
             hurtTime = Mathf.Max(0,hurtTime-dt);
             attackAnimation = Mathf.Max(0,attackAnimation-dt*3f);
             attackCooldown = Mathf.Max(0,attackCooldown-dt);
@@ -229,8 +319,10 @@ namespace Emberfall
             else if (aggro)
             {
                 if (delta.sqrMagnitude>.01f) transform.rotation=Quaternion.Slerp(transform.rotation,Quaternion.LookRotation(delta),dt*9f);
-                float range = IsBoss ? (BossAttackPolicy.ShouldAdvance(distance, previousMove, repeatedMove) ? BossAttackPolicy.ChargeRange : BossAttackPolicy.EngageRange) : Kind==EnemyKind.Wisp ? 7.5f : Kind==EnemyKind.Guardian ? 2.5f : 1.8f;
-                bool attackPath = IsBoss ? CanUseBossAttack(BossAttackPolicy.Select(distance, previousMove, repeatedMove), combatTargetPosition) : Kind == EnemyKind.Wisp ? WorldTraversal.HasLineOfSight(transform.position, combatTargetPosition) : WorldTraversal.HasGroundPath(transform.position, combatTargetPosition, .12f);
+                bool approach = IsBoss && advanceBudget.Advance(dt, distance, BossAttackPolicy.ShouldAdvance(distance, previousMove, repeatedMove));
+                float range = IsBoss ? (approach ? BossAttackPolicy.ChargeRange : BossAttackPolicy.EngageRange) : Kind==EnemyKind.Wisp ? 7.5f : Kind==EnemyKind.Guardian ? 2.5f : 1.8f;
+                if (IsBoss && arenaBossPattern == 1 && !advanceBudget.FallbackActive) range = Mathf.Min(range, BossAttackPolicy.CloseRange);
+                bool attackPath = IsBoss ? CanUseBossAttack(SelectBossMove(distance, combatTargetPosition), combatTargetPosition) : Kind == EnemyKind.Wisp ? WorldTraversal.HasLineOfSight(transform.position, combatTargetPosition) : WorldTraversal.HasGroundPath(transform.position, combatTargetPosition, .12f);
                 if (distance <= range && attackCooldown <= 0 && attackPath) BeginAttack();
                 else if (Kind==EnemyKind.Wisp && distance<4.5f && attackPath)
                 {
@@ -301,11 +393,20 @@ namespace Emberfall
             return CombatFx.SegmentDistance(target, transform.position, end) < BossAttackPolicy.ChargeHalfWidth;
         }
 
+        private BossAttackPolicy.Move SelectBossMove(float distance, Vector3 target)
+        {
+            BossAttackPolicy.Move fallback = BossAttackPolicy.Select(distance, previousMove, repeatedMove);
+            BossAttackPolicy.Move preferred = ArenaBossPatternPolicy.Preferred(arenaBossPattern, distance, previousMove, repeatedMove);
+            BossAttackPolicy.Move selected = preferred != fallback && !CanUseBossAttack(preferred, target) ? fallback : preferred;
+            return BossAttackPolicy.AfterAdvanceBudget(selected, distance, advanceBudget.FallbackActive,
+                CanUseBossAttack(BossAttackPolicy.Move.Fan, target));
+        }
+
         private void BeginAttack()
         {
             Vector3 target = companionTarget != null ? companionTarget.transform.position : session.Player.transform.position;
             comboRemaining = IsEnraged ? 1 : 0;
-            AttackType next = IsBoss ? ToAttack(BossAttackPolicy.Select(CombatFx.Flat(target - transform.position).magnitude, previousMove, repeatedMove)) : Kind == EnemyKind.Wisp ? AttackType.Bolt : Kind == EnemyKind.Guardian ? AttackType.Slam : AttackType.Melee;
+            AttackType next = IsBoss ? ToAttack(SelectBossMove(CombatFx.Flat(target - transform.position).magnitude, target)) : Kind == EnemyKind.Wisp ? AttackType.Bolt : Kind == EnemyKind.Guardian ? AttackType.Slam : AttackType.Melee;
             PrepareAttack(next, false, target);
         }
 
@@ -323,6 +424,7 @@ namespace Emberfall
 
         private void PrepareAttack(AttackType type, bool followUp, Vector3 target)
         {
+            advanceBudget.Reset();
             attackNumber++;
             if (IsBoss) { BossAttackPolicy.Move move = ToMove(type); repeatedMove = repeatedMove > 0 && previousMove == move ? repeatedMove+1 : 1; previousMove = move; }
             attackType = type;
@@ -334,6 +436,8 @@ namespace Emberfall
             windup = IsBoss ? BossAttackPolicy.Windup(ToMove(type), followUp) : Kind == EnemyKind.Wisp ? .72f : Kind == EnemyKind.Guardian ? .85f : Kind == EnemyKind.Slime ? .6f : .48f;
             totalWindup = windup;
             CreateWarning();
+            if (IsBoss) session.SpawnFloatingText(transform.position + Vector3.up * 3.1f,
+                CanBeSkillInterrupted ? "青色预警 · 可打断" : "红色预警 · 霸体恢复", CanBeSkillInterrupted ? new Color(.35f, 1f, .85f) : new Color(1f, .48f, .25f));
         }
 
         private float ImpactRadius { get { return attackType == AttackType.Slam ? (IsBoss ? BossAttackPolicy.SlamRadius : 3f) : 1.55f; } }
@@ -368,6 +472,7 @@ namespace Emberfall
             }
             else telegraph = EnemyAttackTelegraph.Circle(targetPoint, ImpactRadius);
             warning = telegraph.gameObject;
+            telegraph.SetInterruptible(CanBeSkillInterrupted);
             telegraph.SetProgress(1f - windup / Mathf.Max(.01f, totalWindup));
         }
 
@@ -388,6 +493,7 @@ namespace Emberfall
 
         private void ResolveAttack()
         {
+            if (!preparing || IsDead || session == null || !session.HasStarted) return;
             preparing = false;
             ClearWarning();
             attackAnimation = 1f;
@@ -527,10 +633,12 @@ namespace Emberfall
 
         private void CancelAttack(bool interrupted = false)
         {
-            bool activeAttack = preparing || chargeTime > 0;
+            bool activeAttack = preparing || chargeTime > 0 || largeBoss != null && largeBoss.State.Interruptible;
             preparing = false;
-            chargeTime = comboDelay = 0;
+            windup = chargeTime = comboDelay = sidestepTime = 0;
             comboRemaining = 0;
+            StopAllCoroutines();
+            CancelInvoke();
             dodgePending = false;
             dodgePlayer = null;
             attackCooldown = Mathf.Max(attackCooldown,.55f);
@@ -554,6 +662,8 @@ namespace Emberfall
             healthFill.localScale=new Vector3(width*fraction,.095f,1);
             healthFill.localPosition=new Vector3((fraction-1)*width*.5f,0,-.012f);
         }
+
+        private void OnDisable() { CancelAttack(); if (largeBoss != null) largeBoss.StopEncounter(); }
 
         private void OnDestroy()
         {

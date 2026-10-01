@@ -79,12 +79,19 @@ namespace Emberfall.Editor
                 check(game.PendingLootCount == 1 && !fixture.Contains(camp), "An uncollected distant drop remains pending before camp return");
                 game.ReturnToCamp();
                 check(!game.InDungeon && fixture.Contains(camp) && game.PendingLootCount == 0, "Returning to camp settles all pending gear before old scene cleanup");
+                check(ReceiptCount(game, false) == 0 && ReceiptCount(game, true) == 0,
+                    "Successful camp transition releases both old-world receipt sets after settlement");
+                IEnumerator wilderness = ValidateWildernessRetention(game, fixture, check);
+                while (wilderness.MoveNext()) yield return wilderness.Current;
+                fixture.EnterFreshDungeon();
+                ValidateRoomReceiptBoundary(game, fixture, check);
                 fixture.EnterFreshDungeon();
                 ItemData title = fixture.Roll();
                 game.SpawnGroundLoot(title, new Vector3(10, 0, -6));
                 game.QuitToTitle();
                 check(!game.HasStarted && game.PendingLootCount == 0 && fixture.Contains(title), "Returning to title collects distant and protected gear before destroying the player");
                 game.ContinueGame();
+                progression = game.Progression;
                 check(game.HasStarted && fixture.Contains(title) && fixture.Contains(camp), "Scene-exit pickups survive the actual persisted reload");
                 fixture.EnterFreshDungeon();
                 ItemData settled = fixture.Roll();
@@ -100,6 +107,97 @@ namespace Emberfall.Editor
                 IsCheckingPause = false;
                 fixture.Restore();
             }
+        }
+
+        private static int ReceiptCount(GameSession game, bool progression)
+        {
+            object owner = progression ? (object)game.Progression : game;
+            return ((HashSet<string>)Field(owner.GetType(), progression ? "collectedLootIds" : "collectedGroundLoot").GetValue(owner)).Count;
+        }
+
+        private static IEnumerator ValidateWildernessRetention(GameSession game, Fixture fixture, Action<bool, string> check)
+        {
+            ProgressionService progression = game.Progression;
+            foreach (EnemyController enemy in game.Enemies) if (enemy != null) enemy.enabled = false;
+            MethodInfo deliver = typeof(GameSession).GetMethod("DeliverEnemyLoot", PrivateInstance);
+            MethodInfo spawn = typeof(GameSession).GetMethod("SpawnWildernessEnemy", PrivateInstance);
+            MethodInfo automaticCollect = typeof(GameSession).GetMethod("TryCollectGroundLoot", PrivateInstance, null, new[] { typeof(GroundLootPickup) }, null);
+            string temporary = progression.SaveFilePath + ".tmp";
+            if (File.Exists(temporary) || Directory.Exists(temporary)) throw new InvalidOperationException("Wilderness fixture refuses existing temporary save data.");
+            ItemData retained = fixture.Roll(); Vector3 point = game.Player.transform.position + Vector3.right * 6;
+            int bag = progression.Profile.inventory.Count, population = game.Enemies.Count;
+            byte[] primary = File.ReadAllBytes(progression.SaveFilePath), backup = File.ReadAllBytes(progression.SaveFilePath + ".bak");
+            bool ownsTemporary = false;
+            try
+            {
+                File.Copy(progression.SaveFilePath, temporary); ownsTemporary = true;
+                deliver.Invoke(game, new object[] { retained, point });
+                GroundLootPickup pending = game.SpawnGroundLoot(retained, point);
+                check(!game.InDungeon && pending != null && game.PendingLootCount == 1 && !fixture.Contains(retained) && progression.Profile.inventory.Count == bag,
+                    "Rejected wilderness collection retains the exact rolled ID as one visible session-owned pickup");
+                spawn.Invoke(game, null);
+                check(game.Enemies.Count == population, "A retained wilderness drop prevents replacement enemy producers while existing enemies remain");
+                game.Player.Teleport(pending.transform.position);
+                foreach (object tick in Wait(.85f)) yield return tick;
+                check(game.PendingLootCount == 1 && !fixture.Contains(retained) && ReadPickupRetry(pending) > 0,
+                    "Actual wilderness pickup Update retains failed data and backs off disk retries");
+                check(Convert.ToBase64String(File.ReadAllBytes(progression.SaveFilePath)) == Convert.ToBase64String(primary) &&
+                    Convert.ToBase64String(File.ReadAllBytes(progression.SaveFilePath + ".bak")) == Convert.ToBase64String(backup),
+                    "Blocked wilderness pickup leaves primary and backup bytes unchanged");
+                File.Delete(temporary); ownsTemporary = false;
+                foreach (object tick in Wait(1.25f)) yield return tick;
+                check(fixture.Contains(retained) && game.PendingLootCount == 0 && progression.Profile.inventory.Count == bag + 1,
+                    "After recovery the same wilderness identity is collected exactly once through real Update");
+                check(!(bool)automaticCollect.Invoke(game, new object[] { pending }) && !game.TryCollectGroundLoot(retained.id),
+                    "A retired wilderness pickup cannot collect again through either adapter");
+
+                GameProfile beforeCrowding = JsonUtility.FromJson<GameProfile>(JsonUtility.ToJson(progression.Profile));
+                try
+                {
+                    while (progression.Profile.inventory.Count < ProgressionService.InventoryCapacity) progression.Profile.inventory.Add(fixture.Roll());
+                    while (progression.Profile.pendingLoot.Count < ProgressionService.PendingLootCapacity) progression.Profile.pendingLoot.Add(fixture.Roll());
+                    progression.Save();
+                    ItemData protectedDrop = fixture.Roll(); protectedDrop.locked = true;
+                    point = game.Player.transform.position + Vector3.right * 4;
+                    deliver.Invoke(game, new object[] { protectedDrop, point });
+                    GroundLootPickup protectedPickup = game.SpawnGroundLoot(protectedDrop, point);
+                    check(protectedPickup != null && game.PendingLootCount == 1 && !fixture.Contains(protectedDrop),
+                        "Full bag plus protected mailbox retains a valuable wilderness item instead of discarding or selling it");
+                    progression.Profile.inventory.RemoveAt(progression.Profile.inventory.Count - 1); progression.Save();
+                    check(game.TryCollectGroundLoot(protectedDrop.id) && fixture.Contains(protectedDrop) && game.PendingLootCount == 0 &&
+                        !game.TryCollectGroundLoot(protectedDrop.id), "Freeing one bag slot admits the retained protected identity exactly once");
+                }
+                finally { SetProperty(progression, "Profile", beforeCrowding); progression.Save(); game.Player.RefreshStats(false); }
+            }
+            finally { if (ownsTemporary && File.Exists(temporary)) File.Delete(temporary); }
+        }
+
+        private static float ReadPickupRetry(GroundLootPickup pickup)
+        { return (float)Field(typeof(GroundLootPickup), "retryTime").GetValue(pickup); }
+
+        private static void ValidateRoomReceiptBoundary(GameSession game, Fixture fixture, Action<bool, string> check)
+        {
+            var run = new RoomChainState(); RoomChainPlan first = run.Room;
+            for (int i = 0; i < first.EnemyCount; i++) { run.Register(first, i); run.Defeat(first, i); }
+            SetProperty(game, "RoomChainRun", run);
+            ItemData item = fixture.Roll();
+            game.SpawnGroundLoot(item, game.Player.transform.position);
+            check(game.TryCollectGroundLoot(item.id) && ReceiptCount(game, false) > 0 && ReceiptCount(game, true) > 0,
+                "Room boundary fixture starts with both real collected receipt sets");
+            GameObject world = (GameObject)Field(typeof(GameSession), "world").GetValue(game);
+            EnemyController[] enemies = game.Enemies.ToArray();
+            SkillRuntime runtime = (SkillRuntime)Field(typeof(PlayerController), "skillRuntime").GetValue(game.Player);
+            runtime.Advance(200); runtime.FillEnergy(); runtime.TryConsume(0, 1);
+            float cooldown = runtime.Remaining(0); int epoch = game.Player.CombatEpoch;
+            game.Player.transform.position = new Vector3(0, 0, 14);
+            check(game.EnterNextRoom() && game.RoomChainRun.Room.Index == 1 && !world.activeSelf && game.Player.CombatEpoch != epoch &&
+                ReceiptCount(game, false) == 0 && ReceiptCount(game, true) == 0 && runtime.Remaining(0) == cooldown,
+                "Successful real room travel retires both receipt sets after old world/epoch and preserves skill cooldown");
+            int kills = game.Progression.Profile.kills;
+            foreach (EnemyController enemy in enemies) game.OnEnemyKilled(enemy);
+            check(game.Progression.Profile.kills == kills && game.PendingLootCount == 0,
+                "Late old-room enemy callbacks cannot recreate drops or rewards after receipt retirement");
+            typeof(GameSession).GetMethod("ChangeZone", PrivateInstance).Invoke(game, new object[] { false });
         }
 
         private static IEnumerable<object> Wait(float seconds, bool scaled = true)
@@ -252,7 +350,8 @@ namespace Emberfall.Editor
                 {
                     SetProperty(game.Progression, "Profile", originalProfile);
                     sessionCollected.Clear(); sessionCollected.UnionWith(originalSessionCollected);
-                    progressionCollected.Clear(); progressionCollected.UnionWith(originalProgressionCollected);
+                    var currentReceipts = (HashSet<string>)Field(typeof(ProgressionService), "collectedLootIds").GetValue(game.Progression);
+                    currentReceipts.Clear(); currentReceipts.UnionWith(originalProgressionCollected);
                     SetProperty(game.Progression, "LastError", originalError);
                     Field(typeof(GameSession), "notification").SetValue(game, notification);
                     Field(typeof(GameSession), "notificationUntil").SetValue(game, notificationUntil);

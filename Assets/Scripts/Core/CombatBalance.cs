@@ -15,7 +15,6 @@ namespace Emberfall
         public const float UpgradePerRank = .05f;
         public const float MinimumArmorDamageMultiplier = .30f;
         public const float MinimumCombinedDamageMultiplier = .16f;
-        public const float AdvancedSequenceMultiplier = .24f;
 
         public static float UpgradeMultiplier(int rank)
         {

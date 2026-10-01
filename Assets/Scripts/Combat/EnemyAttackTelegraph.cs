@@ -9,6 +9,7 @@ namespace Emberfall
         private readonly List<LineRenderer> lines = new List<LineRenderer>();
         private Material material;
         private float progress;
+        private bool interruptible;
 
         public static EnemyAttackTelegraph Circle(Vector3 center, float radius)
         {
@@ -42,7 +43,9 @@ namespace Emberfall
         {
             var root = new GameObject(title);
             var warning = root.AddComponent<EnemyAttackTelegraph>();
-            warning.material = CombatFx.NewGlow();
+            Shader shader = Resources.Load<Shader>("ThreatBoundary");
+            warning.material = shader == null ? CombatFx.NewGlow() : new Material(shader);
+            warning.material.renderQueue = 3900;
             return warning;
         }
 
@@ -76,19 +79,29 @@ namespace Emberfall
             for (int i = 0; i < points.Length; i++)
             {
                 Vector3 point = CombatFx.Flat(points[i]);
-                point.y = .115f;
+                point.y = .16f;
                 line.SetPosition(i, point);
             }
-            line.widthMultiplier = width;
+            line.widthMultiplier = Mathf.Max(.07f, width);
+            line.sortingOrder = 120;
             line.sharedMaterial = material;
             line.startColor = line.endColor = new Color(1f, .32f, .12f, .85f);
             lines.Add(line);
         }
 
+        public void SetInterruptible(bool value)
+        {
+            if (interruptible == value) return;
+            interruptible = value;
+            SetProgress(progress);
+        }
+
         public void SetProgress(float value)
         {
             progress = Mathf.Clamp01(value);
-            Color color = Color.Lerp(new Color(1f, .46f, .12f, .75f), new Color(1f, .08f, .13f, 1f), progress);
+            Color color = interruptible
+                ? Color.Lerp(new Color(.15f, .72f, .85f, .8f), new Color(.45f, 1f, .8f, 1f), progress)
+                : Color.Lerp(new Color(1f, .46f, .12f, .75f), new Color(1f, .08f, .13f, 1f), progress);
             foreach (LineRenderer line in lines) if (line != null) line.startColor = line.endColor = color;
         }
 

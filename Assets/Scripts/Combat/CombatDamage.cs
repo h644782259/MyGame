@@ -6,15 +6,22 @@ namespace Emberfall
     {
         public float Amount { get; }
         public bool IsCritical { get; }
-        public CombatDamage(float amount, bool isCritical)
-        { Amount = amount; IsCritical = isCritical; }
-        public static CombatDamage Roll(float amount, float chance, float roll)
+        public float CriticalMultiplier { get; }
+        public CombatDamage(float amount, bool isCritical, float criticalMultiplier = 1.65f)
         {
-            bool critical = roll < chance;
-            return new CombatDamage(amount * (critical ? 1.65f : 1f), critical);
+            Amount = amount; IsCritical = isCritical;
+            CriticalMultiplier = float.IsNaN(criticalMultiplier) || float.IsInfinity(criticalMultiplier)
+                ? 1.65f : System.Math.Max(1f, System.Math.Min(2.25f, criticalMultiplier));
         }
-        public CombatDamage WithoutCritical() { return new CombatDamage(IsCritical ? Amount / 1.65f : Amount, false); }
-        public static CombatDamage operator *(CombatDamage value, float multiplier) { return new CombatDamage(value.Amount * multiplier, value.IsCritical); }
+        public static CombatDamage Roll(float amount, float chance, float roll, float criticalMultiplier = 1.65f)
+        {
+            criticalMultiplier = float.IsNaN(criticalMultiplier) || float.IsInfinity(criticalMultiplier)
+                ? 1.65f : System.Math.Max(1f, System.Math.Min(2.25f, criticalMultiplier));
+            bool critical = roll < chance;
+            return new CombatDamage(amount * (critical ? criticalMultiplier : 1f), critical, criticalMultiplier);
+        }
+        public CombatDamage WithoutCritical() { return new CombatDamage(IsCritical ? Amount / CriticalMultiplier : Amount, false); }
+        public static CombatDamage operator *(CombatDamage value, float multiplier) { return new CombatDamage(value.Amount * multiplier, value.IsCritical, value.CriticalMultiplier); }
         public static implicit operator CombatDamage(float amount)
         { return new CombatDamage(amount, false); }
     }

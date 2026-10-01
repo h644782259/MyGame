@@ -3,15 +3,17 @@ using UnityEngine.Rendering;
 
 namespace Emberfall
 {
-    /// <summary>Visible dungeon loot remains session-owned until collected or settled on exit.</summary>
+    /// <summary>Visible loot remains session-owned until collected or settled on exit.</summary>
     public sealed class GroundLootPickup : MonoBehaviour
     {
         public const float PickupRadius = 2f;
         public const float LandingProtection = .6f;
+        public const float RetryDelay = 1f;
         public string ItemId { get; private set; }
         public bool ReadyToCollect { get { return age >= LandingProtection && !retired; } }
         private GameSession session;
         private float age;
+        private float retryTime;
         private bool retired;
         private Transform model;
         private Transform label;
@@ -143,17 +145,18 @@ namespace Emberfall
 
         private void Update()
         {
-            if (retired || session == null || session.InputBlocked || !session.InDungeon) return;
+            if (retired || session == null || session.InputBlocked || !session.IsCurrentGroundLoot(this)) return;
             age += Time.deltaTime;
+            retryTime = Mathf.Max(0, retryTime - Time.deltaTime);
             if (model != null)
             {
                 model.localPosition = Vector3.up * (.4f + Mathf.Sin(age * 2.5f) * .055f);
                 model.localRotation = Quaternion.Euler(0, age * 35f, -15);
             }
-            if (!ReadyToCollect || session.Player == null) return;
+            if (!ReadyToCollect || retryTime > 0 || session.Player == null) return;
             Vector3 offset = session.Player.transform.position - transform.position;
             offset.y = 0;
-            if (offset.sqrMagnitude <= PickupRadius * PickupRadius) session.TryCollectGroundLoot(ItemId);
+            if (offset.sqrMagnitude <= PickupRadius * PickupRadius && !session.TryCollectGroundLoot(this)) retryTime = RetryDelay;
         }
 
         private void LateUpdate()

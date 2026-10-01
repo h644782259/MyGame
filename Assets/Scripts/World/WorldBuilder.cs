@@ -4,15 +4,18 @@ using UnityEngine;
 namespace Emberfall
 {
     // Entire prototype scene is authored here so a fresh checkout needs no imported art.
-    public static class WorldBuilder
+    public static partial class WorldBuilder
     {
-        public static GameObject Build(ZoneKind zone, int dungeonLayout = 0, int campProgress = 0)
+        public static GameObject Build(ZoneKind zone, int dungeonLayout = 0, int campProgress = 0, int hub = 0)
         {
             WorldTraversal.Reset(zone);
             GameObject root = new GameObject(zone == ZoneKind.Wilderness ? "Windwhisper Fields" : "Fallen Star Sanctum");
             WorldResources resources = root.AddComponent<WorldResources>();
             bool dungeon = zone == ZoneKind.Dungeon;
-            RenderSettings.ambientLight = dungeon ? new Color(.29f, .29f, .43f) : new Color(.48f, .55f, .59f);
+            RenderSettings.ambientMode = UnityEngine.Rendering.AmbientMode.Trilight;
+            RenderSettings.ambientSkyColor = dungeon ? new Color(.27f,.32f,.48f) : new Color(.52f,.62f,.72f);
+            RenderSettings.ambientEquatorColor = dungeon ? new Color(.15f,.17f,.27f) : new Color(.30f,.39f,.38f);
+            RenderSettings.ambientGroundColor = dungeon ? new Color(.09f,.085f,.15f) : new Color(.19f,.23f,.20f);
             RenderSettings.fog = true;
             RenderSettings.fogMode = FogMode.ExponentialSquared;
             RenderSettings.fogColor = dungeon ? new Color(.055f, .055f, .11f) : new Color(.1f, .18f, .24f);
@@ -26,8 +29,16 @@ namespace Emberfall
             light.color = dungeon ? new Color(.64f, .72f, 1) : new Color(1, .88f, .66f);
             light.intensity = dungeon ? 1.1f : 1.35f;
             light.shadows = LightShadows.Soft;
-            light.shadowStrength = .7f;
-            if (dungeon) BuildDungeon(root.transform, resources, dungeonLayout); else { BuildWilderness(root.transform, resources); BuildCampFacilities(root.transform, resources, campProgress); }
+            light.shadowStrength = .65f;
+            light.shadowBias = .045f; light.shadowNormalBias = .2f;
+            GameObject fill = new GameObject("Cool silhouette fill");
+            fill.transform.SetParent(root.transform, false);
+            fill.transform.rotation = Quaternion.Euler(25f,145f,0);
+            Light rim = fill.AddComponent<Light>(); rim.type = LightType.Directional;
+            rim.color = dungeon ? new Color(.34f,.43f,.8f) : new Color(.44f,.65f,.77f);
+            rim.intensity = dungeon ? .28f : .32f; rim.shadows = LightShadows.None;
+            if (dungeon) { if(dungeonLayout>=10)BuildLinkedRoom(root.transform,resources,dungeonLayout-10);else if(dungeonLayout>=2)BuildChallengeArena(root.transform,resources,dungeonLayout-2);else BuildDungeon(root.transform, resources, dungeonLayout); } else { if(hub==0){BuildWilderness(root.transform, resources); BuildCampFacilities(root.transform, resources, campProgress);BuildHubNpcs(root.transform,resources);}else BuildTown(root.transform,resources,hub); }
+            if(dungeon)BuildBreakablePockets(root.transform,dungeonLayout);
             return root;
         }
 
@@ -350,7 +361,13 @@ namespace Emberfall
             Material leaves = r.Material(seed % 2 == 0 ? new Color(.12f,.29f,.29f) : new Color(.2f,.37f,.32f));
             Primitive(parent, "Tree trunk", PrimitiveType.Cylinder, p + Vector3.up * size, new Vector3(.34f, size, .34f), trunk);
             for (int j = 0; j < 3; j++)
-                Cone(parent, r, "Pine crown", p + Vector3.up * (1.2f + j * .85f) * size, (1.2f - j * .22f) * size, 1.8f * size, leaves, 7);
+            {
+                GameObject crown = Primitive(parent, "Rounded evergreen crown", PrimitiveType.Sphere,
+                    p + Vector3.up * (1.65f + j * .73f) * size,
+                    new Vector3(2.2f-j*.48f,1.75f-j*.17f,1.9f-j*.42f)*size, leaves);
+                crown.GetComponent<MeshFilter>().sharedMesh = ProceduralVisuals.WeatheredRock;
+                crown.transform.localRotation = Quaternion.Euler(0, seed*31f+j*57f, j%2==0 ? 7f : -7f);
+            }
         }
 
         private static void Rock(Transform parent, WorldResources r, Vector3 p, float scale, int seed)
@@ -358,6 +375,7 @@ namespace Emberfall
             if (p.y >= -.1f && p.sqrMagnitude < 22f*22f) WorldTraversal.AddCircle(p, scale * .82f);
             GameObject rock = Primitive(parent, "Weathered rock", PrimitiveType.Cube, p + Vector3.up * scale * .35f,
                 new Vector3(scale * 1.3f, scale, scale * .9f), r.Material(seed % 2 == 0 ? new Color(.28f,.34f,.37f) : new Color(.32f,.4f,.39f)));
+            rock.GetComponent<MeshFilter>().sharedMesh = ProceduralVisuals.WeatheredRock;
             rock.transform.rotation = Quaternion.Euler(seed % 27, seed * 67 % 360, seed % 18);
         }
 
@@ -368,12 +386,16 @@ namespace Emberfall
             Primitive(parent, "Column base", PrimitiveType.Cube, p + Vector3.up * .25f, new Vector3(1.4f,.5f,1.4f), stone);
             Primitive(parent, "Column", PrimitiveType.Cylinder, p + Vector3.up * height * .5f, new Vector3(.85f,height*.5f,.85f), stone);
             Primitive(parent, "Capital", PrimitiveType.Cube, p + Vector3.up * height, new Vector3(1.3f,.32f,1.3f), stone);
+            Primitive(parent, "Capital bevel collar", PrimitiveType.Cylinder, p + Vector3.up * (height-.23f), new Vector3(1.02f,.08f,1.02f), stone);
             Material band = r.Material(dungeon ? new Color(.31f,.57f,.8f) : new Color(.67f,.59f,.39f), dungeon);
             Primitive(parent, "Column band", PrimitiveType.Cylinder, p + Vector3.up * (height-.5f), new Vector3(.94f,.1f,.94f), band);
         }
 
         private static void Portal(Transform parent, WorldResources r, Vector3 p, Material glow)
         {
+            // All travel gates share the minimap's jade interaction colour;
+            // town-specific amber/blue accents remain on architecture and props.
+            glow = r.Material(new Color(.32f, .91f, .77f), true);
             Material stone = r.Material(new Color(.27f,.34f,.38f));
             Primitive(parent, "Gate plinth", PrimitiveType.Cylinder, p + Vector3.up * .022f, new Vector3(5,.022f,4), stone);
             Ring(parent, r, "Gate frame", p + Vector3.up * 2.1f, 1.85f, .2f, stone, true);
@@ -408,8 +430,12 @@ namespace Emberfall
         {
             Material wood=r.Material(new Color(.3f,.22f,.17f));
             for(int i=0;i<3;i++) { GameObject log=Primitive(parent,"Firewood",PrimitiveType.Cylinder,p+new Vector3(0,.17f,0),new Vector3(.23f,.8f,.23f),wood); log.transform.rotation=Quaternion.Euler(90,i*60,0); }
-            Cone(parent,r,"Amber flame",p+Vector3.up*.24f,.4f,1.1f,r.Material(new Color(1,.38f,.12f),true),6);
-            Cone(parent,r,"Golden flame",p+Vector3.up*.25f,.25f,.72f,r.Material(new Color(1,.82f,.28f),true),5);
+            GameObject flame = Primitive(parent,"Amber flame",PrimitiveType.Sphere,p+Vector3.up*.67f,
+                new Vector3(.64f,1.05f,.6f),r.Material(new Color(1,.34f,.075f),true));
+            flame.AddComponent<WorldMotion>().flame = true;
+            GameObject core = Primitive(parent,"Golden flame",PrimitiveType.Sphere,p+new Vector3(0,.48f,.12f),
+                new Vector3(.36f,.64f,.34f),r.Material(new Color(1,.76f,.22f),true));
+            core.AddComponent<WorldMotion>().flame = true;
             PointLight(parent,p+Vector3.up*1.3f,new Color(1,.52f,.19f),2,8);
             for(int i=0;i<8;i++) { float a=i*Mathf.PI/4; Rock(parent,r,p+new Vector3(Mathf.Cos(a)*.7f,0,Mathf.Sin(a)*.7f),.28f,i); }
         }
@@ -418,14 +444,21 @@ namespace Emberfall
         {
             Material cloth=r.Material(new Color(.29f,.47f,.48f));
             for(int i=0;i<2;i++) { GameObject slope=Primitive(parent,"Camp tent",PrimitiveType.Cube,p+new Vector3(i==0?-.62f:.62f,1,0),new Vector3(.08f,2.5f,2.5f),cloth); slope.transform.rotation=Quaternion.Euler(0,0,i==0?-30:30); }
-            Primitive(parent,"Supply crate",PrimitiveType.Cube,p+new Vector3(2,.45f,0),new Vector3(.8f,.9f,.9f),r.Material(new Color(.44f,.31f,.19f)));
+            Vector3 chest = p + new Vector3(2,.45f,0);
+            Material wood = r.Material(new Color(.31f,.19f,.115f),false,VisualSurface.Wood);
+            Material bronze = r.Material(new Color(.64f,.44f,.21f),false,VisualSurface.Metal);
+            Primitive(parent,"Provision coffer base",PrimitiveType.Cube,chest,new Vector3(.95f,.67f,.75f),wood);
+            Primitive(parent,"Provision coffer domed lid",PrimitiveType.Capsule,chest+Vector3.up*.35f,new Vector3(.74f,.46f,.6f),wood).transform.localRotation=Quaternion.Euler(0,0,90);
+            for(int side=-1;side<=1;side+=2)
+                Primitive(parent,"Coffer bronze band",PrimitiveType.Cube,chest+new Vector3(side*.31f,.08f,.389f),new Vector3(.085f,.76f,.045f),bronze);
+            Primitive(parent,"Coffer clasp",PrimitiveType.Cube,chest+new Vector3(0,.12f,.41f),new Vector3(.18f,.24f,.06f),bronze);
         }
 
         private static GameObject Primitive(Transform parent,string name,PrimitiveType type,Vector3 p,Vector3 scale,Material material)
         {
-            GameObject go=GameObject.CreatePrimitive(type); go.name=name; go.transform.SetParent(parent); go.transform.localPosition=p; go.transform.localScale=scale;
-            Collider collider=go.GetComponent<Collider>(); if(collider!=null) { collider.enabled=false; Object.Destroy(collider); }
-            go.GetComponent<Renderer>().sharedMaterial=material; return go;
+            GameObject go=ProceduralVisuals.Create(name,type,material);
+            go.transform.SetParent(parent,false); go.transform.localPosition=p; go.transform.localScale=scale;
+            return go;
         }
 
         private static GameObject Cone(Transform parent,WorldResources resources,string name,Vector3 p,float radius,float height,Material material,int sides,bool local=false)
@@ -449,13 +482,13 @@ namespace Emberfall
         {
             GameObject go=new GameObject(name); go.transform.SetParent(parent); go.transform.position=center;
             LineRenderer line=go.AddComponent<LineRenderer>(); line.useWorldSpace=false; line.loop=true; line.positionCount=72; line.widthMultiplier=thickness; line.sharedMaterial=material;
-            line.numCornerVertices=2; line.numCapVertices=2;
+            line.numCornerVertices=2; line.numCapVertices=2; line.generateLightingData=true;
             for(int i=0;i<72;i++) { float a=i*Mathf.PI*2/72; line.SetPosition(i,vertical?new Vector3(Mathf.Cos(a)*radius,Mathf.Sin(a)*radius,0):new Vector3(Mathf.Cos(a)*radius,0,Mathf.Sin(a)*radius)); }
             return go;
         }
 
         private static void PointLight(Transform parent,Vector3 p,Color color,float intensity,float range)
-        { GameObject go=new GameObject("Magic light"); go.transform.SetParent(parent); go.transform.position=p; Light light=go.AddComponent<Light>(); light.type=LightType.Point; light.color=color; light.intensity=intensity; light.range=range; }
+        { GameObject go=new GameObject("Magic light"); go.transform.SetParent(parent); go.transform.position=p; Light light=go.AddComponent<Light>(); light.type=LightType.Point; light.color=color; light.intensity=intensity; light.range=range; light.shadows=LightShadows.None; light.renderMode=LightRenderMode.ForceVertex; }
 
         private static void Label(Transform parent,string objectName,string value,Vector3 p,float size,Color color,bool floor)
         {
@@ -487,15 +520,17 @@ namespace Emberfall
     {
         private readonly Dictionary<string,Material> materials=new Dictionary<string,Material>();
         private readonly List<Mesh> meshes=new List<Mesh>();
-        public Material Material(Color color,bool emissive=false)
+        public Material Material(Color color,bool emissive=false) { return Material(color,emissive,VisualSurface.Stone); }
+        internal Material Material(Color color,bool emissive,VisualSurface surface)
         {
-            string key=ColorUtility.ToHtmlStringRGBA(color)+(emissive?"E":"S");
+            string key=ColorUtility.ToHtmlStringRGBA(color)+(emissive?"E":"S")+(int)surface;
             Material material;
             if(materials.TryGetValue(key,out material))return material;
-            Shader shader=Shader.Find(emissive?"Unlit/Color":"Standard");
+            Shader shader=Shader.Find("Standard");
             if(shader==null) shader=Shader.Find("Sprites/Default");
             material=new Material(shader); material.color=color;
-            if(material.HasProperty("_Glossiness")) material.SetFloat("_Glossiness",.12f);
+            ProceduralVisuals.ApplySurface(material,emissive?VisualSurface.Crystal:surface);
+            if(emissive && material.HasProperty("_EmissionColor")) material.SetColor("_EmissionColor",color*.8f);
             materials.Add(key,material); return material;
         }
         public void Own(Mesh mesh) { meshes.Add(mesh); }
@@ -507,12 +542,20 @@ namespace Emberfall
         public Vector3 spin;
         public float bob;
         public float speed=1;
-        private Vector3 origin;
-        private void Start() { origin=transform.localPosition; }
+        public bool flame;
+        private Vector3 origin, baseScale;
+        private void Start() { origin=transform.localPosition; baseScale=transform.localScale; }
         private void Update()
         {
-            transform.Rotate(spin*Time.unscaledDeltaTime,Space.Self);
-            if(bob>0)transform.localPosition=origin+Vector3.up*Mathf.Sin(Time.unscaledTime*speed+origin.x)*bob;
+            if(Time.deltaTime<=0)return;
+            transform.Rotate(spin*Time.deltaTime,Space.Self);
+            if(bob>0)transform.localPosition=origin+Vector3.up*Mathf.Sin(Time.time*speed+origin.x)*bob;
+            if(flame)
+            {
+                float flicker=Mathf.Sin(Time.time*8f+origin.y*13f)*.055f+Mathf.Sin(Time.time*13f)*.025f;
+                transform.localScale=Vector3.Scale(baseScale,new Vector3(1-flicker,1+flicker,1-flicker));
+                transform.localRotation=Quaternion.Euler(Mathf.Sin(Time.time*3f)*5f,0,Mathf.Sin(Time.time*4f)*6f);
+            }
         }
     }
 }

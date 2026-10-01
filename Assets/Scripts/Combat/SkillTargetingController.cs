@@ -31,7 +31,7 @@ namespace Emberfall
             string mode = CurrentPreview.shape == Shape.Self ? "以自身为中心" :
                 CurrentPreview.shape == Shape.Ground ? "鼠标选点 · 最远 " + CurrentPreview.distance.ToString("0.0") + " 米" :
                 CurrentPreview.shape == Shape.Retreat ? "鼠标调整朝向 · 向后撤步" : "鼠标调整攻击方向";
-            return mode + "   /   左键确认 · 右键单击或 Esc 取消 · 右键拖动镜头";
+            return mode + " · 实体遮挡会截断范围   /   左键确认 · 右键单击或 Esc 取消 · 右键拖动镜头";
         } }
 
         private PlayerController owner;
@@ -44,6 +44,9 @@ namespace Emberfall
         private readonly Vector3[] circle = new Vector3[64];
         private readonly Vector3[] fan = new Vector3[35];
         private readonly Vector3[] lane = new Vector3[5];
+        private Vector3 renderedOrigin,renderedTarget,renderedForward;
+        private int renderedRevision=-1,renderedSkill=-1;
+        private bool previewDirty=true;
 
         public void Initialize(PlayerController hero, GameSession game) { owner = hero; session = game; }
 
@@ -60,7 +63,14 @@ namespace Emberfall
         // true without ever entering placement mode; rejected requests keep a preview.
         public bool Begin(int index)
         {
-            if (castFrame == Time.frameCount || owner == null || !owner.CanBeginSkillTargeting(index)) return false;
+            if(castFrame==Time.frameCount||owner==null||index<0||index>=GameBalance.SkillCount||GameBalance.IsPassive(index))return false;
+            if(MobileControls.Active)owner.PrepareMobileSkillAim(index);
+            if(!owner.CanBeginSkillTargeting(index))return false;
+            if(MobileControls.Active&&RequiresConfirmation(owner.HeroClass,index))
+            {
+                if(!owner.ConfirmTargetedSkill(index,owner.AimPoint))return false;
+                Cancel();castFrame=Time.frameCount;return true;
+            }
             if (!RequiresConfirmation(owner.HeroClass, index))
             {
                 if (!owner.CastImmediateSkill(index)) return false;
@@ -68,7 +78,7 @@ namespace Emberfall
                 castFrame = Time.frameCount;
                 return true;
             }
-            skill = index;
+            skill = index;previewDirty=true;
             epoch = owner.CombatEpoch;
             CurrentPreview = Describe(owner.HeroClass, index, session.Progression.Profile.skillRanks[index]);
             EnsureVisuals();
@@ -95,6 +105,7 @@ namespace Emberfall
                 float maximum = CurrentPreview.shape == Shape.Ground ? CurrentPreview.distance : 30f;
                 TargetPoint = origin + Vector3.ClampMagnitude(desired - origin, maximum);
                 TargetPoint = Vector3.ClampMagnitude(TargetPoint, session.ArenaRadius);
+                if(CurrentPreview.shape==Shape.Ground)TargetPoint=CombatSight.GroundPoint(origin,TargetPoint);
             }
             DrawPreview();
         }
@@ -119,7 +130,7 @@ namespace Emberfall
         {
             if (!IsTargeting) return ConsumedThisFrame;
             if (Invalid()) { Cancel(); return true; }
-            // Mobile controls own world-touch selection and explicit confirmation;
+            // Mobile skills auto-confirm before reaching this state;
             // a joystick finger must never act as a simulated mouse confirmation.
             if (MobileControls.Active) return true;
             if (AdventureCamera.CancelSkillRequested || Input.GetKeyDown(KeyCode.Escape)) { Cancel(); return true; }
@@ -232,12 +243,14 @@ namespace Emberfall
             return line;
         }
 
-        private void Circle(LineRenderer line, Vector3 center, float radius)
+        private void Circle(LineRenderer line, Vector3 center, float radius, bool respectCover = false)
         {
             for (int i = 0; i < circle.Length; i++)
             {
                 float a = i * Mathf.PI * 2 / circle.Length;
-                circle[i] = center + new Vector3(Mathf.Cos(a) * radius, .12f, Mathf.Sin(a) * radius);
+                Vector3 edge=center+new Vector3(Mathf.Cos(a)*radius,0,Mathf.Sin(a)*radius);
+                bool groundSwing=(owner.HeroClass==HeroClass.Vanguard&&(skill==0||skill==1))||(owner.HeroClass==HeroClass.Summoner&&skill==0);
+                circle[i]=(respectCover?CombatSight.BoundaryPoint(groundSwing?CombatSightKind.Melee:CombatSightKind.Area,center,edge):edge)+Vector3.up*.12f;
             }
             line.loop = true; line.positionCount = circle.Length; line.SetPositions(circle);
         }
@@ -245,6 +258,12 @@ namespace Emberfall
         private void DrawPreview()
         {
             if (area == null) return;
+            if(!previewDirty&&renderedSkill==skill&&renderedRevision==WorldTraversal.Revision&&
+                (renderedOrigin-owner.transform.position).sqrMagnitude<.000001f&&
+                (renderedTarget-TargetPoint).sqrMagnitude<.000001f&&
+                (renderedForward-owner.transform.forward).sqrMagnitude<.000001f)return;
+            previewDirty=false;renderedSkill=skill;renderedRevision=WorldTraversal.Revision;
+            renderedOrigin=owner.transform.position;renderedTarget=TargetPoint;renderedForward=owner.transform.forward;
             Preview spec = CurrentPreview;
             Vector3 origin = owner.transform.position;
             origin.y = 0;
@@ -258,14 +277,14 @@ namespace Emberfall
             if (range.enabled) Circle(range, origin, spec.distance);
             if (spec.shape == Shape.Self || spec.shape == Shape.Ground)
             {
-                Circle(area, spec.shape == Shape.Self ? origin : TargetPoint, spec.radius);
+                Circle(area, spec.shape == Shape.Self ? origin : TargetPoint, spec.radius,true);
                 Circle(marker, spec.shape == Shape.Self ? origin : TargetPoint, .2f);
             }
             else if (spec.shape == Shape.Cone)
             {
                 fan[0] = origin + Vector3.up * .12f;
                 for (int i = 0; i < 33; i++)
-                    fan[i + 1] = origin + Quaternion.Euler(0, Mathf.Lerp(-spec.angle / 2, spec.angle / 2, i / 32f), 0) * dir * spec.distance + Vector3.up * .12f;
+                    fan[i + 1] = CombatSight.BoundaryPoint(owner.HeroClass==HeroClass.Ranger?CombatSightKind.Direct:CombatSightKind.Melee,origin,origin + Quaternion.Euler(0, Mathf.Lerp(-spec.angle / 2, spec.angle / 2, i / 32f), 0) * dir * spec.distance) + Vector3.up * .12f;
                 fan[34] = fan[0];
                 area.loop = false; area.positionCount = fan.Length; area.SetPositions(fan);
                 Circle(marker, origin + dir * spec.distance, .22f);
@@ -282,11 +301,11 @@ namespace Emberfall
                     area.enabled = false;
                     for (int i = 0; i < spec.impactCount && i < impacts.Length; i++)
                     {
-                        Vector3 impact = Vector3.ClampMagnitude(origin + dir * (spec.startDistance + i * spec.impactSpacing), bound);
+                        Vector3 impact = CombatSight.GroundPoint(origin,Vector3.ClampMagnitude(origin + dir * (spec.startDistance + i * spec.impactSpacing), bound));
                         bool final = i == spec.impactCount - 1;
                         LineRenderer boundary = final ? endArea : impacts[i];
                         boundary.enabled = true;
-                        Circle(boundary, impact, final ? spec.endRadius : spec.radius);
+                        Circle(boundary, impact, final ? spec.endRadius : spec.radius,true);
                     }
                     Circle(marker, end, .35f);
                     return;
@@ -298,8 +317,8 @@ namespace Emberfall
                 lane[2] = end + side + up; lane[3] = origin + side + up; lane[4] = lane[0];
                 area.loop = false; area.positionCount = lane.Length; area.SetPositions(lane);
                 Circle(marker, end, .35f);
-                if (spec.startRadius > 0) { startArea.enabled = true; Circle(startArea, origin, spec.startRadius); }
-                if (spec.endRadius > 0) { endArea.enabled = true; Circle(endArea, end, spec.endRadius); }
+                if (spec.startRadius > 0) { startArea.enabled = true; Circle(startArea, origin, spec.startRadius,true); }
+                if (spec.endRadius > 0) { endArea.enabled = true; Circle(endArea, end, spec.endRadius,true); }
             }
         }
 

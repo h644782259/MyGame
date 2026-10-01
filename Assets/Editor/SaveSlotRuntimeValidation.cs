@@ -21,7 +21,7 @@ namespace Emberfall.Editor
             SaveSlotInfo first = game.Progression.GetSaveSlots().Find(slot => slot.IsCurrent);
             check(first != null && first.CanLoad, "New character appears as the current loadable slot");
             string originalBytes = File.ReadAllText(firstPath);
-            check(game.SaveAsNewSlot(), "Paused-menu snapshot API creates another independent save");
+            check(game.SaveAsNewSlot(), "Explicit snapshot service API creates another independent save");
             check(game.Progression.SaveFilePath != firstPath, "Snapshot becomes the active autosave destination");
             SaveSlotInfo snapshot = game.Progression.GetSaveSlots().Find(slot => slot.IsCurrent);
             game.Progression.Profile.gold = 932;

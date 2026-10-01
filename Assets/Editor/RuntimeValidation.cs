@@ -180,6 +180,9 @@ namespace Emberfall.Editor
                 if (heroIndex == 0)
                 {
                     validatingPause = true;
+                    PersistenceTransitionValidation.Validate(game, Check, Append);
+                    IEnumerator feedbackValidation = FeedbackValidation.Validate(game, Check, Append);
+                    while (feedbackValidation.MoveNext()) yield return feedbackValidation.Current;
                     IEnumerator mobileValidation = MobileValidation.Validate(game, Check, Append);
                     while (mobileValidation.MoveNext()) yield return mobileValidation.Current;
                     validatingPause = false;
@@ -303,7 +306,7 @@ namespace Emberfall.Editor
                     if (category == SkillCategory.Defense)
                     {
                         SetField(game.Player, "invulnerability", 0f);
-                        float unprotected = 100f * (100f / (100f + game.Progression.GetStats().Armor * 4f));
+                        float unprotected = 100f * CombatBalance.ArmorDamageMultiplier(game.Progression.GetStats().Armor, game.Progression.Profile.level);
                         float before = game.Player.Health;
                         game.Player.TakeDamage(100f);
                         Check(before - game.Player.Health < unprotected * .8f, hero + " defense ability reduces actual incoming damage");
@@ -375,6 +378,26 @@ namespace Emberfall.Editor
             }
             Check(lastWave == 3 && blessingCount == 2 && game.Progression.Profile.clearedRuns == originalClears + 1,
                 "Three waves and two explicit blessings award exactly one clear");
+            Check(game.CombatEnded && !game.ModeFinished, "Ordinary three-wave completion is a terminal combat state independently of special modes");
+            float clearedHealth = game.Player.Health;
+            int clearedGold = game.Progression.Profile.gold, clearedKills = game.Progression.Profile.kills;
+            SetField(game.Player, "invulnerability", 0f);
+            game.Player.TakeDamageFrom(100000000f, "Validation late hostile impact");
+            Check(!game.IsDead && !game.Player.IsDead && game.Player.Health == clearedHealth && game.Progression.Profile.gold == clearedGold,
+                "A late lethal hostile hit after ordinary clear cannot kill the player or apply a death penalty");
+            // A callback arriving after completion must be ignored even if its
+            // enemy is still registered. This isolated target grants no fixture loot.
+            EnemyController lateEnemy = SpawnFixtureEnemy(game, EnemyKind.Guardian, game.Player.transform.position + Vector3.forward * 5);
+            float lateHealth = lateEnemy.Health;
+            try
+            {
+                lateEnemy.TakeDamage(100000000f, Vector3.forward);
+                game.OnEnemyKilled(lateEnemy);
+                Check(lateEnemy.Health == lateHealth && game.Enemies.Contains(lateEnemy) && game.Progression.Profile.kills == clearedKills &&
+                    game.Progression.Profile.gold == clearedGold && game.Progression.Profile.clearedRuns == originalClears + 1,
+                    "Ordinary-clear terminal policy rejects stale enemy damage and kill rewards without awarding another clear");
+            }
+            finally { game.Enemies.Remove(lateEnemy); lateEnemy.gameObject.SetActive(false); UnityEngine.Object.Destroy(lateEnemy.gameObject); }
             Check(game.PendingLootCount > 0, "Dungeon rewards remain visibly on the ground until pickup");
             Check(game.Progression.Profile.pendingFashionChest && game.Progression.OpenDungeonChest(1) != null,
                 "The completed run offers exactly one chest");
@@ -391,7 +414,7 @@ namespace Emberfall.Editor
             Call(game.GetComponent<GameUI>(), "ClosePanel");
             game.ReturnToCamp();
             Check(game.PendingLootCount == 0 && game.Progression.Profile.inventory.Count > originalItems, "Dungeon exit automatically collects remaining equipment exactly once");
-            Check(!game.InDungeon && game.Player.Health == game.Player.MaxHealth, "Dungeon exit returns to camp and heals");
+            Check(!game.InDungeon && !game.CombatEnded && game.Player.Health == game.Player.MaxHealth, "Dungeon exit clears terminal combat state and heals at camp");
             int inventoryBeforeDeath = game.Progression.Profile.inventory.Count;
             int goldBeforeDeath = game.Progression.Profile.gold;
             SetField(game.Player, "invulnerability", 0f);

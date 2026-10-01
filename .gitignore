@@ -38,3 +38,7 @@ Thumbs.db
 *.suo
 *.tmp
 *.unitypackage
+
+# Generated Python caches are never game assets.
+__pycache__/
+*.pyc

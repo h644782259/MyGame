@@ -1,4 +1,10 @@
-# Unity 0.3.1 实机验收
+# 当前 0.4.0 验收状态
+
+本轮已执行独立生产逻辑、源代码接线与 Unity API 编译检查，未运行 Unity 编辑器、真实画面、Windows 安装包或 iPhone/iPad 真机。当前待测项目见本页下方的“0.4.0 expanded acceptance”与 [本轮整合说明](../Docs/Overnight-Integration.md)。
+
+以下 0.3.1 表格是仓库原有的历史记录，本次未复验；其 PASS 不能用于证明当前代码已通过引擎/设备测试。历史手动清单中的三页快捷栏和单独“另存为”入口已经被当前十格技能栏、单一保存入口与加载确认替代，不应按旧入口验收现版。
+
+## 历史记录：Unity 0.3.1 实机验收
 
 面向 Unity 6（6000.6.3f1）与 Windows 独立游戏的手动验收清单。自动化检查以 `Tests/TestResults` 报告为准；列表本身不代表全部人工通过。
 
@@ -43,3 +49,33 @@ Play Mode 的 10 张 `Camera.Render` 图片不包含 IMGUI；独立 Player 的84
 23. **分区场景与障碍**：原野依次经木桥走过营地、西林地、东草地、北庭院并触发传送门；副本从入口穿过中央长廊、东西侧廊、横厅、祭坛。河流阻挡步行，木桥可通行；树干、岩石、石墙及低矮石块均阻挡，角色、怪物与召唤物不能穿过，AI可绕行抵达目标。射弹会被实体障碍拦截，但河面不挡射弹。观察铺装无闪烁，敌方红圈/技能预览/地面装备清楚可见；出生点、传送门、各刷怪点均可达。
 24. **跳跃、瞬移与视角**：Space 原地起跳、历时0.55秒、无冷却，落地后即可再次起跳；检查静止或按住方向键时，起跳到落地均不产生水平位移，面朝河流或障碍也能原地跳跃，空中不能重复起跳。Shift 瞬移最远约4.8米、冷却2.1秒；检查安全落点跨窄河成功、河中落点拒绝、实体石墙/树干/岩石无法穿越，低矮石块也不能越过。镜头右键拖动可调水平朝向与俯仰，滚轮只缩放；面板交互、拖动快捷栏、技能选点或取消蓄力时不误触转镜，失焦与暂停后不残留拖动状态。Q保持可自定义绑定，Space/Shift不占技能格。
 25. **药剂快捷栏**：I背包底部生命药剂行点击「放入快捷栏」，可选择当前页槽位或翻页配置；同页再次配置移动已有入口，点击原格可移除。HUD里药剂与已学技能互相拖动可交换，未学占位视为空槽。按槽位绑定键/点击图标/F均能使用同一份库存，满血或暂停时不误消耗；零数量仍保留灰色图标，补货后恢复使用。三页各自保留一个入口，移动不消耗数量、不改变技能冷却；保存重开与另存为后布局保持。
+
+
+## 0.4.0 待运行验收
+
+本轮最终检查通过不代表Play Mode/真机已运行。请执行 [画面/触屏/删除/退出专项清单](../Docs/Visual-Mobile-Release.md#验证结论与待验收)，仅在实际执行后记录通过。
+
+## 0.4.0 expanded acceptance (pending actual Unity/device execution)
+
+- Run all four classes through basic attack, charge cancel, filled crescent/ice/fire/summon impacts and reduced-effects mode. Check anticipation, contact, decay, silhouettes, dangerous floor telegraphs and simultaneous number/FX caps.
+- iPhone compact/notched landscape and iPad: all ten skill positions visible, passives inert; tap area skills once, move/attack/interact with separate fingers. Blank-area vertical drag adjusts only camera; UI content drag scrolls without equipping, selling, deleting or dragging camera.
+- Approach each town NPC/portal and every unlocked room exit while holding the movement thumb. Interaction opens once, cancel restores play. Test threshold just inside/outside and no precision model tapping.
+- Save slot A, make B, reload A, confirm/cancel manual overwrite, Save-and-Load versus Discard-and-Load, broken target slot, rapid repeated clicks, focus/pause/quit coalescing, named deletion including active/last/corrupt backup. Use disposable fixtures only. Failed save must retain a usable pause/load route even after death or challenge settlement.
+- Travel all three unlocked hubs; locked destinations stay unavailable. Buy/sell/upgrade/exchange through visible NPCs, confirm locked gear protection and failed-write rollback. Travel cannot reroll inventory or escape a nearby fight.
+- Play ordinary dungeon, hold-point, timed breakthrough and boss gauntlet through win/failure/retry. Pause, inventory, blessing choice and app background must stop objective clocks. Check repeated/stale enemy callbacks never pay twice.
+- Complete the five-room large expedition, optional crystal branch and rest choice. Doors unlock after actual required enemies; props do not count. No skipping locked rooms, no cooldown reset between rooms, no backtracking rewards, only one active room/world.
+- Final large boss: original ring/core silhouette and footprint; 70%/35% anchors, windup interruption, beam preview/hit alignment/cover, exposure windows. Mobile boss-targeted area attacks must reach anchors; cleanup on death/leave/load/retry.
+- Break crate/pot/rubble with melee, projectile and multi-tick area casts. One recovery reward per prop; collision/path opens promptly; no permanent currency farming or required-route blockage.
+- Confirm red dots disappear after learning/claim/equip/review/sale and never mark level-locked gear. Recap cards remain within safe margins and scroll; objective and healing charge rows never overlap.
+- Verify platform icon in installed app/taskbar/home screen. Measure build/download/install size and GPU/frame-time on target hardware; repository byte counts are not those measurements.
+
+## 本轮可靠性回归：仍待真实引擎/设备执行
+
+- 暂停时联合退点与两套配装切换：技能点严格守恒，已学1阶保留，装备按原编号恢复；缺失装备、确认后配置改变和写入失败都不应部分应用。灵狼/常驻星灵的阶数、生命上限与路线应立即跟随，不能靠退点保留高阶伙伴，也不重置技能冷却
+- 野外背包和保护栏满、或模拟保存失败：已经产生的掉落应留在地面，以同一编号重试；恢复后只得到一次。整理之前不新增替补野怪，现有怪物仍可正常战斗；不自动出售珍贵装备
+- 副本/房间过渡写入失败：原房间、伙伴、冷却和未拾取物品仍保留；成功过渡后旧对象不能补发奖励或伤害新场景
+- 连续伤害在正常帧、一次200ms/500ms尖峰、击杀触发祝福选择暂停之后恢复：应结清应有事件而非重复或丢失，取消/死亡/跨场景仍终止旧效果。补算不应重复播放同一次命中的开场特效
+- 固定同一套装备记录真实5秒爆发、10秒持续、能量支出和移动目标命中率；与CSV的理想事件模型分别保存，不能把CSV当作实测DPS。检查Boss在水面/障碍分隔、8.5–9.5米范围追近超时后仍能用有预警的合法远程攻击
+- 手机最小横屏、刘海安全区与iPad：Boss条、交互按钮、十格技能、通知和存档错误之间没有遮挡；地图显示真实水面/桥/可破坏障碍，城镇门户与地图标记颜色一致
+- 在隔离测试角色中检查一次击杀只产生一次合并的基础奖励保存；若回调或独立掉落确实修改资料，可另有保存。写入失败仍保留当前获得的进度，恢复后只重试保存而不再次发奖
+- 完成一次真实Windows构建/iOS导出后，查看固定的构建体积报告与增量；分别测量发行包、签名IPA和实际安装占用，不能用源码字节数替代。所有失败/删除/覆盖用例均使用可丢弃的隔离角色，勿拿唯一的正式存档做破坏性测试

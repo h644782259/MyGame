@@ -37,6 +37,7 @@ namespace Emberfall
 
         private void DrawChests()
         {
+            if(MobileControls.Active){DrawMobileChests();return;}
             // Keep this modal independent of the victory panel and combat input.
             // The save-backed service consumes the offer before the reveal begins.
             bool revealed = chestRevealResult != null;
@@ -55,8 +56,10 @@ namespace Emberfall
             Border(w, new Color(.52f, .60f, .67f, .25f));
             Fill(new Rect(w.center.x - 32, w.y, 64, 2), gold);
             Text(new Rect(w.x + 36, w.y + 24, 610, 18), "F A L L E N   S T A R", 10, gold, true);
-            Text(new Rect(w.x + 36, w.y + 49, 620, 41), revealed ? (complete ? "星光已归你所有" : "封印正在苏醒") : "遗迹馈赠", 29, pale, true);
+            Text(new Rect(w.x + 36, w.y + 49, 520, 41), revealed ? (complete ? "星光已归你所有" : "封印正在苏醒") : "遗迹馈赠", 29, pale, true);
             Text(new Rect(w.x + 37, w.y + 96, 620, 25), revealed ? (complete ? "已收入行囊" : "轻触跳过动画") : "选一个开启", 15, muted);
+            if (Button(new Rect(w.xMax - 207, w.y + 39, 84, 34), "菜单", jade))
+            { session.SetPaused(true); BlockUITransition(); return; }
             if (Button(new Rect(w.xMax - 111, w.y + 39, 73, 34), chestDetails ? "收起" : "ⓘ 详情", muted)) chestDetails = !chestDetails;
 
             for (int i = 0; i < 3; i++)
@@ -116,7 +119,7 @@ namespace Emberfall
                 Border(details, new Color(.4f, .56f, .62f));
                 Text(new Rect(details.x + 24, details.y + 21, details.width - 48, 24), "奖励规则", 18, gold, true);
                 Text(new Rect(details.x + 24, details.y + 61, details.width - 48, 149),
-                    "三份宝箱机会完全相同，每次只可开启一份。\n\n保底 60～100 金币，时装总概率 40%。\n普通 22% · 稀有 12% · 史诗 5% · 传说 1% · 无时装 60%\n以上均为每次开箱的绝对概率；重复时装转化金币。\n未开启的宝箱会随角色存档保留。", 14, pale, false, true);
+                    "三份宝箱机会完全相同，每次只可开启一份。\n\n保底 "+TierRewardRules.ChestGoldMinimum(session.Progression.Profile.pendingChestTier)+"～"+(TierRewardRules.ChestGoldMinimum(session.Progression.Profile.pendingChestTier)+40)+" 金币，时装总概率 40%。\n普通 22% · 稀有 12% · 史诗 5% · 传说 1% · 无时装 60%\n以上均为每次开箱的绝对概率；重复时装转化金币。\n未开启的宝箱会随角色存档保留。", 14, pale, false, true);
                 // Full overlay blocks the cards underneath, including touch events.
                 if (GUI.Button(new Rect(details.x + details.width - 108, details.y + 204, 88, 31), "知道了", Style(14, true, false, TextAnchor.MiddleCenter))) chestDetails = false;
             }
@@ -151,12 +154,17 @@ namespace Emberfall
 
         private void DrawRewardChest(Rect r, bool opened, float opacity, float progress)
         {
-            int index = opened ? Mathf.Clamp(Mathf.FloorToInt(Mathf.Clamp01((progress-.12f)/.64f)*12),0,12) : 0;
-            if (rewardChestTextures[index] == null) rewardChestTextures[index] = BakeRewardChest(index/12f);
-            Color before = GUI.color;
-            GUI.color = new Color(1, 1, 1, opacity);
-            GUI.DrawTexture(r, rewardChestTextures[index], ScaleMode.ScaleToFit, true);
-            GUI.color = before;
+            // Interpolate cached poses at display rate instead of stepping through
+            // thirteen hard frames. The cache stays fixed at thirteen 256px textures.
+            float frame=opened?Mathf.Clamp01((progress-.12f)/.64f)*12:0;
+            int lower=Mathf.Clamp(Mathf.FloorToInt(frame),0,12),upper=Mathf.Min(12,lower+1);
+            if(rewardChestTextures[lower]==null)rewardChestTextures[lower]=BakeRewardChest(lower/12f);
+            if(rewardChestTextures[upper]==null)rewardChestTextures[upper]=BakeRewardChest(upper/12f);
+            Color before=GUI.color;
+            float mix=frame-lower;
+            GUI.color=new Color(1,1,1,opacity*(1-mix));GUI.DrawTexture(r,rewardChestTextures[lower],ScaleMode.ScaleToFit,true);
+            if(mix>0){GUI.color=new Color(1,1,1,opacity*mix);GUI.DrawTexture(r,rewardChestTextures[upper],ScaleMode.ScaleToFit,true);}
+            GUI.color=before;
         }
 
         private static Texture2D BakeRewardChest(float opening)

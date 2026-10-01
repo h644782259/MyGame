@@ -16,11 +16,11 @@ namespace Emberfall
         public bool IsDead { get; private set; }
         public int DungeonWave { get; private set; }
         public int DungeonTier { get; private set; } = 1;
-        public int TotalWaves { get { return 3; } }
+        public int TotalWaves { get { return RoomChainRun!=null?5:3; } }
         public float ArenaRadius { get { return InDungeon ? 18f : 22f; } }
         public bool DungeonCleared { get; private set; }
         public int PendingLootCount { get { return pendingLoot.Count; } }
-        public string ZoneName { get { return InDungeon ? "沉星遗迹 · 第 " + DungeonTier + " 阶" : "风语原野"; } }
+        public string ZoneName { get { return InDungeon ? ModeName + " · 第 " + DungeonTier + " 阶" : HubTravelRules.Name(CurrentHub); } }
         public string Notification
         {
             get
@@ -30,7 +30,7 @@ namespace Emberfall
                 return Time.unscaledTime < notificationUntil ? notification : "";
             }
         }
-        public bool InputBlocked { get { return !HasStarted || Paused || uiBlocking || IsDead || RunChoices.AwaitingChoice || DungeonSelectionOpen || pauseState.BackgroundPaused; } }
+        public bool InputBlocked { get { return !HasStarted || Paused || uiBlocking || IsDead || ModeFinished || RunChoices.AwaitingChoice || DungeonSelectionOpen || pauseState.BackgroundPaused; } }
         public bool PointerOverUI { get { return ui != null && ui.IsPointerOverUI; } }
         public bool CanChangeLoadout { get { return HasStarted && !IsDead; } }
         public string Objective
@@ -39,6 +39,7 @@ namespace Emberfall
             {
                 if (!HasStarted) return "踏入星烬纪元";
                 if (IsDead) return "旅途尚未结束 · 返回营地重整旗鼓";
+                if(SpecialAdventure)return ModeName+" · "+ModeObjectiveStatus;
                 if (InDungeon) return DungeonCleared ? "遗迹已肃清 · 收集地面战利品 · 按 T 返回" :
                     "肃清遗迹 " + DungeonWave + "/" + TotalWaves + " · 剩余 " + Enemies.Count + " 个敌人";
                 if (Progression.Profile.level < 2) return "击败原野怪物，升至 2 级 · 按 K 查看职业技能";
@@ -59,6 +60,7 @@ namespace Emberfall
         private string notification = "";
         private float respawnTimer;
         private float autosaveTimer;
+        private readonly SaveLifecycleGate lifecycleSave=new SaveLifecycleGate();
         private float portalHintTimer;
         private Coroutine waveRoutine;
         private readonly List<GameObject> transientObjects = new List<GameObject>();
@@ -88,6 +90,8 @@ namespace Emberfall
             Instance = this;
             Application.targetFrameRate = 60;
             QualitySettings.vSyncCount = 1;
+            QualitySettings.antiAliasing = MobileControls.Active ? 2 : 4;
+            QualitySettings.anisotropicFiltering = AnisotropicFiltering.Enable;
 #if UNITY_EDITOR
             string validationDirectory = UnityEditor.SessionState.GetString("Emberfall.ValidationSaveDirectory", "");
             Progression = new ProgressionService(string.IsNullOrEmpty(validationDirectory) ? null : validationDirectory);
@@ -117,6 +121,8 @@ namespace Emberfall
                 camera = go.AddComponent<Camera>();
                 go.AddComponent<AudioListener>();
             }
+            camera.allowMSAA = true;
+            camera.allowHDR = SystemInfo.SupportsRenderTextureFormat(RenderTextureFormat.DefaultHDR);
             camera.orthographic = false;
             camera.fieldOfView = 48;
             camera.nearClipPlane = .1f;
@@ -130,8 +136,13 @@ namespace Emberfall
 
         public void StartNew(HeroClass heroClass)
         {
-            if (!PreserveWorldLoot()) return;
-            if (!Progression.CreateNewSlot(heroClass)) { Notify(Progression.LastError); return; }
+            // Settle the old character before publishing any new active slot.
+            // Otherwise a pending old-run receipt could pay the new character
+            // during BeginAdventure's normal zone-change preflight.
+            if (!SaveBeforeLeaving()) return;
+            string previousEquipment = equipmentFingerprint;
+            equipmentFingerprint = null;
+            if (!Progression.CreateNewSlot(heroClass)) { equipmentFingerprint = previousEquipment; Notify(Progression.LastError); return; }
             collectedGroundLoot.Clear();
             BeginAdventure();
             Notify("已创建独立存档 · 风语原野");
@@ -147,22 +158,89 @@ namespace Emberfall
             return ContinueAdventure(slotId);
         }
 
-        private bool ContinueAdventure(string slotId)
+        public string SaveLoadError { get; private set; }
+        private bool loadingSaveSnapshot;
+
+        public bool LoadSaveFromPause(string slotId, bool discardUnsaved, bool alreadySaved = false)
         {
-            if (!PreserveWorldLoot()) return false;
-            bool loaded = slotId == null ? Progression.Load() : Progression.LoadSlot(slotId);
-            if (!loaded) { Notify("存档未能读取：" + Progression.LastError); return false; }
-            string loadWarning = Progression.LastError;
-            collectedGroundLoot.Clear();
-            BeginAdventure();
-            Notify(string.IsNullOrEmpty(loadWarning) ? "欢迎回来，" + GameBalance.ClassName(Progression.Profile.heroClass) + "。冒险进度已恢复。" : loadWarning);
+            if (!HasStarted || !Paused) { SaveLoadError = "请先暂停当前冒险。"; return false; }
+            return ContinueAdventure(slotId, discardUnsaved, alreadySaved);
+        }
+
+        private bool ContinueAdventure(string slotId, bool discardUnsaved = false, bool alreadySaved = false)
+        {
+            string targetId = slotId ?? Progression.CurrentSlotId ?? "legacy";
+            ProgressionService candidate;
+            string error;
+            if (!SaveSlotTransition.TryStage(Progression, targetId, out candidate, out error))
+            { SaveLoadError = error; Notify("存档未能读取：" + error); return false; }
+            if (HasStarted && !discardUnsaved && !alreadySaved)
+            {
+                if (!SaveBeforeLeaving()) { SaveLoadError = Progression.LastError; return false; }
+                // Saving and reloading the same role must read the newly saved
+                // snapshot, never the preflight's older in-memory version.
+                if (targetId == Progression.CurrentSlotId && !SaveSlotTransition.TryStage(Progression, targetId, out candidate, out error))
+                { SaveLoadError = error; return false; }
+            }
+            string loadWarning = candidate.LastError;
+            // No old-world callbacks may write into the newly selected character.
+            DiscardTransientAdventureForLoad();
+            Progression.Changed -= OnProgressChanged;
+            Progression.LeveledUp -= OnLevelUp;
+            ProgressionService previous = Progression;
+            Progression = candidate;
+            if (ui != null) ui.RebindProgressionNotifications(previous, candidate);
+            Progression.Changed += OnProgressChanged;
+            Progression.LeveledUp += OnLevelUp;
+            autosaveTimer = 0;
+            lifecycleSave.Observe(false, false, () => true);
+            SaveLoadError = null;
+            loadingSaveSnapshot = true;
+            try { BeginAdventure(); }
+            catch (System.Exception exception)
+            {
+                DiscardTransientAdventureForLoad();
+                SaveLoadError = "营地加载失败，角色存档仍保留。请返回列表重试：" + exception.Message;
+                Notify(SaveLoadError);
+                return false;
+            }
+            finally { loadingSaveSnapshot = false; }
+            Notify(string.IsNullOrEmpty(loadWarning) ? "已读取「" + GameBalance.ClassName(Progression.Profile.heroClass) +
+                " · " + Progression.Profile.level + "级」，返回营地。" : loadWarning);
             return true;
+        }
+
+        private void DiscardTransientAdventureForLoad()
+        {
+            // Only after staging succeeded and the user chose how to handle the
+            // current progress. This path intentionally never saves/settles loot.
+            HasStarted = false;
+            Paused = true;
+            uiBlocking = true;
+            changingZone = true;
+            StopAllCoroutines(); waveRoutine = null;
+            foreach (PendingLoot loot in pendingLoot.Values)
+                if (loot.Pickup != null) loot.Pickup.Retire();
+            pendingLoot.Clear(); collectedGroundLoot.Clear();
+            foreach (EnemyController enemy in Enemies)
+                if (enemy != null) { enemy.gameObject.SetActive(false); Destroy(enemy.gameObject); }
+            Enemies.Clear();
+            foreach (GameObject obj in transientObjects)
+                if (obj != null) { obj.SetActive(false); Destroy(obj); }
+            transientObjects.Clear();
+            if (Player != null) { Player.gameObject.SetActive(false); Destroy(Player.gameObject); Player = null; }
+            if (world != null) { world.SetActive(false); Destroy(world); world = null; }
+            // In particular, unclaimed old-mode rewards cannot settle into target.
+            ResetExpedition(false);
+            InDungeon = false; DungeonCleared = false; IsDead = false;
+            equipmentFingerprint = null;
+            changingZone = false;
         }
 
         public bool SaveAsNewSlot()
         {
             if (!HasStarted || IsDead) return false;
-            if (!PreserveWorldLoot()) return false;
+            if (!SaveBeforeLeaving()) return false;
             bool saved = Progression.SaveAsNewSlot();
             Notify(saved ? "已另存为新存档。原进度保留，后续自动保存到新存档。" : Progression.LastError);
             return saved;
@@ -186,14 +264,15 @@ namespace Emberfall
         private void Update()
         {
             if (InputBlocked) return;
+            if(ModeRun!=null){TickArenaRun();if(InputBlocked)return;}
             if (!InputBlocked)
             {
                 if (Input.GetKeyDown(KeyCode.F) || MobileControls.ConsumePotion()) DrinkPotion();
-                if (Input.GetKeyDown(KeyCode.T)) { if (InDungeon) { if (DungeonCleared) ReturnToCamp(); else Notify("先击败本轮敌人；按 H 可放弃副本返回营地。"); } else EnterDungeon(); }
+                if (Input.GetKeyDown(KeyCode.T)) { if(NearRoomExit)EnterNextRoom();else if (InDungeon) { if (DungeonCleared) ReturnToCamp(); else Notify("先击败本轮敌人；按 H 可放弃副本返回营地。"); } else EnterDungeon(); }
                 if (Input.GetKeyDown(KeyCode.H)) ReturnToCamp();
             }
             if(InDungeon && reinforcementQueue.Count>0 && Enemies.Count<=6)TrySpawnReinforcements();
-            if (!InDungeon)
+            if (!InDungeon && CurrentHub==0)
             {
                 respawnTimer -= Time.deltaTime;
                 if (respawnTimer <= 0 && Enemies.Count < Mathf.Min(22,14+Progression.Profile.level/8))
@@ -205,7 +284,7 @@ namespace Emberfall
                 if (NearPortal() && portalHintTimer <= 0) { Notify("沉星遗迹传送门 · 按 T 开始副本挑战"); portalHintTimer = 16f; }
             }
             autosaveTimer += Time.deltaTime;
-            if (autosaveTimer > 25) { autosaveTimer = 0; Progression.Save(); }
+            if (autosaveTimer > 25) { autosaveTimer = 0; if(!DungeonRewardPending||TrySettleDungeonReward())Progression.Save(); }
         }
 
         public void SetPaused(bool value) { Paused = value; UpdateTimeScale(); }
@@ -229,13 +308,14 @@ namespace Emberfall
             else if (!string.IsNullOrEmpty(Progression.LastError)) Notify(Progression.LastError);
             return changed;
         }
-        private void UpdateTimeScale() { Time.timeScale = pauseState.CanAdvance(HasStarted, Paused, uiBlocking || RunChoices.AwaitingChoice || DungeonSelectionOpen, IsDead) ? 1 : 0; }
+        private void UpdateTimeScale() { Time.timeScale = pauseState.CanAdvance(HasStarted, Paused, uiBlocking || RunChoices.AwaitingChoice || DungeonSelectionOpen || ModeFinished, IsDead) ? 1 : 0; }
 
-        private bool NearPortal() { return Player != null && Vector3.Distance(Player.transform.position, new Vector3(0, 0, 11)) < 4.3f; }
+        public bool IsNearDungeonEntrance {get{return NearPortal();}}
+        private bool NearPortal() { return Player != null && PortalInteractionPolicy.IsNear((Player.transform.position-new Vector3(0,0,11)).sqrMagnitude); }
 
         public void EnterDungeon()
         {
-            if (!HasStarted || IsDead || InDungeon) return;
+            if (!HasStarted || IsDead || InDungeon || DungeonSelectionOpen || InputBlocked) return;
             if (!Progression.CanEnterDungeon) { Notify("先领取营地恢复栏的装备，并为珍贵战利品腾出位置。"); return; }
             if (Progression.Profile.pendingFashionChest || Progression.Profile.pendingChestReveal) { Notify("请先开启上次通关的宝箱。"); return; }
             if (!NearPortal()) { Notify("请前往原野北方发光的传送门（小地图菱形），靠近后按 T。"); return; }
@@ -248,7 +328,7 @@ namespace Emberfall
         public void ReturnToCamp()
         {
             if (!HasStarted || IsDead) return;
-            if (!DungeonCleared)
+            if (!DungeonCleared && !ModeFinished)
             {
                 foreach (EnemyController enemy in Enemies)
                     if (enemy != null && !enemy.IsDead && Vector3.Distance(enemy.transform.position, Player.transform.position) < 6f)
@@ -261,41 +341,49 @@ namespace Emberfall
 
         private bool ChangeZone(bool dungeon)
         {
-            if (!PreserveWorldLoot()) return false;
+            // Preserve the old adventure before destroying anything. Staged load
+            // and committed hub travel already supply a durable target snapshot.
+            if (!loadingSaveSnapshot && !SaveBeforeLeaving()) return false;
             changingZone = true;
+            int previousCombatEpoch = Player.CombatEpoch;
             if (waveRoutine != null) { StopCoroutine(waveRoutine); waveRoutine = null; }
             foreach (EnemyController enemy in Enemies) if (enemy != null) { enemy.gameObject.SetActive(false); Destroy(enemy.gameObject); }
             Enemies.Clear();
-            foreach (GameObject obj in transientObjects) if (obj != null) Destroy(obj);
+            foreach (GameObject obj in transientObjects) if (obj != null) { obj.SetActive(false); Destroy(obj); }
             transientObjects.Clear();
             if (world != null) { world.SetActive(false); Destroy(world); }
+            Player.RetireCombatForWorldTransition();
+            RetireWorldLootReceipts(previousCombatEpoch);
             InDungeon = dungeon;
             DungeonCleared = false;
             DungeonWave = 0;
             DungeonTier = Mathf.Clamp(SelectedDungeonTier, 1, MaximumDungeonTier);
             ResetExpedition(dungeon);
-            world = WorldBuilder.Build(dungeon ? ZoneKind.Dungeon : ZoneKind.Wilderness, DungeonLayout, Progression.Profile.bestFloor);
+            world = WorldBuilder.Build(dungeon ? ZoneKind.Dungeon : ZoneKind.Wilderness, DungeonLayout, Progression.Profile.bestFloor,CurrentHub);
             Player.Teleport(new Vector3(0, 0, dungeon ? -9 : -10));
             Player.RefreshStats(true);
+            if(dungeon)Player.ResetCooldownsForDungeonEntry();
             Camera.main.GetComponent<AdventureCamera>().Snap();
             if (dungeon)
             {
                 DungeonWave = 1;
-                SpawnDungeonWave();
-                BuildSideEvent();
+                if(RoomChainRun!=null)BeginRoomChainScene();else if(ModeRun!=null)BeginArenaScene();else {SpawnDungeonWave();BuildSideEvent();}
             }
             else
             {
-                for (int i = 0; i < Mathf.Min(20,12+Progression.Profile.level/8); i++) SpawnWildernessEnemy();
+                if(CurrentHub==0)for (int i = 0; i < Mathf.Min(20,12+Progression.Profile.level/8); i++) SpawnWildernessEnemy();
                 respawnTimer = 8;
             }
-            Progression.Save();
             changingZone = false;
             return true;
         }
 
         private void SpawnWildernessEnemy()
         {
+            // Once acquisition is blocked, existing enemies may still drop their
+            // own items, but no replacement producers enter this world. At most
+            // the already living wilderness population can add retained drops.
+            if (pendingLoot.Count > 0) return;
             for(int attempt=0;attempt<20;attempt++)
             {
                 Vector3 desired=new Vector3(Random.Range(-16f,16f),0,Random.Range(-3f,16f));
@@ -309,7 +397,7 @@ namespace Emberfall
 
         private void SpawnDungeonWave()
         {
-            int level = Mathf.Clamp(Progression.Profile.level, 2, 100);
+            int level = DungeonEntryLevel;
             List<EncounterSpawn> plan=EncounterPlan.Create(DungeonTier,DungeonWave,DungeonLayout,runSeed);
             wavePopulation=plan.Count;
             int initial=0;
@@ -355,39 +443,32 @@ namespace Emberfall
 
         public void OnEnemyKilled(EnemyController enemy)
         {
-            if (enemy == null || !Enemies.Remove(enemy)) return;
+            if (enemy == null || !AdventureResultPolicy.AcceptsKill(HasStarted,CombatEnded,Enemies.Contains(enemy)) || !Enemies.Remove(enemy)) return;
             Vector3 position = enemy.transform.position;
             bool boss = enemy.IsBoss;
             OnExpeditionEnemyKilled(enemy);
+            RecordArenaDefeat(enemy);
+            RecordRoomDefeat(enemy);
             int level = Progression.Profile.level;
             int experience = boss ? 100 + level * 12 : (InDungeon ? 22 : 16) + level * 2;
             int gold = boss ? 85 + DungeonTier * 20 : Random.Range(7, 15) + level;
             if(InDungeon&&!boss) { float share=Mathf.Clamp(6f/Mathf.Max(6,wavePopulation),.5f,1f);experience=Mathf.RoundToInt(experience*share);gold=Mathf.Max(1,Mathf.RoundToInt(gold*share)); }
-            Progression.Profile.kills++;
-            Progression.AddGold(gold);
-            Progression.GrantExperience(experience);
+            Progression.GrantEnemyKillReward(gold, experience);
             LogSystem("+" + gold + " 金币 · +" + experience + " 经验");
             SpawnFloatingText(position + Vector3.up * 2, "+" + experience + " XP  +" + gold + " G", new Color(.95f, .83f, .4f));
             if (boss || Random.value < (InDungeon ? .7f : .5f))
             {
-                ItemData loot = InDungeon ? Progression.RollLoot(Progression.Profile.level + (boss ? 1 : 0), boss)
-                    : Progression.CreateLoot(Progression.Profile.level + (boss ? 1 : 0), boss);
-                if (loot != null)
-                {
-                    if (InDungeon) SpawnGroundLoot(loot, position);
-                    else
-                    {
-                        GameAudio.Play(SoundCue.Loot);
-                        LogSystem("获得 " + GameBalance.RarityName(loot.rarity) + "装备：「" + loot.name + "」 · 按 I 查看" + (string.IsNullOrEmpty(Progression.LastError) ? "" : " · " + Progression.LastError));
-                        SpawnLootBeacon(position, GameBalance.RarityColor(loot.rarity));
-                    }
-                }
+                ItemData loot = Progression.RollLoot(Progression.Profile.level + (boss ? 1 : 0), boss, InDungeon ? DungeonTier : 0);
+                DeliverEnemyLoot(loot, position);
             }
             enemy.BeginDeath();
             transientObjects.RemoveAll(go => go == null);
             transientObjects.Add(enemy.gameObject);
+            // Capture real callback mutations; unchanged rewards do not rotate backups.
             Progression.Save();
-            if (InDungeon && !changingZone && Enemies.Count == 0 && !DungeonCleared)
+            if(RoomChainRun!=null)FinalizeRoomChain();
+            if(ModeRun!=null)FinalizeArenaResult();
+            if (InDungeon && ModeRun==null && RoomChainRun==null && !changingZone && Enemies.Count == 0 && !DungeonCleared)
             {
                 TrySpawnReinforcements();
                 if(Enemies.Count==0 && reinforcementQueue.Count==0) waveRoutine=StartCoroutine(NextWave());
@@ -409,17 +490,11 @@ namespace Emberfall
             {
                 DungeonCleared = true;
                 GameAudio.Play(SoundCue.Victory);
-                Progression.Profile.clearedRuns++;
-                Progression.Profile.bestFloor = Mathf.Max(Progression.Profile.bestFloor, DungeonTier);
-                int completionGold = 120 + DungeonTier * 30;
-                if (HasBlessing(RunBlessing.RiskContract)) completionGold = Mathf.RoundToInt(completionGold * 1.3f);
-                Progression.AddGold(completionGold);
-                Progression.GrantExperience(100 + DungeonTier * 20);
-                Progression.PrepareDungeonChest();
+                QueueDungeonCompletion();
+                bool settled=TrySettleDungeonReward();
                 LastRunSummary = BuildRunSummary(true);
                 Player.Heal(Player.MaxHealth);
-                Progression.Save();
-                Notify("遗迹通关 · 选择一个宝箱开启，然后拾取战利品");
+                Notify(settled?"遗迹通关 · 选择一个宝箱开启，然后拾取战利品":"遗迹已通关，但奖励尚未保存。请重试结算，或打开菜单处理存档。");
             }
             waveRoutine = null;
         }
@@ -428,11 +503,14 @@ namespace Emberfall
         {
             if (IsDead) return;
             IsDead = true;
+            if(ModeRun!=null)ModeRun.Fail(ExpeditionModeFailure.PlayerDefeated);
+            if(RoomChainRun!=null)RoomChainRun.Fail();
             DungeonSelectionOpen = false;
             LastRunSummary = BuildRunSummary(false);
             GameAudio.Play(SoundCue.Death);
             int lost = Mathf.FloorToInt(Progression.Profile.gold * .1f);
             Progression.AddGold(-lost);
+            RecordRecapGoldLoss(lost);
             Progression.Save();
             Notify("你暂时倒下了，损失 " + lost + " 金币。装备、经验与技能均已保留。");
             UpdateTimeScale();
@@ -455,10 +533,10 @@ namespace Emberfall
             if (!HasStarted || IsDead || Player == null) return;
             if (Player.Health >= Player.MaxHealth - .5f) { Notify("生命已满，无需使用药水。"); return; }
             if (ChallengeRun && InDungeon) { if (!TrySpendHealingCharge()) return; }
-            else if (!Progression.UsePotion()) { Notify("药水不足，按 I 在背包中购买。"); return; }
+            else if (!Progression.UsePotion()) { Notify(Progression.LastError); return; }
             Player.Heal(Player.MaxHealth * .5f);
             SpawnFloatingText(Player.transform.position + Vector3.up * 2, "+50% HP", new Color(.4f, 1, .68f));
-            Progression.Save();
+            // Normal potion consumption already committed once; challenge charges are run-only.
         }
 
         public void UseHotbarConsumable()
@@ -467,10 +545,10 @@ namespace Emberfall
             DrinkPotion();
         }
 
-        public void QuitToTitle()
+        public bool QuitToTitle(bool alreadySaved = false)
         {
-            if (!PreserveWorldLoot()) return;
-            if (HasStarted) Progression.Save();
+            if (!alreadySaved && !SaveBeforeLeaving()) return false;
+            SuspendInputs();
             StopAllCoroutines();
             waveRoutine = null;
             HasStarted = false;
@@ -489,6 +567,7 @@ namespace Emberfall
             world = WorldBuilder.Build(ZoneKind.Wilderness);
             Camera.main.GetComponent<AdventureCamera>().Snap();
             UpdateTimeScale();
+            return true;
         }
 
         private void OnProgressChanged()
@@ -511,10 +590,7 @@ namespace Emberfall
 
         public void SpawnFloatingText(Vector3 position, string value, Color color)
         {
-            if (FloatingNumber.ActiveCount >= 48) return;
-            GameObject go = new GameObject("Combat Text");
-            go.transform.position = position;
-            go.AddComponent<FloatingNumber>().Initialize(value, color);
+            FloatingNumber.Spawn(position,value,color);
         }
 
         private void SpawnLootBeacon(Vector3 position, Color color)
@@ -525,9 +601,27 @@ namespace Emberfall
             Destroy(beacon, 2.5f);
         }
 
+        private void DeliverEnemyLoot(ItemData loot, Vector3 position)
+        {
+            if (loot == null) return;
+            if (InDungeon) { SpawnGroundLoot(loot, position); return; }
+            if (!Progression.CollectLoot(loot))
+            {
+                // Keep this exact rolled identity if storage or protected-space
+                // acquisition fails. The visible pickup and exit preflight retry it.
+                SpawnGroundLoot(loot, position);
+                Notify("装备仍在地上，整理背包或恢复保存后可重试：" + Progression.LastError);
+                return;
+            }
+            collectedGroundLoot.Add(loot.id);
+            GameAudio.Play(SoundCue.Loot);
+            LogSystem("获得 " + GameBalance.RarityName(loot.rarity) + "装备：「" + loot.name + "」 · 按 I 查看" + (string.IsNullOrEmpty(Progression.LastError) ? "" : " · " + Progression.LastError));
+            SpawnLootBeacon(position, GameBalance.RarityColor(loot.rarity));
+        }
+
         public GroundLootPickup SpawnGroundLoot(ItemData item, Vector3 position)
         {
-            if (!HasStarted || !InDungeon || item == null || string.IsNullOrWhiteSpace(item.id) ||
+            if (!HasStarted || changingZone || world == null || !world.activeInHierarchy || item == null || string.IsNullOrWhiteSpace(item.id) ||
                 !System.Enum.IsDefined(typeof(ItemSlot), item.slot) || !System.Enum.IsDefined(typeof(Rarity), item.rarity) ||
                 collectedGroundLoot.Contains(item.id) || Progression.Profile.inventory.Exists(value => value != null && value.id == item.id)) return null;
             PendingLoot existing;
@@ -542,6 +636,18 @@ namespace Emberfall
             pickup.Initialize(this, item);
             return pickup;
         }
+
+        internal bool IsCurrentGroundLoot(GroundLootPickup pickup)
+        {
+            PendingLoot pending;
+            return HasStarted && !changingZone && world != null && world.activeInHierarchy && pickup != null &&
+                pickup.gameObject.activeInHierarchy && !string.IsNullOrEmpty(pickup.ItemId) &&
+                pendingLoot.TryGetValue(pickup.ItemId, out pending) && object.ReferenceEquals(pending.Pickup, pickup) &&
+                pickup.transform.IsChildOf(world.transform);
+        }
+
+        internal bool TryCollectGroundLoot(GroundLootPickup pickup)
+        { return IsCurrentGroundLoot(pickup) && TryCollectGroundLoot(pickup.ItemId); }
 
         public bool TryCollectGroundLoot(string itemId, bool feedback = true)
         {
@@ -569,7 +675,63 @@ namespace Emberfall
             foreach (string id in ids) TryCollectGroundLoot(id, false);
         }
 
-        private bool CanQuitSafely() { return PreserveWorldLoot(); }
+        private bool applicationQuitSavePrepared, applicationQuitSaveAccepted;
+
+        public bool SaveBeforeLeaving()
+        {
+            if (!HasStarted) return true;
+            if(DungeonRewardPending&&!TrySettleDungeonReward())return false;
+            if(ModeRewardPending&&!TrySettleArenaReward())return false;
+            if (!PreserveWorldLoot()) return false;
+            // Settlement callbacks can change the live profile. The service checks
+            // the complete document and skips only an already durable snapshot.
+            Progression.Save();
+            if (!string.IsNullOrEmpty(Progression.LastError)) { Notify(Progression.LastError); return false; }
+            return true;
+        }
+
+        public bool ExitApplication(bool alreadySaved = false)
+        {
+#if UNITY_IOS || UNITY_ANDROID
+            return QuitToTitle(alreadySaved);
+#else
+            if (!alreadySaved && !SaveBeforeLeaving()) return false;
+            // One-use token: the in-app confirmation has already made the save
+            // durable. The OS callback must not immediately rotate its backup again.
+            applicationQuitSavePrepared = true;
+            applicationQuitSaveAccepted = false;
+#if UNITY_EDITOR
+            applicationQuitSavePrepared = false;
+            applicationQuitSaveAccepted = true;
+            UnityEditor.EditorApplication.isPlaying = false;
+#else
+            Application.Quit();
+#endif
+            return true;
+#endif
+        }
+
+        private bool CanQuitSafely()
+        {
+            if (applicationQuitSavePrepared)
+            {
+                applicationQuitSavePrepared = false;
+                applicationQuitSaveAccepted = true;
+                return true;
+            }
+            // Alt-F4/window close has no in-app preparation and must still save.
+            // A later separate OS close always reaches this check again.
+            applicationQuitSaveAccepted = SaveBeforeLeaving();
+            return applicationQuitSaveAccepted;
+        }
+
+        private void SaveOnApplicationQuit()
+        {
+            // Some editor/platform shutdown paths omit wantsToQuit. Preserve once
+            // there, but never write again after this quit was already accepted.
+            if (!applicationQuitSaveAccepted && !applicationQuitSavePrepared) SaveBeforeLeaving();
+        }
+
         private bool PreserveWorldLoot()
         {
             if (Progression == null || pendingLoot.Count == 0) return true;
@@ -588,17 +750,25 @@ namespace Emberfall
             return true;
         }
 
+        private void RetireWorldLootReceipts(int previousCombatEpoch)
+        {
+            bool retired = (world == null || !world.activeInHierarchy) && Enemies.Count == 0 && transientObjects.Count == 0;
+            if (Progression != null && Progression.TryRetireWorldLootReceipts(changingZone, pendingLoot.Count,
+                retired, Player != null && Player.CombatEpoch != previousCombatEpoch)) collectedGroundLoot.Clear();
+        }
+
         private void OnApplicationPause(bool pause)
         {
             pauseState.SetSuspended(pause);
             if (pause) SuspendInputs();
-            if (pause && HasStarted) Progression.Save();
+            lifecycleSave.Observe(pauseState.BackgroundPaused,HasStarted,SaveBeforeLeaving);
             UpdateTimeScale();
         }
         private void OnApplicationFocus(bool focus)
         {
             pauseState.SetFocus(focus);
             if (!focus) SuspendInputs();
+            lifecycleSave.Observe(pauseState.BackgroundPaused,HasStarted,SaveBeforeLeaving);
             UpdateTimeScale();
         }
         private void SuspendInputs()
@@ -613,7 +783,7 @@ namespace Emberfall
             }
             if (ui != null) ui.CancelBackgroundInput();
         }
-        private void OnApplicationQuit() { PreserveWorldLoot(); if (HasStarted) Progression.Save(); }
+        private void OnApplicationQuit() { SaveOnApplicationQuit(); }
         private void OnDestroy()
         {
             if (Instance != this) return;
@@ -674,6 +844,8 @@ namespace Emberfall
             bool canStart = canContinue && !game.PointerOverUI;
             ProcessOrbitInput(Input.mousePosition, Input.GetMouseButtonDown(1), Input.GetMouseButton(1), Input.GetMouseButtonUp(1), canStart, canContinue, Input.mouseScrollDelta.y);
         }
+
+        public void ApplyMobilePitch(float delta) { if(MobileControls.Active&&GameSession.Instance!=null&&!GameSession.Instance.InputBlocked)pitch=MobileCameraGesture.Apply(pitch,delta); }
 
         private void ProcessOrbitInput(Vector2 position, bool pressed, bool held, bool released, bool canStart, bool canContinue, float scroll)
         {
