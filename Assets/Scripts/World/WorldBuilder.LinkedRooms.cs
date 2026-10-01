@@ -11,11 +11,11 @@ namespace Emberfall
    Primitive(parent,"Room floor",PrimitiveType.Cube,new Vector3(0,-.04f,0),new Vector3(31,.08f,32),floor);
    for(int side=-1;side<=1;side+=2)
    {
-    Primitive(parent,"Outer hall wall",PrimitiveType.Cube,new Vector3(side*16,1.5f,0),new Vector3(1.1f,3,29),wall);
+    Primitive(parent,"Outer hall wall",PrimitiveType.Cube,new Vector3(side*16,1.5f,0),new Vector3(1.1f,3,29),wall,cameraOccluder:true);
     WorldTraversal.AddBox(new Vector3(side*16,0,0),new Vector2(1.1f,29));
     Pillar(parent,r,new Vector3(side*3.4f,0,15),3.5f,true);
    }
-   Primitive(parent,"North gate lintel",PrimitiveType.Cube,new Vector3(0,3.55f,15),new Vector3(8,.55f,1),trim);
+   Primitive(parent,"North gate lintel",PrimitiveType.Cube,new Vector3(0,3.55f,15),new Vector3(8,.55f,1),trim,cameraOccluder:true);
    if(room==0)
    {
     for(int i=0;i<4;i++){int side=i%2==0?-1:1;Tree(parent,r,new Vector3(side*10,0,-6+i*4),1.2f,i+12);}
@@ -23,7 +23,7 @@ namespace Emberfall
    }
    else if(room==1)
    {
-    for(int i=0;i<4;i++){float x=i%2==0?-7:7,z=-8+i*5;Primitive(parent,"Archive fallen beam",PrimitiveType.Cube,new Vector3(x,.8f,z),new Vector3(8,1.6f,1.2f),wall);WorldTraversal.AddBox(new Vector3(x,0,z),new Vector2(8,1.2f));}
+    for(int i=0;i<4;i++){float x=i%2==0?-7:7,z=-8+i*5;Primitive(parent,"Archive fallen beam",PrimitiveType.Cube,new Vector3(x,.8f,z),new Vector3(8,1.6f,1.2f),wall,cameraOccluder:true);WorldTraversal.AddBox(new Vector3(x,0,z),new Vector2(8,1.2f));}
    }
    else if(room==2)
    {

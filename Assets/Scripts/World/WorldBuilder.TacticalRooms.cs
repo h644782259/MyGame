@@ -10,7 +10,7 @@ namespace Emberfall
             TacticalRoomGeometry.Register(layout);
             Material stone=r.Material(new Color(.33f,.38f,.42f));
             foreach(var wall in TacticalRoomGeometry.Walls(layout))
-                Primitive(parent,"Tactical sight-blocking wall",PrimitiveType.Cube,wall.Position+Vector3.up*.9f,new Vector3(wall.Size.x,1.8f,wall.Size.y),stone);
+                Primitive(parent,"Tactical sight-blocking wall",PrimitiveType.Cube,wall.Position+Vector3.up*.9f,new Vector3(wall.Size.x,1.8f,wall.Size.y),stone,cameraOccluder:true);
             if(TacticalRoomGeometry.Flooded(layout))
             {
                 Rect bridge=TacticalRoomGeometry.Bridge(layout);

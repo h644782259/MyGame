@@ -95,7 +95,7 @@ namespace Emberfall
             Rock(parent, r, new Vector3(8,0,-8), 1.65f, 2);
             Rock(parent, r, new Vector3(13,0,-10), 1.2f, 5);
             Rock(parent, r, new Vector3(14,0,5), 1.5f, 4);
-            Primitive(ruins, "Broken courtyard barricade", PrimitiveType.Cube, new Vector3(10.5f,.75f,13), new Vector3(5,1.5f,.85f), stone);
+            Primitive(ruins, "Broken courtyard barricade", PrimitiveType.Cube, new Vector3(10.5f,.75f,13), new Vector3(5,1.5f,.85f), stone,cameraOccluder:true);
             WorldTraversal.AddBox(new Vector3(10.5f,0,13), new Vector2(5,.85f));
 
             System.Random random = new System.Random(32019);
@@ -217,7 +217,7 @@ namespace Emberfall
                 Pillar(gallery, r, new Vector3(side*7,0,6), 2.9f, true);
                 Vector3 barricade = layout % 2 == 0 ? new Vector3(side*10.5f,0,-7.5f) : new Vector3(side*5f,0,-1.5f);
                 Vector2 barrierSize = layout % 2 == 0 ? new Vector2(4.2f,.9f) : new Vector2(.9f,5.5f);
-                Primitive(gallery, "Collapsed gallery partition", PrimitiveType.Cube, barricade + Vector3.up*.65f, new Vector3(barrierSize.x,1.3f,barrierSize.y), border);
+                Primitive(gallery, "Collapsed gallery partition", PrimitiveType.Cube, barricade + Vector3.up*.65f, new Vector3(barrierSize.x,1.3f,barrierSize.y), border,cameraOccluder:true);
                 WorldTraversal.AddBox(barricade, barrierSize);
                 for (int i = 0; i < 5; i++)
                 {
@@ -364,7 +364,7 @@ namespace Emberfall
             {
                 GameObject crown = Primitive(parent, "Rounded evergreen crown", PrimitiveType.Sphere,
                     p + Vector3.up * (1.65f + j * .73f) * size,
-                    new Vector3(2.2f-j*.48f,1.75f-j*.17f,1.9f-j*.42f)*size, leaves);
+                    new Vector3(2.2f-j*.48f,1.75f-j*.17f,1.9f-j*.42f)*size, leaves,cameraOccluder:true);
                 crown.GetComponent<MeshFilter>().sharedMesh = ProceduralVisuals.WeatheredRock;
                 crown.transform.localRotation = Quaternion.Euler(0, seed*31f+j*57f, j%2==0 ? 7f : -7f);
             }
@@ -375,6 +375,7 @@ namespace Emberfall
             if (p.y >= -.1f && p.sqrMagnitude < 22f*22f) WorldTraversal.AddCircle(p, scale * .82f);
             GameObject rock = Primitive(parent, "Weathered rock", PrimitiveType.Cube, p + Vector3.up * scale * .35f,
                 new Vector3(scale * 1.3f, scale, scale * .9f), r.Material(seed % 2 == 0 ? new Color(.28f,.34f,.37f) : new Color(.32f,.4f,.39f)));
+            if(scale>=1)CameraOcclusionSurface.Mark(rock);
             rock.GetComponent<MeshFilter>().sharedMesh = ProceduralVisuals.WeatheredRock;
             rock.transform.rotation = Quaternion.Euler(seed % 27, seed * 67 % 360, seed % 18);
         }
@@ -384,8 +385,8 @@ namespace Emberfall
             if (p.sqrMagnitude < (dungeon ? 18f*18f : 22f*22f)) WorldTraversal.AddBox(p, new Vector2(1.4f,1.4f));
             Material stone = r.Material(dungeon ? new Color(.24f,.25f,.35f) : new Color(.44f,.48f,.43f));
             Primitive(parent, "Column base", PrimitiveType.Cube, p + Vector3.up * .25f, new Vector3(1.4f,.5f,1.4f), stone);
-            Primitive(parent, "Column", PrimitiveType.Cylinder, p + Vector3.up * height * .5f, new Vector3(.85f,height*.5f,.85f), stone);
-            Primitive(parent, "Capital", PrimitiveType.Cube, p + Vector3.up * height, new Vector3(1.3f,.32f,1.3f), stone);
+            Primitive(parent, "Column", PrimitiveType.Cylinder, p + Vector3.up * height * .5f, new Vector3(.85f,height*.5f,.85f), stone,cameraOccluder:true);
+            Primitive(parent, "Capital", PrimitiveType.Cube, p + Vector3.up * height, new Vector3(1.3f,.32f,1.3f), stone,cameraOccluder:true);
             Primitive(parent, "Capital bevel collar", PrimitiveType.Cylinder, p + Vector3.up * (height-.23f), new Vector3(1.02f,.08f,1.02f), stone);
             Material band = r.Material(dungeon ? new Color(.31f,.57f,.8f) : new Color(.67f,.59f,.39f), dungeon);
             Primitive(parent, "Column band", PrimitiveType.Cylinder, p + Vector3.up * (height-.5f), new Vector3(.94f,.1f,.94f), band);
@@ -454,10 +455,11 @@ namespace Emberfall
             Primitive(parent,"Coffer clasp",PrimitiveType.Cube,chest+new Vector3(0,.12f,.41f),new Vector3(.18f,.24f,.06f),bronze);
         }
 
-        private static GameObject Primitive(Transform parent,string name,PrimitiveType type,Vector3 p,Vector3 scale,Material material)
+        private static GameObject Primitive(Transform parent,string name,PrimitiveType type,Vector3 p,Vector3 scale,Material material,bool cameraOccluder=false)
         {
             GameObject go=ProceduralVisuals.Create(name,type,material);
             go.transform.SetParent(parent,false); go.transform.localPosition=p; go.transform.localScale=scale;
+            if(cameraOccluder)CameraOcclusionSurface.Mark(go);
             return go;
         }
 
