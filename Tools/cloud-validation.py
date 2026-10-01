@@ -93,7 +93,7 @@ def main():
     parser.add_argument("--compile", action="store_true", help="also compile all runtime sources against Unity references")
     parser.add_argument("--compile-android", action="store_true", help="compile the UNITY_ANDROID runtime branch against pinned references; does not build an APK")
     parser.add_argument("--download-references", action="store_true", help="download pinned Unity reference DLLs if missing; implies --compile")
-    parser.add_argument("--unity-editor", type=Path, help="also compile Windows/iOS runtime, Editor, and visual-validation source using installed Unity 6000.6 DLLs (does not launch Unity)")
+    parser.add_argument("--unity-editor", type=Path, help="also compile Windows/iOS/Android runtime, Editor, and visual-validation source using installed Unity 6000.6 DLLs (does not launch Unity)")
     args = parser.parse_args()
     dotnet = shutil.which(args.dotnet)
     if not dotnet:
