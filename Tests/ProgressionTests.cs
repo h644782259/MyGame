@@ -36,6 +36,7 @@ public static class ProgressionTests
         cases = 0;
         assertions = 0;
         NewCharacterAndPersistence();
+        FashionChestAndOdds();
         SkillPointsAndLeveling();
         InventoryAndEconomy();
         WorldLootIsCollectedOnce();
@@ -71,6 +72,43 @@ public static class ProgressionTests
         Check(!result.HasSave, "constructor does not create a save");
         result.NewGame(heroClass);
         return result;
+    }
+
+    private static void FashionChestAndOdds()
+    {
+        int[] counts = new int[5];
+        for (int roll = 0; roll < 100; roll++)
+        {
+            Rarity? rarity = ProgressionService.RollFashionRarity(roll);
+            counts[rarity.HasValue ? (int)rarity.Value : 4]++;
+        }
+        Check(counts[0] == 22 && counts[1] == 12 && counts[2] == 5 && counts[3] == 1 && counts[4] == 60,
+            "chest rarity distribution uses absolute chances per opening, including 1% legendary");
+        var service = Fresh();
+        Check(service.OpenDungeonChest(0) == null, "chest cannot be opened before a clear");
+        service.PrepareDungeonChest();
+        Check(service.Load() && service.Profile.pendingFashionChest, "unopened chest survives save and reload");
+        int priorGold = service.Profile.gold;
+        string result = service.OpenDungeonChest(2);
+        Check(!string.IsNullOrEmpty(result) && service.Profile.gold >= priorGold + 60 && !service.Profile.pendingFashionChest,
+            "one chosen chest grants guaranteed gold and consumes the saved entitlement");
+        Check(service.OpenDungeonChest(1) == null && service.Load() && !service.Profile.pendingFashionChest,
+            "other chests cannot be claimed and entitlement stays consumed after reload");
+        var wings = new FashionData { id = "fashion-0-3", slot = FashionSlot.Wings, rarity = Rarity.Legendary, name = "烬王之翼" };
+        var weapon = new FashionData { id = "fashion-1-3", slot = FashionSlot.Weapon, rarity = Rarity.Legendary, name = "烬王兵装" };
+        service.Profile.fashions.RemoveAll(value => value.id == wings.id || value.id == weapon.id);
+        service.Profile.fashions.Add(wings);
+        service.Profile.fashions.Add(weapon);
+        StatBlock baseStats = service.GetStats();
+        Check(service.EquipFashion(wings.id) && service.EquipFashion(weapon.id), "level-one character can wear both legendary fashion slots");
+        StatBlock dressed = service.GetStats();
+        Check(Math.Abs(dressed.MaxHealth / baseStats.MaxHealth - 1.12f) < .0001f &&
+            Math.Abs(dressed.Armor / baseStats.Armor - 1.08f) < .0001f &&
+            Math.Abs(dressed.Damage / baseStats.Damage - 1.09f) < .0001f &&
+            Math.Abs(dressed.CritChance / baseStats.CritChance - 1.09f) < .0001f,
+            "fashion bonuses multiply final stats by their listed percentages");
+        Check(service.Load() && service.EquippedFashion(FashionSlot.Wings) != null &&
+            service.EquippedFashion(FashionSlot.Weapon) != null, "fashion collection and both worn slots survive reload");
     }
 
     private static void MultipleSaveSlotsAndSnapshots()

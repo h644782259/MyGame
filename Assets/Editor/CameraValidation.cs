@@ -47,7 +47,8 @@ namespace Emberfall.Editor
                 Process(orbit, Vector2.zero, false, false, false, true, true, 100);
                 check(Mathf.Abs(Read<float>(orbit, "distance") - 13f) < .001f, "Scroll zoom respects the nearest distance limit");
                 orbit.Snap();
-                check(view.transform.position.y >= 2.4f, "Lowest pitch and closest zoom retain camera clearance above the ground");
+                check(view.transform.position.y >= .45f && view.transform.forward.y > 0f,
+                    "Lowest pitch remains above the ground and looks upward past the horizon");
                 Process(orbit, Vector2.zero, false, false, false, true, true, -100);
                 check(Mathf.Abs(Read<float>(orbit, "distance") - 25f) < .001f, "Scroll zoom respects the farthest distance limit");
                 float heldPitch = orbit.Pitch, heldYaw = orbit.Yaw;

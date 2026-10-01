@@ -308,6 +308,7 @@ namespace Emberfall
         private Color color;
         private GameObject marker, fallingOrb;
         private Material orbMaterial;
+        private bool fireVisual, poisonVisual, lightningVisual;
 
         public static void Spawn(PlayerController player, GameSession game, Vector3 at, float size, float amount, float disable,
             float startup, float activeTime, float tickInterval, Color tint, bool followPlayer = false, bool fallingMeteor = false, float pulling = 0f, float finisher = 0f, int statusSkill = -1, int statusRank = 1)
@@ -323,6 +324,16 @@ namespace Emberfall
             area.statusSkill = statusSkill; area.statusRank = statusRank;
             area.nextTick = startup;
             area.marker = CombatFx.Ring(at, size, tint, startup + activeTime + .2f, .075f, false);
+            area.fireVisual = fallingMeteor || (player.HeroClass == HeroClass.Arcanist && tint.r > .8f && tint.g < .7f);
+            area.poisonVisual = !area.fireVisual &&
+                ((tint.g > .9f && tint.r < .8f && tint.b < .8f) ||
+                 (statusSkill == 5 && player.HeroClass == HeroClass.Ranger) ||
+                 (statusSkill == 1 && player.HeroClass == HeroClass.Summoner));
+            area.lightningVisual = player.HeroClass == HeroClass.Arcanist && tint.b > .9f && tint.r > .55f && tint.g < .7f;
+            if (area.fireVisual || area.poisonVisual || area.lightningVisual)
+                ElementalCombatVfx.Area(obj.transform, size,
+                    area.fireVisual ? ElementalCombatVfx.Element.Fire :
+                    area.poisonVisual ? ElementalCombatVfx.Element.Poison : ElementalCombatVfx.Element.Lightning);
             if (fallingMeteor)
             {
                 area.fallingOrb = GameObject.CreatePrimitive(PrimitiveType.Sphere);
@@ -365,6 +376,13 @@ namespace Emberfall
             {
                 nextTick += interval;
                 CombatFx.Ring(transform.position,radius,color,.42f,.15f);
+                if (lightningVisual)
+                    for (int bolt = 0; bolt < 3; bolt++)
+                    {
+                        Vector2 point = Random.insideUnitCircle * radius * .85f;
+                        Vector3 end = transform.position + new Vector3(point.x, .15f, point.y);
+                        ElementalCombatVfx.Lightning(transform.position + Vector3.up * Random.Range(2.1f, 3.5f), end);
+                    }
                 if (!meteor && !follow)
                 {
                     for (int j = 0; j < 3; j++)
@@ -380,7 +398,14 @@ namespace Emberfall
                     Vector3 delta = CombatFx.Flat(enemy.transform.position - transform.position);
                     if (delta.magnitude <= radius + (enemy.IsBoss ? .85f : .4f))
                     {
+                        if (fireVisual)
+                            ElementalCombatVfx.OnEnemy(enemy, ElementalCombatVfx.Element.Fire, 2.5f);
+                        if (poisonVisual)
+                            ElementalCombatVfx.OnEnemy(enemy, ElementalCombatVfx.Element.Poison, 2f);
                         enemy.TakeDamage(damage,delta.normalized,.3f,stun);
+                        if (lightningVisual)
+                            ElementalCombatVfx.Lightning(transform.position + Vector3.up * 2f,
+                                enemy.transform.position + Vector3.up * (enemy.IsBoss ? 2f : 1f));
                         if (enemy.StatusEffects != null && statusSkill == 0 && owner.HeroClass == HeroClass.Arcanist)
                             enemy.StatusEffects.Freeze(1.5f + statusRank * .25f);
                         if (enemy.StatusEffects != null && ((statusSkill == 5 && owner.HeroClass == HeroClass.Ranger) || (statusSkill == 1 && owner.HeroClass == HeroClass.Summoner)))

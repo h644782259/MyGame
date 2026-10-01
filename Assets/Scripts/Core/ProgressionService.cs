@@ -22,6 +22,37 @@ namespace Emberfall
         public const int InventoryCapacity = 72;
         public const int MaximumUpgrade = 10;
         public const int PotionPrice = 20;
+        private static readonly int[] WingHealthPercents = { 3, 5, 8, 12 };
+        private static readonly int[] WingArmorPercents = { 2, 3, 5, 8 };
+        private static readonly int[] WeaponPercents = { 2, 4, 6, 9 };
+        // Absolute probabilities per opened dungeon chest: 22% common, 12% rare,
+        // 5% epic, 1% legendary, and 60% without a fashion drop.
+        public static Rarity? RollFashionRarity(int roll)
+        {
+            if (roll < 0 || roll >= 100) throw new ArgumentOutOfRangeException("roll");
+            if (roll < 1) return Rarity.Legendary;
+            if (roll < 6) return Rarity.Epic;
+            if (roll < 18) return Rarity.Rare;
+            if (roll < 40) return Rarity.Common;
+            return null;
+        }
+
+        public static string FashionName(FashionSlot slot, Rarity rarity)
+        {
+            string prefix = new[] { "流光", "星纹", "苍穹", "烬王" }[(int)rarity];
+            return prefix + (slot == FashionSlot.Wings ? "之翼" : "兵装");
+        }
+
+        public static string FashionBonus(FashionSlot slot, Rarity rarity)
+        {
+            int rank = (int)rarity;
+            int primary = slot == FashionSlot.Wings ? WingHealthPercents[rank] : WeaponPercents[rank];
+            int secondary = slot == FashionSlot.Wings ? WingArmorPercents[rank] : WeaponPercents[rank];
+            return slot == FashionSlot.Wings ? "生命 +" + primary + "% · 防御 +" + secondary + "%"
+                : "攻击 +" + primary + "% · 暴击几率 ×" + (100 + secondary) + "%";
+        }
+
+        public static int WeaponFashionPercent(Rarity rarity) { return WeaponPercents[(int)rarity]; }
         private const int MaximumGold = 999999999;
         private const int MaximumEquipmentStat = 10000;
         private const int MaximumEquipmentHealth = 100000;
@@ -352,7 +383,86 @@ namespace Emberfall
                     stats.MoveSpeed *= 1f + (passiveRank == 1 ? .03f : passiveRank == 2 ? .06f : .10f);
                 }
             }
+            FashionData wings = EquippedFashion(FashionSlot.Wings);
+            if (wings != null)
+            {
+                int rank = (int)wings.rarity;
+                stats.MaxHealth *= 1f + WingHealthPercents[rank] / 100f;
+                stats.Armor *= 1f + WingArmorPercents[rank] / 100f;
+            }
+            FashionData weaponFashion = EquippedFashion(FashionSlot.Weapon);
+            if (weaponFashion != null)
+            {
+                float bonus = WeaponPercents[(int)weaponFashion.rarity] / 100f;
+                stats.Damage *= 1f + bonus;
+                stats.CritChance = Math.Min(1f, stats.CritChance * (1f + bonus));
+            }
             return stats;
+        }
+
+        public FashionData EquippedFashion(FashionSlot slot)
+        {
+            string id = slot == FashionSlot.Wings ? Profile.wingsFashionId : Profile.weaponFashionId;
+            return Profile.fashions == null ? null : Profile.fashions.Find(value => value != null && value.id == id && value.slot == slot);
+        }
+
+        public bool EquipFashion(string id)
+        {
+            FashionData fashion = Profile.fashions == null ? null : Profile.fashions.Find(value => value != null && value.id == id);
+            if (fashion == null) return Fail("尚未获得这件时装。");
+            if (fashion.slot == FashionSlot.Wings) Profile.wingsFashionId = id;
+            else Profile.weaponFashionId = id;
+            Commit();
+            return true;
+        }
+
+        public bool UnequipFashion(FashionSlot slot)
+        {
+            if (slot == FashionSlot.Wings) Profile.wingsFashionId = null;
+            else if (slot == FashionSlot.Weapon) Profile.weaponFashionId = null;
+            else return Fail("无效的时装部位。");
+            Commit();
+            return true;
+        }
+
+        public void PrepareDungeonChest()
+        {
+            Profile.pendingFashionChest = true;
+            Commit();
+        }
+
+        // All three chests use the same undisclosed distribution. The roll happens
+        // only after a choice, so changing the selected chest cannot improve odds.
+        public string OpenDungeonChest(int choice)
+        {
+            if (choice < 0 || choice >= 3 || !Profile.pendingFashionChest)
+            {
+                Fail("当前没有可开启的通关宝箱。");
+                return null;
+            }
+            Profile.pendingFashionChest = false;
+            int gold = 60 + random.Next(41);
+            Profile.gold = (int)Math.Min(MaximumGold, (long)Profile.gold + gold);
+            Rarity? rarity = RollFashionRarity(random.Next(100));
+            if (!rarity.HasValue)
+            {
+                Commit();
+                return "宝箱 " + (choice + 1) + "：获得 " + gold + " 金币";
+            }
+            FashionSlot slot = (FashionSlot)random.Next(2);
+            string id = "fashion-" + (int)slot + "-" + (int)rarity.Value;
+            FashionData owned = Profile.fashions.Find(value => value != null && value.id == id);
+            if (owned != null)
+            {
+                int duplicateGold = new[] { 40, 100, 250, 800 }[(int)rarity.Value];
+                Profile.gold = (int)Math.Min(MaximumGold, (long)Profile.gold + duplicateGold);
+                Commit();
+                return "宝箱 " + (choice + 1) + "：" + owned.name + " 已拥有，转化 " + duplicateGold + " 金币；另得 " + gold + " 金币";
+            }
+            var reward = new FashionData { id = id, slot = slot, rarity = rarity.Value, name = FashionName(slot, rarity.Value) };
+            Profile.fashions.Add(reward);
+            Commit();
+            return "宝箱 " + (choice + 1) + "：获得" + GameBalance.RarityName(reward.rarity) + "时装「" + reward.name + "」及 " + gold + " 金币";
         }
 
         public void GrantExperience(int amount)
@@ -893,6 +1003,22 @@ namespace Emberfall
                 items.Add(item);
             }
             profile.inventory = items;
+            if (profile.fashions == null) profile.fashions = new List<FashionData>();
+            var validFashions = new List<FashionData>();
+            var fashionIds = new HashSet<string>(StringComparer.Ordinal);
+            foreach (FashionData fashion in profile.fashions)
+            {
+                if (fashion == null || !Enum.IsDefined(typeof(FashionSlot), fashion.slot) ||
+                    !Enum.IsDefined(typeof(Rarity), fashion.rarity)) continue;
+                string expectedId = "fashion-" + (int)fashion.slot + "-" + (int)fashion.rarity;
+                if (!fashionIds.Add(expectedId)) continue;
+                fashion.id = expectedId;
+                fashion.name = FashionName(fashion.slot, fashion.rarity);
+                validFashions.Add(fashion);
+            }
+            profile.fashions = validFashions;
+            if (!validFashions.Exists(value => value.id == profile.wingsFashionId && value.slot == FashionSlot.Wings)) profile.wingsFashionId = null;
+            if (!validFashions.Exists(value => value.id == profile.weaponFashionId && value.slot == FashionSlot.Weapon)) profile.weaponFashionId = null;
             // Prefer preserving existing valid equipped gear if a damaged save exceeds the cap.
             for (int slot = 0; slot < 3; slot++)
             {

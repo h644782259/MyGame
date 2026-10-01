@@ -1,0 +1,95 @@
+using UnityEngine;
+
+namespace Emberfall
+{
+    // The kill is resolved immediately, while the visible body remains for a short time.
+    internal sealed class EnemyDeathDissolve : MonoBehaviour
+    {
+        private const float FallTime = .48f;
+        private const float RestTime = 1.25f;
+        private const float FadeTime = 1.45f;
+        private CombatModel model;
+        private Transform visual;
+        private Quaternion startRotation;
+        private Vector3 startPosition, startScale;
+        private ParticleSystem ash;
+        private Transform[] motes;
+        private Material moteMaterial;
+        private float age;
+        private bool slime, boss;
+
+        public void Initialize(CombatModel body, bool isSlime, bool boss)
+        {
+            model = body;
+            visual = body.transform;
+            slime = isSlime;
+            this.boss = boss;
+            startRotation = visual.localRotation;
+            startPosition = visual.localPosition;
+            startScale = visual.localScale;
+            model.BeginDeath();
+            ash = ElementalCombatVfx.Create(transform, "Dissolving Ash", ElementalCombatVfx.Element.Fire,
+                boss ? 35f : 16f, boss ? 1.3f : .55f);
+            ash.transform.localPosition = Vector3.up * (boss ? 1.4f : isSlime ? .35f : .8f);
+            var main = ash.main;
+            main.startColor = new Color(.66f, .75f, .8f, .5f);
+            main.startSpeed = .65f;
+            var emission = ash.emission;
+            emission.enabled = false;
+            moteMaterial = new Material(Shader.Find("Unlit/Color"));
+            moteMaterial.color = new Color(.7f, .78f, .84f);
+            motes = new Transform[boss ? 18 : 10];
+            for (int i = 0; i < motes.Length; i++)
+            {
+                GameObject mote = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+                mote.name = "Evaporating Ash";
+                mote.transform.SetParent(transform, false);
+                Collider collider = mote.GetComponent<Collider>();
+                if (collider != null) Destroy(collider);
+                mote.GetComponent<Renderer>().sharedMaterial = moteMaterial;
+                mote.SetActive(false);
+                motes[i] = mote.transform;
+            }
+        }
+
+        private void Update()
+        {
+            if (model == null) { Destroy(gameObject); return; }
+            age += Time.deltaTime;
+            float fall = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(age / FallTime));
+            visual.localRotation = Quaternion.Slerp(startRotation,
+                startRotation * Quaternion.Euler(slime ? 0f : 9f, 0f, slime ? 0f : 84f), fall);
+            visual.localPosition = startPosition + Vector3.down * (slime ? .3f : .08f) * fall;
+            Vector3 fallenScale = slime ? Vector3.Scale(startScale,
+                new Vector3(1f + .3f * fall, 1f - .55f * fall, 1f + .3f * fall)) : startScale;
+            visual.localScale = fallenScale;
+            float fade = Mathf.Clamp01((age - FallTime - RestTime) / FadeTime);
+            if (fade > 0f)
+            {
+                if (ash != null && !ash.isPlaying)
+                {
+                    var emission = ash.emission;
+                    emission.enabled = true;
+                    ash.Play();
+                }
+                model.SetDeathOpacity(1f - Mathf.SmoothStep(0f, 1f, fade));
+                visual.localScale = fallenScale * Mathf.Lerp(1f, .78f, fade);
+                visual.localPosition += Vector3.down * (.25f * fade);
+                for (int i = 0; i < motes.Length; i++)
+                {
+                    Transform mote = motes[i];
+                    if (!mote.gameObject.activeSelf) mote.gameObject.SetActive(true);
+                    float angle = i * 2.39996f;
+                    float distance = (boss ? 1f : .48f) * (.4f + fade * 1.2f);
+                    mote.localPosition = new Vector3(Mathf.Cos(angle) * distance,
+                        (boss ? 1.3f : slime ? .4f : .9f) + fade * (1f + i % 3 * .25f),
+                        Mathf.Sin(angle) * distance);
+                    mote.localScale = Vector3.one * (.11f * (1f - fade) + .025f);
+                }
+            }
+            if (fade >= 1f) Destroy(gameObject);
+        }
+
+        private void OnDestroy() { if (moteMaterial != null) Destroy(moteMaterial); }
+    }
+}

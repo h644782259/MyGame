@@ -255,11 +255,16 @@ namespace Emberfall
                 struck.Add(nearest);
                 Vector3 position=nearest.transform.position;
                 AdvancedSkillVfx.Beam(owner,previous+Vector3.up*1.1f,position+Vector3.up*1.1f,new Color(.7f,.85f,1f),.55f,.17f);
+                ElementalCombatVfx.Lightning(previous + Vector3.up * 1.15f, position + Vector3.up * 1.15f);
                 nearest.TakeDamage(damage*2.9f,forward,.05f,.35f+rank*.15f);
                 if(rank==3) owner.HitArea(position,1.8f*range,damage*.65f,0,.1f);
                 previous=search=position;
             }
-            if(struck.Count==0) AdvancedSkillVfx.Beam(owner,previous+Vector3.up,target+Vector3.up,new Color(.7f,.85f,1f),.45f,.18f);
+            if(struck.Count==0)
+            {
+                AdvancedSkillVfx.Beam(owner,previous+Vector3.up,target+Vector3.up,new Color(.7f,.85f,1f),.45f,.18f);
+                ElementalCombatVfx.Lightning(previous + Vector3.up, target + Vector3.up);
+            }
         }
 
         private EnemyController Nearest(Vector3 at,float maximumDistance)

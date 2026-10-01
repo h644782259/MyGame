@@ -134,6 +134,14 @@ namespace Emberfall
 
         internal void Provoke() { if (!IsDead) aggro = true; }
 
+        internal void BeginDeath()
+        {
+            if (healthRoot != null) healthRoot.gameObject.SetActive(false);
+            if (model != null && GetComponent<EnemyDeathDissolve>() == null)
+                gameObject.AddComponent<EnemyDeathDissolve>().Initialize(model, Kind == EnemyKind.Slime, IsBoss);
+            else if (model == null) Destroy(gameObject);
+        }
+
         private void Update()
         {
             if (session == null || session.Player == null || IsDead || !session.HasStarted || session.Paused || session.IsDead) return;

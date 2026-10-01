@@ -69,6 +69,7 @@ namespace Emberfall
             poisonDamage = Mathf.Max(poisonDamage, damagePerTick);
             poisonSource = source; sourceEpoch = source.CombatEpoch;
             enemy.Provoke();
+            ElementalCombatVfx.OnEnemy(enemy, ElementalCombatVfx.Element.Poison, duration);
         }
         private void Update()
         {
@@ -97,6 +98,7 @@ namespace Emberfall
         }
         private void LateUpdate()
         {
+            if (enemy == null || enemy.IsDead) return;
             if (model == null) { CombatModel found = GetComponentInChildren<CombatModel>(); if (found != null) model = found.transform; }
             if (model == null) return;
             if (downTime > 0 && !enemy.IsBoss) { model.localRotation = Quaternion.Euler(0, 0, 72); wasDown = true; }

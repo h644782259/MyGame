@@ -6,7 +6,7 @@ namespace Emberfall
     /// <summary>Resolution-independent runtime interface; no scene or package dependencies.</summary>
     public sealed class GameUI : MonoBehaviour
     {
-        private enum Panel { None, Inventory, Skills, Bindings, SaveLocation, Controls, UpgradeTransfer, SaveSelection, PotionAssignment }
+        private enum Panel { None, Inventory, Skills, Bindings, SaveLocation, Controls, UpgradeTransfer, SaveSelection, PotionAssignment, Fashion, Chests }
         private GameSession session;
         private Panel panel;
         private HeroClass selectedClass;
@@ -145,7 +145,7 @@ namespace Emberfall
             hotbarBounds = new Rect((width - barWidth) * .5f, height - (mobile ? 177 : 141), barWidth, mobile ? 165 : 129);
             for (int slot = 0; slot < hotbarSlots.Length; slot++)
                 hotbarSlots[slot] = new Rect(hotbarBounds.x + 10 + (slot % 5) * (mobile ? 69 : 53),
-                    hotbarBounds.y + 27 + (slot / 5) * (mobile ? 65 : 50), mobile ? 64 : 48, mobile ? 61 : 46);
+                    hotbarBounds.y + 27 + (1 - slot / 5) * (mobile ? 65 : 50), mobile ? 64 : 48, mobile ? 61 : 46);
         }
 
         private void Update()
@@ -171,6 +171,11 @@ namespace Emberfall
                 }
                 return;
             }
+            if (session.Progression.Profile.pendingFashionChest && panel == Panel.None && !session.Paused)
+            {
+                panel = Panel.Chests;
+                session.SetUIBlocking(true);
+            }
             if (rebindingSlot >= 0) return;
             if (Input.GetKeyDown(KeyCode.Escape))
             {
@@ -191,7 +196,7 @@ namespace Emberfall
                 else session.SetPaused(!session.Paused);
             }
             if (session.Paused) return;
-            if (panel == Panel.Controls || panel == Panel.SaveLocation || panel == Panel.Bindings || panel == Panel.UpgradeTransfer || panel == Panel.PotionAssignment) return;
+            if (panel == Panel.Controls || panel == Panel.SaveLocation || panel == Panel.Bindings || panel == Panel.UpgradeTransfer || panel == Panel.PotionAssignment || panel == Panel.Chests) return;
             if (Input.GetKeyDown(KeyCode.I)) TogglePanel(Panel.Inventory);
             if (Input.GetKeyDown(KeyCode.K)) TogglePanel(Panel.Skills);
             if (panel != Panel.Bindings)
@@ -249,6 +254,8 @@ namespace Emberfall
                 else if (panel == Panel.Controls) DrawControls();
                 else if (panel == Panel.UpgradeTransfer) DrawUpgradeTransfer();
                 else if (panel == Panel.PotionAssignment) DrawPotionAssignment();
+                else if (panel == Panel.Fashion) DrawFashion();
+                else if (panel == Panel.Chests) DrawChests();
                 DrawNotification();
             }
             if (hotbarDragging && hotbarPointerSkill != -1)
@@ -1083,7 +1090,12 @@ namespace Emberfall
             if (Button(new Rect(w.xMax - 69, w.y + 20, 44, 32), "×", jade)) ClosePanel();
             Text(new Rect(w.x + 789, w.y + 28, 268, 30), Money(p.gold) + " 金币", 21, gold, true, false, TextAnchor.MiddleRight);
             float left = w.x + 24;
-            Text(new Rect(left, w.y + 112, 232, 23), "身上装备", 16, jade, true);
+            Text(new Rect(left, w.y + 112, 112, 23), "身上装备", 16, jade, true);
+            if (Button(new Rect(left + 118, w.y + 108, 114, 28), "时装收藏", gold))
+            {
+                panel = Panel.Fashion;
+                return;
+            }
             for (int i = 0; i < 3; i++)
             {
                 ItemData item = progression.Equipped((ItemSlot)i);
@@ -1109,12 +1121,12 @@ namespace Emberfall
             {
                 int baseCrit = p.heroClass == HeroClass.Ranger ? 14 : p.heroClass == HeroClass.Arcanist ? 10 : 8;
                 int totalCrit = Mathf.RoundToInt(stats.CritChance * 100);
-                int passiveCrit = Mathf.Max(0, totalCrit - baseCrit);
-                string passive = p.heroClass == HeroClass.Ranger
-                    ? GameBalance.SkillName(p.heroClass, 3) + "（" + GameBalance.SkillRankName(p.skillRanks[3]) + "）：+" + passiveCrit + " 个百分点"
-                    : "被动加成：+0 个百分点";
-                tooltip = "暴击几率来源\n" + GameBalance.ClassName(p.heroClass) + "基础：" + baseCrit + "%\n" + passive +
-                    "\n" + baseCrit + "% + " + passiveCrit + "% = " + totalCrit + "%\n装备和角色等级目前不提供暴击率。\n暴击伤害为普通伤害的 1.65 倍。";
+                int rank = p.skillRanks == null || p.skillRanks.Length <= 3 ? 0 : p.skillRanks[3];
+                int passiveCrit = p.heroClass == HeroClass.Ranger ? (rank <= 0 ? 0 : rank == 1 ? 4 : rank == 2 ? 7 : 12) : 0;
+                FashionData weaponFashion = progression.EquippedFashion(FashionSlot.Weapon);
+                int fashionPercent = weaponFashion == null ? 0 : ProgressionService.WeaponFashionPercent(weaponFashion.rarity);
+                tooltip = "暴击几率来源\n" + GameBalance.ClassName(p.heroClass) + "基础：" + baseCrit + "%\n游侠被动：+" + passiveCrit + " 个百分点" +
+                    "\n武器时装：乘以 " + (100 + fashionPercent) + "%\n当前：" + totalCrit + "%\n暴击伤害为普通伤害的 1.65 倍。";
             }
 
             float middle = w.x + 272;
@@ -1197,6 +1209,74 @@ namespace Emberfall
                 Feedback(progression.BuyPotion(), "已购买生命药剂 · -" + ProgressionService.PotionPrice + " 金币");
         }
 
+        private void DrawFashion()
+        {
+            ProgressionService progression = session.Progression;
+            GameProfile profile = progression.Profile;
+            Rect w = Modal(940, 638, "时装收藏", "副本通关后三选一宝箱 · 时装所有等级可穿戴 · 百分比加成");
+            if (Button(new Rect(w.xMax - 69, w.y + 20, 44, 32), "×", jade)) { panel = Panel.Inventory; return; }
+            string[] slotNames = { "翅膀", "武器外观" };
+            for (int slotIndex = 0; slotIndex < 2; slotIndex++)
+            {
+                FashionSlot slot = (FashionSlot)slotIndex;
+                float x = w.x + 24 + slotIndex * 451;
+                FashionData equipped = progression.EquippedFashion(slot);
+                Rect summary = new Rect(x, w.y + 110, 439, 60);
+                Fill(summary, card);
+                Border(summary, equipped == null ? muted : GameBalance.RarityColor(equipped.rarity));
+                Text(new Rect(x + 12, summary.y + 6, 200, 20), slotNames[slotIndex] + " · 穿戴中", 12, jade, true);
+                Text(new Rect(x + 12, summary.y + 29, 295, 23), equipped == null ? "未穿戴" : equipped.name + "  " + ProgressionService.FashionBonus(slot, equipped.rarity),
+                    13, equipped == null ? muted : pale, true);
+                if (equipped != null && Button(new Rect(x + 335, summary.y + 14, 90, 32), "卸下", muted))
+                    Feedback(progression.UnequipFashion(slot), "已卸下" + slotNames[slotIndex]);
+                for (int rank = 0; rank < 4; rank++)
+                {
+                    Rarity rarity = (Rarity)rank;
+                    string id = "fashion-" + slotIndex + "-" + rank;
+                    FashionData owned = profile.fashions.Find(value => value != null && value.id == id);
+                    bool worn = equipped != null && equipped.id == id;
+                    Rect cardRect = new Rect(x, w.y + 181 + rank * 94, 439, 84);
+                    Fill(cardRect, card);
+                    Color accent = GameBalance.RarityColor(rarity);
+                    Fill(new Rect(cardRect.x, cardRect.y, 4, cardRect.height), accent);
+                    Text(new Rect(x + 15, cardRect.y + 9, 260, 23), ProgressionService.FashionName(slot, rarity), 16, accent, true);
+                    Text(new Rect(x + 15, cardRect.y + 34, 310, 20), GameBalance.RarityName(rarity) + " · " + ProgressionService.FashionBonus(slot, rarity), 12, pale);
+                    Text(new Rect(x + 15, cardRect.y + 57, 310, 17), owned == null ? "未获得 · 通关宝箱随机掉落" : "已收藏 · 无等级要求", 11, owned == null ? muted : jade);
+                    if (Button(new Rect(x + 333, cardRect.y + 23, 92, 36), worn ? "穿戴中" : owned == null ? "未解锁" : "穿戴",
+                        owned == null ? muted : accent, owned != null && !worn))
+                        Feedback(progression.EquipFashion(id), "已穿戴" + ProgressionService.FashionName(slot, rarity));
+                }
+            }
+            Text(new Rect(w.x + 25, w.y + 571, 890, 21), "每次开箱概率：普通 22% · 稀有 12% · 史诗 5% · 传说 1% · 无时装 60%。重复时装转化金币。", 12, muted);
+            if (Button(new Rect(w.x + 726, w.y + 592, 188, 30), "返回行囊", jade)) panel = Panel.Inventory;
+        }
+
+        private void DrawChests()
+        {
+            Rect w = Modal(836, 427, "遗迹宝箱", "选择一口开启 · 三口宝箱机会相同，选择后其余关闭");
+            Text(new Rect(w.x + 31, w.y + 113, 774, 50), "每箱保底 60～100 金币，并有 40% 概率获得时装。\n普通 22% · 稀有 12% · 史诗 5% · 传说 1%（均为每次开箱的绝对概率）", 14, pale, false, true, TextAnchor.MiddleCenter);
+            for (int i = 0; i < 3; i++)
+            {
+                Rect chest = new Rect(w.x + 32 + i * 267, w.y + 184, 246, 173);
+                Fill(chest, card);
+                Border(chest, gold);
+                Fill(new Rect(chest.x + 43, chest.y + 26, 160, 58), new Color(.34f, .21f, .11f));
+                Border(new Rect(chest.x + 43, chest.y + 26, 160, 58), gold);
+                Fill(new Rect(chest.x + 36, chest.y + 15, 174, 26), new Color(.44f, .29f, .13f));
+                Border(new Rect(chest.x + 36, chest.y + 15, 174, 26), gold);
+                Fill(new Rect(chest.x + 111, chest.y + 35, 24, 34), gold);
+                Text(new Rect(chest.x + 14, chest.y + 88, 218, 28), "宝箱 " + (i + 1), 18, pale, true, false, TextAnchor.MiddleCenter);
+                if (Button(new Rect(chest.x + 21, chest.y + 121, 204, 38), "开启这口宝箱", gold, true, null, true))
+                {
+                    string result = session.Progression.OpenDungeonChest(i);
+                    Feedback(result != null, result ?? "无法开启宝箱");
+                    if (result != null) { panel = Panel.None; session.SetUIBlocking(false); }
+                    return;
+                }
+            }
+            Text(new Rect(w.x + 31, w.y + 378, 774, 20), "未开启的通关宝箱保存在角色存档中。", 12, muted, false, false, TextAnchor.MiddleCenter);
+        }
+
         private void DrawPotionAssignment()
         {
             GameProfile p = session.Progression.Profile;
@@ -1206,7 +1286,7 @@ namespace Emberfall
             {
                 int entry = LearnedSkillAtSlot(p, slot);
                 bool current = entry == GameBalance.HotbarPotion;
-                Rect tile = new Rect(w.x + 24 + slot % 5 * 156, w.y + 114 + slot / 5 * 76, 148, 64);
+                Rect tile = new Rect(w.x + 24 + slot % 5 * 156, w.y + 114 + (1 - slot / 5) * 76, 148, 64);
                 Fill(tile, current ? new Color(.13f, .2f, .2f) : card);
                 Border(tile, current ? gold : new Color(jade.r, jade.g, jade.b, .4f));
                 Text(new Rect(tile.x + 9, tile.y + 5, tile.width - 18, 19), MobileControls.Active ? "位置 " + (slot + 1) : GameBalance.KeyName(p.hotbarKeys[slot]), 13, pale, true);
@@ -1653,7 +1733,7 @@ namespace Emberfall
             {
                 int equipped = LearnedSkillAtSlot(p, slot);
                 bool current = equipped == skill;
-                Rect target = new Rect(actionX + (slot % 5) * 112, r.y + 424 + (slot / 5) * 40, 102, 36);
+                Rect target = new Rect(actionX + (slot % 5) * 112, r.y + 424 + (1 - slot / 5) * 40, 102, 36);
                 string key = GameBalance.KeyName(p.hotbarKeys[slot]);
                 detailSlots[slot] = target;
                 string hint = key + " · " + SlotSkillName(p, slot) + "\n" + (rank == 0 ? "先学习这项技能。" : current ? "点击从此槽卸下；不会清除技能冷却。" : "将" + GameBalance.SkillName(p.heroClass, skill) + "配置到此槽。") + "\n拖动已配置技能可移动或交换，拖到栏外取消。";
@@ -1707,7 +1787,7 @@ namespace Emberfall
             if (Button(new Rect(w.x + 748, w.y + 110, 68, 28), "页 ›", jade, rebindingSlot < 0)) ChangePage(1);
             for (int i = 0; i < GameBalance.HotbarSize; i++)
             {
-                Rect tile = new Rect(w.x + 24 + (i % 5) * 161, w.y + 157 + (i / 5) * 96, 148, 84);
+                Rect tile = new Rect(w.x + 24 + (i % 5) * 161, w.y + 157 + (1 - i / 5) * 96, 148, 84);
                 bool waiting = rebindingSlot == i;
                 Fill(tile, waiting ? new Color(.2f, .18f, .12f) : card);
                 Border(tile, waiting ? gold : jade * new Color(1, 1, 1, .3f));
@@ -1717,7 +1797,7 @@ namespace Emberfall
                 if (GUI.Button(tile, GUIContent.none, invisibleButton)) { rebindingSlot = i; GameAudio.Play(SoundCue.UI); }
             }
             if (rebindingSlot >= 0) Text(new Rect(w.x + 27, w.y + 360, 787, 27), "等待 " + GameBalance.KeyName(p.hotbarKeys[rebindingSlot]) + " 槽的新按键…  /  Esc 取消", 14, gold, true);
-            if (Button(new Rect(w.x + 24, w.y + 437, 350, 39), "恢复默认 ZXCVB / 12345", gold, rebindingSlot < 0))
+            if (Button(new Rect(w.x + 24, w.y + 437, 350, 39), "恢复默认 12345 / ZXCVB", gold, rebindingSlot < 0))
             {
                 bool restored = true;
                 for (int i = 0; i < GameBalance.HotbarSize; i++)
@@ -1803,7 +1883,7 @@ namespace Emberfall
             if (Button(new Rect(keyboard.x + 562, keyboard.y + 234, 65, 26), "页 ›", jade)) ChangePage(1);
             for (int i = 0; i < GameBalance.HotbarSize; i++)
             {
-                Rect keycap = new Rect(keyboard.x + 23 + (i % 5) * 123, keyboard.y + 273 + (i / 5) * 59, 112, 50);
+                Rect keycap = new Rect(keyboard.x + 23 + (i % 5) * 123, keyboard.y + 273 + (1 - i / 5) * 59, 112, 50);
                 Fill(keycap, new Color(.08f, .13f, .18f));
                 Border(keycap, new Color(jade.r, jade.g, jade.b, .4f));
                 Text(new Rect(keycap.x + 7, keycap.y + 3, 98, 20), GameBalance.KeyName(p.hotbarKeys[i]), 16, pale, true);
@@ -1823,7 +1903,7 @@ namespace Emberfall
                 Text(key, keys[i], 13, pale, true, false, TextAnchor.MiddleCenter);
                 Text(new Rect(right + 99, rowY + 4, 234, 25), actions[i], 13, muted);
             }
-            Text(new Rect(right, w.y + 472, 330, 71), "按住右键：左右环绕，上下调整俯仰。\n右键单击：取消选点或蓄力；滚轮缩放。\n空格跳跃 / Shift 闪现：可跨河，需能落脚。\n背包与技能界面会暂停战斗。", 12, muted, false, true);
+            Text(new Rect(right, w.y + 472, 330, 71), "按住右键：左右环绕，上下调整俯仰。\n右键单击：取消选点或蓄力；滚轮缩放。\n空格原地跳跃，无冷却；Shift 闪现可跨河。\n背包与技能界面会暂停战斗。", 12, muted, false, true);
             if (Button(new Rect(w.x + 24, w.y + 575, 650, 39), "自定义技能按键", gold)) OpenBindings();
             if (Button(new Rect(right, w.y + 575, 338, 39), controlsReturnPause ? "返回暂停菜单" : "返回冒险", jade)) ClosePanel();
         }
@@ -1907,6 +1987,12 @@ namespace Emberfall
         private void ClosePanel()
         {
             rebindingSlot = -1;
+            if (panel == Panel.Chests && session.Progression.Profile.pendingFashionChest) return;
+            if (panel == Panel.Fashion)
+            {
+                panel = Panel.Inventory;
+                return;
+            }
             if (panel == Panel.UpgradeTransfer || panel == Panel.PotionAssignment)
             {
                 ReturnToInventory();

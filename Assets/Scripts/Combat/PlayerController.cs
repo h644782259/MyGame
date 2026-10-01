@@ -12,7 +12,7 @@ namespace Emberfall
         public float DodgeCooldown { get { return dodgeCooldown; } }
         public float BlinkCooldown { get { return dodgeCooldown; } }
         public bool IsJumping { get { return jumping; } }
-        public float JumpCooldown { get { return jumpCooldown; } }
+        public float JumpCooldown { get { return 0f; } }
         public bool TraversalStartedThisFrame { get { return traversalFrame == Time.frameCount; } }
         public float Energy { get { return skillRuntime != null ? skillRuntime.Energy : SkillRuntime.MaximumEnergy; } }
         public float MaxEnergy { get { return SkillRuntime.MaximumEnergy; } }
@@ -36,8 +36,8 @@ namespace Emberfall
         private float healingProtectionTime, healingReduction, mobilityTime;
         private float slowTime, slowStrength;
         private bool jumping;
-        private float jumpAge, jumpCooldown, movementSkillLock;
-        private Vector3 jumpOrigin, jumpDestination;
+        private float jumpAge, movementSkillLock;
+        private Vector3 jumpOrigin;
         private int traversalFrame = -1;
         private float passiveCooldown, passiveTime, passiveReduction, passiveSpeed;
         private Vector3 aimPoint;
@@ -70,6 +70,10 @@ namespace Emberfall
             float previousMaximum = MaxHealth;
             bool wasDead = previousMaximum > 0 && Health <= 0;
             stats = session.Progression.GetStats();
+            if (model != null) model.ApplyFashion(session.Progression.EquippedFashion(FashionSlot.Wings),
+                session.Progression.EquippedFashion(FashionSlot.Weapon));
+            if (model != null) model.ApplyEquipment(session.Progression.Equipped(ItemSlot.Weapon),
+                session.Progression.Equipped(ItemSlot.Armor), session.Progression.Equipped(ItemSlot.Relic));
             MaxHealth = Mathf.Max(1f, stats.MaxHealth);
             if (heal) Health = MaxHealth;
             else if (!wasDead) Health = Mathf.Clamp(Health, 1, MaxHealth);
@@ -163,7 +167,6 @@ namespace Emberfall
             attackAnimation = Mathf.Max(0,attackAnimation - dt * 4f);
             hurtTimer = Mathf.Max(0,hurtTimer - dt);
             dodgeCooldown = Mathf.Max(0,dodgeCooldown - dt);
-            jumpCooldown = Mathf.Max(0, jumpCooldown - dt);
             movementSkillLock = Mathf.Max(0, movementSkillLock - dt);
             invulnerability = Mathf.Max(0,invulnerability - dt);
             skillFeedbackCooldown = Mathf.Max(0,skillFeedbackCooldown - dt);
@@ -198,7 +201,7 @@ namespace Emberfall
                 AdventureCamera.CameraRelativeMovement(moveInput, Camera.main == null ? null : Camera.main.transform);
             movement = Vector3.ClampMagnitude(movement,1);
             bool wantsJump = mobile ? MobileControls.ConsumeJump() : Input.GetKeyDown(KeyCode.Space);
-            if (wantsJump) TryJump(movement);
+            if (wantsJump) TryJump();
             bool wantsBlink = mobile ? MobileControls.ConsumeDodge() : Input.GetKeyDown(KeyCode.LeftShift) || Input.GetKeyDown(KeyCode.RightShift);
             if (wantsBlink) TryBlink(movement);
             if (jumping)
@@ -518,19 +521,13 @@ namespace Emberfall
             AdvancedSkillVfx.Beam(this,previous+Vector3.up,transform.position+Vector3.up,GameBalance.ClassColor(HeroClass),.55f,.35f);
         }
 
-        internal bool TryJump(Vector3 direction)
+        internal bool TryJump()
         {
-            if (session == null || IsDead || !session.HasStarted || session.InputBlocked || jumping || jumpCooldown > 0 || TraversalStartedThisFrame || movementSkillLock > 0 || (charge != null && charge.IsCharging)) return false;
-            Vector3 forward = CombatFx.Flat(direction);
-            if (forward.sqrMagnitude < .01f) forward = transform.forward;
+            if (session == null || IsDead || !session.HasStarted || session.InputBlocked || jumping || TraversalStartedThisFrame || movementSkillLock > 0 || (charge != null && charge.IsCharging)) return false;
             Vector3 origin = CombatFx.Flat(transform.position);
-            Vector3 destination = origin + forward.normalized * 4.8f;
-            float bound = session.ArenaRadius - .65f;
-            if (destination.sqrMagnitude > bound * bound || !WorldTraversal.CanLeap(origin, destination, .45f)) { TraversalFailure(); return false; }
+            if (!WorldTraversal.IsWalkable(origin, .45f)) return false;
             jumpOrigin = origin;
-            jumpDestination = destination;
             jumpAge = 0;
-            jumpCooldown = 1.2f;
             jumping = true;
             traversalFrame = Time.frameCount;
             GameAudio.Play(SoundCue.Dodge);
@@ -564,11 +561,11 @@ namespace Emberfall
             if (!jumping || deltaTime <= 0 || float.IsNaN(deltaTime) || float.IsInfinity(deltaTime)) return;
             jumpAge += deltaTime;
             float progress = Mathf.Clamp01(jumpAge / .55f);
-            transform.position = Vector3.Lerp(jumpOrigin, jumpDestination, progress) + Vector3.up * (Mathf.Sin(progress * Mathf.PI) * 1.65f);
+            transform.position = jumpOrigin + Vector3.up * (Mathf.Sin(progress * Mathf.PI) * 1.65f);
             if (progress >= 1f)
             {
                 jumping = false;
-                transform.position = WorldTraversal.NearestWalkable(jumpDestination, .45f);
+                transform.position = jumpOrigin;
             }
         }
 

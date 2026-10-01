@@ -230,6 +230,7 @@ namespace Emberfall
         public void EnterDungeon()
         {
             if (!HasStarted || IsDead || InDungeon) return;
+            if (Progression.Profile.pendingFashionChest) { Notify("请先开启上次通关的宝箱。"); return; }
             if (!NearPortal()) { Notify("请前往原野北方发光的传送门（小地图菱形），靠近后按 T。"); return; }
             if (Progression.Profile.level < 2) { Notify("遗迹需要 2 级。先在原野战斗，并学习第一个职业技能。"); return; }
             ChangeZone(true);
@@ -346,8 +347,9 @@ namespace Emberfall
                     }
                 }
             }
-            enemy.gameObject.SetActive(false);
-            Destroy(enemy.gameObject);
+            enemy.BeginDeath();
+            transientObjects.RemoveAll(go => go == null);
+            transientObjects.Add(enemy.gameObject);
             Progression.Save();
             if (InDungeon && !changingZone && Enemies.Count == 0 && !DungeonCleared) waveRoutine = StartCoroutine(NextWave());
         }
@@ -372,9 +374,10 @@ namespace Emberfall
                 Progression.Profile.bestFloor = Mathf.Max(Progression.Profile.bestFloor, DungeonTier);
                 Progression.AddGold(120 + DungeonTier * 30);
                 Progression.GrantExperience(100 + DungeonTier * 20);
+                Progression.PrepareDungeonChest();
                 Player.Heal(Player.MaxHealth);
                 Progression.Save();
-                Notify("遗迹通关 · 拾取战利品，返回营地");
+                Notify("遗迹通关 · 选择一个宝箱开启，然后拾取战利品");
             }
             waveRoutine = null;
         }
@@ -430,6 +433,8 @@ namespace Emberfall
             IsDead = false;
             foreach (EnemyController enemy in Enemies) if (enemy != null) { enemy.gameObject.SetActive(false); Destroy(enemy.gameObject); }
             Enemies.Clear();
+            foreach (GameObject obj in transientObjects) if (obj != null) Destroy(obj);
+            transientObjects.Clear();
             if (Player != null) { Player.gameObject.SetActive(false); Destroy(Player.gameObject); Player = null; }
             if (world != null) { world.SetActive(false); Destroy(world); }
             InDungeon = false;
@@ -524,7 +529,7 @@ namespace Emberfall
     [DefaultExecutionOrder(-100)]
     public sealed class AdventureCamera : MonoBehaviour
     {
-        public const float MinimumPitch = 20f;
+        public const float MinimumPitch = -18f;
         public const float MaximumPitch = 75f;
         private const float DefaultPitch = 48.36646f;
         private const float DistanceScale = 1.2041595f;
@@ -594,9 +599,11 @@ namespace Emberfall
             smoothPitch = snap ? pitch : Mathf.Lerp(smoothPitch, pitch, orbit);
             smoothDistance = snap ? distance : Mathf.Lerp(smoothDistance, distance, orbit);
             Vector3 position = lookTarget + Quaternion.Euler(smoothPitch, smoothYaw, 0) * Vector3.back * (smoothDistance * DistanceScale);
-            position.y = Mathf.Max(2.4f, position.y);
+            // Near the horizon the camera approaches the ground; look slightly
+            // above the hero so dragging farther can produce a real upward view.
+            position.y = Mathf.Max(.45f, position.y);
             transform.position = position;
-            transform.LookAt(lookTarget);
+            transform.LookAt(lookTarget + Vector3.up * (Mathf.Clamp01(-smoothPitch / 18f) * 2.4f));
             transform.position += HitFeedback.CameraOffset;
         }
 

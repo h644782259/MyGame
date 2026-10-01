@@ -1,0 +1,31 @@
+using UnityEngine;
+
+namespace Emberfall
+{
+    /// <summary>Shared visual progression for worn gear and its world pickup.</summary>
+    public struct EquipmentAppearance
+    {
+        public readonly int Tier;
+        public readonly int RarityRank;
+        public readonly int UpgradeRank;
+        public readonly Color Metal;
+        public readonly Color Accent;
+        public readonly Color Glow;
+
+        public EquipmentAppearance(ItemData item)
+        {
+            int level = Mathf.Clamp(item.level, 1, ProgressionService.MaximumLevel);
+            Tier = Mathf.Min(4, 1 + (level - 1) / 25);
+            RarityRank = Mathf.Clamp((int)item.rarity, 0, 3);
+            UpgradeRank = Mathf.Clamp(item.upgradeLevel, 0, ProgressionService.MaximumUpgrade);
+            Accent = GameBalance.RarityColor((Rarity)RarityRank);
+            Metal = Color.Lerp(new Color(.42f, .48f, .55f), new Color(.84f, .89f, .94f),
+                (Tier - 1) / 3f);
+            Glow = Color.Lerp(Accent, Color.white, .18f + UpgradeRank * .025f);
+        }
+
+        public bool HasRunes { get { return UpgradeRank >= 3; } }
+        public bool HasAura { get { return UpgradeRank >= 7; } }
+        public bool HasCrown { get { return UpgradeRank >= 10; } }
+    }
+}

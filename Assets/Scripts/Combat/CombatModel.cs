@@ -10,6 +10,11 @@ namespace Emberfall
         private Transform leftLeg, rightLeg, leftArm, rightArm, body, decoration;
         private Transform spine, pelvis, headRig, leftElbow, rightElbow, leftKnee, rightKnee, cloak;
         private Transform swordRig, staffRig, bowRig, arrowRig, castingOrb;
+        private Transform fashionWings, fashionWeapon;
+        private string fashionWingsId, fashionWeaponId;
+        private Transform equipmentWeapon, equipmentArmor, equipmentRelic;
+        private Transform equipmentLeftShoulder, equipmentRightShoulder;
+        private string equipmentWeaponKey, equipmentArmorKey, equipmentRelicKey;
         private LineRenderer bowstring;
         private HeroClass heroClass;
         private bool isHero, actionBasic;
@@ -21,6 +26,28 @@ namespace Emberfall
         private Vector3 recoilDirection;
         private EnemyController enemyOwner;
         private Quaternion bodyRestRotation = Quaternion.identity;
+        private bool dying;
+        private float deathOpacity = 1f;
+
+        public void BeginDeath()
+        {
+            if (dying) return;
+            dying = true;
+            foreach (Material material in palette.Values)
+            {
+                if (material == null) continue;
+                material.SetFloat("_Mode", 3f);
+                material.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
+                material.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
+                material.SetInt("_ZWrite", 0);
+                material.DisableKeyword("_ALPHATEST_ON");
+                material.EnableKeyword("_ALPHABLEND_ON");
+                material.DisableKeyword("_ALPHAPREMULTIPLY_ON");
+                material.renderQueue = 3000;
+            }
+        }
+
+        public void SetDeathOpacity(float opacity) { deathOpacity = Mathf.Clamp01(opacity); }
 
         public void Recoil(Vector3 worldDirection, float strength)
         {
@@ -41,6 +68,17 @@ namespace Emberfall
         private void LateUpdate()
         {
             if (isHero) return;
+            if (dying)
+            {
+                foreach (var pair in palette)
+                    if (pair.Value != null)
+                    {
+                        Color color = pair.Key;
+                        color.a = deathOpacity;
+                        pair.Value.color = color;
+                    }
+                return;
+            }
             float flash = Mathf.Clamp01(1f - (Time.time - recoilStarted) / .11f) * .52f;
             foreach (var pair in palette)
                 if (pair.Value != null) pair.Value.color = Color.Lerp(pair.Key, new Color(1f, .92f, .73f), flash);
@@ -53,6 +91,305 @@ namespace Emberfall
             model.EnhanceHero(hero);
             if (hero == HeroClass.Summoner) model.SummonerCrown();
             return model;
+        }
+
+        public void ApplyFashion(FashionData wings, FashionData weapon)
+        {
+            string wingId = wings == null ? null : wings.id;
+            string weaponId = weapon == null ? null : weapon.id;
+            if (wingId == fashionWingsId && weaponId == fashionWeaponId) return;
+            fashionWingsId = wingId;
+            fashionWeaponId = weaponId;
+            if (fashionWings != null) Destroy(fashionWings.gameObject);
+            if (fashionWeapon != null) Destroy(fashionWeapon.gameObject);
+            fashionWings = fashionWeapon = null;
+            if (wings != null && spine != null)
+            {
+                fashionWings = new GameObject("Fashion Wings").transform;
+                fashionWings.SetParent(spine, false);
+                fashionWings.localPosition = new Vector3(0, .26f, -.43f);
+                Color color = GameBalance.RarityColor(wings.rarity);
+                int feathers = 2 + (int)wings.rarity;
+                for (int side = -1; side <= 1; side += 2)
+                    for (int i = 0; i < feathers; i++)
+                    {
+                        Transform feather = Part("Wing feather", PrimitiveType.Capsule,
+                            new Vector3(side * (.38f + i * .19f), .12f - i * .09f, -.04f),
+                            new Vector3(.22f, .72f - i * .055f, .12f), color, fashionWings);
+                        feather.localRotation = Quaternion.Euler(15f, 0, side * (38f + i * 13f));
+                    }
+                Part("Wing jewel", PrimitiveType.Sphere, Vector3.zero, new Vector3(.22f, .25f, .15f), Color.white, fashionWings);
+            }
+            Transform weaponAnchor = heroClass == HeroClass.Ranger ? bowRig :
+                heroClass == HeroClass.Vanguard ? swordRig : staffRig;
+            if (weapon != null && (weaponAnchor != null || rightElbow != null))
+            {
+                fashionWeapon = new GameObject("Fashion Weapon").transform;
+                fashionWeapon.SetParent(weaponAnchor == null ? rightElbow : weaponAnchor, false);
+                fashionWeapon.localPosition = weaponAnchor == null ? new Vector3(0, -.26f, .17f) : Vector3.zero;
+                Color color = GameBalance.RarityColor(weapon.rarity);
+                Part("Weapon aura", PrimitiveType.Capsule, new Vector3(0, .4f, 0),
+                    new Vector3(.09f + (int)weapon.rarity * .018f, .63f, .09f), color, fashionWeapon);
+                Part("Weapon crystal", PrimitiveType.Sphere, new Vector3(0, .98f, 0),
+                    Vector3.one * (.19f + (int)weapon.rarity * .045f), color, fashionWeapon);
+                for (int i = 0; i <= (int)weapon.rarity; i++)
+                    Part("Weapon spark", PrimitiveType.Sphere,
+                        new Vector3((i - (int)weapon.rarity * .5f) * .18f, .48f, -.12f),
+                        Vector3.one * .09f, Color.white, fashionWeapon);
+            }
+        }
+
+        public void ApplyEquipment(ItemData weapon, ItemData armor, ItemData relic)
+        {
+            if (!isHero || spine == null) return;
+            string weaponKey = EquipmentKey(weapon);
+            string armorKey = EquipmentKey(armor);
+            string relicKey = EquipmentKey(relic);
+            if (weaponKey != equipmentWeaponKey)
+            {
+                equipmentWeaponKey = weaponKey;
+                if (equipmentWeapon != null) Destroy(equipmentWeapon.gameObject);
+                equipmentWeapon = null;
+                SetBaseWeaponVisible(weapon == null);
+                if (bowstring != null)
+                {
+                    float reach = weapon == null ? .58f : .58f *
+                        (1f + (new EquipmentAppearance(weapon).Tier - 1) * .13f);
+                    bowstring.SetPosition(0, new Vector3(0, reach, .05f));
+                    bowstring.SetPosition(2, new Vector3(0, -reach, .05f));
+                }
+                if (weapon != null) BuildEquipmentWeapon(new EquipmentAppearance(weapon));
+            }
+            if (armorKey != equipmentArmorKey)
+            {
+                equipmentArmorKey = armorKey;
+                if (equipmentArmor != null) Destroy(equipmentArmor.gameObject);
+                if (equipmentLeftShoulder != null) Destroy(equipmentLeftShoulder.gameObject);
+                if (equipmentRightShoulder != null) Destroy(equipmentRightShoulder.gameObject);
+                equipmentArmor = null;
+                equipmentLeftShoulder = equipmentRightShoulder = null;
+                if (armor != null) BuildEquipmentArmor(new EquipmentAppearance(armor));
+            }
+            if (relicKey != equipmentRelicKey)
+            {
+                equipmentRelicKey = relicKey;
+                if (equipmentRelic != null) Destroy(equipmentRelic.gameObject);
+                equipmentRelic = null;
+                if (relic != null) BuildEquipmentRelic(new EquipmentAppearance(relic));
+            }
+        }
+
+        private static string EquipmentKey(ItemData item)
+        {
+            return item == null ? null : item.id + "/" + item.level + "/" + (int)item.rarity + "/" + item.upgradeLevel;
+        }
+
+        private static void SetVisible(Transform parent, string name, bool visible)
+        {
+            if (parent == null) return;
+            foreach (Transform child in parent)
+                if (child.name == name)
+                {
+                    Renderer renderer = child.GetComponent<Renderer>();
+                    if (renderer != null) renderer.enabled = visible;
+                }
+        }
+
+        private void SetBaseWeaponVisible(bool visible)
+        {
+            if (swordRig != null)
+                foreach (string name in new[] { "Wrapped Hilt", "Gold Pommel", "Crossguard", "Forged Sword", "Blade Fuller" })
+                    SetVisible(swordRig, name, visible);
+            if (staffRig != null)
+                foreach (string name in new[] { "Staff", "Staff Gold", "Arcane Crystal", "Staff Crystal Crown" })
+                    SetVisible(staffRig, name, visible);
+            if (bowRig != null)
+                foreach (string name in new[] { "Bow Limb", "Bow Grip" })
+                    SetVisible(bowRig, name, visible);
+        }
+
+        private Transform GearRoot(string name, Transform parent)
+        {
+            return NewJoint(name, parent, Vector3.zero);
+        }
+
+        private void GlowingPart(string name, PrimitiveType shape, Vector3 at, Vector3 size, Color color, Transform parent)
+        {
+            Part(name, shape, at, size, color, parent);
+            Material material = Mat(color);
+            material.EnableKeyword("_EMISSION");
+            material.SetColor("_EmissionColor", color * .7f);
+        }
+
+        private void BuildEquipmentWeapon(EquipmentAppearance look)
+        {
+            Transform anchor = swordRig != null ? swordRig : staffRig != null ? staffRig : bowRig;
+            if (anchor == null) return;
+            equipmentWeapon = GearRoot("Equipped Weapon", anchor);
+            Color dark = Color.Lerp(look.Metal, Color.black, .56f);
+            float growth = 1f + (look.Tier - 1) * .13f;
+            if (swordRig != null)
+            {
+                Part("Wrapped grip", PrimitiveType.Cylinder, new Vector3(0, -.03f, 0), new Vector3(.105f, .16f, .105f), dark, equipmentWeapon);
+                Part("Faceted pommel", PrimitiveType.Sphere, new Vector3(0, -.2f, 0), Vector3.one * (.14f + look.Tier * .02f), look.Accent, equipmentWeapon);
+                Part("Swept guard", PrimitiveType.Cube, new Vector3(0, .17f, 0), new Vector3(.42f + look.Tier * .08f, .09f, .15f), look.Accent, equipmentWeapon);
+                Blade("Tiered blade", equipmentWeapon, new Vector3(0, .21f, 0), .17f + look.Tier * .035f,
+                    1.08f * growth, .075f, look.Metal);
+                Part("Blade spine", PrimitiveType.Cube, new Vector3(0, .64f * growth, .043f),
+                    new Vector3(.045f, .77f * growth, .018f), look.Accent, equipmentWeapon);
+                for (int side = -1; side <= 1; side += 2)
+                {
+                    if (look.Tier >= 2)
+                        Part("Guard wing", PrimitiveType.Cube, new Vector3(side * .29f, .22f, 0),
+                            new Vector3(.24f, .075f, .13f), look.Metal, equipmentWeapon).localRotation = Quaternion.Euler(0, 0, side * 25f);
+                    if (look.Tier >= 3)
+                        Part("Blade fang", PrimitiveType.Cube, new Vector3(side * .13f, .68f * growth, 0),
+                            new Vector3(.075f, .33f, .06f), look.Accent, equipmentWeapon).localRotation = Quaternion.Euler(0, 0, side * 14f);
+                }
+                if (look.HasRunes)
+                    for (int i = 0; i < 3; i++)
+                        GlowingPart("Blade rune", PrimitiveType.Sphere, new Vector3(0, .44f + i * .22f, .067f),
+                            Vector3.one * (.055f + look.UpgradeRank * .002f), look.Glow, equipmentWeapon);
+                for (int i = 0; i < look.UpgradeRank; i++)
+                    GlowingPart("Forging mark", PrimitiveType.Sphere,
+                        new Vector3((i % 5 - 2) * .1f, .13f - i / 5 * .11f, .09f),
+                        Vector3.one * .055f, look.Glow, equipmentWeapon);
+            }
+            else if (staffRig != null)
+            {
+                Part("Inlaid staff", PrimitiveType.Cylinder, new Vector3(0, .36f, .03f),
+                    new Vector3(.09f + look.Tier * .012f, 1.3f * growth, .09f + look.Tier * .012f), dark, equipmentWeapon);
+                Part("Staff collar", PrimitiveType.Cylinder, new Vector3(0, 1.02f, .03f),
+                    new Vector3(.22f + look.Tier * .025f, .1f, .22f + look.Tier * .025f), look.Accent, equipmentWeapon);
+                GlowingPart("Focus crystal", PrimitiveType.Sphere, new Vector3(0, 1.33f, .03f),
+                    Vector3.one * (.24f + look.Tier * .065f), look.Glow, equipmentWeapon);
+                for (int side = -1; side <= 1; side += 2)
+                {
+                    if (look.Tier >= 2)
+                        Part("Crystal prong", PrimitiveType.Cube, new Vector3(side * .24f, 1.22f, .03f),
+                            new Vector3(.09f, .44f + look.Tier * .07f, .1f), look.Metal, equipmentWeapon)
+                            .localRotation = Quaternion.Euler(0, 0, -side * 24f);
+                    if (look.Tier >= 4)
+                        GlowingPart("Floating shard", PrimitiveType.Sphere, new Vector3(side * .43f, 1.47f, .03f),
+                            Vector3.one * .14f, look.Glow, equipmentWeapon);
+                }
+                if (look.HasRunes)
+                    for (int i = 0; i < 3; i++)
+                        GlowingPart("Staff rune", PrimitiveType.Sphere, new Vector3(0, .16f + i * .3f, .13f),
+                            Vector3.one * .065f, look.Glow, equipmentWeapon);
+                for (int i = 0; i < look.UpgradeRank; i++)
+                    GlowingPart("Staff forging mark", PrimitiveType.Sphere,
+                        new Vector3(0, -.08f + i * .115f, .14f),
+                        Vector3.one * .055f, look.Glow, equipmentWeapon);
+            }
+            else
+            {
+                Part("Bow grip", PrimitiveType.Cube, new Vector3(0, 0, .275f),
+                    new Vector3(.12f, .22f, .12f), dark, equipmentWeapon);
+                for (int side = -1; side <= 1; side += 2)
+                {
+                    for (int i = 0; i < 4; i++)
+                    {
+                        float t = (i + .5f) / 4f;
+                        Part("Layered bow limb", PrimitiveType.Capsule,
+                            new Vector3(0, side * t * .59f * growth, .25f - t * .19f),
+                            new Vector3(.095f + look.Tier * .012f, .17f * growth, .085f), look.Metal, equipmentWeapon)
+                            .localRotation = Quaternion.Euler(side * -18f, 0, 0);
+                    }
+                    Part("Bow tip", PrimitiveType.Sphere, new Vector3(0, side * .59f * growth, .05f),
+                        Vector3.one * (.12f + look.Tier * .015f), look.Accent, equipmentWeapon);
+                    if (look.Tier >= 3)
+                        Part("Bow horn", PrimitiveType.Capsule, new Vector3(0, side * .47f * growth, .22f),
+                            new Vector3(.09f, .24f, .09f), look.Accent, equipmentWeapon)
+                            .localRotation = Quaternion.Euler(side * -35f, 0, 0);
+                }
+                if (look.HasRunes)
+                    GlowingPart("Bow focus", PrimitiveType.Sphere, new Vector3(0, 0, .37f),
+                        Vector3.one * (.17f + look.UpgradeRank * .008f), look.Glow, equipmentWeapon);
+                for (int i = 0; i < look.UpgradeRank; i++)
+                    GlowingPart("Bow forging mark", PrimitiveType.Sphere,
+                        new Vector3(0, (i - 4.5f) * .1f, .32f - Mathf.Abs(i - 4.5f) * .025f),
+                        Vector3.one * .055f, look.Glow, equipmentWeapon);
+            }
+            if (look.HasAura)
+                for (int side = -1; side <= 1; side += 2)
+                    GlowingPart("Weapon aura shard", PrimitiveType.Sphere,
+                        new Vector3(side * .32f, swordRig != null ? .76f : staffRig != null ? 1.48f : 0, .08f),
+                        Vector3.one * (look.HasCrown ? .16f : .11f), look.Glow, equipmentWeapon);
+        }
+
+        private void BuildEquipmentArmor(EquipmentAppearance look)
+        {
+            equipmentArmor = GearRoot("Equipped Armor", spine);
+            equipmentArmor.localPosition = Vector3.down * 1.12f;
+            float width = .68f + look.Tier * .065f;
+            Part("Raised breastplate", PrimitiveType.Cube, new Vector3(0, 1.33f, .32f),
+                new Vector3(width, .5f, .16f), look.Metal, equipmentArmor);
+            Part("Central crest", PrimitiveType.Cube, new Vector3(0, 1.38f, .42f),
+                new Vector3(.18f + look.Tier * .03f, .26f + look.Tier * .025f, .04f), look.Accent, equipmentArmor)
+                .localRotation = Quaternion.Euler(0, 0, 45f);
+            for (int side = -1; side <= 1; side += 2)
+            {
+                Transform shoulder = GearRoot("Equipped Shoulder", side < 0 ? leftArm : rightArm);
+                if (side < 0) equipmentLeftShoulder = shoulder;
+                else equipmentRightShoulder = shoulder;
+                Part("Shoulder shell", PrimitiveType.Sphere, new Vector3(0, 0, .05f),
+                    new Vector3(.3f + look.Tier * .04f, .23f + look.Tier * .025f, .38f), look.Metal, shoulder);
+                if (look.Tier >= 2)
+                    Part("Layered pauldron", PrimitiveType.Cube, new Vector3(side * .13f, -.12f, .12f),
+                        new Vector3(.3f, .17f + look.Tier * .03f, .3f), look.Accent, shoulder)
+                        .localRotation = Quaternion.Euler(0, 0, side * 18f);
+                if (look.Tier >= 3)
+                    Part("Armor horn", PrimitiveType.Capsule, new Vector3(side * .17f, .2f, .02f),
+                        new Vector3(.12f, .26f + look.Tier * .04f, .12f), look.Metal, shoulder)
+                        .localRotation = Quaternion.Euler(0, 0, -side * 35f);
+                if (look.HasRunes)
+                    GlowingPart("Armor rune", PrimitiveType.Sphere, new Vector3(side * .23f, 1.37f, .43f),
+                        Vector3.one * .095f, look.Glow, equipmentArmor);
+            }
+            for (int i = 0; i < look.Tier; i++)
+                Part("Waist plate", PrimitiveType.Cube, new Vector3(0, 1.07f - i * .105f, .3f),
+                    new Vector3(width - i * .055f, .1f, .13f), i % 2 == 0 ? look.Metal : look.Accent, equipmentArmor);
+            for (int i = 0; i < look.UpgradeRank; i++)
+                GlowingPart("Armor forging mark", PrimitiveType.Sphere,
+                    new Vector3((i % 5 - 2) * .11f, 1.58f - i / 5 * .09f, .41f),
+                    Vector3.one * .055f, look.Glow, equipmentArmor);
+            if (look.HasAura)
+                GlowingPart("Armor heart", PrimitiveType.Sphere, new Vector3(0, 1.39f, .46f),
+                    Vector3.one * (look.HasCrown ? .2f : .13f), look.Glow, equipmentArmor);
+        }
+
+        private void BuildEquipmentRelic(EquipmentAppearance look)
+        {
+            equipmentRelic = GearRoot("Equipped Relic", spine);
+            equipmentRelic.localPosition = Vector3.down * 1.12f;
+            float size = .17f + look.Tier * .045f;
+            Part("Relic mount", PrimitiveType.Cylinder, new Vector3(0, 1.65f, .35f),
+                new Vector3(size * 1.7f, .05f, size * 1.7f), look.Metal, equipmentRelic)
+                .localRotation = Quaternion.Euler(90, 0, 0);
+            GlowingPart("Relic gem", PrimitiveType.Sphere, new Vector3(0, 1.65f, .41f),
+                new Vector3(size, size * 1.18f, size * .7f), look.Glow, equipmentRelic);
+            for (int side = -1; side <= 1; side += 2)
+            {
+                if (look.Tier >= 2)
+                    Part("Relic wing", PrimitiveType.Cube, new Vector3(side * (size + .075f), 1.65f, .38f),
+                        new Vector3(.13f + look.Tier * .025f, .075f, .09f), look.Accent, equipmentRelic)
+                        .localRotation = Quaternion.Euler(0, 0, side * 22f);
+                if (look.HasRunes)
+                    GlowingPart("Relic satellite", PrimitiveType.Sphere,
+                        new Vector3(side * (size + .22f), 1.69f, .4f),
+                        Vector3.one * (look.HasCrown ? .13f : .085f), look.Glow, equipmentRelic);
+            }
+            if (look.HasAura)
+                GlowingPart("Relic halo", PrimitiveType.Sphere, new Vector3(0, 1.97f, .36f),
+                    Vector3.one * (look.HasCrown ? .16f : .1f), look.Glow, equipmentRelic);
+            for (int i = 0; i < look.UpgradeRank; i++)
+            {
+                float angle = i * Mathf.PI * 2f / 10f;
+                GlowingPart("Relic forging mark", PrimitiveType.Sphere,
+                    new Vector3(Mathf.Cos(angle) * (size + .12f), 1.65f + Mathf.Sin(angle) * (size + .12f), .42f),
+                    Vector3.one * .055f, look.Glow, equipmentRelic);
+            }
         }
 
         public static CombatModel Enemy(Transform parent, EnemyKind kind, bool boss)

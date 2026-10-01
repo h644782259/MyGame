@@ -230,6 +230,10 @@ namespace Emberfall
                     yaw.SetValue(camera, 58f); pitch.SetValue(camera, 27f); distance.SetValue(camera, 14f);
                     camera.Snap();
                     yield return Capture("camera-orbit-low-angle");
+                    pitch.SetValue(camera, AdventureCamera.MinimumPitch);
+                    camera.Snap();
+                    Check(camera.transform.forward.y > 0f, "Lowest orbit angle looks upward");
+                    yield return Capture("camera-look-up");
                     yaw.SetValue(camera, priorYaw); pitch.SetValue(camera, priorPitch); distance.SetValue(camera, priorDistance);
                     camera.Snap();
                 }
@@ -255,6 +259,23 @@ namespace Emberfall
                 ResetPanels();
                 OpenPanel("Inventory");
                 yield return Capture(label + "-inventory");
+                if (hero == 0)
+                {
+                    session.Progression.Profile.fashions.Add(new FashionData {
+                        id = "fashion-0-3", slot = FashionSlot.Wings, rarity = Rarity.Legendary, name = "烬王之翼"
+                    });
+                    session.Progression.Profile.fashions.Add(new FashionData {
+                        id = "fashion-1-2", slot = FashionSlot.Weapon, rarity = Rarity.Epic, name = "苍穹兵装"
+                    });
+                    Check(session.Progression.EquipFashion("fashion-0-3") && session.Progression.EquipFashion("fashion-1-2"),
+                        "Both fashion slots equip without a level gate");
+                    ResetPanels();
+                    yield return Capture("vanguard-fashion-world");
+                    OpenPanel("Fashion");
+                    yield return Capture("vanguard-fashion-collection");
+                    ResetPanels();
+                    OpenPanel("Inventory");
+                }
                 ItemData transferSource = session.Progression.Equipped(ItemSlot.Weapon);
                 var transferTarget = new ItemData {
                     id = "visual-transfer-target-" + hero, name = "传承试炼武器",
@@ -299,6 +320,44 @@ namespace Emberfall
                     level=50, rarity=(Rarity)(i+1), slot=(ItemSlot)i, attack=60
                 }, new Vector3(-3+i*3,0,1));
                 yield return Capture(label + "-dungeon-ground-loot");
+                if (hero == 0)
+                {
+                    session.Progression.PrepareDungeonChest();
+                    yield return null;
+                    Check(GetField("panel").ToString() == "Chests", "A pending clear opens the three-chest choice panel");
+                    yield return Capture("dungeon-chest-choice");
+                    Check(session.Progression.OpenDungeonChest(1) != null && !session.Progression.Profile.pendingFashionChest,
+                        "Opening one visual-validation chest consumes the pending choice");
+                    ResetPanels();
+                }
+                if (hero == 1 && session.Enemies.Count > 1)
+                {
+                    EnemyController visualEnemy = session.Enemies[0];
+                    visualEnemy.transform.position = session.Player.transform.position + Vector3.forward * 3f;
+                    Vector3 effectAt = visualEnemy.transform.position;
+                    CombatArea.Spawn(session.Player, session, effectAt, 2f, .1f, 0f, 0f, 1.1f, .35f,
+                        new Color(1f, .5f, .2f));
+                    yield return Capture("elemental-fire-on-enemy", .35f);
+                    yield return Capture("elemental-burning-body", 1.1f);
+                    yield return new WaitForSecondsRealtime(2.4f);
+                    CombatArea.Spawn(session.Player, session, effectAt, 2f, .1f, 0f, 0f, 1.1f, .3f,
+                        new Color(.65f, .5f, 1f));
+                    yield return Capture("elemental-lightning", .2f);
+                    yield return new WaitForSecondsRealtime(1.2f);
+                    CombatArea.Spawn(session.Player, session, effectAt, 2f, .1f, 0f, 0f, 1.1f, .35f,
+                        new Color(.7f, 1f, .59f));
+                    visualEnemy.StatusEffects.Poison(session.Player, 2f, .1f);
+                    yield return Capture("elemental-poison-bubbles", .35f);
+                    yield return new WaitForSecondsRealtime(1.15f);
+                    visualEnemy.TakeDamage(visualEnemy.Health + 1f, Vector3.forward);
+                    Check(!session.Enemies.Contains(visualEnemy) && visualEnemy != null,
+                        "Enemy leaves combat immediately but its body remains visible");
+                    yield return Capture("enemy-death-fall", .3f);
+                    yield return Capture("enemy-death-rest", 1.1f);
+                    yield return Capture("enemy-death-dissolve", 1.35f);
+                    yield return new WaitForSecondsRealtime(.55f);
+                    Check(visualEnemy == null, "Enemy body evaporates after the death animation");
+                }
                 if(hero==3)
                 {
                     SummonedCompanion.Summon(session.Player,session,SummonedCompanion.Kind.Wolf,3,session.Player.transform.position+new Vector3(-2,0,2),50);
@@ -347,7 +406,7 @@ namespace Emberfall
             List<SaveSlotInfo> saveChoices = session.Progression.GetSaveSlots();
             Check(saveChoices.Exists(slot => slot.CanLoad && slot.RecoveredFromBackup) && saveChoices.Exists(slot => !slot.CanLoad), "Save selection displays recoverable and unreadable slots distinctly");
             yield return Capture("save-selection-recovery");
-            Check(result.screenshots.Count == 84, "Eighty-four full-frame captures include four heroes, encounters, mobile, saves, potion hotbar and camera orbit");
+            Check(result.screenshots.Count >= 88, "Full-frame captures include four heroes, fashion, chest choice, encounters, mobile, saves and camera orbit");
         }
 
         private IEnumerator SetResolution(int width, int height)

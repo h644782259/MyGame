@@ -7,6 +7,16 @@ namespace Emberfall
     public enum HeroClass { Vanguard, Arcanist, Ranger, Summoner }
     public enum ItemSlot { Weapon, Armor, Relic }
     public enum Rarity { Common, Rare, Epic, Legendary }
+    public enum FashionSlot { Wings, Weapon }
+
+    [Serializable]
+    public class FashionData
+    {
+        public string id;
+        public FashionSlot slot;
+        public Rarity rarity;
+        public string name;
+    }
     public enum EnemyKind { Slime, Goblin, Wisp, Guardian }
     public enum ZoneKind { Wilderness, Dungeon }
     public enum SkillCategory { Damage, Control, Mobility, Buff, Defense, Healing }
@@ -56,6 +66,10 @@ namespace Emberfall
         public string weaponId;
         public string armorId;
         public string relicId;
+        public List<FashionData> fashions = new List<FashionData>();
+        public string wingsFashionId;
+        public string weaponFashionId;
+        public bool pendingFashionChest;
     }
 
     public struct StatBlock
