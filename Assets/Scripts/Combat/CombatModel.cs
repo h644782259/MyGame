@@ -33,6 +33,7 @@ namespace Emberfall
         private bool isHero, actionBasic;
         private int actionSkill, swingCount;
         private float actionAge, actionDuration, gaitPhase;
+        private int actionStartedFrame;
         private bool slime, floating;
         private float phase;
         private float recoilStarted = -10f, recoilStrength;
@@ -848,16 +849,20 @@ namespace Emberfall
         }
 
         // Called only after the corresponding attack has successfully started / consumed resources.
-        public void PlayAction(int skill, bool basic)
+        public void PlayAction(int skill, bool basic, float basicInterval = 0)
         {
             if (!isHero) return;
             actionSkill = skill;
             actionBasic = basic;
             actionAge = 0;
+            actionStartedFrame = Time.frameCount;
             swingCount++;
-            actionDuration = basic ? (heroClass == HeroClass.Vanguard ? .46f : heroClass == HeroClass.Arcanist ? .5f : .38f)
+            actionDuration = basic ? BasicActionTimeline.Duration(heroClass == HeroClass.Ranger, basicInterval > 0 ? basicInterval : SkillDamageBudgets.BasicInterval(heroClass))
                 : (skill == 9 ? 1.12f : skill >= 4 ? .84f : .68f);
+            if (basic) actionAge = actionDuration * BasicActionTimeline.Contact(heroClass == HeroClass.Ranger);
         }
+
+        public void CancelAction() { actionAge = actionDuration = 0; }
 
         public void ReleaseCharge(int skill)
         {
@@ -882,7 +887,7 @@ namespace Emberfall
             speed = smoothedSpeed;
             if (tailoredCloth != null) tailoredCloth.SetMotion(speed, actionDuration > 0 && actionAge < actionDuration ? 1 : 0);
             gaitPhase += dt * (speed > .03f ? 10.5f : 2f);
-            if (actionDuration > 0) actionAge = Mathf.Min(actionAge + dt, actionDuration);
+            if (actionDuration > 0 && (!actionBasic || Time.frameCount != actionStartedFrame)) actionAge = Mathf.Min(actionAge + dt, actionDuration);
             float t = actionDuration > 0 ? actionAge / actionDuration : 1f;
             bool acting = t < 1f;
             float stride = Mathf.Sin(gaitPhase) * speed;
@@ -943,7 +948,7 @@ namespace Emberfall
             }
             else
             {
-                float draw = acting ? (t < .32f ? Mathf.SmoothStep(0, 1, t / .32f) :
+                float draw = acting && actionBasic ? BasicActionTimeline.BowDraw(t) : acting ? (t < .32f ? Mathf.SmoothStep(0, 1, t / .32f) :
                     t < .48f ? 1f - Mathf.SmoothStep(0, 1, (t - .32f) / .16f) : 0) : 0;
                 float ready = acting ? Mathf.Min(1f, Mathf.Min(t / .16f, (1 - t) / .28f)) : .3f;
                 spine.localRotation *= Quaternion.Euler(0, -13f * ready, -3f * ready);
@@ -958,7 +963,7 @@ namespace Emberfall
                 Vector3 stringHand = Vector3.Lerp(new Vector3(.30f, .04f, .22f),
                     spine.InverseTransformPoint(bowRig.TransformPoint(nock)), ready);
                 AimArm(rightArm, rightElbow, stringHand, new Vector3(1, -.2f, -.2f));
-                arrowRig.gameObject.SetActive(!acting || t < .44f || t > .83f);
+                arrowRig.gameObject.SetActive(actionBasic ? BasicActionTimeline.ArrowVisible(t, acting) : !acting || t < .44f || t > .83f);
             }
             if (decoration != null) decoration.Rotate(0, dt * (acting ? 145f : 42f), 0, Space.Self);
         }

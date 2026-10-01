@@ -132,6 +132,7 @@ namespace Emberfall
         {
             SummonedCompanion.RefreshBuild(this);
             CombatEpoch++;
+            if (model != null) model.CancelAction();
             masteryCore.Reset();coreWardTime=0;
             if (targeting != null) targeting.Cancel();
             if (charge != null) charge.Cancel();
@@ -162,6 +163,7 @@ namespace Emberfall
         {
             SummonedCompanion.RefreshBuild(this);
             CombatEpoch++;
+            if (model != null) model.CancelAction();
             if (targeting != null) targeting.Cancel();
             if (charge != null) charge.Cancel();
         }
@@ -171,6 +173,7 @@ namespace Emberfall
         public void ResetCooldownsForDungeonEntry()
         {
             CombatEpoch++;
+            if (model != null) model.CancelAction();
             masteryCore.Reset();coreWardTime=0; // Retire prior-zone delayed impacts as well as stale aim.
             if (targeting != null) targeting.Cancel();
             if (charge != null) charge.Cancel();
@@ -223,6 +226,7 @@ namespace Emberfall
             if (Health <= 0)
             {
                 CombatEpoch++;
+                if (model != null) model.CancelAction();
             masteryCore.Reset();coreWardTime=0;
                 if (targeting != null) targeting.Cancel();
                 if (charge != null) charge.Cancel();
@@ -559,12 +563,15 @@ namespace Emberfall
             if ((HeroClass==HeroClass.Arcanist || HeroClass==HeroClass.Summoner) && !ValidAimTarget(AimTarget)) AimTarget=MagicConeTarget();
             FaceAim();
             GameAudio.Play(SoundCue.Attack);
-            model.PlayAction(-1,true);
+            attackCooldown = SkillDamageBudgets.BasicInterval(HeroClass);
+            if (mobilityTime > 0) attackCooldown *= .8f;
+            if (ActiveRunBonuses != null) attackCooldown /= ActiveRunBonuses.AttackSpeedMultiplier;
+            attackCooldown = Mathf.Max(.18f, attackCooldown);
+            model.PlayAction(-1,true,attackCooldown);
             attackAnimation = 1f;
             Color color = GameBalance.ClassColor(HeroClass);
             if (HeroClass == HeroClass.Vanguard)
             {
-                attackCooldown = SkillDamageBudgets.BasicInterval(HeroClass);
                 CombatFx.Slash(transform.position,transform.forward,2.3f,color);
                 float previousCounter = counterTime;
                 bool wasCounter = previousCounter > 0;
@@ -582,15 +589,11 @@ namespace Emberfall
             else
             {
                 bool ranger = HeroClass == HeroClass.Ranger;
-                attackCooldown = SkillDamageBudgets.BasicInterval(HeroClass);
                 Vector3 target=ValidAimTarget(AimTarget)?EnemyBodyPoint(AimTarget):new Vector3(aimPoint.x,1.15f,aimPoint.z);
                 float distance=CombatFx.Flat(target-transform.position).magnitude;
                 Vector3 muzzle=transform.position+Vector3.up*1.15f+transform.forward*Mathf.Min(.55f,distance*.3f);
                 CombatProjectile.BasicShot(this,session,muzzle,target,Damage(SkillDamageBudgets.BasicCoefficient(HeroClass)*(mobilityTime>0?1f+.12f*mobilityRank:1f)),color,ranger,AimTarget);
             }
-            if (mobilityTime > 0) attackCooldown *= .8f;
-            if (ActiveRunBonuses != null) attackCooldown /= ActiveRunBonuses.AttackSpeedMultiplier;
-            attackCooldown = Mathf.Max(.18f, attackCooldown);
         }
 
         private bool Melee(float range, float arc, CombatDamage damage, float knockback, float stun, float knockdown = 0, bool basic = false, int skillIndex = -1, int castId = 0)
