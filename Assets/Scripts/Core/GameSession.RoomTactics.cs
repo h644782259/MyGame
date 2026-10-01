@@ -80,6 +80,11 @@ namespace Emberfall
             return Vector3.Distance(enemy.transform.position,roomSupplier.transform.position)<=6 && WorldTraversal.HasLineOfSight(enemy.transform.position,roomSupplier.transform.position) ? .7f : 1;
         }
         private void OpenRoomGate()
-        {if(roomExitMarker!=null)roomExitMarker.SetActive(true);Notify("目标完成 · 北门已开；撤离会放弃剩余敌人的击杀收益");}
+        {
+            if(RoomChainRun!=null&&RoomChainRun.Room.Index==0&&RunChoices.CompletedWave==0)
+            {RunChoices.PrepareRoomChoice(1,Progression.Profile,MobileControls.Active,runSeed);UpdateTimeScale();}
+            if(roomExitMarker!=null)roomExitMarker.SetActive(true);
+            Notify(RunChoices.AwaitingChoice?"首房完成 · 选择本局打法":"目标完成 · 北门已开；撤离会放弃剩余敌人的击杀收益");
+        }
     }
 }

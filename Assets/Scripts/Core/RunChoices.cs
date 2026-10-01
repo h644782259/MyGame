@@ -10,7 +10,7 @@ namespace Emberfall
     }
 
     /// <summary>Per-expedition choices: never written into the permanent character stats.</summary>
-    public sealed class RunChoices
+    public sealed partial class RunChoices
     {
         private readonly HashSet<RunBlessing> active = new HashSet<RunBlessing>();
         private RunBlessing[] offer = new RunBlessing[0];

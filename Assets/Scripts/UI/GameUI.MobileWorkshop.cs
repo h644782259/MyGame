@@ -89,28 +89,24 @@ namespace Emberfall
                 () => RequestBuildPlanAction(BuildPlanAction.Reset));
             MobileWorkshopParagraph(ref y, width, GameBalance.ClassName(p.Profile.heroClass) + " · 职业能力", gold, draw, true, 16);
             MobileWorkshopParagraph(ref y, width, BuildCatalog.ClassSignatureDescription(p.Profile.heroClass), pale, draw);
-            if (p.Profile.heroClass == HeroClass.Arcanist)
+            for(int i=0;i<2;i++)
             {
-                for (int i = 0; i < 3; i++)
-                {
-                    var spec = (ElementalistSpecialization)i;
-                    MobileWorkshopParagraph(ref y, width, BuildCatalog.SpecializationDescription(spec), muted, draw);
-                    MobileWorkshopAction(ref y, width, BuildCatalog.SpecializationName(spec) + (p.Profile.specialization == spec ? " · 已选择" : " · 免费切换"),
-                        gold, session.IsInCamp && p.Profile.specialization != spec, draw,
-                        () => MobileWorkshopResult(p.SetSpecialization(spec, session.IsInCamp), "专精已切换"));
-                }
+                var info=CampRouteCards.Describe(p.Profile,true,i);
+                MobileWorkshopParagraph(ref y,width,info.Name,gold,draw,true,17);
+                MobileWorkshopParagraph(ref y,width,info.Loop,pale,draw);
+                MobileWorkshopParagraph(ref y,width,info.Requirements,info.Ready?jade:muted,draw);
+                if(p.Profile.heroClass==HeroClass.Arcanist)
+                {var spec=i==0?ElementalistSpecialization.Shatter:ElementalistSpecialization.Burn;
+                 MobileWorkshopAction(ref y,width,p.Profile.specialization==spec?"专精已选择":"切换专精",gold,session.IsInCamp&&p.Profile.specialization!=spec,draw,
+                    ()=>MobileWorkshopResult(p.SetSpecialization(spec,session.IsInCamp),"专精已切换"));}
+                else if(p.Profile.heroClass==HeroClass.Summoner)
+                {var route=(SummonerRoute)i;
+                 MobileWorkshopAction(ref y,width,p.Profile.summonerRoute==route?"契约已选择":"切换契约",gold,session.IsInCamp&&p.Profile.summonerRoute!=route,draw,
+                    ()=>MobileWorkshopResult(p.SetSummonerRoute(route, session.IsInCamp),"伙伴路线已切换"));}
             }
-            else if (p.Profile.heroClass == HeroClass.Summoner)
-            {
-                MobileWorkshopParagraph(ref y, width, "双契：常驻灵狼与星灵，按契约键指挥。群契：基础灵狼陪伴，契约增援为限时兽群。", pale, draw);
-                for (int i = 0; i < 2; i++)
-                {
-                    var route = (SummonerRoute)i;
-                    MobileWorkshopAction(ref y, width, (i == 0 ? "双契协同" : "群契围攻") + (p.Profile.summonerRoute == route ? " · 已选择" : " · 免费切换"),
-                        gold, session.IsInCamp && p.Profile.summonerRoute != route, draw,
-                        () => MobileWorkshopResult(p.SetSummonerRoute(route, session.IsInCamp), "伙伴路线已切换；现有伙伴在下次契约或出发时调整"));
-                }
-            }
+            if(p.Profile.heroClass==HeroClass.Arcanist)
+                MobileWorkshopAction(ref y,width,"恢复均衡专精",jade,session.IsInCamp&&p.Profile.specialization!=ElementalistSpecialization.None,draw,
+                    ()=>MobileWorkshopResult(p.SetSpecialization(ElementalistSpecialization.None,session.IsInCamp),"已恢复均衡专精"));
             MobileWorkshopParagraph(ref y, width, "精通与技能共用点数；50级起开放。每个方向10点启用初阶核心，20点自动增强；只能启用一个核心。", jade, draw);
             for (int i = 0; i < 4; i++)
             {

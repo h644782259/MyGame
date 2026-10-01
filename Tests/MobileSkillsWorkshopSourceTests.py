@@ -39,7 +39,7 @@ check('layout.FooterButton(1, 2)' in skills and skills.index('EndTouchScroll();'
       'learn action remains fixed outside detail scrolling')
 check('new Vector2[4]' in camp and 'layout.Tab(i, tabs.Length)' in camp and 'layout.TabbedBody' in camp, 'four camp tabs retain separate scroll state and fixed navigation')
 check('TouchRect(8, y, width - 16, 48)' in camp, 'workshop actions use 48 touch units rather than desktop pixel rows')
-check('ElementalistSpecialization)i' in camp and 'i < 3' in camp and 'SetSpecialization(spec, session.IsInCamp)' in camp, 'all three valid element specializations route to the real service')
+check('ElementalistSpecialization.Shatter:ElementalistSpecialization.Burn' in camp and 'SetSpecialization(spec,session.IsInCamp)' in camp and 'SetSpecialization(ElementalistSpecialization.None,session.IsInCamp)' in camp, 'all three valid element specializations route to the real service')
 check('SetSummonerRoute(route, session.IsInCamp)' in camp, 'both summoner routes use the existing camp gate')
 for call in ['MasteryLockReason(mastery)', 'LearnMastery(mastery)', 'SelectMasteryCore(mastery, session.IsInCamp)', 'RefundSkillRanks(session.IsInCamp)', 'ResetMastery(session.IsInCamp)']:
     check(call in camp, 'camp preserves ' + call)

@@ -482,7 +482,7 @@ namespace Emberfall
             {
                 if (!ChallengeRun) Player.Heal(Player.MaxHealth * .25f);
                 else HealingCharges = Mathf.Min(3, HealingCharges + 1);
-                RunChoices.Prepare(DungeonWave, Progression.Profile.heroClass, Progression.Profile.skillRanks, runSeed + DungeonWave * 97);
+                RunChoices.Prepare(DungeonWave, Progression.Profile.heroClass, RunChoices.UsableRanks(Progression.Profile,MobileControls.Active), runSeed + DungeonWave * 97);
                 UpdateTimeScale();
                 waveRoutine = null;
                 yield break;

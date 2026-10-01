@@ -15,19 +15,19 @@ namespace Emberfall
         {
             if(MobileControls.Active){DrawMobileBlessingChoice();return;}
             RunBlessing[] offer = session.RunChoices.Offer;
-            Rect w = Modal(1000, 470, "星烬祝福", "第 " + session.DungeonWave + " 波完成 · 选择一项，仅本局生效");
+            Rect w = Modal(1000, 470, "星烬祝福", session.RoomChainRun!=null?(session.RunChoices.CompletedWave==1?"首房 · 定打法 / 补资源与生存":"星泉 · 强化已有搭配 / 补短板"):"第 " + session.DungeonWave + " 波完成 · 选择一项，仅本局生效");
             for (int i=0;i<offer.Length;i++)
             {
                 Rect cardRect = new Rect(w.x+28+i*322,w.y+117,300,240);
                 bool chosen = i == selectedBlessing;
                 Fill(cardRect,chosen ? new Color(.12f,.2f,.21f):card); Border(cardRect,chosen?gold:jade*.5f);
                 Text(new Rect(cardRect.x+20,cardRect.y+23,260,28),RunChoices.Name(offer[i]),23,chosen?gold:pale,true);
-                bool compatible = RunChoices.IsCompatible(offer[i],session.Progression.Profile.heroClass,session.Progression.Profile.skillRanks);
-                Text(new Rect(cardRect.x+20,cardRect.y+63,260,21),compatible?"适合当前配置":"需要搭配对应技能",12,compatible?jade:muted);
+                bool compatible = RunChoices.IsCompatible(offer[i],session.Progression.Profile.heroClass,RunChoices.UsableRanks(session.Progression.Profile,false));
+                Text(new Rect(cardRect.x+20,cardRect.y+63,260,21),RunChoices.Association(offer[i],session.Progression.Profile,false),12,compatible?jade:muted);
                 Text(new Rect(cardRect.x+20,cardRect.y+102,260,93),RunChoices.Description(offer[i]),16,pale,false,true);
                 if(Button(new Rect(cardRect.x+20,cardRect.y+192,260,32),chosen?"已选择":"选择",chosen?gold:jade))selectedBlessing=i;
             }
-            if(Button(new Rect(w.x+310,w.y+392,380,46),session.RoomChainRun!=null?"确认星泉祝福":"确认并进入下一波",gold,selectedBlessing>=0&&selectedBlessing<offer.Length,null,true))
+            if(Button(new Rect(w.x+310,w.y+392,380,46),session.RoomChainRun!=null?"确认祝福并继续":"确认并进入下一波",gold,selectedBlessing>=0&&selectedBlessing<offer.Length,null,true))
             { if(session.ConfirmBlessing(selectedBlessing))selectedBlessing=-1; }
         }
 
@@ -46,24 +46,21 @@ namespace Emberfall
                 string[] signatures={"真正躲过攻击后，2秒内下一次普攻反击。","冰霜新星 → 陨星，消耗霜印碎冰。","普攻积累三层毒，以扇形箭引爆。","幼狼从开场协战；普攻让伙伴短时集火。"};
                 Text(new Rect(w.x+32,w.y+208,880,38),signatures[(int)p.Profile.heroClass],18,pale,false,true);
                 if(new Rect(w.x+32,w.y+167,880,81).Contains(Mouse))tooltip=BuildCatalog.ClassSignatureDescription(p.Profile.heroClass);
-                if(p.Profile.heroClass==HeroClass.Arcanist)
+                for(int i=0;i<2;i++)
                 {
-                    for(int i=0;i<2;i++)
-                    {
-                        ElementalistSpecialization spec=i==0?ElementalistSpecialization.Shatter:ElementalistSpecialization.Burn;
-                        Rect c=new Rect(w.x+32+i*458,w.y+267,430,149);Fill(c,card);
-                        Text(new Rect(c.x+16,c.y+15,398,67),BuildCatalog.SpecializationDescription(spec),15,muted,false,true);
-                        if(Button(new Rect(c.x+16,c.y+96,398,36),BuildCatalog.SpecializationName(spec)+(p.Profile.specialization==spec?" ✓":""),gold,session.IsInCamp&&p.Profile.specialization!=spec))Feedback(p.SetSpecialization(spec,session.IsInCamp),"专精已切换");
-                    }
+                    int route=i;var info=CampRouteCards.Describe(p.Profile,false,i);
+                    Rect c=new Rect(w.x+32+i*458,w.y+254,430,174);Fill(c,card);
+                    Text(new Rect(c.x+14,c.y+10,402,25),info.Name,19,gold,true);
+                    Text(new Rect(c.x+14,c.y+39,402,36),info.Loop,14,pale,false,true);
+                    Text(new Rect(c.x+14,c.y+79,402,50),info.Requirements,13,info.Ready?jade:muted,false,true);
+                    if(p.Profile.heroClass==HeroClass.Arcanist)
+                    {var spec=i==0?ElementalistSpecialization.Shatter:ElementalistSpecialization.Burn;
+                     if(Button(new Rect(c.x+14,c.y+137,402,28),p.Profile.specialization==spec?"专精已选择":"切换专精",gold,session.IsInCamp&&p.Profile.specialization!=spec))Feedback(p.SetSpecialization(spec,session.IsInCamp),"专精已切换");}
+                    else if(p.Profile.heroClass==HeroClass.Summoner)
+                    {var path=(SummonerRoute)route;
+                     if(Button(new Rect(c.x+14,c.y+137,402,28),p.Profile.summonerRoute==path?"契约已选择":"切换契约",gold,session.IsInCamp&&p.Profile.summonerRoute!=path))Feedback(p.SetSummonerRoute(path,session.IsInCamp),"伙伴路线已切换");}
+                    else Text(new Rect(c.x+14,c.y+137,402,25),"按缺项整备 · 不自动改配装",12,muted);
                 }
-                else if(p.Profile.heroClass==HeroClass.Summoner)
-                {
-                    Text(new Rect(w.x+32,w.y+268,884,45),"双契：常驻狼与星灵，按契约键指挥；群契：基础狼陪伴，契约增援限时兽群。",16,pale,false,true);
-                    for(int i=0;i<2;i++) { SummonerRoute route=(SummonerRoute)i;
-                        if(Button(new Rect(w.x+32+i*458,w.y+337,430,46),(i==0?"双契协同":"群契围攻")+(p.Profile.summonerRoute==route?" ✓":""),gold,session.IsInCamp&&p.Profile.summonerRoute!=route))
-                            Feedback(p.SetSummonerRoute(route,session.IsInCamp),"伙伴路线已切换；现有伙伴在下次契约或出发时调整"); }
-                }
-                else Text(new Rect(w.x+32,w.y+268,884,112),"招牌能力从第一场战斗可用。将职业机制与图鉴装备、波间祝福组合，尝试不同打法。\n\n营地星核随已通关阶数点亮。",17,muted,false,true);
                 for(int i=0;i<4;i++)
                 {
                     MasteryType mastery=(MasteryType)i;Rect c=new Rect(w.x+32+i*229,w.y+435,214,134);

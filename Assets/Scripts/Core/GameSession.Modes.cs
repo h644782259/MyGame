@@ -88,7 +88,7 @@ namespace Emberfall
    if(ModeRun.Status==ExpeditionModeStatus.AwaitingSpawn&&!arenaAwaitingBlessing)
    {
     arenaAwaitingBlessing=true;if(!ChallengeRun)Player.Heal(Player.MaxHealth*.2f);else HealingCharges=Mathf.Min(3,HealingCharges+1);
-    RunChoices.Prepare(ModeRun.CompletedPhases,Progression.Profile.heroClass,Progression.Profile.skillRanks,runSeed+ModeRun.CompletedPhases*197);UpdateTimeScale();
+    RunChoices.Prepare(ModeRun.CompletedPhases,Progression.Profile.heroClass,RunChoices.UsableRanks(Progression.Profile,MobileControls.Active),runSeed+ModeRun.CompletedPhases*197);UpdateTimeScale();
    }
    FinalizeArenaResult();
   }

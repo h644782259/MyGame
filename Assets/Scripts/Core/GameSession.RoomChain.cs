@@ -23,7 +23,7 @@ namespace Emberfall
    BuildRoomObjective();if(RoomChainRun.Finished){FinalizeRoomChain();return;}
    if(plan.Index==RoomTactics.EventRoom(runSeed))BuildSideEvent();
    if(plan.Interlude)
-   {Player.Heal(Player.MaxHealth*.25f);RunChoices.Prepare(1,Progression.Profile.heroClass,Progression.Profile.skillRanks,runSeed+577);UpdateTimeScale();return;}
+   {Player.Heal(Player.MaxHealth*.25f);RunChoices.PrepareRoomChoice(2,Progression.Profile,MobileControls.Active,runSeed);UpdateTimeScale();return;}
    var occupied=new List<Vector3>();
    for(int index=0;index<plan.EnemyCount;index++)
    {
@@ -65,9 +65,14 @@ namespace Emberfall
   }
   private bool ConfirmRoomInterlude(int index)
   {
-   if(RoomChainRun==null||!RoomChainRun.Room.Interlude||!RunChoices.Choose(index)||!RoomChainRun.ChooseInterlude())return false;
-   if(roomExitMarker!=null)roomExitMarker.SetActive(true);UpdateTimeScale();Notify("祝福已选 · 北门通往最终首领");return true;
+   if(RoomChainRun==null||RoomChainRun.Finished||!HasStarted||!InDungeon||IsDead||Paused||pauseState.BackgroundPaused)return false;
+   bool first=RoomChainRun.Room.Index==0&&RoomChainRun.DoorUnlocked&&RunChoices.CompletedWave==1;
+   bool second=RoomChainRun.Room.Interlude&&!RoomChainRun.DoorUnlocked&&RunChoices.CompletedWave==2;
+   if((!first&&!second)||!RunChoices.Choose(index))return false;
+   if(second&&!RoomChainRun.ChooseInterlude())return false;
+   if(roomExitMarker!=null)roomExitMarker.SetActive(true);UpdateTimeScale();Notify(second?"祝福已选 · 北门通往最终首领":"祝福已选 · 继续下一间");return true;
   }
+
   private void FinalizeRoomChain()
   {
    if(RoomChainRun==null||!RoomChainRun.Finished||roomResultRecorded)return;
