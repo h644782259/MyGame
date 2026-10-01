@@ -85,6 +85,14 @@ namespace Emberfall
             return state;
         }
 
+        public static void DescribeRoster(PlayerController owner,out int count,out float shortestLifetime)
+        {
+            count=0;shortestLifetime=float.PositiveInfinity;
+            foreach(var pet in active)
+                if(pet!=null&&pet.IsAlive&&pet.Owner==owner)
+                {count++;if(!pet.IsPermanent)shortestLifetime=Mathf.Min(shortestLifetime,pet.RemainingLifetime);}
+        }
+
         public static SummonedCompanion[] Snapshot(PlayerController owner)
         {
             return active.FindAll(pet => pet != null && pet.IsAlive && pet.Owner == owner).ToArray();

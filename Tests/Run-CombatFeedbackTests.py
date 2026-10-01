@@ -17,7 +17,9 @@ spec = importlib.util.spec_from_file_location('cloud_validation', ROOT / 'Tools/
 helper = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(helper)
 checks = [('MobileCombatFeedbackTests', ['Assets/Scripts/UI/MobileCombatPresentation.cs']),
-          ('CombatTextLayoutTests', ['Assets/Scripts/Combat/CombatTextLayout.cs'])]
+          ('CombatTextLayoutTests', ['Assets/Scripts/Combat/CombatTextLayout.cs']),
+          ('CombatOpportunityTests', ['Assets/Scripts/UI/CombatOpportunityPresentation.cs']),
+          ('MobileControlLayoutTests', ['Assets/Scripts/UI/MobileControlLayout.cs'])]
 report = {'scope': 'Pure production state/geometry; no Unity execution or rendered validation', 'checks': []}
 with tempfile.TemporaryDirectory(prefix='EmberfallFeedback-') as temporary:
     scratch = Path(temporary)

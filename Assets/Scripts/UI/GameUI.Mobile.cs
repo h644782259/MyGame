@@ -89,6 +89,8 @@ namespace Emberfall
             if(session.InDungeon&&!session.SpecialAdventure)
             {blockedRects.Add(TouchRect(l.EncounterText));Text(TouchRect(l.EncounterText),session.DungeonCleared?"遗迹肃清":"第 "+session.DungeonWave+" / "+session.TotalWaves+" 波",TouchFont(12),pale,true,false,TextAnchor.MiddleCenter);}
             DrawMobileHotbar();
+            DrawCompanionCommands();
+            Text(TouchRect(22,58,155,11),CurrentCombatOpportunity(),TouchFont(10),gold,true);
             string interaction=session.NearRoomExit?"进入下一间":session.SideEventAvailable?"晶核挑战":session.NearbyHubNpc!=HubNpcKind.None?HubNpcMobileLabel(session.NearbyHubNpc):session.IsInCamp?"营地工坊":session.InDungeon?"返回营地":session.IsNearDungeonEntrance?"进入副本":"靠近入口";
             Rect interact=TouchRect(l.Interact);blockedRects.Add(interact);
             // One pointer owner handles real touches and simulated/attached mice.

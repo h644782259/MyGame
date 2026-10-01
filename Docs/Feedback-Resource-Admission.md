@@ -74,3 +74,26 @@ rejection checks and adds independent-pool saturation. It uses a dimension-only
 camera render target for layout coordinates (never Create/Render) and restores
 the previous target. These engine checks still require Unity execution. No new
 screenshot, rendered text readability, frame-time or real-device result is claimed.
+
+## Single opportunity and free companion orders
+
+The HUD now uses at most one class opportunity line. It reads the living current
+scene target, counter timer or live companion roster; dead, paused and changed
+combat epochs suppress prior state. Frost/burning, three poison stacks and
+vulnerability are actual status flags. The frost message claims shatter readiness
+only when the non-burn route's meteor is learned and presently usable. No
+reignition mechanic is invented from the target's color or the presence of fire.
+The current charging skill is explicitly marked, while unlocked ready skills
+retain a small ready indicator.
+
+Summoners have two separate free buttons on touch and desktop: focus and recall.
+The touch areas are 48 logical units wide in the gap left of the two skill rows;
+these do not consume any of the ten skill slots. Physical touch/mouse ownership
+submits each command once; the mobile IMGUI surface does not submit a duplicate.
+They call only `SetFreeFocus` / `FreeRecall`, never a contract skill. An absent
+or out-of-range target gets a short local result. The existing free-order APIs
+own all gameplay restrictions, and remain independent of contract cooldowns.
+
+The standalone feedback runner additionally exercises opportunity formatting and
+all control geometry, including 568×320. `CombatOpportunitySourceTests.py` checks
+command dispatch/lifecycle wiring. This is not a touch-device or Unity visual test.

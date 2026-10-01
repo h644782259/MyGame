@@ -731,6 +731,8 @@ namespace Emberfall
                 tooltip = PlatformText(session.Objective + (session.InDungeon ? "\n通关后按 T 返回营地。远离敌人后可按 H 提前撤离。" : "\n靠近紫色传送门按 T 进入副本。远离敌人后可按 H 回营。"));
             DrawMinimap();
             DrawHotbar();
+            DrawCompanionCommands();
+            Text(new Rect(hotbarBounds.x-170,hotbarBounds.y-22,622,18),CurrentCombatOpportunity(),12,gold,true,false,TextAnchor.MiddleCenter);
             DrawChargeProgress();
             DrawDungeonStatus();
             DrawEdgeActions();

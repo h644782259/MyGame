@@ -19,7 +19,8 @@ namespace Emberfall
             if(previousOwner!=hero||previousEpoch!=hero.CombatEpoch)
             {Hide();previousOwner=hero;previousEpoch=hero.CombatEpoch;return;}
             Ensure();
-            EnemyController target=hero.AimTarget,focus=hero.FocusTarget;
+            EnemyController target=hero.AimTarget,focus=hero.HeroClass==HeroClass.Summoner?SummonedCompanion.ExplicitFocus(hero):null;
+            if(focus==null)focus=hero.FocusTarget;
             Mark(0,Valid(target)?target.transform.position:Vector3.zero,Valid(target),.72f,new Color(.6f,.9f,1f),0);
             Mark(1,Valid(focus)?focus.transform.position:Vector3.zero,Valid(focus),1f,new Color(.45f,1f,.55f),1);
             var charge=hero.GetComponent<SkillChargeController>();

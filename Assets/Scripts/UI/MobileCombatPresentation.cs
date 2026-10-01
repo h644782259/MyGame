@@ -4,10 +4,11 @@ namespace Emberfall
     // Pure state ordering shared by the labels and rejected-tap feedback.
     public static class MobileCombatPresentation
     {
-        public static string Skill(bool learned,bool passive,float cooldown,float energy,float cost,bool limitedHealing,int charges)
+        public static string Skill(bool learned,bool passive,float cooldown,float energy,float cost,bool limitedHealing,int charges,bool charging=false)
         {
             if(!learned)return "未学";
             if(passive)return "被动";
+            if(charging)return "蓄力";
             if(cooldown>.01f)return "冷却";
             if(energy<cost)return "缺能";
             if(limitedHealing&&charges<=0)return "限疗空";

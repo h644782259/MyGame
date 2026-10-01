@@ -81,7 +81,7 @@ namespace Emberfall
         {
             if (!Active || instance == null || instance.session == null || instance.session.InputBlocked) return false;
             Vector2 point = instance.ToUI(screen);
-            return Area(Layout.MoveZone).Contains(point) || instance.Attack.Contains(point) || instance.Dodge.Contains(point) || instance.Potion.Contains(point) || Area(Layout.Interact).Contains(point) || instance.Jump.Contains(point) || instance.Cancel.Contains(point);
+            return (instance.ui!=null&&instance.ui.CompanionCommandsVisible&&(Area(Layout.FocusCommand).Contains(point)||Area(Layout.RecallCommand).Contains(point))) || Area(Layout.MoveZone).Contains(point) || instance.Attack.Contains(point) || instance.Dodge.Contains(point) || instance.Potion.Contains(point) || Area(Layout.Interact).Contains(point) || instance.Jump.Contains(point) || instance.Cancel.Contains(point);
         }
         private void Update()
         {
@@ -137,6 +137,8 @@ namespace Emberfall
                     if (targeting != null && targeting.IsTargeting) { targeting.Confirm(); role = Role.Consumed; }
                     else role = Role.Attack;
                 }
+                else if (ui!=null&&ui.CompanionCommandsVisible&&(Area(Layout.FocusCommand).Contains(point)||Area(Layout.RecallCommand).Contains(point)))
+                {ui.ActivateFreeCommand(Area(Layout.RecallCommand).Contains(point));role=Role.Consumed;}
                 else if (Area(Layout.Interact).Contains(point)) { if(ui!=null)ui.ActivateMobileInteraction(finger);role=Role.Consumed; }
                 else if (Dodge.Contains(point)) { CheckDodgeFeedback(); dodge = true; role = Role.Consumed; }
                 else if (Potion.Contains(point)) { CheckPotionFeedback(); potion = true; role = Role.Consumed; }

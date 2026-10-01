@@ -7,6 +7,8 @@ public static class MobileCombatFeedbackTests
     public static string Run()
     {
         count=0;
+        Check(MobileCombatPresentation.Skill(true,false,0,100,20,false,0,true)=="蓄力","Current cast has explicit charging state");
+        Check(MobileCombatPresentation.Skill(false,false,0,100,20,false,0,true)=="未学","Charging cannot make unlearned slot available");
         Check(MobileCombatPresentation.Skill(false,false,3,0,20,true,0)=="未学","Unlearned takes precedence");
         Check(MobileCombatPresentation.Skill(true,true,3,0,20,true,0)=="被动","Passive cannot look like a castable skill");
         Check(MobileCombatPresentation.Skill(true,false,3,0,20,true,0)=="冷却","Cooldown priority");

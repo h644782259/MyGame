@@ -15,7 +15,7 @@ namespace Emberfall
         public readonly float Scale, Width, Height;
         public readonly bool Tablet;
         public readonly Area Joystick, MoveZone, Attack, Dodge, Potion, Jump, Cancel, Menu, Inventory, SkillsMenu, Interact;
-        public readonly Area EncounterText, BossHealth, Notice, AdventureStatus;
+        public readonly Area EncounterText, BossHealth, Notice, AdventureStatus, FocusCommand, RecallCommand;
         public readonly Area[] Skills = new Area[10];
         public MobileControlLayout(float pixelWidth,float pixelHeight,float dpi)
         {
@@ -37,6 +37,8 @@ namespace Emberfall
             Interact=new Area(84,Height-235,120,48);
             for(int i=0;i<Skills.Length;i++)
                 Skills[i]=Centered(Width-286+(i%5)*62,Height-(i<5?201:137),54);
+            FocusCommand=new Area(Skills[0].X-50,Skills[0].Y+3,48,48);
+            RecallCommand=new Area(Skills[5].X-50,Skills[5].Y+3,48,48);
             Menu=Centered(Width-32,32,48);
             Inventory=Centered(Width-91,32,48);
             SkillsMenu=Centered(Width-150,32,48);

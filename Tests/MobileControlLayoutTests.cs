@@ -12,7 +12,7 @@ public static class MobileControlLayoutTests
         foreach(var d in devices)
         {
             var l=new MobileControlLayout(d[0],d[1],d[2]);
-            var targets=new List<MobileControlLayout.Area>{l.Joystick,l.Attack,l.Dodge,l.Potion,l.Jump,l.Menu,l.Inventory,l.SkillsMenu,l.Interact};targets.AddRange(l.Skills);
+            var targets=new List<MobileControlLayout.Area>{l.Joystick,l.Attack,l.Dodge,l.Potion,l.Jump,l.Menu,l.Inventory,l.SkillsMenu,l.Interact,l.FocusCommand,l.RecallCommand};targets.AddRange(l.Skills);
             foreach(var r in targets)
             {
                 Check(r.Width>=48&&r.Height>=48,"minimum 48 logical-unit touch targets");
