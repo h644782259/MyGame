@@ -4,6 +4,11 @@ namespace Emberfall
 {
     public sealed class EnemyController : MonoBehaviour
     {
+        public enum ThreatTier { Normal, Elite, Boss }
+        public ThreatTier Tier { get; private set; }
+        public bool IsAggro { get { return aggro; } }
+        public bool IsStunned { get { return stunTime > 0; } }
+        public EnemyStatusEffects StatusEffects { get; private set; }
         public float Health { get; private set; }
         public float MaxHealth { get; private set; }
         public bool IsDead { get { return Health <= 0; } }
@@ -29,8 +34,10 @@ namespace Emberfall
             session = game;
             Kind = kind;
             IsBoss = boss;
+            Tier = boss ? ThreatTier.Boss : game.InDungeon ? ThreatTier.Elite : ThreatTier.Normal;
             level = Mathf.Max(1,level);
-            DisplayName = boss ? "星蚀巨像" : new[] { "森林史莱姆", "盗宝哥布林", "幽光魔灵", "遗迹守卫" }[(int)kind];
+            DisplayName = (Tier == ThreatTier.Boss ? "首领 · " : Tier == ThreatTier.Elite ? "精英 · " : "普通 · ") +
+                (boss ? "星蚀巨像" : new[] { "森林史莱姆", "盗宝哥布林", "幽光魔灵", "遗迹守卫" }[(int)kind]);
             gameObject.name = DisplayName;
             float[] baseHealth = { 32, 46, 35, 100 };
             float[] healthGrowth = { 9, 12, 10, 24 };
@@ -43,6 +50,7 @@ namespace Emberfall
             patrolPhase = Random.value * Mathf.PI * 2f;
             attackCooldown = Random.Range(.5f,1.2f);
             model = CombatModel.Enemy(transform,kind,boss);
+            StatusEffects = gameObject.AddComponent<EnemyStatusEffects>();
             BuildHealthBar();
         }
 
@@ -56,7 +64,7 @@ namespace Emberfall
             healthBackgroundMaterial = new Material(Shader.Find("Unlit/Color"));
             healthBackgroundMaterial.color = new Color(.12f,.12f,.19f);
             healthFillMaterial = new Material(Shader.Find("Unlit/Color"));
-            healthFillMaterial.color = IsBoss ? new Color(1f,.43f,.28f) : new Color(.94f,.31f,.41f);
+            healthFillMaterial.color = ThreatColor();
             Transform background = HealthQuad("Background",healthBackgroundMaterial);
             background.localScale = new Vector3(width+.06f,.14f,1);
             healthFill = HealthQuad("Health",healthFillMaterial);
@@ -77,6 +85,7 @@ namespace Emberfall
         public void TakeDamage(float amount, Vector3 direction, float knockback = 0f, float stun = 0f)
         {
             if (session == null || IsDead || amount <= 0) return;
+            amount *= StatusEffects == null ? 1 : StatusEffects.DamageMultiplier;
             Health = Mathf.Max(0,Health-amount);
             aggro = true;
             hurtTime = .15f;
@@ -102,6 +111,8 @@ namespace Emberfall
             if(duration>=.45f && !IsBoss) CancelAttack();
         }
 
+        internal void Provoke() { if (!IsDead) aggro = true; }
+
         private void Update()
         {
             if (session == null || session.Player == null || IsDead || !session.HasStarted || session.Paused || session.IsDead) return;
@@ -115,8 +126,12 @@ namespace Emberfall
             knockVelocity = Vector3.Lerp(knockVelocity,Vector3.zero,Mathf.Min(1,dt*12f));
             Vector3 delta = CombatFx.Flat(session.Player.transform.position-transform.position);
             float distance = delta.magnitude;
-            if (session.InDungeon || distance < (IsBoss?15f:9f)) aggro = true;
+            float effectiveSpeed = speed * (StatusEffects == null ? 1 : StatusEffects.MoveMultiplier);
+            // Ordinary wildlife stays neutral regardless of proximity. Damage/control
+            // explicitly provokes retaliation; only elites and bosses acquire on sight.
+            if (Tier != ThreatTier.Normal && (session.InDungeon || distance < (IsBoss?15f:9f))) aggro = true;
             if (!session.InDungeon && distance > 17f) aggro = false;
+            healthFillMaterial.color = ThreatColor();
             if (stunTime > 0)
             {
                 model.Animate(0,attackAnimation,hurtTime>0);
@@ -149,12 +164,12 @@ namespace Emberfall
                 else if (distance > range*.82f)
                 {
                     Vector3 step = delta.normalized + Separation();
-                    transform.position += Vector3.ClampMagnitude(step,1.2f)*speed*dt;
+                    transform.position += Vector3.ClampMagnitude(step,1.2f)*effectiveSpeed*dt;
                     model.Animate(1,attackAnimation,hurtTime>0);
                 }
                 else if (Kind==EnemyKind.Wisp && distance<3.5f)
                 {
-                    transform.position-=delta.normalized*speed*.7f*dt;
+                    transform.position-=delta.normalized*effectiveSpeed*.7f*dt;
                     model.Animate(.5f,attackAnimation,hurtTime>0);
                 }
                 else model.Animate(0,attackAnimation,hurtTime>0);
@@ -163,7 +178,7 @@ namespace Emberfall
             {
                 Vector3 patrol = origin + new Vector3(Mathf.Sin(Time.time*.28f+patrolPhase),0,Mathf.Cos(Time.time*.28f+patrolPhase)) * 1.4f;
                 Vector3 toPatrol = CombatFx.Flat(patrol-transform.position);
-                transform.position += Vector3.ClampMagnitude(toPatrol,1)*speed*.22f*dt;
+                transform.position += Vector3.ClampMagnitude(toPatrol,1)*effectiveSpeed*.22f*dt;
                 if(toPatrol.sqrMagnitude>.1f) transform.rotation=Quaternion.Slerp(transform.rotation,Quaternion.LookRotation(toPatrol),dt*2f);
                 model.Animate(.2f,0,false);
             }
@@ -182,6 +197,13 @@ namespace Emberfall
                 if(distance>.01f && distance<1.35f) force+=away.normalized*(1.35f-distance)*1.3f;
             }
             return Vector3.ClampMagnitude(force,.9f);
+        }
+
+        private Color ThreatColor()
+        {
+            if (Tier == ThreatTier.Boss) return new Color(1f, .3f, .25f);
+            if (Tier == ThreatTier.Elite) return new Color(1f, .72f, .25f);
+            return aggro ? new Color(1f, .46f, .27f) : new Color(.4f, .87f, .6f);
         }
 
         private void BeginAttack()

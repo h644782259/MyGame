@@ -14,6 +14,7 @@ namespace Emberfall
         private float damage, range, interval, age, nextEvent;
         private Vector3 target, forward, origin;
         private Color color;
+        private EnemyController lockedTarget;
 
         public static void Spawn(PlayerController hero, GameSession game, int index, int skillRank, Vector3 aim, Vector3 direction, float strength, Color tint)
         {
@@ -49,7 +50,7 @@ namespace Emberfall
             }
             else
             {
-                if (skill == 7) { steps = 14 + (rank-1)*3; interval = .12f; }
+                if (skill == 7) { steps = 14 + (rank-1)*3; interval = .12f; lockedTarget = Nearest(target,10f*range); }
                 if (skill == 9) { steps = 9 + rank-1; interval = .25f; nextEvent = .6f; }
             }
             if (skill >= 6)
@@ -192,13 +193,14 @@ namespace Emberfall
                     break;
                 case 5:
                     AdvancedSkillVfx.Rune(owner,target,3.7f*range,new Color(.55f,.95f,.3f),4.3f+rank,rank+1);
-                    CombatArea.Spawn(owner,session,target,3.7f*range,damage*1.05f,.3f,.25f,3.6f+(rank-1)*.8f,.6f,new Color(.51f,.88f,.32f),false,false,rank==3?2.8f:0,rank==3?damage*2.5f:0);
+                    CombatArea.Spawn(owner,session,target,3.7f*range,damage*.7f,0,.25f,3.6f+(rank-1)*.8f,.6f,new Color(.51f,.88f,.32f),false,false,rank==3?2.8f:0,rank==3?damage*2.5f:0,5,rank);
                     break;
                 case 7:
-                    EnemyController mark=Nearest(target,10f*range);
+                    EnemyController mark=lockedTarget != null && !lockedTarget.IsDead ? lockedTarget : null;
+                    if (mark != null && mark.StatusEffects != null) mark.StatusEffects.Mark(4f, .08f + rank * .04f);
                     Vector3 fireDirection=mark!=null?CombatFx.Flat(mark.transform.position-owner.transform.position).normalized:forward;
                     Vector3 side=Vector3.Cross(Vector3.up,fireDirection)*(step%2==0?-.55f:.55f);
-                    CombatProjectile.Friendly(owner,session,owner.transform.position+side+fireDirection,fireDirection,damage*1.05f,color,rank>=2,true,false,range,24f*range,rank==3?mark:null);
+                    CombatProjectile.Friendly(owner,session,owner.transform.position+side+fireDirection,fireDirection,damage*1.05f,color,rank>=2,true,false,range,24f*range,mark);
                     if(step%4==0) AdvancedSkillVfx.Beam(owner,owner.transform.position+side+Vector3.up,owner.transform.position+fireDirection*7f+side+Vector3.up,color,.2f,.07f);
                     break;
                 case 9:

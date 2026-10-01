@@ -61,7 +61,13 @@ namespace Emberfall.Editor
             };
             try
             {
-                for (int hero = 0; hero < 3; hero++) ValidateClass((HeroClass)hero);
+                for (int hero = 0; hero < 3; hero++)
+                {
+                    ValidateClass((HeroClass)hero);
+                    ValidateSkillTreeGates((HeroClass)hero);
+                    ValidateSkillTreeBranches((HeroClass)hero);
+                    ValidatePreviouslyLearnedTreeSkill((HeroClass)hero);
+                }
                 ValidateLegacyJson();
                 ValidateDamagedJson();
                 ValidateBackupRecovery();
@@ -178,6 +184,97 @@ namespace Emberfall.Editor
             report.passedStages.Add("legacy JSON migration and conserved rank refunds");
         }
 
+        private static void ValidateSkillTreeGates(HeroClass hero)
+        {
+            int[] expectedLevels = { 2, 4, 6, 4, 10, 6, 13, 20, 13, 30 };
+            for (int skill = 0; skill < GameBalance.SkillCount; skill++)
+            {
+                string name = "tree-gates-" + hero + "-" + skill;
+                var service = Fresh(name, hero);
+                Check(GameBalance.SkillRequiredLevels[skill] == expectedLevels[skill], name + ": first-rank tree level matches design");
+                int prerequisiteRanks = 0;
+                for (int rank = 1; rank <= 3; rank++)
+                {
+                    int level = expectedLevels[skill] + (rank == 1 ? 0 : rank == 2 ? 8 : 18);
+                    ReachLevel(service, level - 1);
+                    if (rank == 1)
+                    {
+                        LearnPrerequisites(service, skill);
+                        prerequisiteRanks = SpentPoints(service);
+                    }
+                    int points = service.Profile.skillPoints;
+                    Check(!service.LearnSkill(skill) && service.Profile.skillRanks[skill] == rank - 1 && service.Profile.skillPoints == points, name + ": rank " + rank + " is rejected one level early without spending");
+                    Check(service.SkillLockReason(skill).Contains(level.ToString()), name + ": lock explains exact next-rank level");
+                    ReachLevel(service, level);
+                    points = service.Profile.skillPoints;
+                    Check(service.LearnSkill(skill) && service.Profile.skillRanks[skill] == rank && service.Profile.skillPoints == points - 1, name + ": rank learned at its exact level through real prerequisites");
+                }
+                Check(!service.LearnSkill(skill) && SpentPoints(service) == prerequisiteRanks + 3 && service.Profile.skillPoints + SpentPoints(service) == service.Profile.level - 1, name + ": rank cap and lifetime point budget survive branch learning");
+                var restored = new ProgressionService(CaseDirectory(name));
+                Check(restored.Load() && restored.Profile.skillRanks[skill] == 3 && SpentPoints(restored) == prerequisiteRanks + 3, name + ": evolved skill and all prerequisite ranks persist");
+            }
+            report.passedStages.Add(hero + ": exact level boundaries for all thirty ranks with recursively learned prerequisites");
+        }
+
+        private static void ValidateSkillTreeBranches(HeroClass hero)
+        {
+            var locked = Fresh("tree-locked-" + hero, hero);
+            ReachLevel(locked, 100);
+            int changes = 0;
+            locked.Changed += () => changes++;
+            for (int skill = 1; skill < GameBalance.SkillCount; skill++)
+                Check(!locked.PrerequisitesMet(skill) && !locked.LearnSkill(skill) && locked.SkillLockReason(skill).Contains("前置") && locked.Profile.skillRanks[skill] == 0 && locked.Profile.skillPoints == 99 && changes == 0, hero + ": high level cannot bypass unlearned predecessor for skill " + skill);
+            Check(locked.PrerequisitesMet(0) && !locked.PrerequisitesMet(-1) && !locked.PrerequisitesMet(GameBalance.SkillCount), hero + ": root and invalid prerequisite queries are safe");
+            int[][] pairs = { new[] { 1, 3, 4 }, new[] { 2, 5, 6 }, new[] { 6, 8, 13 } };
+            foreach (int[] pair in pairs)
+            {
+                var branches = Fresh("tree-pair-" + hero + "-" + pair[2], hero);
+                ReachLevel(branches, pair[2]);
+                LearnPrerequisites(branches, pair[0]);
+                LearnPrerequisites(branches, pair[1]);
+                int points = branches.Profile.skillPoints;
+                Check(branches.LearnSkill(pair[0]) && branches.Profile.skillRanks[pair[1]] == 0, hero + ": learning one branch leaves same-level sibling unlearned");
+                Check(branches.LearnSkill(pair[1]) && branches.Profile.level == pair[2] && branches.Profile.skillPoints == points - 2, hero + ": both same-level nodes accept their own skill point");
+                Check(branches.Profile.skillPoints + SpentPoints(branches) == branches.Profile.level - 1, hero + ": same-level branches conserve earned points");
+            }
+            foreach (int first in new[] { 7, 6 })
+            {
+                int missing = first == 7 ? 6 : 7;
+                var ultimate = Fresh("tree-ultimate-" + hero + "-" + first, hero);
+                ReachLevel(ultimate, 30);
+                LearnBranch(ultimate, first);
+                int points = ultimate.Profile.skillPoints;
+                Check(ultimate.Profile.skillRanks[missing] == 0 && !ultimate.PrerequisitesMet(9) && !ultimate.LearnSkill(9) && ultimate.Profile.skillPoints == points, hero + ": ultimate rejects either missing predecessor without spending");
+                Check(ultimate.SkillLockReason(9).Contains(GameBalance.SkillName(hero, missing)), hero + ": ultimate lock names its missing branch");
+                LearnBranch(ultimate, missing);
+                Check(ultimate.PrerequisitesMet(9) && ultimate.LearnSkill(9) && ultimate.Profile.skillRanks[9] == 1, hero + ": ultimate unlocks with both real branches learned");
+                Check(ultimate.Profile.skillRanks[8] == 0 && ultimate.Profile.skillPoints + SpentPoints(ultimate) == 29, hero + ": ultimate leaves optional passive unlearned and conserves points");
+            }
+            report.passedStages.Add(hero + ": high-level prerequisite rejection, same-level siblings and both ultimate predecessor directions");
+        }
+
+        private static void ValidatePreviouslyLearnedTreeSkill(HeroClass hero)
+        {
+            string name = "legacy-tree-" + hero;
+            var seed = Fresh(name, hero);
+            ReachLevel(seed, 50);
+            // This is an old-save fixture from before prerequisite gates existed.
+            // Ordinary learning fixtures always use LearnBranch instead.
+            var legacy = JsonUtility.FromJson<GameProfile>(JsonUtility.ToJson(seed.Profile));
+            legacy.skillRanks = new[] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 };
+            legacy.skillPoints = 48;
+            WriteEnvelope(name, JsonUtility.ToJson(legacy));
+            var restored = new ProgressionService(CaseDirectory(name));
+            Check(restored.Load() && restored.Profile.skillRanks[9] == 1 && restored.Profile.skillPoints == 48 && !restored.PrerequisitesMet(9), name + ": previously learned ultimate survives without auto-learning parents");
+            Check(restored.Profile.heroClass == hero && restored.Profile.weaponId == seed.Profile.weaponId && restored.AssignSkill(0, 9), name + ": class equipment and active assignment survive");
+            Check(restored.LearnSkill(9) && restored.Profile.skillRanks[9] == 2 && restored.Profile.skillPoints == 47, name + ": grandfathered learned skill evolves at its real rank level");
+            Check(!restored.LearnSkill(7) && restored.Profile.skillRanks[7] == 0, name + ": grandfathering does not bypass an unlearned branch");
+            restored.Save();
+            var roundTrip = new ProgressionService(CaseDirectory(name));
+            Check(roundTrip.Load() && roundTrip.Profile.skillRanks[9] == 2 && roundTrip.Profile.skillPoints == 47 && roundTrip.Profile.equippedSkills[0] == 9 && SpentPoints(roundTrip) == 2, name + ": learned skill and point balance survive another real JsonUtility round trip");
+            report.passedStages.Add(name + ": learned legacy skill retained and evolved without retroactive prerequisite grants");
+        }
+
         private static void ValidateDamagedJson()
         {
             const string name = "repair-json";
@@ -223,6 +320,7 @@ namespace Emberfall.Editor
             const string name = "runtime";
             ProgressionService service = Fresh(name);
             service.GrantExperience(int.MaxValue);
+            LearnPrerequisites(service, 9);
             for (int rank = 1; rank <= 3; rank++) Check(service.LearnSkill(9), "runtime: ultimate learned through production progression");
             Check(service.SetHotbarPage(0) && service.AssignSkill(0, 9), "runtime: ultimate mapped on first page");
             var runtime = new SkillRuntime();
@@ -293,6 +391,32 @@ namespace Emberfall.Editor
             Check(empty.HasSave && empty.Profile.heroClass == HeroClass.Arcanist && empty.Profile.level == 1 && empty.Profile.skillPoints == 0 && File.Exists(empty.SaveFilePath), "portable: third installation creates independent new character");
             Check(File.ReadAllText(source.SaveFilePath) == sourceJson && migrated.Profile.heroClass == HeroClass.Ranger, "portable: new independent character does not overwrite other installations");
             report.passedStages.Add("portable primary-JSON-only transfer, complete profile equality and independent clean installation");
+        }
+
+        private static void ReachLevel(ProgressionService service, int level)
+        {
+            int xp = -service.Profile.xp;
+            for (int current = service.Profile.level; current < level; current++) xp += GameBalance.XpToNext(current);
+            if (xp > 0) service.GrantExperience(xp);
+        }
+
+        private static void LearnPrerequisites(ProgressionService service, int skill)
+        {
+            foreach (int parent in GameBalance.SkillPrerequisites[skill]) LearnBranch(service, parent);
+        }
+
+        private static void LearnBranch(ProgressionService service, int skill)
+        {
+            if (service.Profile.skillRanks[skill] > 0) return;
+            LearnPrerequisites(service, skill);
+            Check(service.LearnSkill(skill) && service.Profile.skillRanks[skill] == 1, "fixture: prerequisite learned through production LearnSkill: " + skill);
+        }
+
+        private static int SpentPoints(ProgressionService service)
+        {
+            int spent = 0;
+            foreach (int rank in service.Profile.skillRanks) spent += rank;
+            return spent;
         }
 
         private static string CaseDirectory(string name) { return Path.Combine(report.outputDirectory, name); }

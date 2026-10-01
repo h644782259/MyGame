@@ -90,6 +90,9 @@ namespace Emberfall
         private float speed, damage, radius, age, lifetime, explosionDamage, explosionRadius;
         private bool hostile, pierce, basicAttack, energyAwarded, arrowShape;
         private EnemyController homingTarget;
+        private EnemyController basicAimTarget;
+        private bool bodyHeightFlight;
+        private float launchHeight, impactHeight, aimedDistance, distanceTravelled;
         private int epoch;
         private readonly HashSet<EnemyController> hitTargets = new HashSet<EnemyController>();
         private Material bodyMaterial, trailMaterial;
@@ -116,6 +119,33 @@ namespace Emberfall
             projectile.radius *= Mathf.Min(2f,size);
             if (velocity > 0) projectile.speed = velocity;
             if (tracking != null) projectile.lifetime = 2.5f;
+        }
+
+        // Ordinary shots keep their original range. A mage locks only the target
+        // chosen at cast time; an arrow gets a very short, bounded correction.
+        public static void BasicShot(PlayerController player,GameSession game,Vector3 muzzle,Vector3 target,float amount,Color tint,bool arrow,EnemyController selected)
+        {
+            Vector3 direction=CombatFx.Flat(target-muzzle);
+            if(direction.sqrMagnitude<.0001f) direction=player.transform.forward;
+            CombatProjectile projectile=Make(muzzle,direction,tint,arrow);
+            projectile.owner=player;
+            projectile.playerGeneration=player;
+            projectile.session=game;
+            projectile.epoch=player.CombatEpoch;
+            projectile.damage=amount;
+            projectile.speed=arrow?20f:16f;
+            projectile.lifetime=1.15f;
+            projectile.radius=.22f;
+            projectile.basicAttack=true;
+            projectile.arrowShape=arrow;
+            projectile.basicAimTarget=selected;
+            projectile.homingTarget=arrow?null:selected;
+            projectile.bodyHeightFlight=true;
+            projectile.launchHeight=muzzle.y;
+            projectile.impactHeight=target.y;
+            projectile.aimedDistance=Mathf.Max(.25f,CombatFx.Flat(target-muzzle).magnitude);
+            projectile.transform.position=muzzle;
+            projectile.AlignBodyFlight();
         }
 
         public static void Hostile(GameSession game, Vector3 at, Vector3 forward, float amount, float velocity = 8f)
@@ -168,14 +198,29 @@ namespace Emberfall
             if (dt <= 0) return;
             age += dt;
             if (age > lifetime) { Destroy(gameObject); return; }
-            if (homingTarget != null && !homingTarget.IsDead)
+            if (homingTarget != null && !homingTarget.IsDead && homingTarget.gameObject.activeInHierarchy)
             {
                 Vector3 towards = CombatFx.Flat(homingTarget.transform.position-transform.position).normalized;
                 if (towards.sqrMagnitude > .01f) direction = Vector3.Slerp(direction,towards,Mathf.Min(1,dt*8f)).normalized;
                 transform.rotation = Quaternion.LookRotation(direction) * (arrowShape ? Quaternion.Euler(90,0,0) : Quaternion.identity);
             }
+            else if(basicAttack && arrowShape && age<=.18f && basicAimTarget!=null && !basicAimTarget.IsDead && basicAimTarget.gameObject.activeInHierarchy)
+            {
+                Vector3 towards=CombatFx.Flat(basicAimTarget.transform.position-transform.position).normalized;
+                if(towards.sqrMagnitude>.01f && Vector3.Angle(direction,towards)<=18f)
+                    direction=Vector3.RotateTowards(direction,towards,70f*Mathf.Deg2Rad*dt,0).normalized;
+            }
             Vector3 previous = transform.position;
             transform.position += direction * speed * dt;
+            if(bodyHeightFlight)
+            {
+                if(basicAimTarget!=null && !basicAimTarget.IsDead && basicAimTarget.gameObject.activeInHierarchy) impactHeight=owner.EnemyBodyPoint(basicAimTarget).y;
+                distanceTravelled+=speed*dt;
+                Vector3 point=transform.position;
+                point.y=Mathf.Lerp(launchHeight,impactHeight,Mathf.Clamp01(distanceTravelled/aimedDistance));
+                transform.position=point;
+                AlignBodyFlight();
+            }
             if (hostile)
             {
                 if (CombatFx.SegmentDistance(session.Player.transform.position, previous, transform.position) < radius + .46f)
@@ -220,6 +265,13 @@ namespace Emberfall
             if (bodyMaterial != null) Destroy(bodyMaterial);
             if (trailMaterial != null) Destroy(trailMaterial);
         }
+
+        private void AlignBodyFlight()
+        {
+            Vector3 visibleDirection=direction;
+            if(distanceTravelled<aimedDistance) visibleDirection.y=(impactHeight-launchHeight)/aimedDistance;
+            transform.rotation=Quaternion.LookRotation(visibleDirection.normalized)*(arrowShape?Quaternion.Euler(90,0,0):Quaternion.identity);
+        }
     }
 
     internal sealed class CombatArea : MonoBehaviour
@@ -228,13 +280,14 @@ namespace Emberfall
         private GameSession session;
         private float radius, damage, stun, delay, duration, interval, age, nextTick, pullStrength, finalDamage;
         private bool follow, meteor, finished;
+        private int statusSkill = -1, statusRank = 1;
         private int epoch;
         private Color color;
         private GameObject marker, fallingOrb;
         private Material orbMaterial;
 
         public static void Spawn(PlayerController player, GameSession game, Vector3 at, float size, float amount, float disable,
-            float startup, float activeTime, float tickInterval, Color tint, bool followPlayer = false, bool fallingMeteor = false, float pulling = 0f, float finisher = 0f)
+            float startup, float activeTime, float tickInterval, Color tint, bool followPlayer = false, bool fallingMeteor = false, float pulling = 0f, float finisher = 0f, int statusSkill = -1, int statusRank = 1)
         {
             GameObject obj = new GameObject("Skill Area");
             obj.transform.position = new Vector3(at.x,0,at.z);
@@ -244,6 +297,7 @@ namespace Emberfall
             area.delay = startup; area.duration = activeTime; area.interval = Mathf.Max(.1f,tickInterval);
             area.color = tint; area.follow = followPlayer; area.meteor = fallingMeteor;
             area.pullStrength = pulling; area.finalDamage = finisher;
+            area.statusSkill = statusSkill; area.statusRank = statusRank;
             area.nextTick = startup;
             area.marker = CombatFx.Ring(at, size, tint, startup + activeTime + .2f, .075f, false);
             if (fallingMeteor)
@@ -302,7 +356,16 @@ namespace Emberfall
                     if (enemy == null || enemy.IsDead) continue;
                     Vector3 delta = CombatFx.Flat(enemy.transform.position - transform.position);
                     if (delta.magnitude <= radius + (enemy.IsBoss ? .85f : .4f))
+                    {
                         enemy.TakeDamage(damage,delta.normalized,.3f,stun);
+                        if (enemy.StatusEffects != null && statusSkill == 0 && owner.HeroClass == HeroClass.Arcanist)
+                            enemy.StatusEffects.Freeze(1.5f + statusRank * .25f);
+                        if (enemy.StatusEffects != null && statusSkill == 5 && owner.HeroClass == HeroClass.Ranger)
+                        {
+                            enemy.StatusEffects.Slow(3f, .3f + statusRank * .07f);
+                            enemy.StatusEffects.Poison(owner, 3.5f + statusRank * .5f, damage * .2f);
+                        }
+                    }
                 }
             }
             if (!finished && finalDamage>0 && age>=delay+duration)

@@ -7,6 +7,7 @@ using System.IO;
 using System.IO.Compression;
 using System.Reflection;
 using System.Runtime.InteropServices;
+using System.Threading;
 using System.Windows.Forms;
 
 namespace EmberfallInstaller
@@ -27,7 +28,24 @@ namespace EmberfallInstaller
                 }
                 catch (Exception error) { Console.Error.WriteLine(error.Message); return 1; }
             }
-            if (args.Length != 0) return 2;
+            if (args.Length == 2 && args[0] == "--install-dir")
+            {
+                try
+                {
+                    if (!Environment.Is64BitOperatingSystem) throw new IOException("该游戏需要 64 位 Windows 10 或 Windows 11。");
+                    string destination = Validator.Destination(args[1]);
+                    string warning = InstallEngine.Install(destination, null);
+                    Console.WriteLine("Installed: " + destination);
+                    if (!string.IsNullOrEmpty(warning)) Console.Error.WriteLine(warning);
+                    return 0;
+                }
+                catch (Exception error) { Console.Error.WriteLine(error.Message); return 1; }
+            }
+            if (args.Length != 0)
+            {
+                Console.Error.WriteLine("Usage: Emberfall-Setup.exe [--verify-payload | --install-dir <absolute local directory>]");
+                return 2;
+            }
             if (!Environment.Is64BitOperatingSystem)
             {
                 MessageBox.Show("该游戏需要 64 位 Windows 10 或 Windows 11。", "无法安装", MessageBoxButtons.OK, MessageBoxIcon.Information);
@@ -88,7 +106,10 @@ namespace EmberfallInstaller
         internal static string Destination(string input)
         {
             if (string.IsNullOrWhiteSpace(input)) throw new IOException("请选择安装目录。");
-            string destination = Path.GetFullPath(input.Trim()).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+            string requested = input.Trim();
+            if (!Path.IsPathRooted(requested) || requested.Length < 3 || requested[1] != ':' || (requested[2] != Path.DirectorySeparatorChar && requested[2] != Path.AltDirectorySeparatorChar))
+                throw new IOException("请选择本机磁盘上的绝对安装路径，例如 E:\\EMBERFALL。");
+            string destination = Path.GetFullPath(requested).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
             string root = Path.GetPathRoot(destination).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
             if (string.Equals(destination, root, StringComparison.OrdinalIgnoreCase)) throw new IOException("请选择专用游戏文件夹，不要安装到磁盘根目录。");
             if (File.Exists(destination)) throw new IOException("安装目录已被同名文件占用。");
@@ -148,6 +169,214 @@ namespace EmberfallInstaller
                 if (progress != null) progress((i + 1) * 100 / Math.Max(1, entries.Count), "正在检查游戏文件…");
             }
             return entries;
+        }
+    }
+
+    internal static class InstallEngine
+    {
+        private sealed class ChangedFile
+        {
+            internal string Target, Backup;
+            internal bool Installed;
+        }
+
+        internal static void GameClosed()
+        {
+            Process[] games = Process.GetProcessesByName(Path.GetFileNameWithoutExtension(Program.Executable));
+            try { if (games.Length != 0) throw new IOException("请先关闭所有正在运行的星烬纪元窗口，再进行安装或更新；安装器不会自动终止游戏。"); }
+            finally { foreach (Process process in games) process.Dispose(); }
+        }
+
+        internal static string Install(string input, Action<int, string> progress)
+        {
+            using (var gate = new Mutex(false, "Local\\EmberfallInstaller"))
+            {
+                bool acquired = false;
+                try
+                {
+                    try { acquired = gate.WaitOne(0); }
+                    catch (AbandonedMutexException) { acquired = true; }
+                    if (!acquired) throw new IOException("另一个星烬纪元安装程序正在运行，请等待它完成。");
+                    return InstallFiles(input, progress);
+                }
+                finally { if (acquired) gate.ReleaseMutex(); }
+            }
+        }
+
+        private static string InstallFiles(string input, Action<int, string> progress)
+        {
+            string destination = Validator.Destination(input);
+            GameClosed();
+            // A non-empty unrelated directory is never treated as an installation.
+            if (Directory.Exists(destination))
+            {
+                bool nonempty;
+                using (IEnumerator<string> files = Directory.EnumerateFileSystemEntries(destination).GetEnumerator()) nonempty = files.MoveNext();
+                if (nonempty && (!File.Exists(Path.Combine(destination, Program.Executable)) || !File.Exists(Path.Combine(destination, "UnityPlayer.dll")) || !Directory.Exists(Path.Combine(destination, "Emberfall_Data"))))
+                    throw new IOException("所选目录不是完整的星烬纪元安装目录。请使用空文件夹，或选择已有游戏的安装目录。");
+            }
+            string parent = Path.GetDirectoryName(destination);
+            string transaction = Path.Combine(parent, ".Emberfall-install-" + Guid.NewGuid().ToString("N"));
+            string staged = Path.Combine(transaction, "staged");
+            string backup = Path.Combine(transaction, "backup");
+            var changed = new List<ChangedFile>();
+            var createdDirectories = new List<string>();
+            try
+            {
+                using (Stream payload = Program.Payload())
+                using (ZipArchive archive = new ZipArchive(payload, ZipArchiveMode.Read))
+                {
+                    List<ZipArchiveEntry> entries = Validator.Validate(archive, delegate(int percent, string message) { Report(progress, percent / 5, message); });
+                    foreach (ZipArchiveEntry entry in entries)
+                    {
+                        string target = Validator.Target(destination, Validator.RelativePath(entry.FullName));
+                        Validator.NoReparsePoints(target);
+                        if (Validator.DirectoryEntry(entry) ? File.Exists(target) : Directory.Exists(target))
+                            throw new IOException("安装目标的文件与文件夹冲突：" + target);
+                        if (!Validator.DirectoryEntry(entry) && File.Exists(target))
+                        {
+                            if ((File.GetAttributes(target) & FileAttributes.ReadOnly) != 0) throw new IOException("游戏文件为只读，无法更新：" + target);
+                            using (var writable = new FileStream(target, FileMode.Open, FileAccess.ReadWrite, FileShare.None)) { }
+                        }
+                    }
+                    CreateDirectories(parent, createdDirectories);
+                    if (Directory.Exists(transaction) || File.Exists(transaction)) throw new IOException("安装临时目录已被占用，请重试。");
+                    Directory.CreateDirectory(staged);
+                    Directory.CreateDirectory(backup);
+                    byte[] buffer = new byte[128 * 1024];
+                    for (int i = 0; i < entries.Count; i++)
+                    {
+                        ZipArchiveEntry entry = entries[i];
+                        string target = Validator.Target(staged, Validator.RelativePath(entry.FullName));
+                        if (Validator.DirectoryEntry(entry)) Directory.CreateDirectory(target);
+                        else
+                        {
+                            Directory.CreateDirectory(Path.GetDirectoryName(target));
+                            using (Stream source = entry.Open())
+                            using (var output = new FileStream(target, FileMode.CreateNew, FileAccess.Write, FileShare.None))
+                            {
+                                int count;
+                                while ((count = source.Read(buffer, 0, buffer.Length)) > 0) output.Write(buffer, 0, count);
+                                output.Flush(true);
+                                if (output.Length != entry.Length) throw new InvalidDataException("临时游戏文件长度校验失败：" + entry.FullName);
+                            }
+                        }
+                        Report(progress, 20 + (i + 1) * 45 / entries.Count, "正在准备：" + entry.FullName);
+                    }
+                    // Existing files remain untouched until the complete archive is staged.
+                    GameClosed();
+                    Validator.Destination(destination);
+                    CreateDirectories(destination, createdDirectories);
+                    for (int i = 0; i < entries.Count; i++)
+                    {
+                        GameClosed();
+                        ZipArchiveEntry entry = entries[i];
+                        string relative = Validator.RelativePath(entry.FullName);
+                        string target = Validator.Target(destination, relative);
+                        Validator.NoReparsePoints(target);
+                        if (Validator.DirectoryEntry(entry)) CreateDirectories(target, createdDirectories);
+                        else
+                        {
+                            CreateDirectories(Path.GetDirectoryName(target), createdDirectories);
+                            var change = new ChangedFile { Target = target };
+                            if (File.Exists(target))
+                            {
+                                string saved = Validator.Target(backup, relative);
+                                Directory.CreateDirectory(Path.GetDirectoryName(saved));
+                                File.Move(target, saved);
+                                change.Backup = saved;
+                            }
+                            changed.Add(change);
+                            File.Move(Validator.Target(staged, relative), target);
+                            change.Installed = true;
+                        }
+                        Report(progress, 65 + (i + 1) * 34 / entries.Count, "正在安装：" + entry.FullName);
+                    }
+                }
+            }
+            catch (Exception error)
+            {
+                string rollbackError = Rollback(changed, createdDirectories);
+                string cleanupError = "";
+                if (string.IsNullOrEmpty(rollbackError))
+                {
+                    try { DeleteTransaction(transaction, parent); }
+                    catch (Exception cleanup) { cleanupError = " 临时目录保留在 " + transaction + "：" + cleanup.Message; }
+                }
+                throw new IOException("安装未完成。" + (string.IsNullOrEmpty(rollbackError) ? "本次游戏文件变更已回滚。" : "部分文件自动回滚失败；请保留备份目录 " + backup + "。" + rollbackError) + "\n" + error.Message + cleanupError, error);
+            }
+            try { DeleteTransaction(transaction, parent); }
+            catch (Exception error) { return "游戏已安装成功，但旧文件备份尚未清理：" + transaction + "。" + error.Message; }
+            Report(progress, 100, "安装完成");
+            return "";
+        }
+
+        private static void CreateDirectories(string path, List<string> created)
+        {
+            Validator.NoReparsePoints(path);
+            if (Directory.Exists(path)) return;
+            string parent = Path.GetDirectoryName(path);
+            if (!string.IsNullOrEmpty(parent)) CreateDirectories(parent, created);
+            Directory.CreateDirectory(path);
+            created.Add(path);
+        }
+
+        private static string Rollback(List<ChangedFile> changed, List<string> createdDirectories)
+        {
+            string errors = "";
+            for (int i = changed.Count - 1; i >= 0; i--)
+            {
+                ChangedFile file = changed[i];
+                try
+                {
+                    Validator.NoReparsePoints(file.Target);
+                    if (file.Installed && File.Exists(file.Target)) File.Delete(file.Target);
+                    if (file.Backup != null)
+                    {
+                        Validator.NoReparsePoints(file.Backup);
+                        File.Move(file.Backup, file.Target);
+                    }
+                }
+                catch (Exception error) { errors += "\n" + file.Target + "：" + error.Message; }
+            }
+            // Remove only empty folders created by this attempt; unrelated files survive.
+            for (int i = createdDirectories.Count - 1; i >= 0; i--)
+            {
+                try
+                {
+                    Validator.NoReparsePoints(createdDirectories[i]);
+                    if (Directory.Exists(createdDirectories[i]) && Directory.GetFileSystemEntries(createdDirectories[i]).Length == 0) Directory.Delete(createdDirectories[i], false);
+                }
+                catch { /* An empty directory cleanup failure does not lose game files. */ }
+            }
+            return errors;
+        }
+
+        private static void DeleteTransaction(string path, string parent)
+        {
+            string absolute = Path.GetFullPath(path);
+            string parentPrefix = Path.GetFullPath(parent).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar) + Path.DirectorySeparatorChar;
+            if (!absolute.StartsWith(parentPrefix, StringComparison.OrdinalIgnoreCase) || !Path.GetFileName(absolute).StartsWith(".Emberfall-install-", StringComparison.Ordinal))
+                throw new IOException("拒绝清理安装临时目录之外的路径。");
+            if (!Directory.Exists(absolute)) return;
+            var pending = new Queue<string>();
+            pending.Enqueue(absolute);
+            while (pending.Count > 0)
+            {
+                string current = pending.Dequeue();
+                Validator.NoReparsePoints(current);
+                foreach (string entry in Directory.GetFileSystemEntries(current))
+                {
+                    Validator.NoReparsePoints(entry);
+                    if (Directory.Exists(entry)) pending.Enqueue(entry);
+                }
+            }
+            Directory.Delete(absolute, true);
+        }
+
+        private static void Report(Action<int, string> progress, int percent, string message)
+        {
+            if (progress != null) progress(percent, message);
         }
     }
 
@@ -222,7 +451,7 @@ namespace EmberfallInstaller
             try
             {
                 string destination = Validator.Destination(destinationBox.Text);
-                GameClosed();
+                InstallEngine.GameClosed();
                 installing = true;
                 Interactive(false);
                 status.Text = "正在检查安装包…";
@@ -235,44 +464,10 @@ namespace EmberfallInstaller
                 MessageBox.Show(this, error.Message, "无法开始安装", MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
         }
-        private static void GameClosed()
-        {
-            Process[] games = Process.GetProcessesByName(Path.GetFileNameWithoutExtension(Program.Executable));
-            try { if (games.Length != 0) throw new IOException("请先关闭所有正在运行的星烬纪元窗口，再进行安装或更新。"); }
-            finally { foreach (Process process in games) process.Dispose(); }
-        }
         private void Install(object sender, DoWorkEventArgs e)
         {
             InstallRequest request = (InstallRequest)e.Argument;
-            string destination = Validator.Destination(request.Destination);
-            GameClosed();
-            using (Stream payload = Program.Payload())
-            using (ZipArchive archive = new ZipArchive(payload, ZipArchiveMode.Read))
-            {
-                // Validate all entry paths and streams before touching an existing install.
-                List<ZipArchiveEntry> entries = Validator.Validate(archive, delegate(int percent, string message) { worker.ReportProgress(percent / 5, message); });
-                foreach (ZipArchiveEntry entry in entries) Validator.NoReparsePoints(Validator.Target(destination, Validator.RelativePath(entry.FullName)));
-                Directory.CreateDirectory(destination);
-                byte[] buffer = new byte[128 * 1024];
-                for (int i = 0; i < entries.Count; i++)
-                {
-                    ZipArchiveEntry entry = entries[i];
-                    string target = Validator.Target(destination, Validator.RelativePath(entry.FullName));
-                    Validator.NoReparsePoints(target);
-                    if (Validator.DirectoryEntry(entry)) Directory.CreateDirectory(target);
-                    else
-                    {
-                        Directory.CreateDirectory(Path.GetDirectoryName(target));
-                        using (Stream input = entry.Open())
-                        using (var output = new FileStream(target, FileMode.Create, FileAccess.Write, FileShare.None))
-                        {
-                            int count;
-                            while ((count = input.Read(buffer, 0, buffer.Length)) > 0) output.Write(buffer, 0, count);
-                        }
-                    }
-                    worker.ReportProgress(20 + (i + 1) * 79 / entries.Count, "正在安装：" + entry.FullName);
-                }
-            }
+            request.Warning = InstallEngine.Install(request.Destination, delegate(int percent, string message) { worker.ReportProgress(percent, message); });
             e.Result = request;
         }
         private void Finished(object sender, RunWorkerCompletedEventArgs e)
@@ -282,11 +477,12 @@ namespace EmberfallInstaller
             if (e.Error != null)
             {
                 status.Text = "安装未完成，可以修正问题后重新安装。";
-                MessageBox.Show(this, e.Error.Message + "\n\n个人存档未作更改，其他文件未被删除。", "安装未完成", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show(this, e.Error.Message + "\n\n个人存档未作更改。若提示保留备份，请保留该目录。", "安装未完成", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return;
             }
             InstallRequest result = (InstallRequest)e.Result;
             installedDirectory = result.Destination;
+            if (!string.IsNullOrEmpty(result.Warning)) MessageBox.Show(this, result.Warning, "安装完成", MessageBoxButtons.OK, MessageBoxIcon.Information);
             if (result.Shortcut)
             {
                 try { DesktopShortcut(installedDirectory); }
@@ -330,6 +526,6 @@ namespace EmberfallInstaller
             destinationBox.Enabled = browseButton.Enabled = shortcutBox.Enabled = installButton.Enabled = closeButton.Enabled = enabled;
             launchButton.Enabled = enabled && installedDirectory != null;
         }
-        private sealed class InstallRequest { internal string Destination; internal bool Shortcut; }
+        private sealed class InstallRequest { internal string Destination; internal bool Shortcut; internal string Warning; }
     }
 }

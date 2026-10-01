@@ -43,6 +43,8 @@ public static class ProgressionTests
         UpperBoundsAndInvalidActions();
         EveryClassSkillUnlocksAtItsGate();
         EveryClassSkillRankRequiresItsLevel();
+        SkillTreePrerequisitesAndBranches();
+        PreviouslyLearnedSkillsSurviveNewPrerequisites();
         LegacyThreeSkillSaveMigratesWithoutLoss();
         MalformedSkillArraysAreRepaired();
         SkillLoadoutAssignmentAndPersistence();
@@ -84,7 +86,7 @@ public static class ProgressionTests
         int changedEvents = 0;
         service.LeveledUp += level => levelEvents++;
         service.Changed += () => changedEvents++;
-        Check(!service.LearnSkill(0), "Q locked at level 1");
+        Check(!service.LearnSkill(0), "starting skill locked at level 1");
         service.GrantExperience(60);
         Check(service.Profile.level == 2 && service.Profile.xp == 0 && service.Profile.skillPoints == 1, "level 2 grants one point");
         Check(levelEvents == 1 && changedEvents == 1, "progression events fire");
@@ -92,7 +94,7 @@ public static class ProgressionTests
         Check(!service.LearnSkill(0) && !service.LearnSkill(1), "cannot overspend points or bypass level lock");
         service.GrantExperience(90 + 120 + 150 + 180);
         Check(service.Profile.level == 6 && levelEvents == 5 && service.Profile.skillPoints == 4, "multi-level gain and points");
-        Check(service.LearnSkill(1) && service.LearnSkill(2), "E and R unlock at required levels");
+        Check(service.LearnSkill(1) && service.LearnSkill(2), "first branch unlocks through its learned predecessors");
         Check(!service.LearnSkill(0) && service.Profile.skillRanks[0] == 1 && service.Profile.skillPoints == 2, "rank two requires its higher character level");
         ReachLevel(service, 10);
         Check(service.LearnSkill(0) && service.Profile.skillRanks[0] == 2 && !service.LearnSkill(0), "rank two unlocks at ten while rank three stays locked");
@@ -188,21 +190,22 @@ public static class ProgressionTests
 
     private static void EveryClassSkillUnlocksAtItsGate()
     {
-        int[] expectedLevels = { 2, 4, 6, 8, 10, 13, 16, 20, 25, 30 };
+        int[] expectedLevels = { 2, 4, 6, 4, 10, 6, 13, 20, 13, 30 };
         Check(GameBalance.SkillCount == 10, "eight active and two passive skills per class");
         Check(GameBalance.SkillCooldowns.Length == 10 && GameBalance.SkillEnergyCosts.Length == 10, "each skill has cooldown and energy balance data");
         for (int hero = 0; hero < 3; hero++)
         {
-            var service = Fresh((HeroClass)hero);
             var names = new HashSet<string>();
-            Check(service.Profile.skillRanks.Length == 10, "new characters have ten skill ranks");
             for (int skill = 0; skill < 10; skill++)
             {
+                var service = Fresh((HeroClass)hero);
+                Check(service.Profile.skillRanks.Length == 10, "new characters have ten skill ranks");
                 int required = expectedLevels[skill];
                 Check(GameBalance.SkillRequiredLevels[skill] == required, "expected skill unlock milestone");
                 string name = GameBalance.SkillName((HeroClass)hero, skill);
                 Check(!string.IsNullOrWhiteSpace(name) && names.Add(name) && !string.IsNullOrWhiteSpace(GameBalance.SkillDescription((HeroClass)hero, skill)), "every class skill has a distinct name and description");
                 ReachLevel(service, required - 1);
+                LearnPrerequisites(service, skill);
                 int points = service.Profile.skillPoints;
                 Check(!service.LearnSkill(skill) && service.Profile.skillRanks[skill] == 0 && service.Profile.skillPoints == points, "cannot learn one level before requirement");
                 Check(service.SkillLockReason(skill).Contains(required.ToString()), "lock reason communicates required level");
@@ -218,7 +221,10 @@ public static class ProgressionTests
                     Check(GameBalance.SkillCooldowns[skill] > GameBalance.SkillCooldowns[previous] && GameBalance.SkillEnergyCosts[skill] > GameBalance.SkillEnergyCosts[previous], "later active skills trade greater cooldown and energy cost");
                 }
             }
-            Check(service.Profile.level == 30 && service.Profile.skillPoints == 19, "all ten first ranks consume exactly ten earned points");
+            var complete = Fresh((HeroClass)hero);
+            ReachLevel(complete, 30);
+            for (int skill = 0; skill < 10; skill++) LearnBranch(complete, skill);
+            Check(complete.Profile.level == 30 && complete.Profile.skillPoints == 19, "all ten first ranks consume exactly ten earned points");
         }
     }
 
@@ -230,11 +236,17 @@ public static class ProgressionTests
                 var service = Fresh((HeroClass)hero);
                 string originalName = GameBalance.SkillName((HeroClass)hero, skill);
                 int assignedSlot = (skill + 3) % 10;
+                int prerequisiteRanks = 0;
                 for (int rank = 1; rank <= 3; rank++)
                 {
                     int required = GameBalance.SkillRequiredLevels[skill] + (rank == 1 ? 0 : rank == 2 ? 8 : 18);
                     Check(GameBalance.SkillRankRequiredLevel(skill, rank) == required, "rank gate uses original skill milestone plus evolution offset");
                     ReachLevel(service, required - 1);
+                    if (rank == 1)
+                    {
+                        LearnPrerequisites(service, skill);
+                        prerequisiteRanks = SpentPoints(service);
+                    }
                     int points = service.Profile.skillPoints;
                     Check(!service.LearnSkill(skill) && service.Profile.skillRanks[skill] == rank - 1 && service.Profile.skillPoints == points, "rank cannot be purchased one level early even with spare points");
                     Check(service.SkillLockReason(skill).Contains(required.ToString()), "next-rank lock reason explains higher level requirement");
@@ -249,8 +261,77 @@ public static class ProgressionTests
                 Check(!service.LearnSkill(skill) && service.Profile.skillRanks[skill] == 3, "evolved original skill remains capped at rank three");
                 int spent = 0;
                 foreach (int learned in service.Profile.skillRanks) spent += learned;
-                Check(spent == 3 && service.Profile.skillPoints + spent == service.Profile.level - 1, "evolving one skill neither unlocks others nor creates extra points");
+                Check(spent == prerequisiteRanks + 3 && service.Profile.skillPoints + spent == service.Profile.level - 1, "evolving one skill preserves its real prerequisite ranks and conserves points");
             }
+    }
+
+    private static void SkillTreePrerequisitesAndBranches()
+    {
+        int[][] expected = { new int[0], new[] { 0 }, new[] { 1 }, new[] { 0 }, new[] { 2 }, new[] { 3 }, new[] { 5 }, new[] { 4 }, new[] { 5 }, new[] { 7, 6 } };
+        for (int skill = 0; skill < expected.Length; skill++)
+        {
+            Check(GameBalance.SkillPrerequisites[skill].Length == expected[skill].Length, "tree prerequisite count matches branch design");
+            for (int i = 0; i < expected[skill].Length; i++)
+                Check(GameBalance.SkillPrerequisites[skill][i] == expected[skill][i], "tree prerequisite edge matches branch design");
+        }
+        for (int hero = 0; hero < 3; hero++)
+        {
+            var locked = Fresh((HeroClass)hero);
+            ReachLevel(locked, 100);
+            int changes = 0;
+            locked.Changed += () => changes++;
+            for (int skill = 1; skill < 10; skill++)
+                Check(!locked.PrerequisitesMet(skill) && !locked.LearnSkill(skill) && locked.SkillLockReason(skill).Contains("前置") && locked.Profile.skillRanks[skill] == 0 && locked.Profile.skillPoints == 99 && changes == 0, "high level and spare points cannot bypass an unlearned predecessor");
+            Check(locked.PrerequisitesMet(0) && !locked.PrerequisitesMet(-1) && !locked.PrerequisitesMet(10), "root and invalid prerequisite queries are handled");
+
+            int[][] pairs = { new[] { 1, 3, 4 }, new[] { 2, 5, 6 }, new[] { 6, 8, 13 } };
+            foreach (int[] pair in pairs)
+            {
+                var branches = Fresh((HeroClass)hero);
+                ReachLevel(branches, pair[2]);
+                LearnPrerequisites(branches, pair[0]);
+                LearnPrerequisites(branches, pair[1]);
+                int points = branches.Profile.skillPoints;
+                Check(branches.LearnSkill(pair[0]) && branches.Profile.skillRanks[pair[1]] == 0, "learning one same-level branch does not grant its sibling");
+                Check(branches.LearnSkill(pair[1]) && branches.Profile.level == pair[2] && branches.Profile.skillPoints == points - 2, "both same-level branches may be learned for separate points");
+                Check(branches.Profile.skillPoints + SpentPoints(branches) == branches.Profile.level - 1, "branch purchases conserve earned points");
+            }
+
+            foreach (int first in new[] { 7, 6 })
+            {
+                int missing = first == 7 ? 6 : 7;
+                var ultimate = Fresh((HeroClass)hero);
+                ReachLevel(ultimate, 30);
+                LearnBranch(ultimate, first);
+                int points = ultimate.Profile.skillPoints;
+                Check(ultimate.Profile.skillRanks[missing] == 0 && !ultimate.PrerequisitesMet(9) && !ultimate.LearnSkill(9) && ultimate.Profile.skillPoints == points, "either missing ultimate predecessor blocks purchase without spending");
+                Check(ultimate.SkillLockReason(9).Contains(GameBalance.SkillName((HeroClass)hero, missing)), "ultimate lock explains the missing branch by name");
+                LearnBranch(ultimate, missing);
+                Check(ultimate.PrerequisitesMet(9) && ultimate.LearnSkill(9) && ultimate.Profile.skillRanks[9] == 1, "ultimate unlocks after learning both real branches");
+                Check(ultimate.Profile.skillRanks[8] == 0 && ultimate.Profile.skillPoints + SpentPoints(ultimate) == 29, "ultimate does not auto-grant optional passive or mint points");
+            }
+        }
+    }
+
+    private static void PreviouslyLearnedSkillsSurviveNewPrerequisites()
+    {
+        for (int hero = 0; hero < 3; hero++)
+        {
+            var service = Fresh((HeroClass)hero);
+            ReachLevel(service, 50);
+            string weapon = service.Profile.weaponId;
+            JsonNode legacy = JsonNode.Parse(File.ReadAllText(SavePath()));
+            legacy["profile"]["skillRanks"] = JsonNode.Parse("[0,0,0,0,0,0,0,0,0,1]");
+            legacy["profile"]["skillPoints"] = 48;
+            File.WriteAllText(SavePath(), legacy.ToJsonString());
+            Check(service.Load() && service.Profile.skillRanks[9] == 1 && service.Profile.skillPoints == 48 && !service.PrerequisitesMet(9), "legacy learned ultimate survives new prerequisite rules without inventing parents");
+            Check(service.Profile.heroClass == (HeroClass)hero && service.Profile.weaponId == weapon && service.AssignSkill(0, 9), "legacy identity equipment and active skill assignment survive");
+            Check(service.LearnSkill(9) && service.Profile.skillRanks[9] == 2 && service.Profile.skillPoints == 47, "grandfathered skill can evolve at its rank level while spending a point");
+            Check(!service.LearnSkill(7) && service.Profile.skillRanks[7] == 0, "grandfathering does not unlock another unlearned branch");
+            service.Save();
+            var restored = new ProgressionService();
+            Check(restored.Load() && restored.Profile.skillRanks[9] == 2 && restored.Profile.skillPoints == 47 && restored.Profile.equippedSkills[0] == 9 && SpentPoints(restored) == 2, "legacy learned skill and point balance survive another save round trip");
+        }
     }
 
     private static void LegacyThreeSkillSaveMigratesWithoutLoss()
@@ -307,10 +388,10 @@ public static class ProgressionTests
         var service = Fresh();
         WriteSkillFixture("[-4,5,2,3,99,1,0,8,3,2,9,9]", "[9,8,7]", 40);
         Check(service.Load(), "oversized malformed skill array loads with repair");
-        int[] expected = { 0, 3, 2, 3, 3, 1, 0, 3, 2, 2 };
+        int[] expected = { 0, 3, 2, 3, 3, 1, 0, 3, 3, 2 };
         Check(service.Profile.skillRanks.Length == 10, "excess skill entries removed");
         for (int i = 0; i < expected.Length; i++) Check(service.Profile.skillRanks[i] == expected[i], "each rank bounded to zero through three");
-        Check(service.Profile.skillPoints == 20, "point budget reconstructed after rank and level-gate repair");
+        Check(service.Profile.skillPoints == 19, "point budget reconstructed after rank and level-gate repair");
         Check(service.Profile.equippedSkills[0] == 9 && service.Profile.equippedSkills[1] == -1 && service.Profile.equippedSkills[2] == 7, "valid active assignments survive while a mapped passive is cleared");
         string[] malformedLoadouts = { "null", "[]", "[0]", "[0,1,2,3]", "[0,0,2]", "[-1,1,2]", "[10,1,2]" };
         for (int i = 0; i < malformedLoadouts.Length; i++)
@@ -345,8 +426,8 @@ public static class ProgressionTests
         Check(!service.AssignSkill(2, 9) && service.Profile.equippedSkills[2] == 2, "unlearned higher skill rejected without changing loadout");
         Check(service.AssignSkill(2, -1) && service.Profile.equippedSkills[2] == -1, "negative-one assignment clears a locked or learned slot");
         ReachLevel(service, 30);
-        service.LearnSkill(9);
-        service.LearnSkill(7);
+        LearnBranch(service, 9);
+        LearnBranch(service, 7);
         int points = service.Profile.skillPoints;
         int changes = 0;
         service.Changed += () => changes++;
@@ -428,6 +509,7 @@ public static class ProgressionTests
             for (int rank = 1; rank <= 3; rank++)
             {
                 ReachLevel(service, GameBalance.SkillRankRequiredLevel(3, rank));
+                if (rank == 1) LearnPrerequisites(service, 3);
                 int oldRank = service.Profile.skillRanks[3];
                 service.Profile.skillRanks[3] = 0;
                 StatBlock baseline = service.GetStats();
@@ -463,6 +545,7 @@ public static class ProgressionTests
                 Check(Near(savedStats.Damage, actual.Damage) && Near(savedStats.Armor, actual.Armor) && Near(savedStats.MaxHealth, actual.MaxHealth) && Near(savedStats.MoveSpeed, actual.MoveSpeed) && Near(savedStats.CritChance, actual.CritChance), "passive-adjusted stats survive save reload");
             }
             ReachLevel(service, GameBalance.SkillRankRequiredLevel(8, 3));
+            LearnPrerequisites(service, 8);
             StatBlock beforeReactive = service.GetStats();
             for (int rank = 1; rank <= 3; rank++) Check(service.LearnSkill(8), "reactive passive can evolve through three ranks");
             Check(!service.AssignSkill(9, 8), "reactive passive cannot be placed on an active hotbar");
@@ -522,6 +605,25 @@ public static class ProgressionTests
         int xp = -service.Profile.xp;
         for (int current = service.Profile.level; current < level; current++) xp += GameBalance.XpToNext(current);
         if (xp > 0) service.GrantExperience(xp);
+    }
+
+    private static void LearnPrerequisites(ProgressionService service, int skill)
+    {
+        foreach (int parent in GameBalance.SkillPrerequisites[skill]) LearnBranch(service, parent);
+    }
+
+    private static void LearnBranch(ProgressionService service, int skill)
+    {
+        if (service.Profile.skillRanks[skill] > 0) return;
+        LearnPrerequisites(service, skill);
+        Check(service.LearnSkill(skill) && service.Profile.skillRanks[skill] == 1, "fixture learns prerequisite through production LearnSkill: " + skill);
+    }
+
+    private static int SpentPoints(ProgressionService service)
+    {
+        int spent = 0;
+        foreach (int rank in service.Profile.skillRanks) spent += rank;
+        return spent;
     }
 
     private static string SavePath()

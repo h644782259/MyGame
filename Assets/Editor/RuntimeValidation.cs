@@ -168,6 +168,9 @@ namespace Emberfall.Editor
                 game.StartNew(hero);
                 game.SetPaused(false);
                 Check(game.Player != null && game.Player.HeroClass == hero && game.HasStarted, hero + " initializes correctly");
+                int inventoryAssertions = InventoryUIValidation.Validate(game);
+                SessionState.SetInt(Prefix + "Assertions", SessionState.GetInt(Prefix + "Assertions", 0) + inventoryAssertions);
+                Append("INVENTORY " + hero + " passed " + inventoryAssertions + " classification, sorting and sale checks.");
                 FreezeEnemies(game);
                 yield return new Delay(.5f);
                 CaptureWorld(hero + "-world.png", false);
@@ -216,6 +219,9 @@ namespace Emberfall.Editor
                     Check(!game.Progression.SetHotbarKey(0, (int)KeyCode.W), "Movement key binding rejected");
                     for (int slot = 0; slot < GameBalance.HotbarSize; slot++) game.Progression.SetHotbarKey(slot, GameBalance.DefaultHotbarKeys[slot]);
                 }
+
+                IEnumerator combatSystems = ValidateCombatSystems(game, hero);
+                while (combatSystems.MoveNext()) yield return combatSystems.Current;
 
                 for (int skill = 0; skill < GameBalance.SkillCount; skill++)
                 {
@@ -338,6 +344,284 @@ namespace Emberfall.Editor
             yield return new Delay(.25f);
             Append("COMPLETE: all three heroes and 24 active casts exercised in the Unity player loop.");
         }
+
+        private static IEnumerator ValidateCombatSystems(GameSession game, HeroClass hero)
+        {
+            PlayerController player = game.Player;
+            bool wasEnabled = player.enabled;
+            float respawnTimer = (float)Field(typeof(GameSession), "respawnTimer").GetValue(game);
+            int firstAssertion = SessionState.GetInt(Prefix + "Assertions", 0);
+            player.enabled = false; // Real mouse/key state must not overwrite controlled aiming fixtures.
+            SetField(game, "respawnTimer", 10000f);
+            try
+            {
+                Append("COMBAT " + hero + " — projected body selection, attack direction and uncommitted skill placement");
+                EnemyKind[] kinds = { EnemyKind.Slime, EnemyKind.Wisp, EnemyKind.Guardian };
+                for (int i = 0; i < kinds.Length; i++)
+                {
+                    ResetCombatFixture(game);
+                    EnemyController target = SpawnFixtureEnemy(game, kinds[i], player.transform.position + Vector3.forward * 8, i == 2);
+                    Vector3 screen = ProjectBody(player, target);
+                    Check(screen.z > 0 && Camera.main.pixelRect.Contains(new Vector2(screen.x, screen.y)), hero + " " + kinds[i] + " body projects inside the actual camera");
+                    Call(player, "ApplyAim", new Vector2(screen.x, screen.y));
+                    Check(player.AimTarget == target && Vector3.Distance(player.AimPoint, target.transform.position) < .01f, hero + " selects " + kinds[i] + " body instead of ground behind it");
+                    player.transform.position += Vector3.right * 2;
+                    Vector3 expected = (target.transform.position - player.transform.position).normalized;
+                    Call(player, "BasicAttack");
+                    Check(Vector3.Angle(player.transform.forward, expected) < .1f, hero + " recalculates facing after movement before attacking " + kinds[i]);
+                    if (hero != HeroClass.Vanguard)
+                    {
+                        Component shot = FindBasicProjectile(player);
+                        Check(shot != null && Vector3.Angle(ReadVector(shot, "direction"), expected) < .1f, hero + " projectile follows recalculated body direction");
+                        Check(Mathf.Abs(ReadFloat(shot, "impactHeight") - ((Vector3)Call(player, "EnemyBodyPoint", target)).y) < .01f && Mathf.Abs(shot.transform.position.y - 1.15f) < .01f,
+                            hero + " projectile travels from muzzle height toward " + kinds[i] + " body height");
+                    }
+                    Call(player, "ApplyAim", new Vector2(Camera.main.pixelRect.xMax - 2, Camera.main.pixelRect.yMax - 2));
+                    Check(player.AimTarget == null, hero + " cursor away from all bodies retains free aiming");
+                }
+
+                IEnumerator projectiles = ValidateBasicProjectiles(game, hero);
+                while (projectiles.MoveNext()) yield return projectiles.Current;
+                IEnumerator placement = ValidateSkillPlacement(game, hero);
+                while (placement.MoveNext()) yield return placement.Current;
+                if (hero == HeroClass.Vanguard)
+                {
+                    IEnumerator status = ValidateNeutralAndStatusEffects(game);
+                    while (status.MoveNext()) yield return status.Current;
+                }
+            }
+            finally
+            {
+                player.enabled = wasEnabled;
+                SetField(game, "respawnTimer", respawnTimer);
+                game.SetPaused(false);
+                validatingPause = false;
+            }
+            Append("COMBAT " + hero + " completed " + (SessionState.GetInt(Prefix + "Assertions", 0) - firstAssertion) + " additional assertions.");
+        }
+
+        private static IEnumerator ValidateBasicProjectiles(GameSession game, HeroClass hero)
+        {
+            if (hero == HeroClass.Vanguard) yield break;
+            ResetCombatFixture(game);
+            PlayerController player = game.Player;
+            Vector3 origin = player.transform.position;
+            EnemyController target = SpawnFixtureEnemy(game, EnemyKind.Wisp, origin + Vector3.forward * 16);
+            Vector3 screen = ProjectBody(player, target);
+            Call(player, "ApplyAim", new Vector2(screen.x, screen.y));
+            Call(player, "BasicAttack");
+            Component shot = FindBasicProjectile(player);
+            Check(shot != null && Mathf.Abs(ReadFloat(shot, "lifetime") - 1.15f) < .001f, hero + " basic projectile retains its original 1.15 second lifetime");
+            Check((EnemyController)Field(shot.GetType(), "homingTarget").GetValue(shot) == (hero == HeroClass.Arcanist ? target : null), hero + " uses the correct mage homing / straight arrow target policy");
+            Vector3 initial = ReadVector(shot, "direction");
+            if (hero == HeroClass.Ranger) target.transform.position += Vector3.right * .8f;
+            yield return new Delay(.25f);
+            Check(shot != null, hero + " basic projectile remains alive before its original expiry");
+            Vector3 earlyDirection = ReadVector(shot, "direction");
+            if (hero == HeroClass.Ranger)
+                Check(Vector3.Angle(initial, earlyDirection) <= 12.7f, "Ranger early steering stays inside the 70 degrees/second, .18 second correction budget");
+            target.transform.position += Vector3.right * 6;
+            yield return new Delay(.12f);
+            Check(shot != null, hero + " projectile survives the moving-target steering fixture");
+            Vector3 lateDirection = ReadVector(shot, "direction");
+            if (hero == HeroClass.Arcanist)
+            {
+                Check(lateDirection.x > earlyDirection.x + .02f && (EnemyController)Field(shot.GetType(), "homingTarget").GetValue(shot) == target,
+                    "Mage bolt still follows its original moving target after the ranger correction window has ended");
+                EnemyController replacement = SpawnFixtureEnemy(game, EnemyKind.Wisp, origin + new Vector3(-8, 0, 15));
+                target.TakeDamage(100000000f, Vector3.zero);
+                yield return new Delay(.08f);
+                Check(shot != null && (EnemyController)Field(shot.GetType(), "homingTarget").GetValue(shot) != replacement && Vector3.Angle(ReadVector(shot, "direction"), lateDirection) < .1f,
+                    "Mage bolt keeps its last direction after target death and never retargets another monster");
+            }
+            else
+                Check(Vector3.Angle(earlyDirection, lateDirection) < .1f, "Ranger arrow stays straight after its brief correction window");
+            yield return new Delay(1.2f);
+            Check(shot == null, hero + " basic projectile expires without a homing range extension");
+
+            if (hero == HeroClass.Arcanist)
+            {
+                ResetCombatFixture(game);
+                origin = player.transform.position;
+                EnemyController nearest = SpawnFixtureEnemy(game, EnemyKind.Slime, origin + new Vector3(2, 0, 7));
+                EnemyController farther = SpawnFixtureEnemy(game, EnemyKind.Slime, origin + new Vector3(0, 0, 11));
+                SpawnFixtureEnemy(game, EnemyKind.Slime, origin - Vector3.forward * 3);
+                SpawnFixtureEnemy(game, EnemyKind.Slime, origin + Vector3.right * 8);
+                SetField(player, "aimPoint", origin + Vector3.forward * 20);
+                Check((EnemyController)Call(player, "MagicConeTarget") == nearest, "Mage fallback selects nearest living monster inside the 14 metre / 35 degree cone");
+                Call(player, "BasicAttack");
+                Check(player.AimTarget == nearest, "Mage ordinary attack actually acquires the valid cone fallback");
+                nearest.gameObject.SetActive(false);
+                SetField(player, "aimPoint", origin + Vector3.forward * 20);
+                Check((EnemyController)Call(player, "MagicConeTarget") == farther, "Mage fallback ignores inactive closer monsters");
+                farther.transform.position = origin + Vector3.forward * 15;
+                Check(Call(player, "MagicConeTarget") == null, "Mage fallback cannot lock distant, sideward or rear monsters globally");
+            }
+        }
+
+        private static IEnumerator ValidateSkillPlacement(GameSession game, HeroClass hero)
+        {
+            ResetCombatFixture(game);
+            PlayerController player = game.Player;
+            SkillRuntime runtime = Runtime(player);
+            runtime.Advance(200); runtime.FillEnergy();
+            SkillTargetingController targeting = player.GetComponent<SkillTargetingController>();
+            int skill = hero == HeroClass.Vanguard ? 9 : 1;
+            EnemyController target = SpawnFixtureEnemy(game, EnemyKind.Guardian, player.transform.position + Vector3.forward * 8);
+            Vector3 screen = ProjectBody(player, target);
+            Call(player, "ApplyAim", new Vector2(screen.x, screen.y));
+            float energy = player.Energy;
+            Check(targeting != null && targeting.Begin(skill) && targeting.IsTargeting && Mathf.Approximately(player.Energy, energy) && player.SkillCooldownRemaining(skill) == 0,
+                hero + " entering skill preview spends no resources and starts no cooldown");
+            targeting.SetTarget(player.transform.position + Vector3.right * 1000);
+            Check(Mathf.Abs(Vector3.Distance(player.transform.position, targeting.TargetPoint) - targeting.CurrentPreview.distance) < .01f && targeting.TargetPoint.magnitude <= game.ArenaRadius + .01f,
+                hero + " out-of-range placement clamps to the actual cast distance and arena");
+            targeting.Cancel();
+            Check(!targeting.IsTargeting && targeting.CancelledThisFrame && targeting.TickInput() && Mathf.Approximately(player.Energy, energy) && player.SkillCooldownRemaining(skill) == 0,
+                hero + " cancelling preserves energy/cooldown and consumes the same-frame ordinary attack input");
+            Check(targeting.Begin(skill), hero + " cancelled preview can be entered again");
+            Vector3 chosen = player.transform.position + new Vector3(-3, 0, 2);
+            targeting.SetTarget(chosen);
+            Check(targeting.Confirm() && !targeting.IsTargeting && player.AimTarget == null && Vector3.Distance(player.AimPoint, chosen) < .01f,
+                hero + " confirmation keeps the precise chosen ground point and clears a prior monster lock");
+            float spentEnergy = energy - GameBalance.SkillEnergyCosts[skill];
+            float cooldown = GameBalance.EffectiveCooldown(skill, 3);
+            Check(Mathf.Abs(player.Energy - spentEnergy) < .01f && Mathf.Abs(player.SkillCooldownRemaining(skill) - cooldown) < .01f,
+                hero + " confirmation consumes the configured cost and cooldown exactly once");
+            Check(!targeting.Confirm() && !targeting.Begin(skill) && Mathf.Abs(player.Energy - spentEnergy) < .01f && Mathf.Abs(player.SkillCooldownRemaining(skill) - cooldown) < .01f,
+                hero + " duplicate confirmation or cooldown preview cannot double-spend resources");
+            runtime.FillEnergy();
+            Check(targeting.Begin(0), hero + " another ready skill may enter preview independently");
+            player.Teleport(player.transform.position + Vector3.right);
+            Check(!targeting.IsTargeting && !targeting.Confirm() && Mathf.Approximately(player.Energy, player.MaxEnergy) && player.SkillCooldownRemaining(0) == 0 && Mathf.Abs(player.SkillCooldownRemaining(skill) - cooldown) < .01f,
+                hero + " teleport invalidates pending placement while preserving existing independent cooldowns");
+            Check(targeting.Begin(0), hero + " teleport leaves ready skills available");
+            validatingPause = true;
+            game.SetPaused(true);
+            yield return new Delay(.12f, false);
+            Check(!targeting.IsTargeting && Mathf.Approximately(player.Energy, player.MaxEnergy) && player.SkillCooldownRemaining(0) == 0,
+                hero + " paused player loop cancels uncommitted placement without spending");
+            game.SetPaused(false);
+            validatingPause = false;
+        }
+
+        private static IEnumerator ValidateNeutralAndStatusEffects(GameSession game)
+        {
+            ResetCombatFixture(game);
+            PlayerController player = game.Player;
+            EnemyController neutral = SpawnFixtureEnemy(game, EnemyKind.Slime, player.transform.position + Vector3.forward);
+            neutral.enabled = true;
+            float health = player.Health;
+            yield return new Delay(1.05f);
+            Check(neutral.Tier == EnemyController.ThreatTier.Normal && !neutral.IsAggro && (int)Field(typeof(EnemyController), "attackNumber").GetValue(neutral) == 0 && Mathf.Approximately(player.Health, health),
+                "An ordinary monster remains neutral after a nearby player spends one full second within melee range");
+            neutral.transform.position = player.transform.position + Vector3.forward;
+            SetField(neutral, "attackCooldown", 0f);
+            SetField(player, "invulnerability", 0f);
+            neutral.TakeDamage(1, Vector3.zero);
+            Check(neutral.IsAggro, "Damage provokes the formerly neutral monster immediately");
+            yield return new Delay(.85f);
+            Check((int)Field(typeof(EnemyController), "attackNumber").GetValue(neutral) > 0 && player.Health < health,
+                "Provoked ordinary monster actually retaliates and deals damage in live player-loop frames");
+
+            ResetCombatFixture(game);
+            EnemyController normal = SpawnFixtureEnemy(game, EnemyKind.Guardian, player.transform.position + new Vector3(-4, 0, 8));
+            EnemyController boss = SpawnFixtureEnemy(game, EnemyKind.Guardian, player.transform.position + new Vector3(4, 0, 8), true);
+            normal.StatusEffects.Slow(3, .6f);
+            boss.StatusEffects.Slow(3, .6f);
+            Check(Mathf.Abs(normal.StatusEffects.MoveMultiplier - .4f) < .001f && normal.IsAggro,
+                "Slow reduces the real movement multiplier and provokes the target");
+            Check(boss.StatusEffects.MoveMultiplier > normal.StatusEffects.MoveMultiplier && boss.StatusEffects.MoveMultiplier < 1,
+                "Boss slow resistance reduces the applied movement penalty");
+            health = normal.Health;
+            normal.TakeDamage(10, Vector3.zero);
+            float unmarked = health - normal.Health;
+            normal.StatusEffects.Mark(3, .2f);
+            health = normal.Health;
+            normal.TakeDamage(10, Vector3.zero);
+            Check(Mathf.Abs((health - normal.Health) - unmarked * 1.2f) < .02f && normal.StatusEffects.DamageMultiplier > 1,
+                "Mark increases actual incoming damage by the configured vulnerability");
+            normal.StatusEffects.Knockdown(3);
+            boss.StatusEffects.Knockdown(3);
+            Check(normal.StatusEffects.KnockedDown && normal.IsStunned && boss.StatusEffects.KnockedDown && boss.IsStunned,
+                "Knockdown creates both the visual state and actual attack/movement control");
+            Check(ReadFloat(boss.StatusEffects, "downTime") < ReadFloat(normal.StatusEffects, "downTime") && ReadFloat(boss, "stunTime") < ReadFloat(normal, "stunTime"),
+                "Boss control resistance shortens both knockdown and stun duration");
+            normal.enabled = boss.enabled = true;
+            yield return new Delay(.85f);
+            Check(!boss.StatusEffects.KnockedDown && !boss.IsStunned && normal.StatusEffects.KnockedDown && normal.IsStunned,
+                "Boss recovers from resisted control while ordinary enemy remains knocked down in actual frames");
+            normal.enabled = boss.enabled = false;
+            normal.StatusEffects.Freeze(2);
+            Check(normal.IsStunned && normal.StatusEffects.MoveMultiplier < 1 && normal.StatusEffects.Summary.Contains("击倒"),
+                "Freeze preserves simultaneous control and slow without erasing an active knockdown");
+
+            EnemyController poisoned = SpawnFixtureEnemy(game, EnemyKind.Guardian, player.transform.position + Vector3.forward * 8);
+            health = poisoned.Health;
+            for (int i = 0; i < 4; i++) poisoned.StatusEffects.Poison(player, 3, 4);
+            Check(poisoned.StatusEffects.PoisonStacks == 3 && Mathf.Approximately(poisoned.Health, health),
+                "Poison caps at three stacks and deals no immediate application damage");
+            yield return new Delay(.85f);
+            Check(poisoned.Health <= health - 12 + .02f && poisoned.StatusEffects.PoisonStacks == 3,
+                "Three poison stacks deal their delayed damage in live frames");
+            health = poisoned.Health;
+            player.Teleport(player.transform.position);
+            yield return new Delay(.12f);
+            Check(poisoned.StatusEffects.PoisonStacks == 0 && Mathf.Approximately(poisoned.Health, health),
+                "Teleport invalidates poison from the previous combat generation without another damage tick");
+        }
+
+        private static void ResetCombatFixture(GameSession game)
+        {
+            ClearFixtureEnemies(game);
+            Type projectileType = typeof(PlayerController).Assembly.GetType("Emberfall.CombatProjectile", true);
+            foreach (UnityEngine.Object value in UnityEngine.Object.FindObjectsOfType(projectileType))
+            {
+                Component projectile = (Component)value;
+                projectile.gameObject.SetActive(false);
+                UnityEngine.Object.Destroy(projectile.gameObject);
+            }
+            game.Player.Teleport(new Vector3(0, 0, -5));
+            game.Player.RefreshStats(true);
+            Camera.main.GetComponent<AdventureCamera>().Snap();
+            game.SetPaused(false);
+        }
+
+        private static void ClearFixtureEnemies(GameSession game)
+        {
+            EnemyController[] previous = game.Enemies.ToArray();
+            game.Enemies.Clear();
+            foreach (EnemyController enemy in previous)
+            {
+                if (enemy == null) continue;
+                enemy.gameObject.SetActive(false);
+                UnityEngine.Object.Destroy(enemy.gameObject);
+            }
+        }
+
+        private static EnemyController SpawnFixtureEnemy(GameSession game, EnemyKind kind, Vector3 position, bool boss = false)
+        {
+            Call(game, "SpawnEnemy", kind, 100, position, boss);
+            EnemyController enemy = game.Enemies[game.Enemies.Count - 1];
+            enemy.enabled = false;
+            return enemy;
+        }
+
+        private static Vector3 ProjectBody(PlayerController player, EnemyController enemy)
+        {
+            return Camera.main.WorldToScreenPoint((Vector3)Call(player, "EnemyBodyPoint", enemy));
+        }
+
+        private static Component FindBasicProjectile(PlayerController player)
+        {
+            Type type = typeof(PlayerController).Assembly.GetType("Emberfall.CombatProjectile", true);
+            foreach (UnityEngine.Object value in UnityEngine.Object.FindObjectsOfType(type))
+                if (Field(type, "owner").GetValue(value) == (object)player && (bool)Field(type, "basicAttack").GetValue(value)) return (Component)value;
+            return null;
+        }
+
+        private static float ReadFloat(object target, string name) { return (float)Field(target.GetType(), name).GetValue(target); }
+        private static Vector3 ReadVector(object target, string name) { return (Vector3)Field(target.GetType(), name).GetValue(target); }
 
         private static void PrepareCastFixture(GameSession game)
         {

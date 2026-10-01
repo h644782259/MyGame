@@ -78,6 +78,8 @@ namespace Emberfall
 #if UNITY_EDITOR
             string validationDirectory = UnityEditor.SessionState.GetString("Emberfall.ValidationSaveDirectory", "");
             Progression = new ProgressionService(string.IsNullOrEmpty(validationDirectory) ? null : validationDirectory);
+#elif EMBERFALL_VISUAL_VALIDATION
+            Progression = new ProgressionService(VisualValidationPlayer.SaveDirectory);
 #else
             Progression = new ProgressionService();
 #endif

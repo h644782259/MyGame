@@ -279,6 +279,11 @@ namespace Emberfall
             return (8 + Clamp(item.level, 1, MaximumLevel) * 4) * (Clamp((int)item.rarity, 0, 3) + 1) + Clamp(item.upgradeLevel, 0, MaximumUpgrade) * 10;
         }
 
+        public static float EquipmentScore(ItemData item)
+        {
+            return item == null ? 0 : item.attack * 5f + item.defense * 3f + item.health * .2f;
+        }
+
         public bool LearnSkill(int slot)
         {
             string reason = SkillLockReason(slot);
@@ -296,8 +301,17 @@ namespace Emberfall
             int nextRank = Profile.skillRanks[slot] + 1;
             int required = GameBalance.SkillRankRequiredLevel(slot, nextRank);
             if (Profile.level < required) return "角色达到 " + required + " 级可学习技能第 " + nextRank + " 阶。";
+            if (nextRank == 1 && !PrerequisitesMet(slot)) return "请先点亮前置技能。" + GameBalance.PrerequisiteDescription(Profile.heroClass, slot);
             if (Profile.skillPoints < 1) return "需要 1 点技能点，升级后获得。";
             return string.Empty;
+        }
+
+        public bool PrerequisitesMet(int skill)
+        {
+            if (skill < 0 || skill >= GameBalance.SkillCount) return false;
+            foreach (int parent in GameBalance.SkillPrerequisites[skill])
+                if (Profile.skillRanks[parent] < 1) return false;
+            return true;
         }
 
         public bool AssignSkill(int hotbarSlot, int skillIndex)

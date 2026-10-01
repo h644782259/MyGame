@@ -17,6 +17,12 @@ public static class SkillRuntimeTests
     }
     private static bool Near(float a, float b) { return Math.Abs(a - b) < .001f; }
 
+    private static void CollectPrerequisites(int skill, HashSet<int> ancestors)
+    {
+        foreach (int parent in GameBalance.SkillPrerequisites[skill])
+            if (ancestors.Add(parent)) CollectPrerequisites(parent, ancestors);
+    }
+
     public static string Run()
     {
         assertions = 0;
@@ -71,20 +77,77 @@ public static class SkillRuntimeTests
                 Check(!string.IsNullOrWhiteSpace(GameBalance.SkillDescription((HeroClass)hero, skill)), "skill has a readable effect description");
             }
         }
-        int previousActive = 0;
-        for (int skill = 1; skill < GameBalance.SkillCount; skill++)
+        // IDs are stable save/hotbar identities. Branches can unlock in a different
+        // order, so progression must be checked along prerequisite edges instead.
+        Check(GameBalance.SkillPrerequisites.Length == GameBalance.SkillCount, "every skill has a prerequisite entry");
+        int roots = 0, activeCount = 0, passiveCount = 0;
+        for (int skill = 0; skill < GameBalance.SkillCount; skill++)
         {
-            Check(GameBalance.SkillRequiredLevels[skill] > GameBalance.SkillRequiredLevels[skill-1], "higher-tier unlock levels increase");
+            int[] parents = GameBalance.SkillPrerequisites[skill];
+            Check(parents != null, "prerequisite entry is present for skill " + skill);
+            if (parents.Length == 0) roots++;
+            var uniqueParents = new HashSet<int>();
+            foreach (int parent in parents)
+            {
+                Check(parent >= 0 && parent < GameBalance.SkillCount && parent != skill && uniqueParents.Add(parent), "prerequisite is valid, distinct and not self-referential");
+                Check(GameBalance.SkillRequiredLevels[parent] < GameBalance.SkillRequiredLevels[skill], "prerequisite unlocks before its child " + parent + " -> " + skill);
+                Check(GameBalance.SkillTreeRow(parent) < GameBalance.SkillTreeRow(skill), "tree connector flows down to its child");
+            }
+            Check(GameBalance.SkillRankRequiredLevel(skill, 1) == GameBalance.SkillRequiredLevels[skill], "initial rank uses its own branch unlock level");
             Check(GameBalance.SkillRankRequiredLevel(skill, 2) == GameBalance.SkillRequiredLevels[skill]+8 && GameBalance.SkillRankRequiredLevel(skill,3) == GameBalance.SkillRequiredLevels[skill]+18, "rank evolution gated by character level");
+            if (GameBalance.IsPassive(skill))
+            {
+                passiveCount++;
+                Check(Near(GameBalance.SkillEnergyCosts[skill], 0) && Near(GameBalance.SkillCooldowns[skill], 0), "passive has no manual cast budget");
+            }
+            else activeCount++;
+        }
+        Check(roots == 1 && GameBalance.SkillPrerequisites[0].Length == 0, "all branches share the starting skill");
+        Check(activeCount == 8 && passiveCount == 2, "each class has eight active skills and two passives");
+
+        var reachable = new HashSet<int> { 0 };
+        for (int pass = 0; pass < GameBalance.SkillCount; pass++)
+            for (int skill = 0; skill < GameBalance.SkillCount; skill++)
+            {
+                bool allParentsAvailable = true;
+                foreach (int parent in GameBalance.SkillPrerequisites[skill])
+                    if (!reachable.Contains(parent)) allParentsAvailable = false;
+                if (allParentsAvailable) reachable.Add(skill);
+            }
+        Check(reachable.Count == GameBalance.SkillCount, "all skills are reachable with no prerequisite cycle or stranded branch");
+
+        for (int skill = 0; skill < GameBalance.SkillCount; skill++)
+        {
             if (GameBalance.IsPassive(skill)) continue;
-            Check(GameBalance.SkillEnergyCosts[skill] > GameBalance.SkillEnergyCosts[previousActive], "higher-tier active resource cost increases");
-            Check(GameBalance.EffectiveCooldown(skill, 3) > GameBalance.SkillCooldowns[previousActive], "even fully upgraded high-tier active retains a longer cooldown");
-            previousActive = skill;
+            var ancestors = new HashSet<int>();
+            CollectPrerequisites(skill, ancestors);
+            foreach (int parent in ancestors)
+            {
+                if (GameBalance.IsPassive(parent)) continue;
+                Check(GameBalance.SkillEnergyCosts[skill] > GameBalance.SkillEnergyCosts[parent], "deeper active skill costs more energy than active prerequisite " + parent + " -> " + skill);
+                Check(GameBalance.EffectiveCooldown(skill, 3) > GameBalance.EffectiveCooldown(parent, 1), "even awakened descendant retains longer cooldown than its active prerequisite");
+            }
+            Check(GameBalance.EffectiveCooldown(skill, 3) < GameBalance.EffectiveCooldown(skill, 2) &&
+                GameBalance.EffectiveCooldown(skill, 2) < GameBalance.EffectiveCooldown(skill, 1), "upgrading the same active skill reduces its cooldown");
+            for (int rank = 1; rank <= 3; rank++)
+            {
+                var cast = new SkillRuntime();
+                float expected = GameBalance.EffectiveCooldown(skill, rank);
+                Check(cast.TryConsume(skill, rank), "active skill can cast at rank " + rank);
+                Check(Near(cast.Remaining(skill), expected) && Near(cast.Energy, 100 - GameBalance.SkillEnergyCosts[skill]), "cast uses the selected rank's cooldown and catalog resource cost");
+                cast.FillEnergy();
+                Check(!cast.TryConsume(skill, 3) && Near(cast.Remaining(skill), expected), "changing rank cannot reset an already-running cooldown");
+                cast.Advance(expected - .01f);
+                Check(!cast.TryConsume(skill, rank), "cast stays blocked until the whole cooldown elapses");
+                cast.Advance(.02f);
+                cast.FillEnergy();
+                Check(cast.TryConsume(skill, rank), "cast becomes available after its cooldown elapses");
+            }
         }
         int[] layout = GameBalance.DefaultLoadout();
         Check(layout.Length == 30, "three independent ten-slot pages");
         int[] active = { 0, 1, 2, 4, 5, 6, 7, 9 };
-        for (int slot = 0; slot < 8; slot++) Check(layout[slot] == active[slot] && !GameBalance.IsPassive(layout[slot]), "first page maps eight active skills in unlock order");
+        for (int slot = 0; slot < 8; slot++) Check(layout[slot] == active[slot] && !GameBalance.IsPassive(layout[slot]), "first page maps eight active skills in stable catalog order");
         for (int slot = 8; slot < 30; slot++) Check(layout[slot] == -1, "remaining slots and extra pages initially empty");
         var keys = new HashSet<int>();
         foreach (int key in GameBalance.DefaultHotbarKeys) Check(GameBalance.IsBindableKey(key) && keys.Add(key), "default key is valid and unique");

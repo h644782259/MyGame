@@ -72,7 +72,21 @@ namespace Emberfall
         public static readonly Color[] ClassColors = {
             new Color(1f, .65f, .26f), new Color(.4f, .7f, 1f), new Color(.38f, .88f, .65f)
         };
-        public static readonly int[] SkillRequiredLevels = { 2, 4, 6, 8, 10, 13, 16, 20, 25, 30 };
+        public static readonly int[] SkillRequiredLevels = { 2, 4, 6, 4, 10, 6, 13, 20, 13, 30 };
+        public static readonly int[][] SkillPrerequisites = {
+            new int[0], new[] { 0 }, new[] { 1 }, new[] { 0 }, new[] { 2 },
+            new[] { 3 }, new[] { 5 }, new[] { 4 }, new[] { 5 }, new[] { 7, 6 }
+        };
+        public static int SkillTreeRow(int skill) { return new[] { 0, 1, 2, 1, 3, 2, 4, 5, 4, 6 }[skill]; }
+        public static float SkillTreeColumn(int skill) { return new[] { 1f, 0f, 0f, 2f, 0f, 2f, 1f, 0f, 2f, 1f }[skill]; }
+        public static string PrerequisiteDescription(HeroClass hero, int skill)
+        {
+            int[] parents = SkillPrerequisites[skill];
+            if (parents.Length == 0) return "起始技能 · 无前置";
+            string result = "前置：";
+            for (int i = 0; i < parents.Length; i++) result += (i == 0 ? "" : " + ") + SkillName(hero, parents[i]);
+            return result;
+        }
         public static readonly float[] SkillCooldowns = { 5f, 9f, 16f, 0f, 25f, 32f, 40f, 50f, 0f, 90f };
         public static readonly float[] SkillEnergyCosts = { 8f, 12f, 20f, 0f, 32f, 40f, 48f, 58f, 0f, 85f };
         private static readonly string[,] SkillNames = {
@@ -82,21 +96,21 @@ namespace Emberfall
         };
         private static readonly string[,] SkillDescriptions = {
             {
-                "旋转斩击周围敌人。低消耗、短冷却，适合持续输出。", "向前方重击，击退并眩晕敌人。", "连续释放剑气，切割周围的敌人。",
+                "旋转斩击周围敌人。低消耗、短冷却，觉醒后牵引收束。", "向前方重击，击退并击倒敌人，打断其攻击。", "连续释放剑气，切割周围的敌人。",
                 "被动：永久提高攻击与防御，学习后自动生效。", "展开护盾减轻伤害，并以圣光反击周围敌人。", "向前突进并连续斩击，撕开敌阵。",
                 "树立生命战旗，持续恢复生命；升阶获得防护与回复能量。", "引爆前方地脉，连续的裂地冲击击碎敌阵。", "被动：濒危时自动触发减伤防护；触发后有独立内置冷却。",
                 "巨剑裁决与多段剑阵爆发，终结大范围敌群。消耗极高，冷却很长。"
             },
             {
-                "释放寒冰圆环，伤害并冻结身边敌人。", "在瞄准地点降下陨星，造成范围爆发。", "在瞄准地点制造持续的奥术风暴。",
-                "被动：永久提高法术攻击与生命，学习后自动生效。", "雷霆在附近敌人间跳跃，造成连锁打击。", "以冰晶护盾保护自身，减轻伤害并释放寒冰脉冲。",
+                "冻结身边敌人，解冻后仍暂时减速40%；首领控制持续时间缩短。", "在瞄准地点降下陨星，造成范围爆发。", "在瞄准地点制造持续的奥术风暴。",
+                "被动：永久提高法术攻击与生命，学习后自动生效。", "雷霆在敌人间跳跃，逐个造成伤害并短暂眩晕。", "以冰晶护盾保护自身，减轻伤害并释放寒冰脉冲。",
                 "回收奥术之力，持续恢复生命；升阶获得防护与回复能量。", "创造虚空漩涡，将敌人吸向中心并反复撕裂。", "被动：受伤时自动生成法力屏障并回复少量能量，具有内置冷却。",
                 "多重星环汇聚，陨星与雷霆引爆整片战场。消耗极高，冷却很长。"
             },
             {
                 "向前方发射多支穿透箭矢。短冷却，适合清理敌群。", "在瞄准地点引爆陷阱，伤害并眩晕敌人。", "向瞄准地点持续倾泻箭雨。",
-                "被动：永久提高暴击几率和移动速度，学习后自动生效。", "后撤脱离危险，同时获得机动增益并释放追击箭矢。", "铺开毒蔓，持续侵蚀并束缚区域内的敌人。",
-                "召唤自然之力持续恢复生命；升阶获得防护与回复能量。", "召唤幻影连续发射多轮箭矢。", "被动：受伤时自动短暂无敌并提高移动速度，具有内置冷却。",
+                "被动：永久提高暴击几率和移动速度，学习后自动生效。", "后撤脱离危险，同时获得机动增益并释放追击箭矢。", "毒蔓使敌人减速并叠加中毒，最多3层；离开毒区后毒伤仍会持续。",
+                "召唤自然之力持续恢复生命；升阶获得防护与回复能量。", "锁定选区内的一名敌人持续追射，并使其受到的伤害提高12%至20%。目标死亡后不自动转锁。", "被动：受伤时自动短暂无敌并提高移动速度，具有内置冷却。",
                 "星弓展开，巨量光羽与箭雨汇聚于目标。消耗极高，冷却很长。"
             }
         };

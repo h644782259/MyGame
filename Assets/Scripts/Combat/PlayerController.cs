@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace Emberfall
@@ -11,11 +12,16 @@ namespace Emberfall
         public float DodgeCooldown { get { return dodgeCooldown; } }
         public float Energy { get { return skillRuntime.Energy; } }
         public float MaxEnergy { get { return SkillRuntime.MaximumEnergy; } }
+        public EnemyController AimTarget { get; private set; }
+        public Vector3 AimPoint { get { return aimPoint; } }
         internal int CombatEpoch { get; private set; }
 
         private GameSession session;
         private StatBlock stats;
         private CombatModel model;
+        private SkillTargetingController targeting;
+        private readonly Dictionary<EnemyController,Renderer[]> aimGeometry = new Dictionary<EnemyController,Renderer[]>();
+        private readonly List<EnemyController> staleAimGeometry = new List<EnemyController>();
         private readonly SkillRuntime skillRuntime = new SkillRuntime();
         private float attackCooldown, attackAnimation, hurtTimer, dodgeCooldown, dodgeTime, invulnerability, skillFeedbackCooldown;
         private float guardTime, guardPower, guardReduction, guardRadius, guardPulseTimer;
@@ -32,6 +38,9 @@ namespace Emberfall
             gameObject.name = "Hero - " + GameBalance.ClassName(heroClass);
             if (model != null) Destroy(model.gameObject);
             model = CombatModel.Hero(transform, heroClass);
+            targeting = GetComponent<SkillTargetingController>();
+            if (targeting == null) targeting = gameObject.AddComponent<SkillTargetingController>();
+            targeting.Initialize(this,session);
             RefreshStats(true);
             aimPoint = transform.position + Vector3.forward * 5;
         }
@@ -62,8 +71,12 @@ namespace Emberfall
         public void Teleport(Vector3 position)
         {
             CombatEpoch++;
+            if (targeting != null) targeting.Cancel();
+            AimTarget = null;
+            aimGeometry.Clear();
             position.y = 0;
             transform.position = position;
+            aimPoint = position+transform.forward*5f;
             dodgeTime = 0;
             guardTime = healingProtectionTime = mobilityTime = passiveTime = 0;
             attackAnimation = 0;
@@ -97,6 +110,8 @@ namespace Emberfall
             if (Health <= 0)
             {
                 CombatEpoch++;
+                if (targeting != null) targeting.Cancel();
+                AimTarget = null;
                 dodgeTime = 0;
                 model.transform.localRotation = Quaternion.Euler(0,0,75f);
                 session.OnPlayerDied();
@@ -117,6 +132,7 @@ namespace Emberfall
         private void Update()
         {
             if (session == null || model == null) return;
+            if (session.InputBlocked && targeting != null) targeting.Cancel();
             float dt = Time.deltaTime;
             if (dt <= 0) return;
             attackCooldown = Mathf.Max(0,attackCooldown - dt);
@@ -149,7 +165,6 @@ namespace Emberfall
                 model.Animate(0,attackAnimation,hurtTimer > 0);
                 return;
             }
-            if (!session.PointerOverUI) UpdateAim();
             Vector3 movement = new Vector3(Input.GetAxisRaw("Horizontal"),0,Input.GetAxisRaw("Vertical"));
             movement = Vector3.ClampMagnitude(movement,1);
             if (Input.GetKeyDown(KeyCode.Space) && dodgeCooldown <= 0)
@@ -171,36 +186,155 @@ namespace Emberfall
                 float movementBonus = passiveTime>0?passiveSpeed:0;
                 if (mobilityTime>0) movementBonus += .1f+mobilityRank*.05f;
                 transform.position += movement * stats.MoveSpeed * (1f+movementBonus) * dt;
-                if (!session.PointerOverUI)
-                {
-                    if ((Input.GetMouseButton(0) || Input.GetKey(KeyCode.J)) && attackCooldown <= 0) BasicAttack();
-                    GameProfile profile = session.Progression.Profile;
-                    for (int slot = 0; slot < GameBalance.HotbarSize; slot++)
-                        if (profile.hotbarKeys != null && slot < profile.hotbarKeys.Length && Input.GetKeyDown((KeyCode)profile.hotbarKeys[slot]))
-                        {
-                            int skill = HotbarSkill(slot);
-                            if (skill >= 0 && skill < GameBalance.SkillCount) CastSkill(skill);
-                        }
-                }
             }
             Vector3 bounded = transform.position;
             float bound = Mathf.Max(1,session.ArenaRadius - .65f);
             bounded.y = 0;
             transform.position = Vector3.ClampMagnitude(bounded,bound);
+            // Mouse selection uses this frame's final position. Walking only turns
+            // the model; it never overwrites the independent mouse aim point.
+            if (!session.PointerOverUI) aimPoint = ResolveAim(Camera.main,Input.mousePosition);
+            bool wantsBasic = !session.PointerOverUI && (Input.GetMouseButton(0) || Input.GetKey(KeyCode.J));
+            if (movement.sqrMagnitude > .01f && !wantsBasic)
+                transform.rotation = Quaternion.RotateTowards(transform.rotation,Quaternion.LookRotation(movement),720f*dt);
+            if (dodgeTime <= 0 && !session.PointerOverUI)
+            {
+                GameProfile profile = session.Progression.Profile;
+                for (int slot=0;slot<GameBalance.HotbarSize;slot++)
+                    if (profile.hotbarKeys != null && slot < profile.hotbarKeys.Length && Input.GetKeyDown((KeyCode)profile.hotbarKeys[slot]))
+                    {
+                        int skill = HotbarSkill(slot);
+                        if (skill >= 0 && skill < GameBalance.SkillCount && targeting != null) targeting.Begin(skill);
+                    }
+            }
+            bool suppressBasic = targeting != null && targeting.TickInput();
+            if (dodgeTime <= 0 && wantsBasic && !suppressBasic)
+            {
+                FaceAim();
+                if (attackCooldown <= 0) BasicAttack();
+            }
             model.Animate(dodgeTime > 0 ? 1 : movement.magnitude,attackAnimation,hurtTimer > 0);
         }
 
-        private void UpdateAim()
+        // Kept independent of Input so runtime validation can project a known body
+        // point, move the player and check that the firing direction is recalculated.
+        private void ApplyAim(Vector2 screenPosition)
         {
-            Camera camera = Camera.main;
-            if (camera != null)
+            aimPoint = ResolveAim(Camera.main,screenPosition);
+            FaceAim();
+        }
+
+        private Vector3 ResolveAim(Camera camera,Vector2 screenPosition)
+        {
+            AimTarget = null;
+            if (camera == null || !camera.pixelRect.Contains(screenPosition)) return aimPoint;
+            Vector3 freeAim = aimPoint;
+            Ray ray = camera.ScreenPointToRay(screenPosition);
+            float enter;
+            if (new Plane(Vector3.up,Vector3.zero).Raycast(ray,out enter)) freeAim = ray.GetPoint(enter);
+            if (session == null) return freeAim;
+            float margin = Mathf.Clamp(camera.pixelHeight/90f,6f,12f);
+            float bestScore = float.PositiveInfinity;
+            for (int i=0;i<session.Enemies.Count;i++)
             {
-                Ray ray = camera.ScreenPointToRay(Input.mousePosition);
-                float enter;
-                if (new Plane(Vector3.up,Vector3.zero).Raycast(ray,out enter)) aimPoint = ray.GetPoint(enter);
+                EnemyController enemy = session.Enemies[i];
+                if (!ValidAimTarget(enemy) || CombatFx.Flat(enemy.transform.position-transform.position).sqrMagnitude>18f*18f) continue;
+                Bounds bounds = EnemyAimBounds(enemy);
+                Rect projected;
+                if (!ProjectedBounds(camera,bounds,out projected)) continue;
+                bool direct = projected.Contains(screenPosition);
+                Rect assisted = Rect.MinMaxRect(projected.xMin-margin,projected.yMin-margin,projected.xMax+margin,projected.yMax+margin);
+                if (!assisted.Contains(screenPosition)) continue;
+                Vector3 bodyScreen = camera.WorldToScreenPoint(EnemyBodyPoint(enemy));
+                float bodyDistance = Vector2.Distance(screenPosition,new Vector2(bodyScreen.x,bodyScreen.y));
+                float score = (direct?0f:10000f)+bodyDistance+bodyScreen.z*.02f;
+                if (score<bestScore) { bestScore=score; AimTarget=enemy; }
             }
-            Vector3 forward = CombatFx.Flat(aimPoint - transform.position);
-            if (forward.sqrMagnitude > .12f) transform.rotation = Quaternion.LookRotation(forward.normalized);
+            PruneAimGeometry();
+            return AimTarget != null ? CombatFx.Flat(AimTarget.transform.position) : freeAim;
+        }
+
+        private static bool ProjectedBounds(Camera camera,Bounds bounds,out Rect screenBounds)
+        {
+            Vector3 min=bounds.min,max=bounds.max;
+            float left=float.PositiveInfinity,bottom=float.PositiveInfinity,right=float.NegativeInfinity,top=float.NegativeInfinity;
+            for(int corner=0;corner<8;corner++)
+            {
+                Vector3 screen=camera.WorldToScreenPoint(new Vector3((corner&1)==0?min.x:max.x,(corner&2)==0?min.y:max.y,(corner&4)==0?min.z:max.z));
+                if(screen.z<=camera.nearClipPlane) { screenBounds=new Rect(); return false; }
+                left=Mathf.Min(left,screen.x); right=Mathf.Max(right,screen.x);
+                bottom=Mathf.Min(bottom,screen.y); top=Mathf.Max(top,screen.y);
+            }
+            screenBounds=Rect.MinMaxRect(left,bottom,right,top);
+            return camera.pixelRect.Overlaps(screenBounds);
+        }
+
+        private Bounds EnemyAimBounds(EnemyController enemy)
+        {
+            Renderer[] renderers;
+            if(!aimGeometry.TryGetValue(enemy,out renderers))
+            {
+                CombatModel enemyModel=enemy.GetComponentInChildren<CombatModel>();
+                renderers=enemyModel!=null?enemyModel.GetComponentsInChildren<Renderer>():new Renderer[0];
+                aimGeometry.Add(enemy,renderers);
+            }
+            Bounds bounds=new Bounds(enemy.transform.position+Vector3.up,Vector3.one);
+            bool found=false;
+            for(int i=0;i<renderers.Length;i++)
+                if(renderers[i]!=null && renderers[i].enabled)
+                {
+                    if(!found) { bounds=renderers[i].bounds; found=true; }
+                    else bounds.Encapsulate(renderers[i].bounds);
+                }
+            return bounds;
+        }
+
+        internal Vector3 EnemyBodyPoint(EnemyController enemy)
+        {
+            if(enemy==null) return aimPoint+Vector3.up;
+            Bounds bounds=EnemyAimBounds(enemy);
+            Vector3 at=enemy.transform.position;
+            at.y=Mathf.Clamp(bounds.center.y,at.y+.35f,at.y+3f);
+            return at;
+        }
+
+        private static bool ValidAimTarget(EnemyController enemy)
+        {
+            return enemy!=null && !enemy.IsDead && enemy.gameObject.activeInHierarchy;
+        }
+
+        private void PruneAimGeometry()
+        {
+            if(aimGeometry.Count<=session.Enemies.Count+4) return;
+            staleAimGeometry.Clear();
+            foreach(KeyValuePair<EnemyController,Renderer[]> pair in aimGeometry)
+                if(!ValidAimTarget(pair.Key)) staleAimGeometry.Add(pair.Key);
+            for(int i=0;i<staleAimGeometry.Count;i++) aimGeometry.Remove(staleAimGeometry[i]);
+        }
+
+        private void FaceAim()
+        {
+            if(!ValidAimTarget(AimTarget)) AimTarget=null;
+            if(AimTarget!=null) aimPoint=CombatFx.Flat(AimTarget.transform.position);
+            Vector3 forward=CombatFx.Flat(aimPoint-transform.position);
+            if(forward.sqrMagnitude>.0001f) transform.rotation=Quaternion.LookRotation(forward.normalized);
+        }
+
+        private EnemyController MagicConeTarget()
+        {
+            Vector3 direction=CombatFx.Flat(aimPoint-transform.position).normalized;
+            if(direction.sqrMagnitude<.01f) direction=transform.forward;
+            EnemyController selected=null;
+            float nearest=14f;
+            for(int i=0;i<session.Enemies.Count;i++)
+            {
+                EnemyController enemy=session.Enemies[i];
+                if(!ValidAimTarget(enemy)) continue;
+                Vector3 delta=CombatFx.Flat(enemy.transform.position-transform.position);
+                float distance=delta.magnitude;
+                if(distance<=nearest && Vector3.Angle(direction,delta)<=35f) { selected=enemy; nearest=distance; }
+            }
+            return selected;
         }
 
         private float Damage(float multiplier)
@@ -210,7 +344,10 @@ namespace Emberfall
 
         private void BasicAttack()
         {
+            if (HeroClass==HeroClass.Arcanist && !ValidAimTarget(AimTarget)) AimTarget=MagicConeTarget();
+            FaceAim();
             GameAudio.Play(SoundCue.Attack);
+            model.PlayAction(-1,true);
             attackAnimation = 1f;
             Color color = GameBalance.ClassColor(HeroClass);
             if (HeroClass == HeroClass.Vanguard)
@@ -223,12 +360,15 @@ namespace Emberfall
             {
                 bool ranger = HeroClass == HeroClass.Ranger;
                 attackCooldown = ranger ? .34f : .52f;
-                CombatProjectile.Friendly(this,session,transform.position + transform.forward * .7f,transform.forward,Damage((ranger ? .78f : 1.15f)*(mobilityTime>0?1f+.12f*mobilityRank:1f)),color,false,ranger,true);
+                Vector3 target=ValidAimTarget(AimTarget)?EnemyBodyPoint(AimTarget):new Vector3(aimPoint.x,1.15f,aimPoint.z);
+                float distance=CombatFx.Flat(target-transform.position).magnitude;
+                Vector3 muzzle=transform.position+Vector3.up*1.15f+transform.forward*Mathf.Min(.55f,distance*.3f);
+                CombatProjectile.BasicShot(this,session,muzzle,target,Damage((ranger ? .78f : 1.15f)*(mobilityTime>0?1f+.12f*mobilityRank:1f)),color,ranger,AimTarget);
             }
             if (mobilityTime > 0) attackCooldown *= .8f;
         }
 
-        private bool Melee(float range, float arc, float damage, float knockback, float stun)
+        private bool Melee(float range, float arc, float damage, float knockback, float stun, float knockdown = 0)
         {
             bool hit = false;
             for (int i = session.Enemies.Count - 1; i >= 0; i--)
@@ -240,6 +380,7 @@ namespace Emberfall
                 {
                     hit = true;
                     enemy.TakeDamage(damage,delta.normalized,knockback,stun);
+                    if (knockdown > 0 && enemy.StatusEffects != null) enemy.StatusEffects.Knockdown(knockdown);
                 }
             }
             return hit;
@@ -323,6 +464,28 @@ namespace Emberfall
             AdvancedSkillVfx.Beam(this,previous+Vector3.up,transform.position+Vector3.up,GameBalance.ClassColor(HeroClass),.55f,.35f);
         }
 
+        internal bool CanBeginSkillTargeting(int skill)
+        {
+            if(session==null || IsDead || !session.HasStarted || session.InputBlocked || skill<0 || skill>=GameBalance.SkillCount || GameBalance.IsPassive(skill)) return false;
+            int rank=session.Progression.Profile.skillRanks[skill];
+            string failure=null;
+            if(rank<=0) failure="按 K 学习这个技能后再施放。";
+            else if(skillRuntime.Remaining(skill)>0) failure=GameBalance.SkillName(HeroClass,skill)+" 冷却中（"+skillRuntime.Remaining(skill).ToString("0.0")+" 秒）";
+            else if(Energy<GameBalance.SkillEnergyCosts[skill]) failure="能量不足：普攻命中回复 8 点，持续回复每秒 4 点。";
+            if(failure==null) return true;
+            if(skillFeedbackCooldown<=0) { session.Notify(failure); skillFeedbackCooldown=.8f; }
+            return false;
+        }
+
+        internal void ConfirmTargetedSkill(int skill,Vector3 worldPoint)
+        {
+            if(!CanBeginSkillTargeting(skill)) return;
+            AimTarget=null;
+            aimPoint=CombatFx.Flat(worldPoint);
+            FaceAim();
+            CastSkill(skill);
+        }
+
         private void CastSkill(int slot)
         {
             if (slot < 0 || slot >= GameBalance.SkillCount || GameBalance.IsPassive(slot)) return;
@@ -347,6 +510,7 @@ namespace Emberfall
                 return;
             }
             GameAudio.Play(SoundCue.Cast);
+            model.PlayAction(slot,false);
             attackAnimation = 1;
             float power = 1f + (rank-1)*.3f;
             float range = GameBalance.SkillRangeMultiplier(rank);
@@ -382,7 +546,7 @@ namespace Emberfall
                 else if (slot == 1)
                 {
                     CombatFx.Slash(transform.position,transform.forward,4.8f*range,new Color(1f,.85f,.4f));
-                    Melee(4.8f*range,90+(rank-1)*10,Damage(2.5f*power),1.9f,1.3f+(rank-1)*.3f);
+                    Melee(4.8f*range,90+(rank-1)*10,Damage(2.5f*power),1.9f,1.3f+(rank-1)*.3f,1.3f+(rank-1)*.3f);
                     CombatFx.Ring(transform.position+transform.forward*2.5f*range,2.1f*range,color,.4f,.16f);
                     if(rank>=2) CombatArea.Spawn(this,session,transform.position+transform.forward*3f*range,2.3f*range,Damage(.9f*power),.6f,.25f,0,1,color,false,false,0,rank==3?Damage(1.3f*power):0);
                 }
@@ -396,8 +560,8 @@ namespace Emberfall
             {
                 if (slot == 0)
                 {
-                    CombatArea.Spawn(this,session,transform.position,3.7f*range,Damage(1.5f*power),2f,0,0,1f,new Color(.51f,.92f,1f));
-                    if(rank>=2) CombatArea.Spawn(this,session,transform.position,3.7f*range,Damage(.75f*power),1.2f,.5f,0,1f,new Color(.51f,.92f,1f));
+                    CombatArea.Spawn(this,session,transform.position,3.7f*range,Damage(1.5f*power),2f,0,0,1f,new Color(.51f,.92f,1f),statusSkill:0,statusRank:rank);
+                    if(rank>=2) CombatArea.Spawn(this,session,transform.position,3.7f*range,Damage(.75f*power),1.2f,.5f,0,1f,new Color(.51f,.92f,1f),statusSkill:0,statusRank:rank);
                     if(rank==3) for(int i=0;i<8;i++)
                     {
                         Vector3 shard=Quaternion.Euler(0,i*45f,0)*Vector3.forward;
