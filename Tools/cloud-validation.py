@@ -91,6 +91,7 @@ def main():
     parser.add_argument("--dotnet", default=os.environ.get("DOTNET", "dotnet"),
                         help=".NET 8 SDK executable (or set DOTNET)")
     parser.add_argument("--compile", action="store_true", help="also compile all runtime sources against Unity references")
+    parser.add_argument("--compile-android", action="store_true", help="compile the UNITY_ANDROID runtime branch against pinned references; does not build an APK")
     parser.add_argument("--download-references", action="store_true", help="download pinned Unity reference DLLs if missing; implies --compile")
     parser.add_argument("--unity-editor", type=Path, help="also compile Windows/iOS runtime, Editor, and visual-validation source using installed Unity 6000.6 DLLs (does not launch Unity)")
     args = parser.parse_args()
@@ -274,19 +275,23 @@ def main():
                         [dotnet, "run", "--project", str(project), "--no-restore", "--configuration", "Release", "--", str(workspace / "saves")]]
             passed = run_check(name, commands, env, output, report)
             failed = failed or not passed
-        if args.compile or args.download_references:
+        if args.compile or args.download_references or args.compile_android:
             try:
                 refs = unity_references(args.download_references)
                 sources = sorted((ROOT / "Assets/Scripts").rglob("*.cs"))
-                project = write_project(workspace / "runtime-compile", sources, references=list(refs.glob("*.dll")))
-                commands = [[dotnet, "restore", str(project), "--configfile", str(config), "--verbosity", "quiet"],
-                            [dotnet, "build", str(project), "--no-restore", "--configuration", "Release", "--verbosity", "minimal"]]
-                passed = run_check("runtime-compile", commands, env, output, report)
+                variants = [("runtime-compile", "")] if args.compile or args.download_references else []
+                if args.compile_android:
+                    variants.append(("android-runtime-compile", "UNITY_ANDROID"))
+                for name, defines in variants:
+                    project = write_project(workspace / name, sources, references=list(refs.glob("*.dll")), defines=defines)
+                    commands = [[dotnet, "restore", str(project), "--configfile", str(config), "--verbosity", "quiet"],
+                                [dotnet, "build", str(project), "--no-restore", "--configuration", "Release", "--verbosity", "minimal"]]
+                    passed = run_check(name, commands, env, output, report)
+                    failed = failed or not passed
                 report["runtimeSourceCount"] = len(sources)
-                failed = failed or not passed
             except (OSError, RuntimeError, subprocess.CalledProcessError) as error:
-                print("FAIL runtime-compile: " + str(error), file=sys.stderr)
-                report["checks"].append({"name": "runtime-compile", "passed": False, "error": str(error)})
+                print("FAIL reference-compile-setup: " + str(error), file=sys.stderr)
+                report["checks"].append({"name": "reference-compile-setup", "passed": False, "error": str(error)})
                 failed = True
         if args.unity_editor:
             managed = args.unity_editor.resolve().parent / "Data/Managed"
@@ -300,6 +305,7 @@ def main():
                 for variant, extra_defines in [
                     ("runtime", "UNITY_STANDALONE;UNITY_STANDALONE_WIN"),
                     ("ios-runtime", "UNITY_IOS"),
+                    ("android-runtime", "UNITY_ANDROID"),
                     ("editor", "UNITY_EDITOR;UNITY_EDITOR_LINUX"),
                     ("visual-validation", "EMBERFALL_VISUAL_VALIDATION;UNITY_STANDALONE;UNITY_STANDALONE_WIN"),
                 ]:
