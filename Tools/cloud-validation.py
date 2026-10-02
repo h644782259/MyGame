@@ -330,6 +330,10 @@ def main():
             if ROOT/"Tests/CombatBalanceTests.cs" in sources:sources.append(ROOT/"Assets/Scripts/Core/SkillDamageBudgets.cs")
         for _, sources, _ in checks:
             sources[:] = list(dict.fromkeys(sources))
+        for name, script in [("asset-meta-guids", "Tools/validate-meta-guids.py"),
+                             ("asset-meta-guid-controls", "Tests/MetaGuidAuditTests.py")]:
+            passed = run_check(name, [[sys.executable, str(ROOT / script)]], env, output, report)
+            failed = failed or not passed
         for name, sources, program in checks:
             project = write_project(workspace / name, sources, program, defines={"collection-render-lifecycle-modern":"UNITY_2023_1_OR_NEWER", "combat-review-object-id-modern-contract":"UNITY_6000_6_OR_NEWER", "game-font-android":"UNITY_ANDROID", "game-font-ios":"UNITY_IOS"}.get(name, ""))
             commands = [[dotnet, "restore", str(project), "--configfile", str(config), "--verbosity", "quiet"],
