@@ -3,7 +3,7 @@ r=Path(__file__).resolve().parent.parent/'Assets/Scripts/Combat'
 p=(r/'PlayerController.cs').read_text();pet=(r/'SummonedCompanion.cs').read_text();charge=(r/'SkillChargeController.cs').read_text()
 assert 'if (!TraversalStartedThisFrame && wantsBasic && !suppressBasic' in p
 basic=p[p.index('private void BasicAttack()'):p.index('private bool Melee(')]
-assert basic.index('TraversalStartedThisFrame || model.BasicActionBlocked')<basic.index('GameAudio.Play(SoundCue.Attack)')<basic.index('model.PlayAction(')
+assert basic.index('TraversalStartedThisFrame || skillBasicRecovery.Blocked')<basic.index('GameAudio.Play(SoundCue.Attack)')<basic.index('model.PlayAction(')
 command=pet[pet.index('private void Command('):pet.index('private float AttackMultiplier')]
 assert 'if (preservePoint)\n            { commandedPoint' in command and 'preservePoint && commandedTarget == null' not in command
 acquire=pet[pet.index('private EnemyController AcquireTarget()'):pet.index('private void Update()')]

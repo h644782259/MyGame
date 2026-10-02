@@ -221,12 +221,16 @@ def main():
             'using System; internal static class Program { static void Main(string[] args) { Console.WriteLine(AdventureProgressionTests.Run(args[0])); } }'))
         checks.append(("build-size-policy", [ROOT/"Assets/Editor/BuildSizePolicy.cs", ROOT/"Tests/BuildSizePolicyTests.cs"],
             'using System; internal static class Program { static void Main() { Console.WriteLine(BuildSizePolicyTests.Run()); } }'))
-        checks.append(("mobile-room-objective",[ROOT/"Assets/Scripts/Core/RoomChainState.cs",ROOT/"Assets/Scripts/UI/RoomObjectivePresentation.cs",ROOT/"Assets/Scripts/UI/MobileControlLayout.cs",ROOT/"Tests/RoomObjectivePresentationTests.cs"],
+        checks.append(("mobile-room-objective",[ROOT/"Assets/Scripts/Core/RoomTacticalRegion.cs",ROOT/"Assets/Scripts/Core/RoomChainState.cs",ROOT/"Assets/Scripts/UI/RoomObjectivePresentation.cs",ROOT/"Assets/Scripts/UI/MobileControlLayout.cs",ROOT/"Tests/RoomObjectivePresentationTests.cs"],
             'using System; internal static class Program { static void Main() { Console.WriteLine(RoomObjectivePresentationTests.Run()); } }'))
+        checks.append(("tactical-room-region",[ROOT/("Assets/Scripts/"+f+".cs") for f in ["Core/RoomTacticalRegion","Core/RoomChainState","Core/ExpeditionModeState","Core/TierRewardBand","UI/RoomObjectivePresentation","World/WorldTraversal"]]+[ROOT/"Tests/DestructibleTraversalTests.cs",ROOT/"Tests/RoomTacticalRegionTests.cs"],
+            'using System; internal static class Program { static void Main() { Console.WriteLine(RoomTacticalRegionTests.Run()); } }'))
         checks.append(("tactical-room-geometry",[ROOT/"Assets/Scripts/World/WorldTraversal.cs",ROOT/"Assets/Scripts/World/TacticalRoomGeometry.cs",ROOT/"Tests/DestructibleTraversalTests.cs",ROOT/"Tests/TacticalRoomGeometryTests.cs"],
             'using System; internal static class Program { static void Main() { Console.WriteLine(TacticalRoomGeometryTests.Run()); } }'))
         for name, test, helpers in [
             ("basic-action-timeline", "BasicActionTimelineTests", ["Core/BasicActionTimeline"]),
+            ("weapon-structure", "WeaponStructureTests", ["Core/WeaponStructure"]),
+            ("costume-layers", "CostumeLayersTests", ["Core/CostumeLayers"]),
             ("panel-readability", "PanelReadabilityLayoutTests", ["UI/AdventureSelectionLayout", "UI/MobilePanelLayout"]),
             ("decoration-budget", "DecorationBudgetTests", ["Core/DecorationBudget"]),
             ("mobile-combat-feedback", "MobileCombatFeedbackTests", ["UI/MobileCombatPresentation"]),
@@ -335,14 +339,22 @@ def main():
                     ("ios-runtime", "UNITY_IOS"),
                     ("android-runtime", "UNITY_ANDROID"),
                     ("editor", "UNITY_EDITOR;UNITY_EDITOR_LINUX"),
+                    ("android-editor", "UNITY_EDITOR;UNITY_EDITOR_LINUX;UNITY_ANDROID"),
+                    ("ios-editor", "UNITY_EDITOR;UNITY_EDITOR_LINUX;UNITY_IOS"),
                     ("visual-validation", "EMBERFALL_VISUAL_VALIDATION;UNITY_STANDALONE;UNITY_STANDALONE_WIN"),
                 ]:
                     name = "exact-unity-" + variant + "-compile"
                     refs = list(modules.glob("UnityEngine*.dll"))
                     sources = sorted((ROOT / "Assets/Scripts").rglob("*.cs"))
                     defines = "UNITY_6000_0_OR_NEWER;UNITY_6000_6_OR_NEWER;" + extra_defines
-                    if variant == "editor":
+                    if variant in ("editor", "android-editor", "ios-editor"):
                         refs += list(modules.glob("UnityEditor*.dll"))
+                        refs += list(managed.glob("UnityEditor*.dll"))
+                        if variant == "android-editor":
+                            refs += list((args.unity_editor.resolve().parent / "Data/PlaybackEngines/AndroidPlayer").glob("**/UnityEditor.Android.Extensions.dll"))
+                        if variant == "ios-editor":
+                            refs += list((args.unity_editor.resolve().parent / "Data/PlaybackEngines/iOSSupport").glob("**/UnityEditor.iOS.Extensions*.dll"))
+                        refs = list({p.resolve():p for p in refs}.values())
                         sources += sorted((ROOT / "Assets/Editor").rglob("*.cs"))
                     elif variant == "visual-validation":
                         sources += sorted((ROOT / "Assets/Tests").rglob("*.cs"))
