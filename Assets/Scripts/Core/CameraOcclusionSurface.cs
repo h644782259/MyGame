@@ -13,14 +13,16 @@ namespace Emberfall
         private Material original,fade;
         private float alpha=1;
         private BuildingOcclusionGroup group;
-        private bool requested;
+        private bool requested,heroRequested,targetRequested;
         private static readonly HashSet<BuildingOcclusionGroup> hitGroups=new HashSet<BuildingOcclusionGroup>(),admittedGroups=new HashSet<BuildingOcclusionGroup>();
         public static int LastOccluders {get;private set;}
+        public static int LastHeroOccluders {get;private set;}
+        public static int LastTargetOccluders {get;private set;}
         public static void Mark(GameObject root)
         {if(root!=null&&root.GetComponent<CameraOcclusionSurface>()==null)root.AddComponent<CameraOcclusionSurface>();}
         internal void AssignGroup(BuildingOcclusionGroup value){group=value;}
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void ResetRegistry(){surfaces.Clear();hitGroups.Clear();admittedGroups.Clear();fadedCount=0;LastOccluders=0;}
+        private static void ResetRegistry(){surfaces.Clear();hitGroups.Clear();admittedGroups.Clear();fadedCount=0;LastOccluders=0;LastHeroOccluders=0;LastTargetOccluders=0;}
         private void OnEnable()
         {visual=GetComponent<Renderer>();if(visual!=null&&surfaces.Count<CameraVisibilityRules.MaximumSurfaces&&!surfaces.Contains(this))surfaces.Add(this);}
         public static float Nearest(Vector3 point)
@@ -35,12 +37,16 @@ namespace Emberfall
         {Advance(camera,hero,hero,hero,false,deltaTime);}
         public static void Advance(Vector3 camera,Vector3 torso,Vector3 feet,Vector3 target,bool protectTarget,float deltaTime)
         {
-            LastOccluders=0;hitGroups.Clear();admittedGroups.Clear();
+            LastOccluders=0;LastHeroOccluders=0;LastTargetOccluders=0;hitGroups.Clear();admittedGroups.Clear();
             foreach(var surface in surfaces)
             {
                 if(surface==null||surface.visual==null)continue;
                 Bounds bounds=surface.visual.bounds;bounds.Expand(.7f);
-                surface.requested=surface.visual.enabled&&(Protects(bounds,camera,torso)||Protects(bounds,camera,feet)||(protectTarget&&Protects(bounds,camera,target)));
+                surface.heroRequested=surface.visual.enabled&&(Protects(bounds,camera,torso)||Protects(bounds,camera,feet));
+                surface.targetRequested=surface.visual.enabled&&protectTarget&&Protects(bounds,camera,target);
+                surface.requested=surface.heroRequested||surface.targetRequested;
+                if(surface.heroRequested)LastHeroOccluders++;
+                if(surface.targetRequested)LastTargetOccluders++;
                 if(surface.requested)LastOccluders++;
                 if(surface.requested&&surface.group!=null)hitGroups.Add(surface.group);
             }
@@ -92,7 +98,7 @@ namespace Emberfall
             {if(visual!=null&&visual.sharedMaterial==fade)visual.sharedMaterial=original;Destroy(fade);fade=null;fadedCount=Mathf.Max(0,fadedCount-1);}
             alpha=1;
         }
-        public static void RestoreAll(){foreach(var surface in surfaces)if(surface!=null){surface.Restore();if(surface.group!=null)surface.group.SetOccluded(false);}LastOccluders=0;}
+        public static void RestoreAll(){foreach(var surface in surfaces)if(surface!=null){surface.Restore();if(surface.group!=null)surface.group.SetOccluded(false);}LastOccluders=0;LastHeroOccluders=0;LastTargetOccluders=0;}
         private void OnDisable(){surfaces.Remove(this);Restore();}
         private void OnDestroy(){surfaces.Remove(this);Restore();}
     }
