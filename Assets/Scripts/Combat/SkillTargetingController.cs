@@ -21,6 +21,7 @@ namespace Emberfall
             }
         }
 
+        internal bool ConfirmingContract { get; private set; }
         public bool IsTargeting { get { return skill >= 0; } }
         public bool CancelledThisFrame { get { return cancelledFrame == Time.frameCount; } }
         public bool ConsumedThisFrame { get { return CancelledThisFrame || castFrame == Time.frameCount; } }
@@ -119,7 +120,13 @@ namespace Emberfall
             bool ready = owner.CanBeginSkillTargeting(confirmed);
             Cancel();
             if (!ready) return false;
-            if (!owner.ConfirmTargetedSkill(confirmed, point)) return false;
+            // Only the deliberate desktop confirmation owns an override. Mobile
+            // auto-confirmation and ordinary contracts inherit the team order.
+            ConfirmingContract = owner.HeroClass == HeroClass.Summoner && confirmed == 9;
+            bool committed;
+            try { committed = owner.ConfirmTargetedSkill(confirmed, point); }
+            finally { ConfirmingContract = false; }
+            if (!committed) return false;
             castFrame = Time.frameCount;
             return true;
         }

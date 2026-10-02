@@ -6,7 +6,7 @@ public static class RoomObjectivePresentationTests
     static void Check(bool value,string why){n++;if(!value)throw new Exception(why);}
     static RoomObjectivePresentation View(RoomChainState run,bool inside=false,bool contested=false,bool paused=false,bool support=true)
     {
-        var view=RoomObjectivePresentation.Create(run,inside,contested,paused,support);
+        var view=RoomObjectivePresentation.Create(run,inside,contested?2:0,paused,new RoomSupportSnapshot(support,support?2:0,support?RoomTargetSupport.Supported:RoomTargetSupport.Severed));
         float width=new MobileControlLayout(568,320,163).AdventureStatus.Width-12;
         // Conservative one-em-per-character bound, not real Unity font rendering.
         Check(view.Title.Length*13<=width&&view.ProgressText.Length*11<=width&&view.Hint.Length*10<=width&&view.SupportHint.Length*10<=width,"all compact lines fit one-em budget on smallest phone");
@@ -16,12 +16,19 @@ public static class RoomObjectivePresentationTests
     public static string Run()
     {
         n=0;var purify=new RoomChainState(0);Register(purify);
+        foreach(RoomTargetSupport target in Enum.GetValues(typeof(RoomTargetSupport)))
+        foreach(int count in new[]{0,1,5})
+        {
+            var compact=RoomObjectivePresentation.Create(purify,true,6,false,new RoomSupportSnapshot(true,count,target));
+            float budget=new MobileControlLayout(568,320,163).AdventureStatus.Width-12;
+            Check(compact.SupportHint.Length*10<=budget&&compact.Hint.Length*10<=budget,"every target support state and max room count fits compact text budget");
+        }
         var v=View(purify);Check(v.Title.Contains("双印净化")&&v.ProgressText.Contains("0/2")&&v.ProgressText.Contains("0.0/3秒")&&v.Hint.Contains("站入金环"),"initial mobile card explains seal count and time");
         for(int i=0;i<6;i++)purify.Advance(.25f,true,true,false);
         v=View(purify,true);Check(v.ProgressText.Contains("1.5/3秒")&&v.Fraction==.25f&&v.Hint.Contains("正在累积"),"bar tracks capture rather than room index");
-        Check(View(purify,true,true).Hint.Contains("敌人争夺"),"contest visible");
+        Check(View(purify,true,true).Hint.Contains("争夺2敌"),"contest visible");
         Check(View(purify,true,true,true).Hint.Contains("已暂停"),"pause takes precedence");
-        Check(View(purify).SupportHint.Contains("敌群减伤")&&View(purify).SupportHint.Contains("引开或击杀"),"support counterplay remains visible during capture");
+        Check(View(purify).SupportHint.Contains("援2")&&View(purify).SupportHint.Contains("目标受援"),"support counterplay remains visible during capture");
         Check(View(purify,support:false).SupportHint.Contains("护援已断"),"supplier death changes persistent hint");
         for(int i=0;i<6;i++)purify.Advance(.25f,true,true,false);
         v=View(purify);Check(v.ProgressText.Contains("1/2")&&v.Fraction==.5f,"first seal advances overall bar and resets current timer");

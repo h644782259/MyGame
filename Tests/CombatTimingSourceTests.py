@@ -30,7 +30,7 @@ for component,batch in [(area,'pendingTickTargets'),(spell,'pendingTargets')]:
 advanced=read('Combat/AdvancedSkillSequence.cs')
 check('if (session.InputBlocked || Time.deltaTime <= 0) return;' in advanced and 'if (session.InputBlocked) return;' in advanced,'advanced multi-event catch-up stops at pause boundaries without consuming the next event')
 check('CombatSight.Area(transform.position,enemy.transform.position)' in area,'area tick and pull use shared wall visibility')
-check('TargetEnemy = owner.AimTarget;' in charge and charge.index('owner.ExecuteChargedSkill(skill);')<charge.index('TargetEnemy = null;',charge.index('owner.ExecuteChargedSkill(skill);')),'charged target snapshot survives through commit then clears')
+check('TargetEnemy = contract && !explicitPoint ? SummonedCompanion.ExplicitFocus(owner) ?? owner.AimTarget : owner.AimTarget;' in charge and charge.index('owner.ExecuteChargedSkill(skill);')<charge.index('TargetEnemy = null;',charge.index('owner.ExecuteChargedSkill(skill);')),'charged target snapshot survives through commit then clears')
 check('session.Enemies.Contains(TargetEnemy)' in charge and 'owner.CombatEpoch != epoch' in charge,'charge rejects disposed target/old encounter')
 check('SkillDamageBudgets.ChargeSeconds(hero, skill)' in charge,'live charge and combo budget use same production duration')
 check('executingChargedSkill ? charge.TargetEnemy : AimTarget, executingChargedSkill' in player,'player passes locked target and point intent to summoner')

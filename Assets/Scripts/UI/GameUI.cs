@@ -726,6 +726,7 @@ namespace Emberfall
                 : p.level < 2 ? "经验 " + p.xp + " / " + GameBalance.XpToNext(p.level)
                 : p.skillRanks[0] == 0 ? "可用技能点 " + p.skillPoints + " · K"
                 : "收集装备，进入传送门 · T";
+            string growthTitle,growthDetail;if(TryGrowthHudHint(out growthTitle,out growthDetail)){objectiveText=growthTitle;objectiveProgress=growthDetail;}
             float bodyHeight=Mathf.Max(24,Style(15,true,true).CalcHeight(new GUIContent(objectiveText),255));
             string progressText=PlatformText(objectiveProgress);
             float progressHeight=Mathf.Max(18,Style(12,false,true).CalcHeight(new GUIContent(progressText),255));
@@ -902,7 +903,11 @@ namespace Emberfall
                 Border(slot, new Color(accent.r, accent.g, accent.b, locked ? .23f : .55f));
                 if (hotbarDragging && !hotbarPointerConfiguring && (slotIndex == hotbarPointerSlot || slot.Contains(Mouse))) Border(slot, gold, 2);
                 if (!empty)
-                    DrawIcon(new Rect(slot.center.x - (mobile ? 22 : 16), slot.y + 10, mobile ? 44 : 32, mobile ? 44 : 32), HotbarIcon(p, skill), locked ? new Color(.4f, .4f, .4f) : lacksEnergy ? new Color(.55f, .68f, .85f) : Color.white);
+                {
+                    Rect identity=new Rect(slot.center.x-(mobile?22:16),slot.y+10,mobile?44:32,mobile?44:32);
+                    if(potion)DrawIcon(identity,HotbarIcon(p,skill),locked?new Color(.4f,.4f,.4f):Color.white);
+                    else DrawSkillIdentity(identity,p.heroClass,skill,rank,!locked&&!lacksEnergy,32);
+                }
                 else Text(new Rect(slot.x, slot.y + 9, slot.width, 32), "+", 20, new Color(.34f, .44f, .53f), false, false, TextAnchor.MiddleCenter);
                 if (cooldown > .01f)
                 {
@@ -1524,8 +1529,8 @@ namespace Emberfall
                 Color accent = rank > 0 ? jade : canLearn ? gold : muted;
                 Fill(node, selectedSkill == i ? new Color(.12f, .20f, .23f) : rank > 0 ? new Color(.06f, .145f, .15f) : card);
                 Border(node, selectedSkill == i ? gold : new Color(accent.r, accent.g, accent.b, rank > 0 || canLearn ? .7f : .25f), selectedSkill == i ? 2 : 1);
-                Fill(new Rect(node.x + 9, node.y + 8, 3, 15), accent);
-                Text(new Rect(node.x + 17, node.y + 7, 117, 24), GameBalance.SkillName(p.heroClass, i), 14, rank > 0 || canLearn ? pale : muted, true, false, TextAnchor.MiddleCenter);
+                DrawSkillIdentity(new Rect(node.x+5,node.y+7,24,24),p.heroClass,i,rank,rank>0||canLearn,24);
+                Text(new Rect(node.x + 32, node.y + 7, 107, 24), GameBalance.SkillName(p.heroClass, i), 14, rank > 0 || canLearn ? pale : muted, true, false, TextAnchor.MiddleCenter);
                 Text(new Rect(node.x + 5, node.y + 35, 134, 18), "Lv." + required + " / " + (passive ? "被动" : "主动"), 11, passive ? new Color(.82f, .74f, .98f) : muted, false, false, TextAnchor.MiddleCenter);
                 string state = rank > 0 ? GameBalance.SkillRankName(rank) + (canLearn ? " · 可进阶" : " · 已学习") : canLearn ? "可学习" : !prerequisitesMet ? "需要前置" : p.level < required ? "等级未达" : "需要技能点";
                 Text(new Rect(node.x + 5, node.y + 57, 134, 17), state, 11, accent, true, false, TextAnchor.MiddleCenter);
@@ -1760,11 +1765,13 @@ namespace Emberfall
         {
             if (session == null || !session.HasStarted || session.IsDead || session.Paused) return;
             panel = panel == value ? Panel.None : value;
+            if(panel==Panel.Skills)ResetMobileSkillNavigation();
             session.SetUIBlocking(panel != Panel.None);
         }
 
         private void ClosePanel()
         {
+            if(CloseMobileSkillDetail())return;
             if(CloseProgressionGoalSurface())return;
             if(CloseBuildPlanSurface())return;
             if(CloseTravelMap())return;

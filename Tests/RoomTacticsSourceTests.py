@@ -13,12 +13,12 @@ assert 'if(!SaveBeforeLeaving())return false;' in s
 assert s.index('if(!SaveBeforeLeaving())return false;')<s.index('RoomChainRun.Next(true,false)')
 assert 'Player.RetireCombatForWorldTransition()' in s and 'roomEnemies.Clear()' in s
 assert 'RoomChainRun.Finished||InputBlocked||Player==null' in t
-assert 'WorldTraversal.HasLineOfSight(enemy.transform.position,target)' in t
-assert 'enemy==roomSupplier||enemy.IsBoss' in t and 'roomSupplier.IsDead' in t
+assert 'WorldTraversal.HasLineOfSight(enemy.transform.position,RoomObjectivePoint)' in t
+assert 'enemy==roomSupplier||enemy.IsBoss' in t and 'LiveRoomEnemy(roomSupplier)' in t
 assert 'amount *= session.RoomSupportMultiplier(this)' in e
 assert 'WorldTraversal.HasLineOfSight(enemy.transform.position,roomSupplier.transform.position)' in t
 assert 'TacticalRoomGeometry.Register(layout)' in w and 'TacticalRoomGeometry.Walls(layout)' in w
-assert 'MakeRoomObjective(first)' in t and '2.4f,.09f' in w
+assert 'MakeRoomObjective(first)' in t and 'RoomTacticalRegion.CaptureRadius,.09f' in w
 assert 'TickRoomTactics();' in read('Assets/Scripts/Core/GameSession.cs')
 
 assert "Player.Teleport(dungeon&&RoomChainRun!=null?TacticalRoomGeometry.Entrance:" in read("Assets/Scripts/Core/GameSession.cs")
@@ -28,9 +28,13 @@ assert "var entrance=TacticalRoomGeometry.Entrance;" in read("Tests/TacticalRoom
 
 mobile=read('Assets/Scripts/UI/GameUI.Mobile.cs');modes=read('Assets/Scripts/UI/GameUI.Modes.cs')
 assert 'TouchRect(l.AdventureStatus)' in mobile
-assert 'RoomObjectivePresentation.Create(session.RoomChainRun,session.RoomCaptureInside,session.RoomCaptureContested,session.InputBlocked,session.RoomSupplyActive)' in modes
+assert ('var objective=session.RoomObjectiveView;' in modes or 'RoomObjectivePresentation.Create(session.RoomChainRun,session.RoomCaptureInside,session.RoomCaptureContested,session.InputBlocked,session.RoomSupplyActive)' in modes) # Root owns the one-line UI migration.
+assert 'RoomContestantCount,InputBlocked,RoomSupport)' in t
 for value in ['objective.Title','objective.ProgressText','objective.Hint','objective.Fraction','objective.SupportHint']:assert value in modes
-assert 'RoomCaptureContested=contested;' in t and 'RoomCaptureInside=Vector3.Distance(Player.transform.position,target)<2.4f;' in t
+assert 'RoomCaptureContested {get{return RoomContestantCount>0;}}' in t and 'RoomTacticalRegion.ContainsPlayer(' in t
+assert 'RoomTacticalRegion.Contests(' in t and 'enemy.NavigationRadius' in t
+assert 'session.IsRoomContesting(this)' in e and 'MakeRoomContestMarker(transform,NavigationRadius)' in e
+assert 'RoomTacticalRegion.ReceivesSupport(' in t and 'RoomSupportMultiplier(target)<1' in t
 
 assert "session.IsRoomSupplier(this)" in e and "6米内可见同伴减伤30%" in e
 

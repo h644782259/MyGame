@@ -31,8 +31,11 @@ namespace Emberfall
             if(collectionModel==null){collectionModel=new CollectionModelPreview();collectionModel.SetYaw(collectionPreviewYaw);}
             FashionData wings=progression.EquippedFashion(FashionSlot.Wings),weapon=progression.EquippedFashion(FashionSlot.Weapon);
             if(trial!=null){if(trial.slot==FashionSlot.Wings)wings=trial;else weapon=trial;}
+            CollectionPreviewComposition composition=trial==null?CollectionPreviewComposition.Full:trial.slot==FashionSlot.Wings?CollectionPreviewComposition.Back:CollectionPreviewComposition.Weapon;
+            collectionModel.SetComposition(composition);
+            collectionModel.SetViewport(area.width*Mathf.Abs(GUI.matrix.m00),area.height*Mathf.Abs(GUI.matrix.m11),MobileControls.Active);
             Texture image=collectionModel.Render(progression.Profile.heroClass,progression.Equipped(ItemSlot.Weapon),progression.Equipped(ItemSlot.Armor),progression.Equipped(ItemSlot.Relic),wings,weapon);
-            Fill(area,new Color(.035f,.06f,.09f));if(image!=null)GUI.DrawTexture(area,image,ScaleMode.ScaleToFit,false);
+            Fill(area,new Color(.035f,.06f,.09f));if(image!=null)GUI.DrawTexture(area,image,MobileControls.Active&&composition!=CollectionPreviewComposition.Full?ScaleMode.ScaleAndCrop:ScaleMode.ScaleToFit,false);
             if(rotate)
             {
                 float size=MobileControls.Active?48*TouchRatio:42;

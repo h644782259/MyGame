@@ -17,7 +17,9 @@ namespace Emberfall
             {
                 case SkillVisualRecipe.Fire: return FilledVfxKind.Fire;
                 case SkillVisualRecipe.Ice: return FilledVfxKind.Ice;
-                case SkillVisualRecipe.Steel: return FilledVfxKind.Crescent;
+                case SkillVisualRecipe.Steel: return FilledVfxKind.Sword;
+                case SkillVisualRecipe.Lightning: return FilledVfxKind.Lightning;
+                case SkillVisualRecipe.Arcane: return FilledVfxKind.Arcane;
                 default: return FilledVfxKind.Summon;
             }
         }

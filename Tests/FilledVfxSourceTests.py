@@ -13,7 +13,7 @@ seq=read('Assets/Scripts/Combat/AdvancedSkillSequence.cs');summon=read('Assets/S
 shader=read('Assets/Resources/FilledSpell.shader');threat=read('Assets/Resources/ThreatBoundary.shader')
 check('LineRenderer' not in fx and 'LineRenderer' not in old,'primary filled effects do not construct lines')
 check('MeshFilter' in fx and 'MeshRenderer' in fx and 'RecalculateNormals' in fx,'real world-space mesh surfaces with normals')
-check('private static Mesh crescent, crystal, flame;' in fx and 'private static Material sharedMaterial;' in fx,'three reusable meshes and one shared material')
+check('private static Mesh crescent, crystal, flame, sword, lightning, arcane, rupture, arcaneShard;' in fx and 'private static Material sharedMaterial;' in fx,'distinct reusable identity meshes and one shared material')
 check('MaximumParts=14, ReducedParts=7, DesktopEffects=20, MobileEffects=12' in recipes,'bounded mobile/reduced resource policy')
 check('active>=maximum' in fx and 'if(count>=cap)return' in fx and 'private void OnDisable(){Release();}' in fx,'runtime caps and immediate release')
 check('owner.CombatEpoch!=epoch' in fx and 'game.ModeFinished' in fx and 'game.InputBlocked||Time.deltaTime<=0' in fx,'no stale character/room or paused advancement')

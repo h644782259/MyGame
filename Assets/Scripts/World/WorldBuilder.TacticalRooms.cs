@@ -14,16 +14,33 @@ namespace Emberfall
             if(TacticalRoomGeometry.Flooded(layout))
             {
                 Rect bridge=TacticalRoomGeometry.Bridge(layout);
-                Ribbon(parent,r,"Flooded crossing",TacticalRoomGeometry.River(),3.2f,.06f,r.Material(new Color(.06f,.27f,.35f)));
-                Primitive(parent,"Offset wooden bridge",PrimitiveType.Cube,new Vector3((bridge.xMin+bridge.xMax)*.5f,.09f,0),new Vector3(5.4f,.1f,6),r.Material(new Color(.42f,.28f,.16f)));
+                BuildWaterSurface(parent,r,"Flooded crossing",TacticalRoomGeometry.River(),3.2f,.06f,WaterEnvironment.Tactical);
+                Primitive(parent,"Offset wooden bridge",PrimitiveType.Cube,new Vector3((bridge.xMin+bridge.xMax)*.5f,.09f,0),new Vector3(5.4f,.1f,6),r.Material(new Color(.42f,.28f,.16f),false,VisualSurface.Wood));
+                BuildBridgeWaterContact(parent,r,new Rect((bridge.xMin+bridge.xMax)*.5f-2.7f,-3,5.4f,6),.14f);
             }
         }
         public static GameObject MakeRoomObjective(Vector3 position)
         {
             GameObject root=new GameObject("Room capture boundary");root.transform.position=position;
             WorldResources r=root.AddComponent<WorldResources>();Material gold=r.Material(new Color(1,.8f,.25f),true);
-            Ring(root.transform,r,"Stand inside",position+Vector3.up*.08f,2.4f,.09f,gold,false);
+            Ring(root.transform,r,"Stand inside",position+Vector3.up*.08f,RoomTacticalRegion.CaptureRadius,.09f,gold,false);
             Crystal(root.transform,r,position+Vector3.up*.6f,.35f,gold);
+            return root;
+        }
+        public static GameObject MakeSideEventCrystal(Vector3 position)
+        {
+            var root=MakeLootBeacon(position,new Color(.33f,.85f,1));
+            Label(root.transform,"Optional crystal terms","晶核支线 · 2敌\n全灭：1材料+补给\n可放弃 · 不阻北门",position+Vector3.up*2.1f,.065f,new Color(.65f,.95f,1),false);
+            return root;
+        }
+        public static GameObject MakeRoomContestMarker(Transform enemy,float footprint)
+        {
+            var root=new GameObject("Contesting objective: double gold ring");
+            root.transform.SetParent(enemy,false);
+            var r=root.AddComponent<WorldResources>();
+            var gold=r.Material(new Color(1f,.82f,.18f),true);
+            Ring(root.transform,r,"Contest inner",enemy.position+Vector3.up*.08f,footprint+.10f,.055f,gold,false);
+            Ring(root.transform,r,"Contest outer",enemy.position+Vector3.up*.08f,footprint+.23f,.055f,gold,false);
             return root;
         }
     }

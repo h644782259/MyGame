@@ -221,12 +221,33 @@ def main():
             'using System; internal static class Program { static void Main(string[] args) { Console.WriteLine(AdventureProgressionTests.Run(args[0])); } }'))
         checks.append(("build-size-policy", [ROOT/"Assets/Editor/BuildSizePolicy.cs", ROOT/"Tests/BuildSizePolicyTests.cs"],
             'using System; internal static class Program { static void Main() { Console.WriteLine(BuildSizePolicyTests.Run()); } }'))
-        checks.append(("mobile-room-objective",[ROOT/"Assets/Scripts/Core/RoomChainState.cs",ROOT/"Assets/Scripts/UI/RoomObjectivePresentation.cs",ROOT/"Assets/Scripts/UI/MobileControlLayout.cs",ROOT/"Tests/RoomObjectivePresentationTests.cs"],
+        for name,test in [("progression-goal-identity","ProgressionGoalIdentityTests"),("progression-route-layers","ProgressionRouteLayerTests")]:
+            checks.append((name,[ROOT/("Assets/Scripts/Core/"+f+".cs") for f in ["GameTypes","ProgressionService","CampRouteCards","RunChoices","SkillRuntime","ProgressionHudHint","ProgressionAttention"]]+[ROOT/"Tests/ProgressionTests.cs",ROOT/("Tests/"+test+".cs")],
+                'using System; internal static class Program { static void Main(string[] args) { Console.WriteLine('+test+'.Run(args[0])); } }'))
+        checks.append(("chest-reveal-presentation",[ROOT/"Assets/Scripts/Core/GameTypes.cs",ROOT/"Assets/Scripts/Core/ProgressionService.cs",ROOT/"Assets/Scripts/UI/ChestRevealPresentation.cs",ROOT/"Tests/ProgressionTests.cs",ROOT/"Tests/ChestRevealPresentationTests.cs"],
+            'using System; internal static class Program { static void Main(string[] args) { Console.WriteLine(ChestRevealPresentationTests.Run(args[0])); } }'))
+        checks.append(("side-event-rewards",[ROOT/"Assets/Scripts/Core/GameTypes.cs",ROOT/"Assets/Scripts/Core/ProgressionService.cs",ROOT/"Tests/ProgressionTests.cs",ROOT/"Tests/SideEventRewardTests.cs"],
+            'using System; internal static class Program { static void Main(string[] args) { Console.WriteLine(SideEventRewardTests.Run(args[0])); } }'))
+        checks.append(("adventure-entry-truth",[ROOT/("Assets/Scripts/"+f+".cs") for f in ["UI/AdventureEntryPresentation","Core/ExpeditionModeState","Core/TierRewardBand","Core/TierRewardRules","Core/GameTypes","Core/SkillRuntime","Core/ProgressionGoalState"]]+[ROOT/"Tests/SkillRuntimeTests.cs",ROOT/"Tests/AdventureEntryPresentationTests.cs"],
+            'using System; internal static class Program { static void Main() { Console.WriteLine(AdventureEntryPresentationTests.Run()); } }'))
+        checks.append(("mobile-room-objective",[ROOT/"Assets/Scripts/Core/RoomTacticalRegion.cs",ROOT/"Assets/Scripts/Core/RoomChainState.cs",ROOT/"Assets/Scripts/UI/RoomObjectivePresentation.cs",ROOT/"Assets/Scripts/UI/MobileControlLayout.cs",ROOT/"Tests/RoomObjectivePresentationTests.cs"],
             'using System; internal static class Program { static void Main() { Console.WriteLine(RoomObjectivePresentationTests.Run()); } }'))
+        checks.append(("environment-readability",[ROOT/("Assets/Scripts/"+f+".cs") for f in ["Core/ArenaPulseRules","Core/WorldLabelReadability","Core/CameraVisibilityRules","Core/CombatSightRules","Combat/CombatSight","World/WorldTraversal"]]+[ROOT/"Tests/DestructibleTraversalTests.cs",ROOT/"Tests/EnvironmentReadabilityTests.cs"],
+            'using System; internal static class Program { static void Main() { Console.WriteLine(EnvironmentReadabilityTests.Run()); } }'))
+        checks.append(("escape-room-formation",[ROOT/("Assets/Scripts/"+f+".cs") for f in ["Core/EscapePostPolicy","Core/RoomTacticalRegion","Core/RoomChainState","World/WorldTraversal","World/TacticalRoomGeometry","World/EscapeRoomFormation"]]+[ROOT/"Tests/DestructibleTraversalTests.cs",ROOT/"Tests/EscapeRoomFormationTests.cs"],
+            'using System; internal static class Program { static void Main() { Console.WriteLine(EscapeRoomFormationTests.Run()); } }'))
+        checks.append(("tactical-room-region",[ROOT/("Assets/Scripts/"+f+".cs") for f in ["Core/RoomTacticalRegion","Core/RoomChainState","Core/ExpeditionModeState","Core/TierRewardBand","UI/RoomObjectivePresentation","World/WorldTraversal"]]+[ROOT/"Tests/DestructibleTraversalTests.cs",ROOT/"Tests/RoomTacticalRegionTests.cs"],
+            'using System; internal static class Program { static void Main() { Console.WriteLine(RoomTacticalRegionTests.Run()); } }'))
         checks.append(("tactical-room-geometry",[ROOT/"Assets/Scripts/World/WorldTraversal.cs",ROOT/"Assets/Scripts/World/TacticalRoomGeometry.cs",ROOT/"Tests/DestructibleTraversalTests.cs",ROOT/"Tests/TacticalRoomGeometryTests.cs"],
             'using System; internal static class Program { static void Main() { Console.WriteLine(TacticalRoomGeometryTests.Run()); } }'))
         for name, test, helpers in [
             ("basic-action-timeline", "BasicActionTimelineTests", ["Core/BasicActionTimeline"]),
+            ("weapon-structure", "WeaponStructureTests", ["Core/WeaponStructure"]),
+            ("visual-motion-envelope", "VisualMotionEnvelopeTests", ["Core/VisualMotionEnvelope"]),
+            ("environment-light-profile", "EnvironmentLightProfileTests", ["Core/EnvironmentLightProfile"]),
+            ("water-presentation", "WaterPresentationTests", ["Core/WaterPresentation"]),
+            ("collection-preview-composition", "CollectionPreviewCompositionTests", ["UI/CollectionPreviewComposition"]),
+            ("costume-layers", "CostumeLayersTests", ["Core/CostumeLayers"]),
             ("panel-readability", "PanelReadabilityLayoutTests", ["UI/AdventureSelectionLayout", "UI/MobilePanelLayout"]),
             ("decoration-budget", "DecorationBudgetTests", ["Core/DecorationBudget"]),
             ("mobile-combat-feedback", "MobileCombatFeedbackTests", ["UI/MobileCombatPresentation"]),
@@ -251,11 +272,15 @@ def main():
             'using System; internal static class Program { static void Main() { Console.WriteLine(SkillVisualRecipeTests.Run()); } }'))
         checks.append(("hold-point-state",[ROOT/"Assets/Scripts/Core/ExpeditionModeState.cs",ROOT/"Assets/Scripts/Core/TierRewardBand.cs",ROOT/"Tests/HoldPointStateTests.cs"],
             'using System; internal static class Program { static void Main() { Console.WriteLine(HoldPointStateTests.Run()); } }'))
+        checks.append(("room-blessing-usability",[ROOT/("Assets/Scripts/"+f+".cs") for f in ["Core/GameTypes","Core/RunChoices","Core/SkillRuntime","Core/SkillDamageBudgets","Combat/EnemyControlPolicy"]]+[ROOT/"Tests/SkillRuntimeTests.cs",ROOT/"Tests/RoomBlessingUsabilityTests.cs"],
+            'using System; internal static class Program { static void Main() { Console.WriteLine(RoomBlessingUsabilityTests.Run()); } }'))
         checks.append(("room-blessing-routes",[ROOT/"Assets/Scripts/Core/GameTypes.cs",ROOT/"Assets/Scripts/Core/RunChoices.cs",ROOT/"Assets/Scripts/Core/CampRouteCards.cs",ROOT/"Assets/Scripts/Core/SkillRuntime.cs",ROOT/"Tests/SkillRuntimeTests.cs",ROOT/"Tests/RoomBlessingRouteTests.cs"],
             'using System; internal static class Program { static void Main() { Console.WriteLine(RoomBlessingRouteTests.Run()); } }'))
         checks.append(("mobile-pause-navigation",[ROOT/"Assets/Scripts/UI/GameUI.PauseNavigation.cs",ROOT/"Tests/MobilePauseNavigationTests.cs"],
             'using System; internal static class Program { static void Main() { Console.WriteLine(MobilePauseNavigationTests.Run()); } }'))
-        checks.append(("collection-render-lifecycle",[ROOT/"Assets/Scripts/UI/CollectionModelPreview.cs",ROOT/"Assets/Scripts/UI/CollectionPreviewState.cs",ROOT/"Tests/CollectionRenderLifecycleTests.cs"],
+        checks.append(("collection-render-lifecycle",[ROOT/"Assets/Scripts/UI/CollectionModelPreview.cs",ROOT/"Assets/Scripts/UI/CollectionPreviewState.cs",ROOT/"Assets/Scripts/UI/CollectionPreviewComposition.cs",ROOT/"Tests/CollectionRenderLifecycleTests.cs"],
+            'using System; internal static class Program { static void Main() { Console.WriteLine(CollectionRenderLifecycleTests.Run()); } }'))
+        checks.append(("collection-render-lifecycle-modern",[ROOT/"Assets/Scripts/UI/CollectionModelPreview.cs",ROOT/"Assets/Scripts/UI/CollectionPreviewState.cs",ROOT/"Assets/Scripts/UI/CollectionPreviewComposition.cs",ROOT/"Tests/CollectionRenderLifecycleTests.cs"],
             'using System; internal static class Program { static void Main() { Console.WriteLine(CollectionRenderLifecycleTests.Run()); } }'))
         checks.append(("ui-render-cache",[ROOT/"Assets/Scripts/Core/GameTypes.cs",ROOT/"Assets/Scripts/Core/ProgressionService.cs",ROOT/"Tests/ProgressionTests.cs",ROOT/"Assets/Scripts/UI/CollectionPreviewState.cs",ROOT/"Assets/Scripts/Combat/CombatTextMetrics.cs",ROOT/"Assets/Scripts/Combat/CombatTextLayout.cs",ROOT/"Tests/UiRenderCacheTests.cs"],
             'using System; internal static class Program { static void Main() { Console.WriteLine(UiRenderCacheTests.Run()); } }'))
@@ -287,10 +312,10 @@ def main():
                 sources.append(ROOT / "Assets/Scripts/Core/CombatBalance.cs")
         for _,sources,_ in checks:
             if ROOT/"Assets/Scripts/Core/ProgressionService.cs" in sources:
-                for helper in ["HubTravelRules","MasteryCoreRuntime","TierRewardRules","TierRewardBand"]:sources.append(ROOT/("Assets/Scripts/Core/"+helper+".cs"))
+                for helper in ["HubTravelRules","MasteryCoreRuntime","TierRewardRules","TierRewardBand","ProgressionGoalState"]:sources.append(ROOT/("Assets/Scripts/Core/"+helper+".cs"))
             if ROOT/"Tests/CombatBalanceTests.cs" in sources:sources.append(ROOT/"Assets/Scripts/Core/SkillDamageBudgets.cs")
         for name, sources, program in checks:
-            project = write_project(workspace / name, sources, program, defines={"combat-review-object-id-modern-contract":"UNITY_6000_6_OR_NEWER", "game-font-android":"UNITY_ANDROID", "game-font-ios":"UNITY_IOS"}.get(name, ""))
+            project = write_project(workspace / name, sources, program, defines={"collection-render-lifecycle-modern":"UNITY_2023_1_OR_NEWER", "combat-review-object-id-modern-contract":"UNITY_6000_6_OR_NEWER", "game-font-android":"UNITY_ANDROID", "game-font-ios":"UNITY_IOS"}.get(name, ""))
             commands = [[dotnet, "restore", str(project), "--configfile", str(config), "--verbosity", "quiet"],
                         [dotnet, "run", "--project", str(project), "--no-restore", "--configuration", "Release", "--", str(workspace / "saves")]]
             passed = run_check(name, commands, env, output, report)
@@ -303,6 +328,9 @@ def main():
         failed = failed or not passed
         passed = run_check("chest-pause-back-production", [[sys.executable, str(ROOT / "Tests/ChestPauseBackProductionTests.py"), dotnet]], env, output, report)
         failed = failed or not passed
+        for name, script in [("companion-intent-production","CompanionIntentProductionTests.py"),("contract-snapshot-production","ContractSnapshotProductionTests.py"),("filled-vfx-allocation","FilledVfxAllocationTests.py"),("side-event-production","SideEventProductionTests.py"),("skill-readability-production","SkillReadabilityProductionTests.py"),("milestone-goal-surface","MilestoneGoalSurfaceTests.py"),("skill-panel-navigation","SkillPanelNavigationProductionTests.py"),("room-blessing-usability-negative","RoomBlessingUsabilityNegativeTests.py")]:
+            passed = run_check(name, [[sys.executable,str(ROOT/"Tests"/script),dotnet]], dict(env,DOTNET=dotnet), output, report)
+            failed = failed or not passed
         if args.compile or args.download_references or args.compile_android:
             try:
                 refs = unity_references(args.download_references)
@@ -322,7 +350,10 @@ def main():
                 report["checks"].append({"name": "reference-compile-setup", "passed": False, "error": str(error)})
                 failed = True
         if args.unity_editor:
-            managed = args.unity_editor.resolve().parent / "Data/Managed"
+            editor = args.unity_editor.resolve()
+            contents = editor.parent.parent if editor.parent.name == "MacOS" else editor.parent / "Data"
+            host_define = "UNITY_EDITOR_OSX" if editor.parent.name == "MacOS" else "UNITY_EDITOR_WIN" if editor.suffix.lower() == ".exe" else "UNITY_EDITOR_LINUX"
+            managed = contents / "Managed"
             modules = managed / "UnityEngine"
             if not (modules / "UnityEngine.CoreModule.dll").is_file():
                 report["checks"].append({"name": "exact-unity-compile", "passed": False,
@@ -334,15 +365,23 @@ def main():
                     ("runtime", "UNITY_STANDALONE;UNITY_STANDALONE_WIN"),
                     ("ios-runtime", "UNITY_IOS"),
                     ("android-runtime", "UNITY_ANDROID"),
-                    ("editor", "UNITY_EDITOR;UNITY_EDITOR_LINUX"),
+                    ("editor", "UNITY_EDITOR;" + host_define),
+                    ("android-editor", "UNITY_EDITOR;" + host_define + ";UNITY_ANDROID"),
+                    ("ios-editor", "UNITY_EDITOR;" + host_define + ";UNITY_IOS"),
                     ("visual-validation", "EMBERFALL_VISUAL_VALIDATION;UNITY_STANDALONE;UNITY_STANDALONE_WIN"),
                 ]:
                     name = "exact-unity-" + variant + "-compile"
                     refs = list(modules.glob("UnityEngine*.dll"))
                     sources = sorted((ROOT / "Assets/Scripts").rglob("*.cs"))
-                    defines = "UNITY_6000_0_OR_NEWER;UNITY_6000_6_OR_NEWER;" + extra_defines
-                    if variant == "editor":
+                    defines = "UNITY_2023_1_OR_NEWER;UNITY_6000_0_OR_NEWER;UNITY_6000_4_OR_NEWER;UNITY_6000_6_OR_NEWER;" + extra_defines
+                    if variant in ("editor", "android-editor", "ios-editor"):
                         refs += list(modules.glob("UnityEditor*.dll"))
+                        refs += list(managed.glob("UnityEditor*.dll"))
+                        if variant == "android-editor":
+                            refs += list((contents / "PlaybackEngines/AndroidPlayer").glob("**/UnityEditor.Android.Extensions.dll"))
+                        if variant == "ios-editor":
+                            refs += list((contents / "PlaybackEngines/iOSSupport").glob("**/UnityEditor.iOS.Extensions*.dll"))
+                        refs = list({p.resolve():p for p in refs}.values())
                         sources += sorted((ROOT / "Assets/Editor").rglob("*.cs"))
                     elif variant == "visual-validation":
                         sources += sorted((ROOT / "Assets/Tests").rglob("*.cs"))
@@ -370,6 +409,7 @@ def main():
 
 def source_hashes():
     sources = sorted((ROOT / "Assets").rglob("*.cs")) + sorted((ROOT / "Tests").glob("*.cs"))
+    sources += sorted((ROOT / "Tests").glob("*.py")) + sorted((ROOT / "Tools").glob("*.py")) + [ROOT / "Tests/Run-CloudValidation.sh"]
     return {str(path.relative_to(ROOT)): hashlib.sha256(path.read_bytes()).hexdigest() for path in sources}
 
 

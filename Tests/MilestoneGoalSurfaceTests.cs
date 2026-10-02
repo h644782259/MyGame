@@ -1,0 +1,53 @@
+// Executes the actual goal UI partial and real progression service. GUI/layout shells
+// deliver an explicit click; they do not emulate Unity rendering or touch routing.
+using System;
+using System.IO;
+using System.Collections.Generic;
+using UnityEngine;
+namespace UnityEngine
+{
+ public struct Rect{public Rect(float x,float y,float w,float h){}}
+ public struct Vector2{public static Vector2 zero=>new Vector2();}
+ public static class Mathf{public static int RoundToInt(float n)=>(int)Math.Round(n);public static float Ceil(float n)=>(float)Math.Ceiling(n);public static float Max(float a,float b)=>Math.Max(a,b);}
+ public class GUIContent{public string text;public GUIContent(string value){text=value;}}
+ public class GUIStyle{public float CalcHeight(GUIContent c,float width)=>20*(1+c.text.Length/Math.Max(1,(int)(width/10)));}
+}
+namespace Emberfall
+{
+ public static class MobileControls{public static bool Active=true;}
+ public sealed partial class GameUI
+ {
+  enum Panel{Camp,Inventory} Panel panel=Panel.Camp;
+  sealed class Context{public ProgressionService Progression;public bool IsInCamp=true;}
+  Context session;float TouchRatio=1,width=568,height=320;Color jade,pale,gold,muted;
+  List<Rect> blockedRects=new List<Rect>();List<string> shown=new List<string>();string click;int presetOpened;
+  void CancelMobileScroll(){}void BlockUITransition(){}void Fill(Rect r,Color c){}void Box(Rect r,Color c,bool b){}
+  void Text(Rect r,string s,int size,Color c,bool bold=false,bool wrap=false){shown.Add(s);}
+  GUIStyle Style(int size,bool bold,bool wrap)=>new GUIStyle();
+  Rect BuildPlanRect(MobilePanelLayout.Area r,float u)=>new Rect(r.X*u,r.Y*u,r.Width*u,r.Height*u);
+  Vector2 BeginTouchScroll(string key,Rect r,Vector2 scroll,Rect content)=>scroll;void EndTouchScroll(){}
+  bool Button(Rect r,string s,Color c,bool enabled=true,string hint=null){shown.Add(s);if(enabled&&click!=null&&s.StartsWith(click)){click=null;return true;}return false;}
+  void Feedback(bool ok,string text){if(!ok)throw new Exception(session.Progression.LastError);}void OpenBuildPlans(){presetOpened++;}
+  public static string VerifyMilestones(string root){int n=0;Action<bool,string> check=(ok,why)=>{n++;if(!ok)throw new Exception(why);};
+   var p=new ProgressionService(Path.Combine(root,"milestones"));check(p.CreateNewSlot(HeroClass.Arcanist),"create persisted character");p.Profile.highestAdventureTier=40;
+   check(p.SelectCoreGoal(EquipmentMechanic.CinderTrail),"initial explicit core");var ui=new GameUI{session=new Context{Progression=p}};
+   string profile=JsonUtility.ToJson(p.Profile,true),disk=File.ReadAllText(p.SaveFilePath);int changed=0;p.Changed+=()=>changed++;
+   ui.OpenProgressionGoals();ui.DrawProgressionGoalSurface();ui.CloseProgressionGoalSurface();ui.OpenProgressionGoals();ui.DrawProgressionGoalSurface();
+   check(profile==JsonUtility.ToJson(p.Profile,true)&&disk==File.ReadAllText(p.SaveFilePath)&&changed==0,"opening drawing and reopening make no writes or replacements");
+   check(!p.SelectedProgressionGoal(true).Done,"tier40 does not invent selected core ownership");
+   foreach(string label in new[]{"10阶节点","20阶节点","40阶节点"})check(ui.shown.Exists(x=>x.StartsWith(label)),"all optional reasons visible independent of current tier");
+   ui.click="保存第二套配装";ui.DrawProgressionGoalOptions(520,1,true);
+   check(changed==1&&p.Profile.progressionGoal==ProgressionGoalKind.SecondPreset,"only clicked candidate commits selected goal");
+   var second=p.SelectedProgressionGoal(true);check(!second.Done&&second.Action==ProgressionGoalAction.OpenPresets,"tier40 never substitutes for both actual presets");
+   ui.click=second.ActionLabel;ui.DrawProgressionGoalOptions(520,1,true);check(ui.presetOpened==1&&changed==1,"existing shared action opens presets without claiming completion");
+   ui.click="自愿挑战 · 通关第40阶";ui.DrawProgressionGoalOptions(520,1,true);
+   check(changed==2&&p.SelectedProgressionGoal(true).Done&&p.Profile.progressionGoalTier==40,"explicit tier goal uses actual tier completion");
+   p.Profile.highestAdventureTier=20;check(!p.SelectedProgressionGoal(true).Done,"tier progress below target remains unfinished");
+   var item=p.CreateMechanicItem(EquipmentMechanic.FrostEcho);check(p.CollectLoot(item),"collect actual variant candidate");p.Profile.mechanicMaterials=0;
+   ui.click="解锁变体 · ";ui.DrawProgressionGoalOptions(520,1,true);var target=p.SelectedProgressionGoal(true);
+   check(target.ItemId==item.id&&!target.Done&&!target.CanAct&&target.MaterialCost==ProgressionService.VariantCost,"clicked item keeps stable identity and real material eligibility");
+   int before=changed;ui.click=target.ActionLabel;ui.DrawProgressionGoalOptions(520,1,true);check(changed==before&&!p.Profile.inventory.Find(x=>x.id==item.id).mechanicVariantUnlocked,"disabled action cannot execute or fabricate reward");
+   return "PASS: "+n+" actual milestone goal surface/persistence assertions";
+  }
+ }
+}

@@ -44,7 +44,7 @@ namespace Emberfall.Editor
             if(EditorApplication.isPlayingOrWillChangePlaymode || SessionState.GetBool(Key+"Active",false)) throw new InvalidOperationException("Stop current Play Mode first.");
             if(UnityEngine.SceneManagement.SceneManager.GetActiveScene().isDirty) throw new InvalidOperationException("Save the current scene first.");
             string build=Arg("-reviewBuild","vanguard"), scenario=Arg("-reviewScenario","stationary");
-            if(Array.Find(CombatReviewConfigurations.Create(),c=>c.id==build)==null)throw new ArgumentException("Unknown review build: "+build);
+            if(Array.Find(CombatReviewConfigurations.CreateAll(),c=>c.id==build)==null)throw new ArgumentException("Unknown review build: "+build);
             if(scenario!="stationary"&&scenario!="moving"&&scenario!="formation")throw new ArgumentException("Scenario must be stationary, moving or formation.");
             string output=Path.GetFullPath(Path.Combine(Application.dataPath,"../Tests/TestResults/CombatReview-"+Guid.NewGuid().ToString("N")));
             ending=false;Directory.CreateDirectory(Path.Combine(output,"IsolatedSave"));
@@ -66,16 +66,13 @@ namespace Emberfall.Editor
             string output=SessionState.GetString(Key+"Output","");
             string expected=Path.GetFullPath(Path.Combine(output,"IsolatedSave"));
             if(Path.GetFullPath(SessionState.GetString(SaveKey,""))!=expected)throw new InvalidOperationException("Isolated save override lost.");
-            var config=Array.Find(CombatReviewConfigurations.Create(),c=>c.id==SessionState.GetString(Key+"Build",""));
+            var config=Array.Find(CombatReviewConfigurations.CreateAll(),c=>c.id==SessionState.GetString(Key+"Build",""));
             UnityEngine.Random.InitState(config.seed);
             game.StartNew(config.hero);
             if(!game.HasStarted||game.Player==null)throw new InvalidOperationException("Review character creation failed.");
             if(!Path.GetFullPath(game.Progression.SaveFilePath).StartsWith(expected+Path.DirectorySeparatorChar,StringComparison.Ordinal))throw new InvalidOperationException("Review save escaped isolation.");
-            var p=game.Progression.Profile;p.level=config.level;p.xp=0;p.specialization=config.specialization;
-            p.skillRanks=(int[])config.skillRanks.Clone();p.masteryRanks=new int[4];p.masteryCore=-1;p.summonerRoute=SummonerRoute.Bonded;
-            p.tutorialMask=int.MaxValue;game.Progression.Save();
-            if(!string.IsNullOrEmpty(game.Progression.LastError))throw new InvalidOperationException(game.Progression.LastError);
-            p=game.Progression.Profile;game.Player.RefreshStats(true);game.SetPaused(false);
+            CombatReviewBuildSetup.Apply(game.Progression,config,expected);
+            var p=game.Progression.Profile;game.Player.RefreshStats(true);game.SetPaused(false);
             foreach(var e in game.Enemies)if(e!=null){e.gameObject.SetActive(false);UnityEngine.Object.Destroy(e.gameObject);}game.Enemies.Clear();
             // Keep the actual wilderness terrain/collisions, suppress only unrelated ambient respawns.
             typeof(GameSession).GetField("respawnTimer",Private).SetValue(game,100000f);

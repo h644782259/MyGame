@@ -1,4 +1,4 @@
-// Compile alone with CollectionModelPreview.cs and CollectionPreviewState.cs.
+// Compile with CollectionModelPreview.cs, CollectionPreviewState.cs and CollectionPreviewComposition.cs.
 // Runs production preview lifecycle against controlled native-resource stand-ins;
 // no GPU, Unity frame timing, pixel correctness or real CombatModel execution.
 using System;
@@ -11,9 +11,10 @@ public static class CollectionRenderLifecycleTests
     static void Check(bool ok,string why){checks++;if(!ok)throw new Exception(why);}
     static RenderTexture Draw(CollectionModelPreview preview)
     {return preview.Render(HeroClass.Arcanist,null,null,null,null,null) as RenderTexture;}
+    static int Live<T>()where T:UnityEngine.Object {int n=0;foreach(var item in UnityEngine.Object.Registry)if(item is T&&!item.Destroyed)n++;return n;}
     public static string Run()
     {
-        checks=0;Time.frameCount=10;Event.current=new Event{type=EventType.Repaint};
+        checks=0;Time.unscaledDeltaTime=0;Time.frameCount=10;Event.current=new Event{type=EventType.Repaint};
         Camera.Renders=CombatModel.Builds=0;RenderTexture.FailCreate=false;
         var preview=new CollectionModelPreview();var first=Draw(preview);
         Check(first!=null&&first.Populated&&Camera.Renders==1&&CombatModel.Builds==1,"initial repaint builds and populates one texture");
@@ -41,6 +42,43 @@ public static class CollectionRenderLifecycleTests
         preview.Dispose();var next=Draw(preview);
         Check(next!=first&&next.Populated&&CombatModel.Builds==2,"repeated dispose is safe and later render recreates resources");
         preview.Dispose();
+        Check(Live<RenderTexture>()==0&&Live<Material>()==0&&Live<Texture2D>()==0&&Live<Light>()==0,"all initial preview resources disposed");
+        var world=new GameObject("World light").AddComponent<Light>();world.cullingMask=-1;
+        var originalAmbient=new Color(.1f,.2f,.3f);RenderSettings.ambientLight=originalAmbient;RenderSettings.ambientMode=UnityEngine.Rendering.AmbientMode.Skybox;RenderSettings.fog=true;
+        SystemInfo.SupportedSamples=1;Time.unscaledDeltaTime=1f/60;Camera.Renders=CombatModel.Builds=0;
+        preview=new CollectionModelPreview();preview.SetViewport(500,800,true);allocations=RenderTexture.Instances;
+        RenderTexture animated=null;
+        for(int frame=100;frame<700;frame++)
+        {
+            Time.frameCount=frame;Event.current.type=EventType.Layout;int layoutAllocations=RenderTexture.Instances;Draw(preview);
+            Check(RenderTexture.Instances==layoutAllocations,"layout never creates native surfaces");
+            Event.current.type=EventType.Repaint;animated=Draw(preview);int rendered=Camera.Renders;Draw(preview);
+            Check(Camera.Renders==rendered,"repeated repaint advances neither motion nor render count");
+        }
+        Check(Camera.Renders>=199&&Camera.Renders<=201&&CombatModel.Builds==1&&RenderTexture.Instances==allocations+1,"ten seconds of motion remain20Hz with stable one-model/one-RT cache");
+        Check(animated.width==320&&animated.height==512&&animated.samples==1,"physical viewport cap and unsupported MSAA fallback use production allocation");
+        Check(Live<Material>()==2&&Live<Texture2D>()==1&&Live<Light>()==4,"motion does not accumulate owned materials/textures/lights");
+        preview.SetComposition(CollectionPreviewComposition.Back);Time.frameCount++;var prior=animated;Draw(preview);
+        Check(CombatModel.Builds==1&&RenderTexture.Instances==allocations+1,"composition reuses mannequin and surface");
+        preview.SetViewport(900,1200,false);Time.frameCount++;animated=Draw(preview);
+        Check(prior.Destroyed&&!prior.IsCreated()&&animated.width==576&&animated.height==768,"resize releases old RT before bounded replacement");
+        int native=RenderTexture.Instances;preview.SetViewport(200,200,true);Draw(preview);
+        Check(RenderTexture.Instances==native,"multiple viewport requests allocate at most one surface per frame");
+        Time.frameCount++;animated=Draw(preview);Check(animated.width==208&&animated.height==208,"deferred viewport applies next frame");
+        preview.Invalidate();Time.frameCount++;
+        bool observedIsolation=false;
+        Camera.DuringRender=()=>observedIsolation=(world.cullingMask&(1<<31))==0&&!RenderSettings.fog&&RenderSettings.ambientMode==UnityEngine.Rendering.AmbientMode.Flat;
+        Camera.ThrowOnRender=true;bool threw=false;try{Draw(preview);}catch(Exception){threw=true;}
+        Check(observedIsolation,"external light/fog isolated only during render");
+        Check(threw&&world.cullingMask==-1&&RenderSettings.fog&&RenderSettings.ambientMode==UnityEngine.Rendering.AmbientMode.Skybox&&RenderSettings.ambientLight.r==originalAmbient.r,"render failure restores masks and world ambient/fog in finally");
+        Camera.ThrowOnRender=false;Camera.DuringRender=null;Draw(preview);Check(animated.Populated,"failed render remains retryable");
+        preview.Dispose();Check(Live<Material>()==0&&Live<Texture2D>()==0&&Live<RenderTexture>()==0&&Live<Light>()==1,"dispose after animation/resize/render exception returns all owned resource counts to zero");
+        for(int i=0;i<20;i++)
+        {
+            Time.frameCount++;Draw(preview);preview.Dispose();
+            Check(Live<Material>()==0&&Live<Texture2D>()==0&&Live<RenderTexture>()==0&&Live<Light>()==1,"repeated reopen/close never retains native stand-ins");
+        }
+        UnityEngine.Object.Destroy(world.gameObject);Time.unscaledDeltaTime=0;SystemInfo.SupportedSamples=4;
         return "PASS: "+checks+" production preview lifecycle checks (managed resource fixture, not Unity rendering)";
     }
 }
@@ -62,59 +100,91 @@ namespace UnityEngine
 {
     public class Object
     {
+        public static readonly List<Object> Registry=new List<Object>();
         public string name;public HideFlags hideFlags;public bool Destroyed;
-        public static void Destroy(Object value){if(value!=null)value.Destroyed=true;}
+        public Object(){Registry.Add(this);}
+        public static void Destroy(Object value)
+        {
+            if(value==null||value.Destroyed)return;value.Destroyed=true;
+            if(value is GameObject go){foreach(var child in go.transform.children.ToArray())Destroy(child.gameObject);foreach(var c in go.Components)Destroy(c);}
+        }
+        public static T[] FindObjectsOfType<T>()where T:Object
+        {var list=new List<T>();foreach(var item in Registry)if(item is T t&&!t.Destroyed&&(!(t is Component c)||c.gameObject.activeInHierarchy))list.Add(t);return list.ToArray();}
+        public static T[] FindObjectsByType<T>(FindObjectsSortMode mode)where T:Object{return FindObjectsOfType<T>();}
     }
+    public enum FindObjectsSortMode{None}
     public class Component:Object{public GameObject gameObject;public Transform transform=>gameObject.transform;}
     public class MonoBehaviour:Component{public bool enabled=true;}
     public class GameObject:Object
     {
-        readonly List<Component> components=new List<Component>();public Transform transform;public int layer;
-        public GameObject(string name=""){this.name=name;transform=new Transform{gameObject=this};components.Add(transform);}
-        public T AddComponent<T>()where T:Component,new(){var c=new T{gameObject=this};components.Add(c);return c;}
+        public readonly List<Component> Components=new List<Component>();public Transform transform;public int layer;bool active=true;
+        public bool activeInHierarchy=>active&&!Destroyed&&(transform.parent==null||transform.parent.gameObject.activeInHierarchy);
+        public GameObject(string name=""){this.name=name;transform=new Transform{gameObject=this};Components.Add(transform);}
+        public T AddComponent<T>()where T:Component,new(){var c=new T{gameObject=this};Components.Add(c);return c;}
+        public T GetComponent<T>()where T:class{foreach(var c in Components)if(c is T t)return t;return null;}
         public T[] GetComponentsInChildren<T>(bool all)where T:class
-        {var result=new List<T>();foreach(var c in components)if(c is T t)result.Add(t);foreach(var child in transform.children)result.AddRange(child.gameObject.GetComponentsInChildren<T>(all));return result.ToArray();}
-        public void SetActive(bool value){}
+        {var result=new List<T>();foreach(var c in Components)if(c is T t)result.Add(t);foreach(var child in transform.children)if(!child.gameObject.Destroyed)result.AddRange(child.gameObject.GetComponentsInChildren<T>(all));return result.ToArray();}
+        public static GameObject CreatePrimitive(PrimitiveType type){var go=new GameObject();go.AddComponent<Renderer>();go.AddComponent<Collider>();return go;}
+        public void SetActive(bool value){active=value;}
     }
     public class Transform:Component
     {
-        public List<Transform> children=new List<Transform>();public Vector3 position,localPosition;public Quaternion localRotation;
-        public void SetParent(Transform parent,bool world){parent.children.Add(this);position=parent.position;}
+        public new string name=>gameObject.name;
+        public List<Transform> children=new List<Transform>();public Transform parent;public Vector3 localPosition,localScale=Vector3.one;public Quaternion localRotation;
+        public Vector3 position{get{return parent==null?localPosition:parent.position+localPosition;}set{localPosition=parent==null?value:value-parent.position;}}
+        public void SetParent(Transform p,bool world){parent=p;p.children.Add(this);}
+        public bool IsChildOf(Transform root){for(var p=parent;p!=null;p=p.parent)if(p==root)return true;return false;}
         public void LookAt(Vector3 point){}
     }
     public class Texture:Object{}
+    public class Texture2D:Texture
+    {
+        public TextureWrapMode wrapMode;public Texture2D(int w,int h,TextureFormat f,bool m){}
+        public void SetPixels(Color[] c){}public void Apply(bool m,bool unreadable){}
+    }
+    public class Shader:Object{public static Shader Find(string name){return new Shader();}}
+    public class Material:Object{public Color color;public Texture mainTexture;public Material(Shader s){}}
+    public struct RenderTextureDescriptor
+    {public int width,height,msaaSamples;public RenderTextureDescriptor(int w,int h,RenderTextureFormat f,int d){width=w;height=h;msaaSamples=1;}}
+    public static class SystemInfo{public static int SupportedSamples=4;public static int GetRenderTextureSupportedMSAASampleCount(RenderTextureDescriptor d)=>Math.Min(d.msaaSamples,SupportedSamples);}
     public class RenderTexture:Texture
     {
-        bool created;public int width,height;public bool Populated;public static bool FailCreate;public static int Instances;
-        public RenderTexture(int w,int h,int depth){width=w;height=h;Instances++;}
+        bool created;public int width,height,samples;public bool Populated;public static bool FailCreate;public static int Instances;
+        public RenderTexture(RenderTextureDescriptor d){width=d.width;height=d.height;samples=d.msaaSamples;Instances++;}
         public bool IsCreated()=>created;
         public bool Create(){if(created)return true;Populated=false;return created=!FailCreate;}
         public void Release(){created=false;Populated=false;}
     }
     public class Camera:MonoBehaviour
     {
-        public static int Renders;public bool orthographic,allowHDR,allowMSAA;public float aspect,orthographicSize,nearClipPlane,farClipPlane;
+        public static int Renders;public static bool ThrowOnRender;public static Action DuringRender;
+        public bool orthographic,allowHDR,allowMSAA;public float aspect,orthographicSize,nearClipPlane,farClipPlane;
         public CameraClearFlags clearFlags;public Color backgroundColor;public int cullingMask;public RenderTexture targetTexture;
-        public void Render(){if(!targetTexture.IsCreated())throw new Exception("render to uncreated texture");Renders++;targetTexture.Populated=true;}
+        public void Render(){if(!targetTexture.IsCreated())throw new Exception("render to uncreated texture");DuringRender?.Invoke();if(ThrowOnRender)throw new Exception("simulated native render failure");Renders++;targetTexture.Populated=true;}
     }
-    public class Light:Component{public LightType type;public float intensity;public int cullingMask;public LightShadows shadows;}
+    public class Light:Component{public LightType type;public float intensity;public Color color;public int cullingMask;public LightShadows shadows;}
     public class Collider:Component{public bool enabled;}
-    public class Renderer:Component{public Rendering.ShadowCastingMode shadowCastingMode;public Bounds bounds=new Bounds(Vector3.zero,Vector3.one);}
+    public class Renderer:Component{public bool enabled=true,receiveShadows;public Material sharedMaterial;public Rendering.ShadowCastingMode shadowCastingMode;public Bounds bounds=>new Bounds(transform.position+Vector3.up,Vector3.one);}
+    public class LineRenderer:Renderer{public bool useWorldSpace;public int positionCount;public float startWidth,endWidth;public void SetPosition(int i,Vector3 v){}}
+    public static class RenderSettings{public static Rendering.AmbientMode ambientMode;public static Color ambientLight;public static bool fog;}
     public enum HideFlags{HideAndDontSave}public enum CameraClearFlags{SolidColor}public enum LightType{Directional}public enum LightShadows{None}
+    public enum TextureFormat{RGBA32}public enum TextureWrapMode{Clamp}public enum PrimitiveType{Quad}public enum RenderTextureFormat{ARGB32}
     public static class Random{public static int state;}
     public enum EventType{Layout,Repaint}public class Event{public static Event current;public EventType type;}
-    public static class Time{public static int frameCount;}
-    public struct Quaternion{public static Quaternion Euler(float x,float y,float z)=>new Quaternion();}
-    public struct Color{public Color(float r,float g,float b){}}
+    public static class Time{public static int frameCount;public static float unscaledDeltaTime;}
+    public struct Quaternion{public static Quaternion Euler(float x,float y,float z)=>new Quaternion();public static Quaternion Euler(Vector3 v)=>new Quaternion();}
+    public struct Color{public float r,g,b,a;public Color(float r,float g,float b,float a=1){this.r=r;this.g=g;this.b=b;this.a=a;}}
+    public struct Vector2{public float x,y;public Vector2(float x,float y){this.x=x;this.y=y;}public float magnitude=>(float)Math.Sqrt(x*x+y*y);}
     public struct Vector3
     {
         public float x,y,z;public Vector3(float x,float y,float z){this.x=x;this.y=y;this.z=z;}
         public static Vector3 zero=>new Vector3();public static Vector3 one=>new Vector3(1,1,1);public static Vector3 up=>new Vector3(0,1,0);public static Vector3 forward=>new Vector3(0,0,1);
         public static Vector3 operator+(Vector3 a,Vector3 b)=>new Vector3(a.x+b.x,a.y+b.y,a.z+b.z);
+        public static Vector3 operator-(Vector3 a,Vector3 b)=>new Vector3(a.x-b.x,a.y-b.y,a.z-b.z);
         public static Vector3 operator*(Vector3 a,float b)=>new Vector3(a.x*b,a.y*b,a.z*b);
     }
     public struct Bounds{public Vector3 center,extents;public Bounds(Vector3 c,Vector3 size){center=c;extents=size*.5f;}public void Encapsulate(Bounds bounds){}}
     public static class Mathf
-    {public static float Abs(float v)=>Math.Abs(v);public static float Pow(float a,float b)=>(float)Math.Pow(a,b);public static float Sqrt(float v)=>(float)Math.Sqrt(v);public static float Max(params float[] args){float m=args[0];foreach(float v in args)m=Math.Max(m,v);return m;}}
+    {public const float PI=(float)Math.PI;public static float Sin(float a)=>(float)Math.Sin(a);public static float Cos(float a)=>(float)Math.Cos(a);public static float Clamp01(float a)=>Math.Max(0,Math.Min(1,a));public static int Clamp(int a,int l,int h)=>Math.Max(l,Math.Min(h,a));public static float Abs(float v)=>Math.Abs(v);public static float Pow(float a,float b)=>(float)Math.Pow(a,b);public static float Sqrt(float v)=>(float)Math.Sqrt(v);public static float Max(params float[] args){float m=args[0];foreach(float v in args)m=Math.Max(m,v);return m;}}
 }
-namespace UnityEngine.Rendering{public enum ShadowCastingMode{Off}}
+namespace UnityEngine.Rendering{public enum ShadowCastingMode{Off}public enum AmbientMode{Flat,Skybox}}

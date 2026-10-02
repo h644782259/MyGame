@@ -29,12 +29,15 @@ namespace Emberfall
    for(int index=0;index<plan.EnemyCount;index++)
    {
     bool boss=plan.Boss&&index==0;EnemyKind kind=plan.Boss?(boss?EnemyKind.Guardian:index%3==1?EnemyKind.Goblin:EnemyKind.Guardian):index==0?EnemyKind.Wisp:index%3==1?EnemyKind.Guardian:index%3==2?EnemyKind.Goblin:EnemyKind.Slime;
+    bool escape=plan.Objective==RoomObjective.Escape;
+    if(escape)kind=index==0?EnemyKind.Wisp:index==1||index==3?EnemyKind.Guardian:index==2||index==4?EnemyKind.Goblin:EnemyKind.Slime;
     float angle=index*2.39996f+plan.Index*.42f;Vector3 desired=new Vector3(Mathf.Sin(angle)*10,0,Mathf.Cos(angle)*9+2),point;
-    bool safe=plan.Boss?TrySafeSpawn(desired,boss?1.3f:.65f,5.5f,out point):TacticalRoomGeometry.TrySpawn(runSeed,plan.Index,index,occupied,out point);
+    bool safe=plan.Boss?TrySafeSpawn(desired,boss?1.3f:.65f,5.5f,out point):escape?EscapeRoomFormation.TrySpawn(runSeed,index,occupied,out point):TacticalRoomGeometry.TrySpawn(runSeed,plan.Index,index,occupied,out point);
     if(!safe||!WorldTraversal.CanReach(TacticalRoomGeometry.Entrance,point,boss?1.3f:.65f)||!RoomChainRun.Register(plan,index)){RoomChainRun.Fail();FinalizeRoomChain();return;}
     try
     {
      occupied.Add(point);SpawnEnemy(kind,DungeonEntryLevel,point,boss);EnemyController enemy=Enemies[Enemies.Count-1];
+     if(escape)enemy.ConfigureEscapePost(EscapeRoomFormation.Role(index),point);
      if(index==0&&!plan.Boss){roomSupplier=enemy;Notify(RoomTactics.Name(plan.Objective)+" · 金环魔灵为6米内可见同伴减伤30%，引开或优先击败");}
      if(boss)LargeExpeditionBoss.Configure(enemy,DungeonTier,runSeed+plan.Index*911);
      roomEnemies.Add(enemy,new RoomEnemyReceipt{Plan=plan,Index=index});
@@ -53,7 +56,7 @@ namespace Emberfall
    if(RoomChainRun==null||!NearRoomExit||InputBlocked||pendingRoomChoice.Pending)return false;
    if(!SaveBeforeLeaving())return false;
    if(!RoomChainRun.Next(true,false))return false;
-   SuspendInputs();changingZone=true;sideEventEnemies.Clear();sideEventStarted=false;sideCrystal=null;
+   SuspendInputs();changingZone=true;AbandonSideEvent();
    int previousCombatEpoch=Player.CombatEpoch;
    foreach(var enemy in Enemies)if(enemy!=null){enemy.gameObject.SetActive(false);Destroy(enemy.gameObject);}Enemies.Clear();roomEnemies.Clear();
    foreach(var obj in transientObjects)if(obj!=null){obj.SetActive(false);Destroy(obj);}transientObjects.Clear();

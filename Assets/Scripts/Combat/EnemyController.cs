@@ -25,7 +25,7 @@ namespace Emberfall
         public float ProjectileHitRadius { get { return largeBoss != null ? 1.3f : IsBoss ? 1.05f : .6f; } }
         internal float AttackDamage { get { return damage; } }
         public string DisplayName { get; private set; }
-        public string TraitDescription { get { return session!=null&&session.IsRoomSupplier(this)?"护援者：6米内可见同伴减伤30%；引开、遮挡或击杀可解除。" : largeBoss != null ? "大型远征首领：70%与35%生命召唤供能锚；青色符号表示可打断，红色扫射期间摧毁锚点。断能后核心暴露6秒，受到伤害增加35%。" : IsBoss ? "首领：危险边界始终橙红；青色符号表示可用控制技能打断，无符号时处于霸体恢复。打断后5秒免疫再次打断，击退大幅衰减。近身震地、中距冲锋、远距弹幕。" : Kind == EnemyKind.Slime ? "跳扑近身，黏液命中使你暂时减速。" : Kind == EnemyKind.Goblin ? "绕侧接近，近身后快速出刀并侧移。" : Kind == EnemyKind.Wisp ? "保持远距离游走，发射双重灵弹。" : "正面石甲减伤35%；重击蓄力时护甲失效。"; } }
+        public string TraitDescription { get { return EscapePostDescription+(session!=null&&session.IsRoomSupplier(this)?"护援者：6米内可见同伴减伤30%；引开、遮挡或击杀可解除。" : largeBoss != null ? "大型远征首领：70%与35%生命召唤供能锚；青色符号表示可打断，红色扫射期间摧毁锚点。断能后核心暴露6秒，受到伤害增加35%。" : IsBoss ? "首领：危险边界始终橙红；青色符号表示可用控制技能打断，无符号时处于霸体恢复。打断后5秒免疫再次打断，击退大幅衰减。近身震地、中距冲锋、远距弹幕。" : Kind == EnemyKind.Slime ? "跳扑近身，黏液命中使你暂时减速。" : Kind == EnemyKind.Goblin ? "绕侧接近，近身后快速出刀并侧移。" : Kind == EnemyKind.Wisp ? "保持远距离游走，发射双重灵弹。" : "正面石甲减伤35%；重击蓄力时护甲失效。"); } }
 
         private enum AttackType { Melee, Bolt, Slam, Charge, Fan }
         private GameSession session;
@@ -279,6 +279,7 @@ namespace Emberfall
                 ClampPosition();
                 return;
             }
+            if (ReturnToEscapePost(dt,effectiveSpeed,combatTargetPosition)) return;
             if (sidestepTime > 0)
             {
                 sidestepTime -= dt;
@@ -677,8 +678,31 @@ namespace Emberfall
             transform.position = WorldTraversal.Move(transform.position, Vector3.zero, NavigationRadius);
         }
 
+        private string EscapePostDescription
+        {get{return escapePost==null?"":escapePost.Role==EscapeRole.GateGuard?"守门：短追后返岗；可引离金环。 ":escapePost.Role==EscapeRole.Pursuer?"追击：持续追踪入侵者。 ":escapePost.Role==EscapeRole.GateSupplier?"北门供能：留守门组。 ":"侧线：守住侧路，远离后返回。 ";}}
+        private EscapePostPolicy escapePost;
+        private Vector3 escapePostPosition;
+        internal void ConfigureEscapePost(EscapeRole role,Vector3 position)
+        {escapePost=new EscapePostPolicy(role);escapePostPosition=position;}
+        private bool ReturnToEscapePost(float dt,float speed,Vector3 target)
+        {
+            if(escapePost==null||!escapePost.ReturnToPost(dt,CombatFx.Flat(transform.position-escapePostPosition).magnitude,CombatFx.Flat(target-escapePostPosition).magnitude))return false;
+            CancelAttack();companionTarget=null;
+            Vector3 towards=CombatFx.Flat(escapePostPosition-transform.position);
+            if(towards.magnitude>.18f)
+            {
+                Vector3 step=route.Direction(transform.position,escapePostPosition,NavigationRadius);
+                transform.position=WalkForAnimation(step*Mathf.Min(towards.magnitude,speed*dt));
+                if(step.sqrMagnitude>.01f)transform.rotation=Quaternion.Slerp(transform.rotation,Quaternion.LookRotation(step),dt*7);
+            }
+            AnimateModel(towards.magnitude>.18f?1:0,0,hurtTime>0);ClampPosition();return true;
+        }
+        private GameObject roomContestMarker;
         private void LateUpdate()
         {
+            bool contesting=session!=null&&session.IsRoomContesting(this);
+            if(contesting&&roomContestMarker==null)roomContestMarker=WorldBuilder.MakeRoomContestMarker(transform,NavigationRadius);
+            if(roomContestMarker!=null)roomContestMarker.SetActive(contesting);
             if(healthRoot==null) return;
             healthRoot.gameObject.SetActive(!IsDead && (aggro || Health<MaxHealth || IsBoss));
             Camera camera=Camera.main;
@@ -689,7 +713,7 @@ namespace Emberfall
             healthFill.localPosition=new Vector3((fraction-1)*width*.5f,0,-.012f);
         }
 
-        private void OnDisable() { CancelAttack(); if (largeBoss != null) largeBoss.StopEncounter(); }
+        private void OnDisable() { CancelAttack(); if (roomContestMarker != null) roomContestMarker.SetActive(false); if (largeBoss != null) largeBoss.StopEncounter(); }
 
         private void OnDestroy()
         {

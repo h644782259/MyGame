@@ -15,6 +15,20 @@ namespace Emberfall
         private LineRenderer[] strands;
         private Transform[] bubbles;
         private Material material;
+        private Vector3[] placements;
+        private float[] placementScales;
+        private bool[] placed;
+        private Vector3 placementPosition,placementScale;
+        private Quaternion placementRotation;
+        private int placementRevision=-1;
+        private bool placementReady;
+        private System.Func<float,float,float,bool> clearPlacement;
+        private bool ClearPlacement(float x,float z,float extent)
+        {
+            Vector3 point=transform.TransformPoint(new Vector3(x,0,z));
+            float scale=Mathf.Max(Mathf.Abs(transform.lossyScale.x),Mathf.Abs(transform.lossyScale.z));
+            return CombatSight.Area(transform.position,point)&&CombatSight.VisualFootprint(point,point,extent*scale);
+        }
 
         public static ElementalFieldVisual Spawn(Transform parent, ElementalCombatVfx.Element type, float size, bool body)
         {
@@ -34,6 +48,7 @@ namespace Emberfall
             onBody = body;
             int count = onBody ? 3 : MobileControls.Active ? 5 : 8;
             if(EffectPreferences.ReducedEffects)count=onBody?2:3;
+            placements=new Vector3[count];placementScales=new float[count];placed=new bool[count];clearPlacement=ClearPlacement;
             if (type == ElementalCombatVfx.Element.Poison)
             {
                 material = CombatFx.NewGlow();
@@ -66,33 +81,50 @@ namespace Emberfall
                     strands[i] = line;
                 }
             }
+            RefreshPlacement();
+            Draw(Time.time); // Initial visible-side placement is applied before the first render.
         }
 
-        private void Update()
+        private void RefreshPlacement()
         {
-            float time = Time.time;
+            if(onBody)return;
+            if(placementReady&&placementRevision==WorldTraversal.Revision&&placementPosition.Equals(transform.position)&&
+                placementRotation.Equals(transform.rotation)&&placementScale.Equals(transform.lossyScale))return;
+            placementReady=true;placementRevision=WorldTraversal.Revision;placementPosition=transform.position;
+            placementRotation=transform.rotation;placementScale=transform.lossyScale;
+            float extent=element==ElementalCombatVfx.Element.Poison?.14f:element==ElementalCombatVfx.Element.Fire?.44f:.45f;
+            for(int i=0;i<placements.Length;i++)
+            {
+                float angle=i*2.39996f,distance=radius*(.28f+(i%4)*.19f),x,z,fit;
+                placed[i]=FilledVfxPlacement.TryPlace(Mathf.Cos(angle)*distance,Mathf.Sin(angle)*distance,radius,extent,clearPlacement,out x,out z,out fit);
+                placements[i]=new Vector3(x,0,z);placementScales[i]=fit;
+                if(bubbles!=null)bubbles[i].gameObject.SetActive(placed[i]);
+                else{strands[i].enabled=placed[i];strands[i].widthMultiplier=(element==ElementalCombatVfx.Element.Fire?.15f:.065f)*fit;}
+            }
+        }
+        private void Update(){RefreshPlacement();Draw(Time.time);}
+        private void Draw(float time)
+        {
             int count = bubbles != null ? bubbles.Length : strands.Length;
             for (int i = 0; i < count; i++)
             {
-                float angle = i * 2.39996f + time * (onBody ? .45f : .2f);
-                float distance = radius * (onBody ? .75f : .28f + (i % 4) * .19f);
-                Vector3 origin = new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle)) * distance;
-                bool visible=onBody||CombatSight.VisualFootprint(transform.position,transform.TransformPoint(origin),.55f);
-                if(bubbles!=null)bubbles[i].gameObject.SetActive(visible);else strands[i].enabled=visible;
-                if(!visible)continue;
+                if(!onBody&&!placed[i])continue;
+                float angle=i*2.39996f+time*.45f;
+                Vector3 origin=onBody?new Vector3(Mathf.Cos(angle),0,Mathf.Sin(angle))*radius*.75f:placements[i];
+                float fit=onBody?1:placementScales[i];
                 if (bubbles != null)
                 {
                     float rise = Mathf.Repeat(time * .65f + i * .173f, 1f);
                     float height = onBody ? .6f : .75f;
                     bubbles[i].localPosition = origin + Vector3.up * ((onBody ? -.35f : .1f) + rise * height);
                     float size = (onBody ? .13f : .18f) * (1f + .35f * Mathf.Sin(time * 5f + i));
-                    bubbles[i].localScale = Vector3.one * size;
+                    bubbles[i].localScale = Vector3.one * size * fit;
                 }
                 else if (element == ElementalCombatVfx.Element.Fire)
                 {
                     float height = (onBody ? .55f : .8f) * (.75f + .25f * Mathf.Sin(time * 8f + i));
                     float bottom = onBody ? -.42f : .08f;
-                    Vector3 sway = new Vector3(Mathf.Sin(time * 6f + i * 2f), 0f, Mathf.Cos(time * 5f + i)) * .18f;
+                    Vector3 sway = new Vector3(Mathf.Sin(time * 6f + i * 2f), 0f, Mathf.Cos(time * 5f + i)) * .18f * fit;
                     strands[i].SetPosition(0, origin + Vector3.up * bottom);
                     strands[i].SetPosition(1, origin + sway * .4f + Vector3.up * (bottom + height * .3f));
                     strands[i].SetPosition(2, origin + sway + Vector3.up * (bottom + height * .7f));
@@ -101,10 +133,10 @@ namespace Emberfall
                 else
                 {
                     float height = onBody ? .65f : 1.05f;
-                    Vector3 top = origin * .25f + Vector3.up * height;
+                    Vector3 top = (onBody?origin*.25f:origin) + Vector3.up * height;
                     strands[i].SetPosition(0, top);
-                    strands[i].SetPosition(1, Vector3.Lerp(top, origin, .33f) + new Vector3(Mathf.Sin(time * 39f + i), 0f, Mathf.Cos(time * 31f + i)) * .28f);
-                    strands[i].SetPosition(2, Vector3.Lerp(top, origin, .68f) + new Vector3(Mathf.Cos(time * 37f + i), 0f, Mathf.Sin(time * 29f + i)) * .25f);
+                    strands[i].SetPosition(1, Vector3.Lerp(top, origin, .33f) + new Vector3(Mathf.Sin(time * 39f + i), 0f, Mathf.Cos(time * 31f + i)) * .28f * fit);
+                    strands[i].SetPosition(2, Vector3.Lerp(top, origin, .68f) + new Vector3(Mathf.Cos(time * 37f + i), 0f, Mathf.Sin(time * 29f + i)) * .25f * fit);
                     strands[i].SetPosition(3, origin + Vector3.up * .08f);
                 }
             }

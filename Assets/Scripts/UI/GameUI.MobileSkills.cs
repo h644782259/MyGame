@@ -5,6 +5,8 @@ namespace Emberfall
     public sealed partial class GameUI
     {
         private Vector2 mobileSkillListScroll, mobileSkillDetailScroll;
+        private bool mobileSkillDetail;
+        private string mobileSkillsSlot;
         private ProgressionService mobileSkillsService;
         private string mobileSkillStatus;
         private bool mobileSkillStatusFailed;
@@ -12,9 +14,9 @@ namespace Emberfall
         private void DrawMobileSkills()
         {
             var progression = session.Progression;
-            if (mobileSkillsService != progression)
+            if (mobileSkillsService != progression || mobileSkillsSlot != progression.CurrentSlotId)
             {
-                mobileSkillsService = progression;
+                mobileSkillsService = progression; mobileSkillsSlot = progression.CurrentSlotId; mobileSkillDetail = false;
                 mobileSkillListScroll = mobileSkillDetailScroll = Vector2.zero;
                 mobileSkillStatus = null;
             }
@@ -24,21 +26,30 @@ namespace Emberfall
             if (DrawMobilePanelChrome(layout, GameBalance.ClassName(profile.heroClass) + " · 技能",
                 "Lv." + profile.level + " · 可用技能点 " + profile.skillPoints + " · 上下滑动查看全部10项")) return;
 
-            float u = TouchRatio, listWidth = layout.BodyLeft.Width - 16, detailWidth = layout.BodyRight.Width - 16;
-            float listHeight = DrawMobileSkillRows(listWidth, false);
-            mobileSkillListScroll = BeginTouchScroll("mobile-skill-list", MobilePanelRect(layout.BodyLeft), mobileSkillListScroll,
-                new Rect(0, 0, listWidth * u, Mathf.Max(layout.BodyLeft.Height, listHeight) * u));
-            DrawMobileSkillRows(listWidth, true);
-            EndTouchScroll();
-
-            float detailHeight = DrawMobileSkillDescription(detailWidth, false);
-            mobileSkillDetailScroll = BeginTouchScroll("mobile-skill-detail", MobilePanelRect(layout.BodyRight), mobileSkillDetailScroll,
-                new Rect(0, 0, detailWidth * u, Mathf.Max(layout.BodyRight.Height, detailHeight) * u));
-            DrawMobileSkillDescription(detailWidth, true);
-            EndTouchScroll();
-
-            if (Button(MobilePanelRect(layout.FooterButton(0, 2)), "返回冒险", jade))
+            bool split = SkillIconPresentation.SideBySide(layout.Width);
+            bool showList = split || !mobileSkillDetail, showDetail = split || mobileSkillDetail;
+            var listArea = split ? layout.BodyLeft : layout.Body;
+            var detailArea = split ? layout.BodyRight : layout.Body;
+            float u = TouchRatio, listWidth = listArea.Width - 16, detailWidth = detailArea.Width - 16;
+            if (showList)
+            {
+                float listHeight = DrawMobileSkillRows(listWidth, false);
+                mobileSkillListScroll = BeginTouchScroll("mobile-skill-list", MobilePanelRect(listArea), mobileSkillListScroll,
+                    new Rect(0, 0, listWidth * u, Mathf.Max(listArea.Height, listHeight) * u));
+                DrawMobileSkillRows(listWidth, true);
+                EndTouchScroll();
+            }
+            if (showDetail)
+            {
+                float detailHeight = DrawMobileSkillDescription(detailWidth, false);
+                mobileSkillDetailScroll = BeginTouchScroll("mobile-skill-detail", MobilePanelRect(detailArea), mobileSkillDetailScroll,
+                    new Rect(0, 0, detailWidth * u, Mathf.Max(detailArea.Height, detailHeight) * u));
+                DrawMobileSkillDescription(detailWidth, true);
+                EndTouchScroll();
+            }
+            if (Button(MobilePanelRect(layout.FooterButton(0, showDetail ? 2 : 1)), !split && mobileSkillDetail ? "返回技能列表" : "返回冒险", jade))
             { ClosePanel(); BlockUITransition(); return; }
+            if (!showDetail) return;
             int rank = progression.Profile.skillRanks[selectedSkill];
             string reason = progression.SkillLockReason(selectedSkill);
             string caption = rank >= 3 ? "已完全觉醒" : (rank == 0 ? "学习初习" : "进阶" + GameBalance.SkillRankName(rank + 1)) + " · 1点";
@@ -67,20 +78,21 @@ namespace Emberfall
                 string name = (skill + 1) + ". " + GameBalance.SkillName(p.heroClass, skill);
                 string state = GameBalance.SkillRankName(rank) + " · " + (GameBalance.IsPassive(skill) ? "被动" : "主动") +
                     "\nLv." + GameBalance.SkillRequiredLevels[skill] + (Attention.LearnableSkills.Contains(skill) ? " · 可学习 / 进阶" : "");
-                float nameHeight = MeasureMobileParagraph(name, width - 20, 15, true);
-                float stateHeight = MeasureMobileParagraph(state, width - 20, 14);
+                float nameHeight = MeasureMobileParagraph(name, width - 78, 15, true);
+                float stateHeight = MeasureMobileParagraph(state, width - 78, 14);
                 float h = Mathf.Max(48, nameHeight + stateHeight + 24);
                 if (draw)
                 {
                     Rect row = TouchRect(0, y, width, h);
                     Fill(row, selectedSkill == skill ? new Color(.10f, .20f, .23f) : card);
                     Border(row, selectedSkill == skill ? gold : jade * .4f);
-                    DrawMobileParagraph(10, y + 8, width - 20, name, 15, pale, true);
-                    DrawMobileParagraph(10, y + 12 + nameHeight, width - 20, state, 14, rank > 0 ? jade : muted);
+                    DrawSkillIdentity(TouchRect(8, y + 10, 48, 48), p.heroClass, skill, rank, rank > 0, 48);
+                    DrawMobileParagraph(66, y + 8, width - 78, name, 15, pale, true);
+                    DrawMobileParagraph(66, y + 12 + nameHeight, width - 78, state, 14, rank > 0 ? jade : muted);
                     Badge(row, Attention.LearnableSkills.Contains(skill));
-                    if (GUI.Button(row, GUIContent.none, invisibleButton) && selectedSkill != skill)
+                    if (MobileSkillRowClicked(row) && (selectedSkill != skill || !mobileSkillDetail))
                     {
-                        selectedSkill = skill;
+                        selectedSkill = skill; mobileSkillDetail = true;
                         mobileSkillDetailScroll = Vector2.zero;
                         mobileSkillStatus = null;
                         CancelMobileScroll();
@@ -97,6 +109,14 @@ namespace Emberfall
             var p = session.Progression.Profile;
             int skill = selectedSkill, rank = p.skillRanks[skill];
             float y = 8;
+            string name = GameBalance.SkillName(p.heroClass, skill);
+            float headerHeight = Mathf.Max(56, MeasureMobileParagraph(name, width - 80, 18, true) + 8);
+            if (draw)
+            {
+                DrawSkillIdentity(TouchRect(8, y, 48, 48), p.heroClass, skill, rank, rank > 0, 48);
+                DrawMobileParagraph(68, y + 4, width - 80, name, 18, pale, true);
+            }
+            y += headerHeight;
             if (!string.IsNullOrEmpty(mobileSkillStatus))
                 MobileSkillParagraph(ref y, width, mobileSkillStatus, 14, mobileSkillStatusFailed ? gold : jade, true, draw);
             MobileSkillParagraph(ref y, width, (GameBalance.IsPassive(skill) ? "被动" : "主动") + " · " +

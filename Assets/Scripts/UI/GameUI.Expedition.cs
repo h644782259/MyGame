@@ -67,14 +67,9 @@ namespace Emberfall
                     Rect c=new Rect(w.x+32+i*458,w.y+254,430,174);Fill(c,card);
                     Text(new Rect(c.x+14,c.y+10,402,25),info.Name,19,gold,true);
                     Text(new Rect(c.x+14,c.y+39,402,36),info.Loop,14,pale,false,true);
-                    Text(new Rect(c.x+14,c.y+79,402,50),info.Requirements,13,info.Ready?jade:muted,false,true);
-                    if(p.Profile.heroClass==HeroClass.Arcanist)
-                    {var spec=i==0?ElementalistSpecialization.Shatter:ElementalistSpecialization.Burn;
-                     if(Button(new Rect(c.x+14,c.y+137,402,28),p.Profile.specialization==spec?"专精已选择":"切换专精",gold,session.IsInCamp&&p.Profile.specialization!=spec))Feedback(p.SetSpecialization(spec,session.IsInCamp),"专精已切换");}
-                    else if(p.Profile.heroClass==HeroClass.Summoner)
-                    {var path=(SummonerRoute)route;
-                     if(Button(new Rect(c.x+14,c.y+137,402,28),p.Profile.summonerRoute==path?"契约已选择":"切换契约",gold,session.IsInCamp&&p.Profile.summonerRoute!=path))Feedback(p.SetSummonerRoute(path,session.IsInCamp),"伙伴路线已切换");}
-                    else Text(new Rect(c.x+14,c.y+137,402,25),"按缺项整备 · 不自动改配装",12,muted);
+                    Text(new Rect(c.x+14,c.y+79,402,50),info.Requirements+(info.Ready?"\n"+info.Enhancement:""),12,info.Ready?jade:muted,false,true);
+                    if(info.NextAction==CampRouteAction.None)Text(new Rect(c.x+14,c.y+137,402,25),info.NextStep,12,muted);
+                    else if(Button(new Rect(c.x+14,c.y+137,402,28),info.NextStep,gold,session.IsInCamp))FollowCampRouteStep(info,route);
                 }
                 for(int i=0;i<4;i++)
                 {
@@ -103,8 +98,8 @@ namespace Emberfall
                     ItemData equipped=p.Equipped(BuildCatalog.MechanicSlot(mechanic));
                     if(equipped!=null&&equipped.mechanic==mechanic)
                     {
-                        if(Button(new Rect(c.x+660,c.y+55,99,36),"重铸 · 6",jade,session.IsInCamp&&equipped.level<p.Profile.level&&p.Profile.mechanicMaterials>=6,"保持装备身份、机制与部位强化，更新至角色等级"))Feedback(p.ReforgeMechanic(equipped.id,session.IsInCamp),"核心装备已成长");
-                        if(p.Profile.heroClass==HeroClass.Arcanist&&Button(new Rect(c.x+766,c.y+55,99,36),equipped.mechanicVariantUnlocked?(equipped.mechanicVariant==0?"变体 A":"变体 B"):"变体 · 4",jade,session.IsInCamp&&(equipped.mechanicVariantUnlocked||p.Profile.mechanicMaterials>=4),"首次解锁4碎片，之后免费切换互斥效果"))Feedback(p.ToggleMechanicVariant(equipped.id,session.IsInCamp),"装备变体已切换");
+                        if(Button(new Rect(c.x+660,c.y+55,99,36),"重铸 · 6",jade,string.IsNullOrEmpty(p.ReforgeLockReason(equipped.id,session.IsInCamp)),"保持装备身份、机制与部位强化，更新至角色等级"))Feedback(p.ReforgeMechanic(equipped.id,session.IsInCamp),"核心装备已成长");
+                        if(p.Profile.heroClass==HeroClass.Arcanist&&Button(new Rect(c.x+766,c.y+55,99,36),equipped.mechanicVariantUnlocked?(equipped.mechanicVariant==0?"变体 A":"变体 B"):"变体 · 4",jade,string.IsNullOrEmpty(p.VariantLockReason(equipped.id,session.IsInCamp)),"首次解锁4碎片，之后免费切换互斥效果"))Feedback(p.ToggleMechanicVariant(equipped.id,session.IsInCamp),"装备变体已切换");
                         string ascension = p.AscensionLockReason(equipped.id,session.IsInCamp);
                         if(Button(new Rect(c.x+660,c.y+101,205,36),equipped.rarity==Rarity.Legendary?"已是传说品质":"传说升华 · 24碎片",gold,string.IsNullOrEmpty(ascension),string.IsNullOrEmpty(ascension)?"保留物品编号、等级、机制变体和部位强化；基础属性按25/18提升，无随机重抽。":ascension))Feedback(p.AscendMechanic(equipped.id,session.IsInCamp),"机制装备已升华为传说；身份、变体与部位强化保留");
                     }
@@ -155,7 +150,7 @@ namespace Emberfall
             { Rect r=new Rect(16,AdventureSelectionLayout.WorkshopY(height,session.SystemMessages.Count,systemHistory),212,36);blockedRects.Add(r);if(Button(r,"营地工坊",jade)) {panel=Panel.Camp;session.SetUIBlocking(true);} }
             if(session.SideEventAvailable)
             { Rect r=new Rect((width-410)*.5f,height-260,410,48);blockedRects.Add(r);
-              if(Button(r,"唤醒晶核守卫 · 碎片 + 补给",gold,true,"额外一名遗迹守卫与一名魔灵；全部击败才获得1碎片和补给。"))session.StartSideEvent(); }
+              if(Button(r,"晶核支线：2敌 · 全灭1碎片+补给",gold,true,"额外一名遗迹守卫与一名魔灵；全部击败才获得1碎片和补给。未完成可放弃，不阻挡已开启的北门。"))session.StartSideEvent(); }
 
             DrawSystemLog();
         }

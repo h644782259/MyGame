@@ -10,7 +10,19 @@ assert 'CombatProjectile.BasicShot(' in b and 'StartCoroutine' not in b and 'Inv
 assert 'BasicActionTimeline.Contact(heroClass == HeroClass.Ranger)' in m
 assert 'Time.frameCount != actionStartedFrame' in m
 assert 'BasicActionTimeline.ArrowVisible(t, acting)' in m and 'BasicActionTimeline.BowDraw(t)' in m
-assert all('model.CancelAction();' in tail[:150] for tail in p.split('CombatEpoch++;')[1:])
+assert all('CancelCombatPose();' in tail[:150] for tail in p.split('CombatEpoch++;')[1:])
 assert 'session.IsDead || session.CombatEnded || session.Player.CombatEpoch != epoch' in fx
 assert 'if (IsDead) return;' in p and 'if (session.InputBlocked)' in p
 print('PASS: 8 basic action timing wiring contracts')
+
+assert 'model.BasicActionBlocked' not in p
+assert 'TraversalStartedThisFrame || skillBasicRecovery.Blocked' in b
+assert 'skillBasicRecovery.Advance(dt);' in p
+assert 'internal void CancelCombatPose() { skillBasicRecovery.Clear();' in p
+cast=p[p.index('private void CastSkillNow'): ] if 'private void CastSkillNow' in p else p[p.index('if (!skillRuntime.TryConsume(slot, rank'):]
+assert cast.index('skillRuntime.TryConsume(')<cast.index('skillBasicRecovery.Begin(HeroClass, slot, executingChargedSkill)')
+assert '!charge.IsCharging && !charge.ConsumedThisFrame' in p
+assert 'if (attackCooldown <= 0) BasicAttack();' in p
+hit=p[p.index('internal void OnBasicAttackHitTarget'):p.index('private void',p.index('internal void OnBasicAttackHitTarget'))]
+assert hit.index('!confirmedLivingHit) return;')<hit.index('skillRuntime.RestoreEnergy(')
+print('PASS: gameplay recovery independent of visual pose; confirmed-hit energy and cancellation wiring')

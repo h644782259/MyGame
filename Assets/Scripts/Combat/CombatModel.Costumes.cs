@@ -71,7 +71,9 @@ namespace Emberfall
         {
             equipmentArmor=GearRoot("Equipped class costume",spine);equipmentArmor.localPosition=Vector3.down*1.12f;
             float width=CostumeRecipes.ChestWidth(heroClass,look.Tier);
-            Color cloth=Color.Lerp(GameBalance.ClassColor(heroClass)*.65f,look.Accent,.2f);
+            Color cloth=GameBalance.ClassColor(heroClass)*.72f;
+            if(heroClass==HeroClass.Arcanist)
+                Tapered("Equipped robe skirt",equipmentArmor,new Vector3(0,.4f,0),.48f,.30f,.62f,Vector3.zero,cloth,20);
             if(heroClass==HeroClass.Arcanist)
             {
                 for(int side=-1;side<=1;side+=2)
@@ -97,7 +99,7 @@ namespace Emberfall
                 else Part("Tailored shoulder mantle",PrimitiveType.Sphere,new Vector3(0,0,.04f),new Vector3(heroClass==HeroClass.Ranger?.4f:.25f,.15f,.35f),cloth,shoulder,VisualSurface.Cloth);
             }
             Part("Costume fastening",PrimitiveType.Sphere,new Vector3(0,1.49f,.42f),Vector3.one*(.1f+look.Tier*.017f),look.Accent,equipmentArmor,VisualSurface.Metal);
-            if(look.HasRunes)GlowingPart("Costume rune",PrimitiveType.Sphere,new Vector3(0,1.37f,.44f),Vector3.one*.08f,look.Glow,equipmentArmor);
+            BuildClassUpgradeGeometry(look);
         }
     }
 }

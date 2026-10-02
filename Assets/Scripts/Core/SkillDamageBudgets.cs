@@ -1,6 +1,18 @@
 using System;
 namespace Emberfall
 {
+    // The combat clock has no animation input or callback. It advances once per
+    // gameplay update and never queues missed attacks after a long frame.
+    public struct SkillBasicRecoveryClock
+    {
+        public float Remaining { get; private set; }
+        public bool Blocked { get { return Remaining > 0; } }
+        public void Begin(HeroClass hero,int skill,bool charged)
+        { Remaining=SkillDamageBudgets.SkillBasicRecovery(hero,skill,charged); }
+        public void Advance(float dt)
+        { if(!float.IsNaN(dt)&&!float.IsInfinity(dt)&&dt>0)Remaining=Math.Max(0,Remaining-dt); }
+        public void Clear() { Remaining=0; }
+    }
     public readonly struct PeriodicSkillBudget
     {
         public readonly float Startup,Duration,Interval,TickCoefficient,FinisherCoefficient;
@@ -37,6 +49,14 @@ namespace Emberfall
             return new PeriodicSkillBudget(0,0,1,0,0);
         }
         public const float BasicEnergyOnHit=8f;
+        // Nominal release/recovery timing is gameplay data, not the current model's
+        // animation age. Visual settling may extend beyond these values safely.
+        public static float SkillPoseDuration(HeroClass hero,int skill,bool charged)
+        { return charged && hero==HeroClass.Vanguard && skill==9 ? AdvancedFirstEvent(hero,skill)/(.52f-.30f) : skill==9?1.12f:skill>=4?.84f:.68f; }
+        public static float SkillPoseStart(HeroClass hero,int skill,bool charged)
+        { return charged && hero==HeroClass.Vanguard && skill==9 ? .30f : .52f; }
+        public static float SkillBasicRecovery(HeroClass hero,int skill,bool charged)
+        { return SkillPoseDuration(hero,skill,charged)*(.65f-SkillPoseStart(hero,skill,charged)); }
         public static float BasicCoefficient(HeroClass hero){return hero==HeroClass.Vanguard?1f:hero==HeroClass.Ranger?.78f:1.15f;}
         public static float BasicInterval(HeroClass hero){return hero==HeroClass.Vanguard?.46f:hero==HeroClass.Ranger?.34f:.52f;}
         // Auxiliary values multiply the same rank-scaled advanced cast snapshot.

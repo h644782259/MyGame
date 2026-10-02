@@ -77,6 +77,14 @@ namespace Emberfall
         public static bool IsCompatible(RunBlessing blessing, HeroClass hero, int[] ranks)
         {
             if (!Enum.IsDefined(typeof(RunBlessing), blessing)) return false;
+            if (blessing == RunBlessing.FlowingEssence || blessing == RunBlessing.QuickRecovery)
+            {
+                if(ranks==null||(int)hero<0||(int)hero>=GameBalance.ClassNames.Length)return false;
+                for(int skill=0;skill<ranks.Length&&skill<GameBalance.SkillCount;skill++)
+                    if(ranks[skill]>=1&&ranks[skill]<=3&&!GameBalance.IsPassive(skill)&&
+                        (blessing==RunBlessing.FlowingEssence?GameBalance.SkillEnergyCost(hero,skill)>0:GameBalance.EffectiveCooldown(hero,skill,ranks[skill])>1))return true;
+                return false;
+            }
             if ((int)blessing >= (int)RunBlessing.KeenSight || blessing == RunBlessing.DodgeShock || blessing == RunBlessing.ExecutionMend || blessing == RunBlessing.RiskContract) return true;
             if (ranks == null) return false;
             if (blessing == RunBlessing.MarkedPursuit) return hero == HeroClass.Ranger && ranks.Length > 7 && ranks[7] > 0;
@@ -99,11 +107,11 @@ namespace Emberfall
                 "闪现后2秒内，下次普攻命中释放一次小范围冲击。",
                 "完成一次蓄力施法，获得2秒25%减伤。取消施法不触发。",
                 "真正打断敌人预警时回复12能量，冷却1秒。首领带青色符号的预警可被指定控制技能打断。",
-                "击杀带狩猎标记的目标，获得2.5秒20%移速。",
+                "击杀带狩猎标记的目标，获得2.5秒20%移速；首领房可借护卫触发。",
                 "击败每波的守卫或首领，恢复12%最大生命（每波一次）。",
                 "本局受到伤害+15%，通关金币+30%；撤离或失败不发额外奖励。",
-                "本局暴击率+10个百分点，最高80%。普攻与可暴击直伤技能生效。",
-                "本局暴击倍率由165%提高至195%。持续伤害不继承暴击加成。",
+                "本局暴击率+10个百分点，最高80%。玩家普攻与可暴击直伤技能生效；持续伤害与伙伴不继承。",
+                "本局暴击倍率由165%提高至195%。持续伤害与伙伴不继承暴击加成。",
                 "本局玩家攻击伤害+15%，技能按攻击计算部分同效；不改变永久装备。",
                 "本局新施放技能冷却缩短15%，最低1秒。不会清空正在运行的冷却。",
                 "本局普通攻击速度+18%；不加速技能、持续伤害或召唤物攻击。",

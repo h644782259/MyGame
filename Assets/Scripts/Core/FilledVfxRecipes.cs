@@ -1,8 +1,9 @@
 using System;
+using System.Collections.Generic;
 
 namespace Emberfall
 {
-    public enum FilledVfxKind { Crescent, Ice, Fire, Summon, Charge, Thrust }
+    public enum FilledVfxKind { Crescent, Ice, Fire, Summon, Charge, Thrust, Sword, Lightning, Arcane }
     public sealed class FilledMeshRecipe
     {
         public readonly float[] Positions, Uv;
@@ -87,6 +88,81 @@ namespace Emberfall
                 tr[o+3]=surface+1;tr[o+4]=rings*sides+n;tr[o+5]=rings*sides+j;
             }
             return new FilledMeshRecipe(p,uv,tr);
+        }
+        // Distinct closed volumes; disconnected sub-volumes share one mesh/renderer budget slot.
+        public static FilledMeshRecipe Sword()
+        {
+            var b=new VolumeBuilder();
+            int tip=b.Vertex(0,0,0),start=b.Count;
+            foreach(float y in new[]{.2f,.94f})
+            {b.Vertex(-.22f,y,0);b.Vertex(0,y,.075f);b.Vertex(.22f,y,0);b.Vertex(0,y,-.075f);}
+            for(int i=0;i<4;i++)
+            {int n=(i+1)%4;b.Triangle(tip,start+n,start+i);b.Quad(start+i,start+n,start+4+n,start+4+i);}
+            b.Quad(start+4,start+5,start+6,start+7);
+            b.Beam(-.42f,.98f,0,.42f,.98f,0,.065f);
+            b.Beam(0,1.02f,0,0,1.3f,0,.055f);
+            return b.Build();
+        }
+        public static FilledMeshRecipe Lightning()
+        {
+            var b=new VolumeBuilder();
+            float[] x={0,-.16f,.13f,-.2f,.1f,0},y={0,.24f,.46f,.73f,1.02f,1.4f};
+            for(int i=0;i<5;i++)b.Beam(x[i],y[i],0,x[i+1],y[i+1],0,.038f);
+            b.Beam(-.2f,.73f,0,-.52f,.58f,.12f,.024f);
+            b.Beam(-.52f,.58f,.12f,-.42f,.3f,.2f,.018f);
+            b.Beam(.13f,.46f,0,.46f,.31f,-.12f,.024f);
+            return b.Build();
+        }
+        public static FilledMeshRecipe Arcane()
+        {
+            var b=new VolumeBuilder();
+            // A cubical lattice with diagonals, not a cluster of crystal spikes.
+            for(int axis=0;axis<3;axis++)for(int a=-1;a<=1;a+=2)for(int c=-1;c<=1;c+=2)
+            {
+                float[] from={a*.4f,c*.4f,.4f},to={a*.4f,c*.4f,-.4f};
+                b.Beam(from[axis],from[(axis+1)%3]+.5f,from[(axis+2)%3],to[axis],to[(axis+1)%3]+.5f,to[(axis+2)%3],.032f);
+            }
+            b.Beam(-.4f,.1f,-.4f,.4f,.9f,.4f,.042f);
+            b.Beam(.4f,.1f,-.4f,-.4f,.9f,.4f,.042f);
+            return b.Build();
+        }
+        public static FilledMeshRecipe ArcaneShard()
+        {
+            var b=new VolumeBuilder();b.Beam(-.28f,0,0,.28f,.38f,0,.032f);b.Beam(.28f,.38f,0,.28f,.7f,.18f,.028f);return b.Build();
+        }
+        public static FilledMeshRecipe Rupture()
+        {
+            var b=new VolumeBuilder();
+            for(int arm=0;arm<3;arm++)
+            {
+                double a=arm*Math.PI*2/3;float dx=(float)Math.Cos(a),dz=(float)Math.Sin(a);
+                float px=0,pz=0;
+                for(int i=1;i<=3;i++)
+                {float x=dx*i*.28f-dz*(i%2==0?-.09f:.09f),z=dz*i*.28f+dx*(i%2==0?-.09f:.09f);b.Beam(px,.025f,pz,x,.025f,z,.027f);px=x;pz=z;}
+            }
+            return b.Build();
+        }
+        private sealed class VolumeBuilder
+        {
+            private readonly List<float> positions=new List<float>(),uv=new List<float>();
+            private readonly List<int> indices=new List<int>();
+            public int Count=>positions.Count/3;
+            public int Vertex(float x,float y,float z){int i=Count;positions.Add(x);positions.Add(y);positions.Add(z);uv.Add((x+1)*.5f);uv.Add(Math.Max(0,Math.Min(1,y)));return i;}
+            public void Triangle(int a,int b,int c){indices.Add(a);indices.Add(b);indices.Add(c);}
+            public void Quad(int a,int b,int c,int d){Triangle(a,b,c);Triangle(a,c,d);}
+            public void Beam(float ax,float ay,float az,float bx,float by,float bz,float width)
+            {
+                float dx=bx-ax,dy=by-ay,dz=bz-az,length=(float)Math.Sqrt(dx*dx+dy*dy+dz*dz);dx/=length;dy/=length;dz/=length;
+                float ux=-dy,uy=dx,uz=0;
+                if(Math.Abs(dz)>.95f){ux=1;uy=uz=0;}
+                float ul=(float)Math.Sqrt(ux*ux+uy*uy+uz*uz);ux=ux/ul*width;uy=uy/ul*width;uz=uz/ul*width;
+                float vx=dy*uz-dz*uy,vy=dz*ux-dx*uz,vz=dx*uy-dy*ux;int o=Count;
+                foreach(int end in new[]{0,1})foreach(int corner in new[]{0,1,2,3})
+                {float u=corner==0||corner==3?-1:1,v=corner<2?-1:1;Vertex((end==0?ax:bx)+ux*u+vx*v,(end==0?ay:by)+uy*u+vy*v,(end==0?az:bz)+uz*u+vz*v);}
+                Quad(o,o+3,o+2,o+1);Quad(o+4,o+5,o+6,o+7);
+                for(int i=0;i<4;i++){int n=(i+1)%4;Quad(o+i,o+n,o+4+n,o+4+i);}
+            }
+            public FilledMeshRecipe Build(){return new FilledMeshRecipe(positions.ToArray(),uv.ToArray(),indices.ToArray());}
         }
         private static bool Finite(float n){return !float.IsNaN(n)&&!float.IsInfinity(n);}
     }

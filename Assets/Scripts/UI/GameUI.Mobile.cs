@@ -72,7 +72,14 @@ namespace Emberfall
             if(MobileIcon(l.SkillsMenu,"skills",p.skillPoints>0?gold:jade))TogglePanel(Panel.Skills);
             if(MobileIcon(l.Menu,"pause",muted))session.SetPaused(true);
             Rect map=TouchRect(l.Width*.5f-44,12,88,60);
+            string growthTitle,growthStep;
             if(session.SpecialAdventure)DrawMobileModeStatus(session.RoomChainRun!=null||session.ModeRun!=null&&session.ModeRun.Mode==ExpeditionModeKind.HoldPoint?TouchRect(l.AdventureStatus):TouchRect(l.Width*.5f-86,12,172,58));
+            else if(TryGrowthHudHint(out growthTitle,out growthStep))
+            {
+                Rect goal=TouchRect(l.AdventureStatus);blockedRects.Add(goal);Box(goal,jade,false);
+                Text(new Rect(goal.x+6*TouchRatio,goal.y+4*TouchRatio,goal.width-12*TouchRatio,20*TouchRatio),growthTitle,TouchFont(11),gold,true,true);
+                Text(new Rect(goal.x+6*TouchRatio,goal.y+25*TouchRatio,goal.width-12*TouchRatio,46*TouchRatio),growthStep,TouchFont(10),pale,false,true);
+            }
             else
             {
                 blockedRects.Add(map);Box(map,jade,false);DrawMinimapTerrain(map);
@@ -113,11 +120,11 @@ namespace Emberfall
             {
                 Rect hit=hotbarSlots[i];blockedRects.Add(hit);Rect r=MobileVisualRect(hit);int skill=MobileSkillPolicy.SkillAtButton(i);bool learned=p.skillRanks[skill]>0;bool passive=GameBalance.IsPassive(skill);
                 Fill(r,new Color(.035f,.075f,.105f,.92f));Border(r,!learned?muted*.25f:GameBalance.ClassColor(p.heroClass));
-                float inset=7*TouchRatio;DrawIcon(new Rect(r.x+inset,r.y+inset,r.width-inset*2,r.height-inset*2),UIIconAtlas.Skill(p.heroClass,skill),learned?passive?new Color(.7f,.66f,.86f,.75f):Color.white:new Color(.3f,.36f,.4f,.45f));
+                float iconSize=Mathf.Min(r.width-4*TouchRatio,Mathf.Min(r.height-17*TouchRatio,30*TouchRatio));DrawSkillIdentity(new Rect(r.center.x-iconSize*.5f,r.y+TouchRatio,iconSize,iconSize),p.heroClass,skill,p.skillRanks[skill],learned,iconSize/TouchRatio<=24?24:32);
                 if(passive||!learned)Text(new Rect(r.x,r.yMax-15*TouchRatio,r.width,15*TouchRatio),passive?"被动":"Lv."+GameBalance.SkillRequiredLevels[skill],TouchFont(9),passive?new Color(.8f,.7f,1):muted,true,false,TextAnchor.MiddleCenter);
                 float cooldown=skill<0||session.Player==null?0:session.Player.SkillCooldownRemaining(skill);
                 if(cooldown>.01f)
-                {Fill(r,new Color(.01f,.02f,.04f,.7f));Text(r,cooldown.ToString(cooldown>=10?"0":"0.0"),TouchFont(17),pale,true,false,TextAnchor.MiddleCenter);}
+                {Rect stateRect=new Rect(r.x,r.yMax-15*TouchRatio,r.width,15*TouchRatio);Fill(stateRect,new Color(.01f,.02f,.04f,.9f));Text(stateRect,cooldown.ToString(cooldown>=10?"0":"0.0"),TouchFont(12),pale,true,false,TextAnchor.MiddleCenter);}
                 DrawMobileSkillAvailability(r,skill);
                 if(mobileTap.Skill==skill&&mobileTap.Active)Border(r,gold,2*TouchRatio);
             }

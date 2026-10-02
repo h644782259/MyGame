@@ -51,6 +51,7 @@ namespace Emberfall
         private bool lastMeleeDamagedEnemy;
         private float blinkBufferTime, perfectDodgeWindow, counterTime, dodgeShockTime, chargedWardTime, pursuitTime, starterRetry;
         private bool perfectDodgeAwarded, suppressBasicUntilReleased;
+        private SkillBasicRecoveryClock skillBasicRecovery;
         private float classDodgeTime, burnStrideTime, coreWardTime;
         private readonly MasteryCoreRuntime masteryCore = new MasteryCoreRuntime();
         private int nextCastId;
@@ -138,7 +139,7 @@ namespace Emberfall
             SummonedCompanion.RefreshBuild(this);
             CombatEpoch++;
             perfectDodgeCounterTime = 0;
-            if (model != null) model.CancelAction();
+            CancelCombatPose();
             masteryCore.Reset();coreWardTime=0;
             if (targeting != null) targeting.Cancel();
             if (charge != null) charge.Cancel();
@@ -171,7 +172,7 @@ namespace Emberfall
             SummonedCompanion.RefreshBuild(this);
             CombatEpoch++;
             perfectDodgeCounterTime = 0;
-            if (model != null) model.CancelAction();
+            CancelCombatPose();
             if (targeting != null) targeting.Cancel();
             if (charge != null) charge.Cancel();
         }
@@ -182,7 +183,7 @@ namespace Emberfall
         {
             CombatEpoch++;
             perfectDodgeCounterTime = 0;
-            if (model != null) model.CancelAction();
+            CancelCombatPose();
             masteryCore.Reset();coreWardTime=0; // Retire prior-zone delayed impacts as well as stale aim.
             if (targeting != null) targeting.Cancel();
             if (charge != null) charge.Cancel();
@@ -239,7 +240,7 @@ namespace Emberfall
                 if (CombatReviewEvents.Enabled) CombatReviewEvents.Emit("death",CombatReviewObjectId.Get(this));
                 CombatEpoch++;
                 perfectDodgeCounterTime = 0;
-                if (model != null) model.CancelAction();
+                CancelCombatPose();
             masteryCore.Reset();coreWardTime=0;
                 if (targeting != null) targeting.Cancel();
                 if (charge != null) charge.Cancel();
@@ -286,6 +287,7 @@ namespace Emberfall
             float dt = Time.deltaTime;
             if (dt <= 0) return;
             attackCooldown = Mathf.Max(0,attackCooldown - dt);
+            skillBasicRecovery.Advance(dt);
             attackAnimation = Mathf.Max(0,attackAnimation - dt * 4f);
             hurtTimer = Mathf.Max(0,hurtTimer - dt);
             dodgeCooldown = Mathf.Max(0,dodgeCooldown - dt);
@@ -581,7 +583,7 @@ namespace Emberfall
 
         private void BasicAttack()
         {
-            if (TraversalStartedThisFrame || model.BasicActionBlocked) return;
+            if (TraversalStartedThisFrame || skillBasicRecovery.Blocked) return;
             if (charge != null && (charge.IsCharging || charge.ConsumedThisFrame)) return;
             if ((HeroClass==HeroClass.Arcanist || HeroClass==HeroClass.Summoner) && !ValidAimTarget(AimTarget)) AimTarget=MagicConeTarget();
             FaceAim();
@@ -956,7 +958,7 @@ namespace Emberfall
             return true;
         }
 
-        internal void CancelCombatPose() { if (model != null) model.CancelAction(); }
+        internal void CancelCombatPose() { skillBasicRecovery.Clear(); if (model != null) model.CancelAction(); }
         internal float CounterOpportunityRemaining { get { return IsDead ? 0 : counterTime; } }
         internal EnemyController CurrentOpportunityTarget { get { return ValidAimTarget(AimTarget) ? AimTarget : null; } }
 
@@ -988,7 +990,7 @@ namespace Emberfall
             if (!WorldTraversal.TryResolveBlink(origin, forward, 4.8f, .45f, session.ArenaRadius - .65f, out destination))
             { TraversalFailure(); return false; }
             if (charge != null) charge.Cancel();
-            model.CancelAction();
+            CancelCombatPose();
             model.ResetLocomotion();
             transform.position = destination;
             dodgeCooldown = 2.1f;
@@ -1151,6 +1153,7 @@ namespace Emberfall
             GameAudio.Play(SoundCue.Cast);
             if (CombatReviewEvents.Enabled) CombatReviewEvents.Emit("skillrelease",CombatReviewObjectId.Get(this),skill:slot);
             if ((HeroClass == HeroClass.Vanguard && slot == 5) || (HeroClass == HeroClass.Ranger && slot == 4)) movementSkillLock = .15f;
+            skillBasicRecovery.Begin(HeroClass, slot, executingChargedSkill);
             if (executingChargedSkill) model.ReleaseCharge(slot);
             else model.PlayAction(slot,false);
             attackAnimation = 1;

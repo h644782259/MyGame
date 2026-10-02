@@ -95,14 +95,10 @@ namespace Emberfall
                 MobileWorkshopParagraph(ref y,width,info.Name,gold,draw,true,17);
                 MobileWorkshopParagraph(ref y,width,info.Loop,pale,draw);
                 MobileWorkshopParagraph(ref y,width,info.Requirements,info.Ready?jade:muted,draw);
-                if(p.Profile.heroClass==HeroClass.Arcanist)
-                {var spec=i==0?ElementalistSpecialization.Shatter:ElementalistSpecialization.Burn;
-                 MobileWorkshopAction(ref y,width,p.Profile.specialization==spec?"专精已选择":"切换专精",gold,session.IsInCamp&&p.Profile.specialization!=spec,draw,
-                    ()=>MobileWorkshopResult(p.SetSpecialization(spec,session.IsInCamp),"专精已切换"));}
-                else if(p.Profile.heroClass==HeroClass.Summoner)
-                {var route=(SummonerRoute)i;
-                 MobileWorkshopAction(ref y,width,p.Profile.summonerRoute==route?"契约已选择":"切换契约",gold,session.IsInCamp&&p.Profile.summonerRoute!=route,draw,
-                    ()=>MobileWorkshopResult(p.SetSummonerRoute(route, session.IsInCamp),"伙伴路线已切换"));}
+                MobileWorkshopParagraph(ref y,width,info.Enhancement,muted,draw);
+                MobileWorkshopParagraph(ref y,width,"下一步："+info.NextStep,jade,draw);
+                int route=i;
+                if(info.NextAction!=CampRouteAction.None)MobileWorkshopAction(ref y,width,info.NextStep,gold,session.IsInCamp,draw,()=>FollowCampRouteStep(info,route));
             }
             if(p.Profile.heroClass==HeroClass.Arcanist)
                 MobileWorkshopAction(ref y,width,"恢复均衡专精",jade,session.IsInCamp&&p.Profile.specialization!=ElementalistSpecialization.None,draw,
@@ -151,13 +147,13 @@ namespace Emberfall
                 MobileWorkshopParagraph(ref y, width, "当前穿戴：" + ItemTitle(item) + " · " + GameBalance.RarityName(item.rarity) + " · Lv." + item.level + "\n编号：" + id, jade, draw);
                 MobileWorkshopParagraph(ref y, width, "重铸保留装备身份、机制和部位强化，成长到角色当前等级。", muted, draw);
                 MobileWorkshopAction(ref y, width, "重铸当前装备 · 6碎片", jade,
-                    session.IsInCamp && p.HasDiscoveredMechanic(mechanic) && item.level < p.Profile.level && p.Profile.mechanicMaterials >= ProgressionService.ReforgeCost, draw,
+                    string.IsNullOrEmpty(p.ReforgeLockReason(id,session.IsInCamp)), draw,
                     () => MobileWorkshopResult(p.ReforgeMechanic(id, session.IsInCamp), "机制装备已成长"));
                 if (mechanic == EquipmentMechanic.FrostEcho || mechanic == EquipmentMechanic.CinderTrail)
                 {
                     MobileWorkshopParagraph(ref y, width, "当前变体 " + (item.mechanicVariant == 0 ? "A" : "B") + "；首次解锁4碎片，此后免费切换互斥效果。", muted, draw);
                     MobileWorkshopAction(ref y, width, item.mechanicVariantUnlocked ? "切换到变体 " + (item.mechanicVariant == 0 ? "B" : "A") : "解锁变体 B · 4碎片", jade,
-                        session.IsInCamp && (item.mechanicVariantUnlocked || p.Profile.mechanicMaterials >= ProgressionService.VariantCost), draw,
+                        string.IsNullOrEmpty(p.VariantLockReason(id,session.IsInCamp)), draw,
                         () => MobileWorkshopResult(p.ToggleMechanicVariant(id, session.IsInCamp), "装备变体已切换"));
                 }
                 string reason = p.AscensionLockReason(id, session.IsInCamp);
