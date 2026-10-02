@@ -23,14 +23,19 @@ namespace Emberfall
         public RoomFailureReason Failure {get;private set;}
         public bool RewardClaimed {get;private set;}
         public int Seals {get;private set;}
-        public float Progress {get;private set;}
+        private float progress;
+        private readonly float[] sealProgress=new float[2];
+        public float Progress {get{return Room!=null&&Room.Objective==RoomObjective.Purify?SealProgress(SealComplete(0)?1:0):progress;}}
+        public float SealProgress(int index){return index>=0&&index<2?sealProgress[index]:0;}
+        public bool SealComplete(int index){return index>=0&&index<2&&sealProgress[index]>=3f;}
+        public float CaptureFraction {get{return Room!=null&&Room.Objective==RoomObjective.Purify?(sealProgress[0]+sealProgress[1])/6f:progress/4f;}}
         private bool[] spawned, defeated;
         private int spawnedCount, kills;
         public RoomChainState(int seed=0) { SetRoom(new RoomChainPlan(0,seed)); }
         private void SetRoom(RoomChainPlan plan)
         {
             Room=plan; spawned=new bool[plan.EnemyCount]; defeated=new bool[plan.EnemyCount];
-            spawnedCount=kills=Seals=0; Progress=0; DoorUnlocked=false;
+            spawnedCount=kills=Seals=0; progress=0; Array.Clear(sealProgress,0,2); DoorUnlocked=false;
         }
         public bool Register(RoomChainPlan plan,int index)
         { if(Finished||!ReferenceEquals(plan,Room)||index<0||index>=spawned.Length||spawned[index])return false;spawned[index]=true;spawnedCount++;return true; }
@@ -44,16 +49,24 @@ namespace Emberfall
         }
         // No deadline or reinforcements: clearing enemies always leaves a safe way to finish.
         // Leaving a seal pauses progress; it never erases a mobile player's partial capture.
+        private bool CanCapture(float delta,bool active,bool inside,bool contested)
+        {return active&&!Finished&&!DoorUnlocked&&spawnedCount==Room.EnemyCount&&inside&&!contested&&!float.IsNaN(delta)&&!float.IsInfinity(delta)&&delta>0;}
+        public void AdvanceSeal(int index,float delta,bool active,bool inside,bool contested)
+        {
+            if(Room==null||Room.Objective!=RoomObjective.Purify||index<0||index>=2||SealComplete(index)||!CanCapture(delta,active,inside,contested))return;
+            sealProgress[index]=Math.Min(3f,sealProgress[index]+Math.Min(delta,.25f));
+            if(sealProgress[index]+.00001f<3f)return;
+            sealProgress[index]=3f;Seals++;if(Seals==2)DoorUnlocked=true;
+        }
         public void Advance(float delta,bool active,bool inside,bool contested)
         {
-            if(!active||Finished||DoorUnlocked||spawnedCount!=Room.EnemyCount||!inside||contested||
-               float.IsNaN(delta)||float.IsInfinity(delta)||delta<=0||
-               (Room.Objective!=RoomObjective.Purify&&Room.Objective!=RoomObjective.Escape))return;
-            Progress+=Math.Min(delta,.25f);
-            float required=Room.Objective==RoomObjective.Purify?3f:4f;
-            if(Progress<required)return;
-            Progress=0;Seals++;
-            if(Room.Objective==RoomObjective.Escape||Seals==2)DoorUnlocked=true;
+            if(Room==null)return;
+            // Compatibility only: the live host addresses each physical seal explicitly.
+            if(Room.Objective==RoomObjective.Purify){AdvanceSeal(SealComplete(0)?1:0,delta,active,inside,contested);return;}
+            if(Room.Objective!=RoomObjective.Escape||!CanCapture(delta,active,inside,contested))return;
+            progress=Math.Min(4f,progress+Math.Min(delta,.25f));
+            if(progress<4f)return;
+            progress=0;Seals=1;DoorUnlocked=true;
         }
         public bool ChooseInterlude(){if(Finished||!Room.Interlude||DoorUnlocked)return false;DoorUnlocked=true;return true;}
         public bool Next(bool nearDoor,bool blocked)

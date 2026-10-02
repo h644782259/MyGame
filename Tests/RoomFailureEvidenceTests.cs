@@ -18,6 +18,10 @@ public static class RoomFailureEvidenceTests
    if(reason==RoomFailureReason.Timeout)Check(view.Tip.Contains("当前进度"),"timeout uses actual objective progress");
    session.RoomChainRun.Fail(RoomFailureReason.Abandoned);Check(session.RoomChainRun.Failure==reason,"terminal reason never overwritten by later cleanup");
   }
+  var partial=new GameSession();partial.RoomChainRun=new RoomChainState(0);for(int i=0;i<6;i++)partial.RoomChainRun.Register(partial.RoomChainRun.Room,i);
+  for(int i=0;i<6;i++)partial.RoomChainRun.AdvanceSeal(1,.25f,true,true,false);for(int i=0;i<2;i++)partial.RoomChainRun.AdvanceSeal(0,.25f,true,true,false);
+  partial.RoomChainRun.Fail(RoomFailureReason.Abandoned);partial.Build(false);
+  Check(partial.LastRunRecap.Evidence.Objective.Contains("A 0.5/3秒 · B 1.5/3秒"),"actual failed result preserves independent partial B-first evidence");
   var death=new GameSession();death.RoomChainRun=new RoomChainState();death.RecordIncomingDamage("近战",22);death.RecordActualHealing(float.NaN);death.RoomChainRun.Fail(RoomFailureReason.Death);death.Build(false);
   Check(new RunRecapPresentation(death.LastRunRecap).Tip.Contains("未记录有效治疗"),"no-healing advice requires real damage and zero valid healing");
   death.RecordActualHealing(8);death.Build(false);Check(!new RunRecapPresentation(death.LastRunRecap).Tip.Contains("未记录有效治疗"),"actual healing changes advice");

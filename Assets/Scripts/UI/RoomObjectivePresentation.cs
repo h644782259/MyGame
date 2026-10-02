@@ -32,9 +32,9 @@ namespace Emberfall
             if(run.Room.Boss)return new RoomObjectivePresentation(title,"击败首领与护卫","观察首领预警与锚点",0);
             if(run.Room.Objective==RoomObjective.Hunt)return new RoomObjectivePresentation(title,"击败金环魔灵","6米护援 · 遮挡可切断",0);
             bool purify=run.Room.Objective==RoomObjective.Purify;
-            string progress=(purify?"双印 "+run.Seals+"/2 · ":"占领 ")+run.Progress.ToString("0.0",CultureInfo.InvariantCulture)+(purify?"/3秒":"/4秒");
-            string hint=paused?"已暂停 · 保留进度":contestants>0?"争夺"+contestants+"敌·双环标记·保留进度":inside?"正在累积 · 保持站位":purify?"站入金环 · 累计3秒":"站入北门金环 · 累计4秒";
-            float fraction=purify?(run.Seals*3+run.Progress)/6:run.Progress/4;
+            string progress=(purify?"双印 "+run.Seals+"/2 · ":"占领 ")+(purify?run.SealProgress(0)+run.SealProgress(1):run.Progress).ToString("0.0",CultureInfo.InvariantCulture)+(purify?"/6秒":"/4秒");
+            string hint=paused?"已暂停 · 保留进度":contestants>0?"争夺"+contestants+"敌·双环标记·保留进度":inside?"正在累积 · 保持站位":purify?"任选A/B · 各累计3秒":"站入北门金环 · 累计4秒";
+            float fraction=run.CaptureFraction;
             return new RoomObjectivePresentation(title,progress,hint,fraction);
         }
     }

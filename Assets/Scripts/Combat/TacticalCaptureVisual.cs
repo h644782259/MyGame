@@ -3,13 +3,18 @@ namespace Emberfall
 {
     public sealed class TacticalCaptureVisual:MonoBehaviour
     {
+        private enum OwnerMode { Generic, ChapterSeal, RoomSeal }
+        private OwnerMode ownerMode;
+        private PlayerController roomOwner;private RoomChainState roomRun;private object roomIdentity;
         private GameSession session;private LineRenderer[] segments;private LineRenderer contestedFlag,direction,identity;private Material material;private int epoch,sealIndex=-1;
-        public static void Attach(GameObject objective,GameSession session){Create(objective,session,-1);}
-        public static void AttachChapter(GameObject objective,GameSession session,int index){Create(objective,session,index);}
-        private static void Create(GameObject objective,GameSession session,int index)
+        public static void Attach(GameObject objective,GameSession session){Create(objective,session,-1,OwnerMode.Generic);}
+        public static void AttachChapter(GameObject objective,GameSession session,int index){Create(objective,session,index,OwnerMode.ChapterSeal);}
+        public static void AttachRoomSeal(GameObject objective,GameSession session,int index){Create(objective,session,index,OwnerMode.RoomSeal);}
+        private static void Create(GameObject objective,GameSession session,int index,OwnerMode mode)
         {
             var root=new GameObject("Segmented capture progress");root.transform.SetParent(objective.transform,false);
-            var visual=root.AddComponent<TacticalCaptureVisual>();visual.session=session;visual.sealIndex=index;visual.epoch=session.Player.CombatEpoch;visual.material=CombatFx.NewGlow();visual.segments=new LineRenderer[12];
+            var visual=root.AddComponent<TacticalCaptureVisual>();visual.session=session;visual.ownerMode=mode;visual.sealIndex=index;visual.epoch=session.Player.CombatEpoch;visual.material=CombatFx.NewGlow();visual.segments=new LineRenderer[12];
+            if(mode==OwnerMode.RoomSeal){visual.roomOwner=session.Player;visual.roomRun=session.RoomChainRun;visual.roomIdentity=session.RoomChainRun==null?null:session.RoomChainRun.Room;}
             for(int i=0;i<12;i++)
             {
                 var line=visual.Line("Capture segment "+i,3,.1f);
@@ -38,7 +43,8 @@ namespace Emberfall
         {
             float fraction=0;bool contested=false,complete=false;
             bool valid=session!=null&&session.Player!=null&&session.Player.CombatEpoch==epoch;
-            bool active=valid&&(sealIndex>=0?session.TryGetChapterSeal(sealIndex,out fraction,out contested,out complete):session.TryGetTacticalCapture(out fraction,out contested));
+            if(ownerMode==OwnerMode.RoomSeal)valid=valid&&roomIdentity!=null&&object.ReferenceEquals(session.Player,roomOwner)&&object.ReferenceEquals(session.RoomChainRun,roomRun)&&object.ReferenceEquals(session.RoomChainRun.Room,roomIdentity);
+            bool active=valid&&(ownerMode==OwnerMode.RoomSeal?session.TryGetRoomSeal(sealIndex,out fraction,out contested,out complete):ownerMode==OwnerMode.ChapterSeal?session.TryGetChapterSeal(sealIndex,out fraction,out contested,out complete):session.TryGetTacticalCapture(out fraction,out contested));
             if(!active){Hide();return;}
             if(identity!=null)identity.enabled=true;
             for(int i=0;i<segments.Length;i++)
@@ -52,7 +58,7 @@ namespace Emberfall
             direction.enabled=sealIndex>=0&&complete;
             if(direction.enabled)
             {
-                Vector3 delta=CombatFx.Flat(session.ChapterNextObjectivePoint-transform.position);
+                Vector3 delta=CombatFx.Flat((ownerMode==OwnerMode.RoomSeal?session.RoomNextObjectivePoint:session.ChapterNextObjectivePoint)-transform.position);
                 if(delta.sqrMagnitude<.01f){direction.enabled=false;return;}
                 Vector3 forward=delta.normalized,right=Vector3.Cross(Vector3.up,forward),tip=forward*3.05f+Vector3.up*.12f;
                 direction.SetPosition(0,tip-forward*.45f+right*.28f);direction.SetPosition(1,tip);direction.SetPosition(2,tip-forward*.45f-right*.28f);
