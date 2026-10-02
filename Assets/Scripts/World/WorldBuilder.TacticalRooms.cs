@@ -14,8 +14,9 @@ namespace Emberfall
             if(TacticalRoomGeometry.Flooded(layout))
             {
                 Rect bridge=TacticalRoomGeometry.Bridge(layout);
-                Ribbon(parent,r,"Flooded crossing",TacticalRoomGeometry.River(),3.2f,.06f,r.Material(new Color(.06f,.27f,.35f)));
-                Primitive(parent,"Offset wooden bridge",PrimitiveType.Cube,new Vector3((bridge.xMin+bridge.xMax)*.5f,.09f,0),new Vector3(5.4f,.1f,6),r.Material(new Color(.42f,.28f,.16f)));
+                BuildWaterSurface(parent,r,"Flooded crossing",TacticalRoomGeometry.River(),3.2f,.06f,WaterEnvironment.Tactical);
+                Primitive(parent,"Offset wooden bridge",PrimitiveType.Cube,new Vector3((bridge.xMin+bridge.xMax)*.5f,.09f,0),new Vector3(5.4f,.1f,6),r.Material(new Color(.42f,.28f,.16f),false,VisualSurface.Wood));
+                BuildBridgeWaterContact(parent,r,new Rect((bridge.xMin+bridge.xMax)*.5f-2.7f,-3,5.4f,6),.14f);
             }
         }
         public static GameObject MakeRoomObjective(Vector3 position)

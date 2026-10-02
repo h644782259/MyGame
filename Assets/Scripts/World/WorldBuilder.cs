@@ -82,8 +82,7 @@ namespace Emberfall
             Vector3[] stream = { new Vector3(-25,0,5), new Vector3(-18,0,4), new Vector3(-11,0,2), new Vector3(-5,0,.5f), new Vector3(0,0,-1), new Vector3(7,0,-2), new Vector3(14,0,-5), new Vector3(22,0,-7), new Vector3(26,0,-10) };
             WorldTraversal.SetRiver(stream, 2.4f, new Rect(-1.9f, -3.9f, 3.8f, 5.8f));
             Ribbon(lowland, r, "Pebble stream banks", stream, 3.4f, .032f, r.Material(new Color(.40f,.46f,.41f)));
-            Ribbon(lowland, r, "Deep flowing water", stream, 2.4f, .038f, r.Material(new Color(.055f,.25f,.33f),false,VisualSurface.Water));
-            Ribbon(lowland, r, "Brook reflected current", stream, .22f, .041f, r.Material(new Color(.32f,.64f,.62f),false,VisualSurface.Water));
+            BuildWaterSurface(lowland,r,"Brook water",stream,2.4f,.038f,WaterEnvironment.Brook);
             BuildWaterBankDetail(lowland,r,stream);
             // The deck is the only ground crossing. Both banks remain reachable
             // by the shared creature route planner; leaps may clear the water.
@@ -92,6 +91,8 @@ namespace Emberfall
                 Primitive(lowland, "Timber crossing plank", PrimitiveType.Cube, new Vector3(0,.043f,-2.8f+i*.39f), new Vector3(3.8f,.012f,.35f), timber);
             Primitive(lowland, "Bridge edge strip west", PrimitiveType.Cube, new Vector3(-1.85f,.05f,-1.04f), new Vector3(.08f,.008f,4.0f), gold);
             Primitive(lowland, "Bridge edge strip east", PrimitiveType.Cube, new Vector3(1.85f,.05f,-1.04f), new Vector3(.08f,.008f,4.0f), gold);
+
+            BuildBridgeWaterContact(lowland,r,new Rect(-1.9f,-2.975f,3.8f,3.86f),.049f);
 
             Vector3[] trees = { new Vector3(-12,0,-8), new Vector3(-15,0,-4), new Vector3(-9,0,-9), new Vector3(-12,0,7), new Vector3(-15,0,9) };
             for (int i = 0; i < trees.Length; i++) Tree(woodland, r, trees[i], .9f + i % 2 * .2f, i);

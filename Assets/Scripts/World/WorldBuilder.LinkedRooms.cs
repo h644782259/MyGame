@@ -28,8 +28,9 @@ namespace Emberfall
    else if(room==2)
    {
     Vector3[] stream={new Vector3(-16,0,0),new Vector3(0,0,1),new Vector3(16,0,0)};
-    WorldTraversal.SetRiver(stream,3.2f,new Rect(-3.4f,-3,6.8f,7));Ribbon(parent,r,"Sunken room water",stream,3.2f,.02f,r.Material(new Color(.06f,.27f,.35f),false,VisualSurface.Water));
+    WorldTraversal.SetRiver(stream,3.2f,new Rect(-3.4f,-3,6.8f,7));BuildWaterSurface(parent,r,"Sunken room water",stream,3.2f,.02f,WaterEnvironment.Courtyard);
     Primitive(parent,"Sunken courtyard bridge",PrimitiveType.Cube,new Vector3(0,.05f,.5f),new Vector3(6.8f,.04f,6),trim);
+    BuildBridgeWaterContact(parent,r,new Rect(-3.4f,-2.5f,6.8f,6),.07f);
     Rock(parent,r,new Vector3(-9,0,7),1.6f,11);Rock(parent,r,new Vector3(9,0,-7),1.7f,7);
    }
    else if(room==3)
