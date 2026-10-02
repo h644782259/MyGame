@@ -43,13 +43,14 @@ namespace Emberfall
                 if(targeting!=null&&!targeting.Begin(skill))
                 {if(string.IsNullOrEmpty(session.ControlFailure("skill"+skill)))session.ReportControlFailure("skill"+skill,"暂不可用");}}
         }
-        private bool CanMobileInteract {get{return session!=null&&!session.InputBlocked&&!session.DungeonSelectionOpen&&(session.NearRoomExit||session.SideEventAvailable||session.NearbyHubNpc!=HubNpcKind.None||session.IsInCamp||session.InDungeon||session.IsNearDungeonEntrance);}}
+        private bool CanMobileInteract {get{return session!=null&&!session.InputBlocked&&!session.DungeonSelectionOpen&&(session.NearChapterExit||session.NearRoomExit||session.SideEventAvailable||session.NearbyHubNpc!=HubNpcKind.None||session.IsInCamp||session.InDungeon||session.IsNearDungeonEntrance);}}
         public void ActivateMobileInteraction(int triggeringFinger=TouchReleaseLatch.AnyPointer)
         {
             if(!CanMobileInteract||UITransitionBlocked)return;
             try
             {
-                if(session.NearRoomExit)session.EnterNextRoom();
+                if(session.NearChapterExit)session.EnterNextChapterRoom();
+                else if(session.NearRoomExit)session.EnterNextRoom();
                 else if(session.SideEventAvailable)session.StartSideEvent();
                 else if(session.NearbyHubNpc!=HubNpcKind.None)OpenNearbyHubNpc();
                 else if(session.IsInCamp){panel=Panel.Camp;session.SetUIBlocking(true);}
@@ -73,7 +74,7 @@ namespace Emberfall
             if(MobileIcon(l.Menu,"pause",muted))session.SetPaused(true);
             Rect map=TouchRect(l.Width*.5f-44,12,88,60);
             string growthTitle,growthStep;
-            if(session.SpecialAdventure)DrawMobileModeStatus(session.RoomChainRun!=null||session.ModeRun!=null&&session.ModeRun.Mode==ExpeditionModeKind.HoldPoint?TouchRect(l.AdventureStatus):TouchRect(l.Width*.5f-86,12,172,58));
+            if(session.ChapterActive||session.SpecialAdventure)DrawMobileModeStatus(session.ChapterActive||session.RoomChainRun!=null||session.ModeRun!=null&&session.ModeRun.Mode==ExpeditionModeKind.HoldPoint?TouchRect(l.AdventureStatus):TouchRect(l.Width*.5f-86,12,172,58));
             else if(TryGrowthHudHint(out growthTitle,out growthStep))
             {
                 Rect goal=TouchRect(l.AdventureStatus);blockedRects.Add(goal);Box(goal,jade,false);
@@ -98,7 +99,7 @@ namespace Emberfall
             DrawMobileHotbar();
             DrawCompanionCommands();
             Text(TouchRect(22,58,155,11),CurrentCombatOpportunity(),TouchFont(10),gold,true);
-            string interaction=session.NearRoomExit?"进入下一间":session.SideEventAvailable?"晶核挑战":session.NearbyHubNpc!=HubNpcKind.None?HubNpcMobileLabel(session.NearbyHubNpc):session.IsInCamp?"营地工坊":session.InDungeon?"返回营地":session.IsNearDungeonEntrance?"进入副本":"靠近入口";
+            string interaction=session.NearChapterExit?"沿星路前进":session.NearRoomExit?"进入下一间":session.SideEventAvailable?"晶核挑战":session.NearbyHubNpc!=HubNpcKind.None?HubNpcMobileLabel(session.NearbyHubNpc):session.IsInCamp?"营地工坊":session.InDungeon?"返回营地":session.IsNearDungeonEntrance?"进入副本":"靠近入口";
             Rect interact=TouchRect(l.Interact);blockedRects.Add(interact);
             // One pointer owner handles real touches and simulated/attached mice.
             // This is presentation only: a second IMGUI Button here would dispatch

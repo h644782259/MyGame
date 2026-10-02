@@ -15,7 +15,7 @@ namespace Emberfall
   {
    pendingRoomChoice.Cancel();
    if(RoomChainRun!=null)RoomChainRun.Dispose();RoomChainRun=null;roomEnemies.Clear();roomExitMarker=null;roomObjectiveMarker=null;roomSupplier=null;roomResultRecorded=false;
-   if(dungeon&&SelectedArenaMode==3){runSeed=RoomTactics.NextSeed(runSeed,previousRoomSeed,beforePreviousRoomSeed);beforePreviousRoomSeed=previousRoomSeed;previousRoomSeed=runSeed;RoomChainRun=new RoomChainState(runSeed);DungeonLayout=RoomChainRun.Room.Layout;modeReceipt=System.Guid.NewGuid().ToString("N");}
+   if(dungeon&&!ChapterActive&&SelectedArenaMode==3){runSeed=RoomTactics.NextSeed(runSeed,previousRoomSeed,beforePreviousRoomSeed);beforePreviousRoomSeed=previousRoomSeed;previousRoomSeed=runSeed;RoomChainRun=new RoomChainState(runSeed);DungeonLayout=RoomChainRun.Room.Layout;modeReceipt=System.Guid.NewGuid().ToString("N");}
   }
   private void BeginRoomChainScene()
   {

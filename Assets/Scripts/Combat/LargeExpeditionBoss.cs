@@ -16,7 +16,12 @@ namespace Emberfall
         private Material beamMaterial;
         private Vector3 phaseCenter;
         private float startAngle;
-        public float BeamWorldAngle {get{return startAngle+(State==null?0:State.BeamAngle);}}
+        private bool chapterConfigured;
+        private ChapterDifficulty chapterDifficulty;
+        private int ownerEpoch,ownerRoom,ownerSeed;
+        private PlayerController owner;
+        private float sweepSign=1;
+        public float BeamWorldAngle {get{return startAngle+(State==null?0:State.BeamAngle*sweepSign);}}
         private int seed;
         private bool stopped;
 
@@ -31,28 +36,37 @@ namespace Emberfall
             boss.ConfigureLargeExpedition(value);
             return value;
         }
+        public static LargeExpeditionBoss ConfigureChapter(EnemyController boss,int tier,int seed,ChapterDifficulty difficulty)
+        {
+            var value=Configure(boss,tier,seed);
+            if(value==null||value.chapterConfigured)return value;
+            // Explicit chapter opt-in only, before the first threshold; legacy Configure stays unchanged.
+            if(value.State.PhaseNumber!=0)return value;
+            value.chapterConfigured=true;value.chapterDifficulty=difficulty;
+            value.State=new LargeBossPhaseState(difficulty!=ChapterDifficulty.Normal);
+            value.owner=value.game==null?null:value.game.Player;
+            value.ownerEpoch=value.owner==null?-1:value.owner.CombatEpoch;
+            value.ownerRoom=value.game==null?-1:value.game.ChapterRoomIndex;value.ownerSeed=value.game==null?0:value.game.ChapterSeed;
+            return value;
+        }
         internal bool Tick(float delta)
         {
             if (stopped || State == null) return false;
             bool alive = boss != null && !boss.IsDead && boss.enabled && gameObject.activeInHierarchy &&
-                game != null && game.HasStarted && game.Player != null && !game.IsDead;
+                game != null && game.HasStarted && game.Player != null && !game.IsDead && ChapterOwnerValid;
             if (!alive) { StopEncounter(); return false; }
             bool active = !game.InputBlocked;
             if (!active) { State.Advance(delta, false, true); return State.OwnsAttacks; }
             LargeBossPhase before = State.Phase;
             if (State.TryBegin(boss.Health / Mathf.Max(1, boss.MaxHealth), !boss.IsStunned))
             {
-                boss.BeginLargeBossMechanic(); phaseCenter = CombatFx.Flat(transform.position);
-                Vector3 toward = CombatFx.Flat(game.Player.transform.position-phaseCenter);
-                startAngle = Mathf.Atan2(toward.x,toward.z)*Mathf.Rad2Deg + 35f;
-                CreateAnchors(); EnsureBeam();
-                game.SpawnMechanismText(transform.position+Vector3.up*3.6f,"断能蓄力 · 摧毁供能锚",new Color(.35f,.92f,1));
-                game.LogSystem("星环执政官 · 橙红边界表示危险，青色符号可打断，摧毁供能锚可中止扫射并暴露核心");
+                BeginPhasePresentation();
             }
             for (int i=0;i<anchors.Length;i++)
                 if ((State.LiveAnchorMask & (1<<i)) != 0 && (anchors[i]==null || anchors[i].Broken || !anchors[i].gameObject.activeInHierarchy))
                     State.DestroyAnchor(State.PhaseNumber,i);
             State.Advance(delta,true,!boss.IsDead);
+            if(before==LargeBossPhase.Recovery&&State.Phase==LargeBossPhase.Windup)BeginPhasePresentation();
             if (State.Phase == LargeBossPhase.Exposed && before != LargeBossPhase.Exposed)
                 AnnounceExposure();
             bool beamVisible = State.Phase == LargeBossPhase.Windup || State.Phase == LargeBossPhase.Beam;
@@ -69,6 +83,21 @@ namespace Emberfall
                     game.Player.TakeDamageFrom(boss.AttackDamage*.55f,"星环执政官 · 环流扫射");
             }
             return State.OwnsAttacks;
+        }
+        private bool ChapterOwnerValid
+        {get{return !chapterConfigured||(game!=null&&game.ChapterActive&&!game.ChapterFinished&&game.Player==owner&&owner!=null&&!owner.IsDead&&owner.CombatEpoch==ownerEpoch&&game.ChapterRoomIndex==ownerRoom&&game.ChapterSeed==ownerSeed);}}
+        private void BeginPhasePresentation()
+        {
+            boss.BeginLargeBossMechanic();phaseCenter=CombatFx.Flat(transform.position);
+            Vector3 toward=CombatFx.Flat(game.Player.transform.position-phaseCenter);
+            bool heroic=chapterConfigured&&chapterDifficulty==ChapterDifficulty.Heroic;
+            sweepSign=ChapterBossPattern.SweepSign(heroic,seed,State.PhaseNumber);
+            startAngle=Mathf.Atan2(toward.x,toward.z)*Mathf.Rad2Deg+ChapterBossPattern.StartOffset(heroic,seed,State.PhaseNumber);
+            CreateAnchors();EnsureBeam();
+            game.SpawnMechanismText(transform.position+Vector3.up*3.6f,State.IsFollowup?"追加扫射预警 · 断锚可中止":"断能蓄力 · 摧毁供能锚",new Color(.35f,.92f,1));
+            game.LogSystem("星环执政官 · 橙红边界表示危险，青色符号可打断，摧毁供能锚可中止扫射并暴露核心"+
+                (chapterConfigured&&chapterDifficulty!=ChapterDifficulty.Normal?" · 完整扫射后追加预警；断锚可止连扫":"")+
+                (heroic?(sweepSign>0?" · 本轮顺时针扫射":" · 本轮逆时针扫射"):""));
         }
         internal void InterruptWindup()
         {
@@ -97,7 +126,8 @@ namespace Emberfall
                 Vector3 point=Vector3.zero;bool safe=false;
                 for(int attempt=0;attempt<6;attempt++)
                 {
-                    float angle=startAngle+i*120f+attempt*13f+((seed&15)-7);
+                    float angle=startAngle+i*120f+attempt*13f+((seed&15)-7)+
+                        ChapterBossPattern.AnchorOffset(chapterConfigured&&chapterDifficulty==ChapterDifficulty.Heroic,seed,State.PhaseNumber);
                     point=phaseCenter+Quaternion.Euler(0,angle,0)*Vector3.forward*2.6f;
                     if(DestructibleProp.CanPlace(point,.55f)&&WorldTraversal.HasGroundPath(phaseCenter,point,.15f)&&
                         CombatFx.Flat(point-game.Player.transform.position).magnitude>1.2f){safe=true;break;}
@@ -130,7 +160,7 @@ namespace Emberfall
             Shader shader=Resources.Load<Shader>("ThreatBoundary");beamMaterial=shader==null?CombatFx.NewGlow():new Material(shader);beamMaterial.renderQueue=3900;
             for(int i=0;i<beamLines.Length;i++)
             {
-                var obj=new GameObject(i==3?"Clockwise sweep arrow":i==4?"Interrupt symbol":i==5?"Windup timing arc":"Beam footprint");obj.transform.SetParent(beamRoot.transform,false);
+                var obj=new GameObject(i==3?"Sweep direction arrow":i==4?"Interrupt symbol":i==5?"Windup timing arc":"Beam footprint");obj.transform.SetParent(beamRoot.transform,false);
                 var line=obj.AddComponent<LineRenderer>();line.sharedMaterial=beamMaterial;line.useWorldSpace=true;
                 line.positionCount=i==5?33:i>=3?3:2;line.numCapVertices=4;line.shadowCastingMode=UnityEngine.Rendering.ShadowCastingMode.Off;
                 line.sortingOrder=125;beamLines[i]=line;
@@ -150,9 +180,9 @@ namespace Emberfall
                 beamLines[i].widthMultiplier=i==0?(live?(EffectPreferences.ReducedEffects?.22f:.7f):.06f):.09f;
                 beamLines[i].startColor=beamLines[i].endColor=tint;
             }
-            // A fixed right-turn arrow indicates sweep direction before activation.
+            // Arrow and damage beam share the configured signed sweep direction.
             Vector3 head=Vector3.Lerp(from,to,.78f);beamLines[3].SetPosition(0,head-direction*.3f);
-            beamLines[3].SetPosition(1,head+right*.6f);beamLines[3].SetPosition(2,head+direction*.3f);
+            beamLines[3].SetPosition(1,head+right*(.6f*sweepSign));beamLines[3].SetPosition(2,head+direction*.3f);
             beamLines[3].widthMultiplier=.11f;beamLines[3].startColor=beamLines[3].endColor=tint;
             Vector3 clock=phaseCenter+Vector3.up*.22f;
             var symbol=beamLines[4];symbol.enabled=!live&&boss.CanBeSkillInterrupted;
@@ -177,7 +207,7 @@ namespace Emberfall
         private void OnDisable(){StopEncounter();}
         // Runs even with timeScale zero: terminal menus must not retain live hazards.
         private void LateUpdate()
-        {if(!stopped&&(game==null||!game.HasStarted||game.IsDead||game.ModeFinished||boss==null||boss.IsDead))StopEncounter();}
+        {if(!stopped&&(game==null||!game.HasStarted||game.IsDead||game.ModeFinished||!ChapterOwnerValid||boss==null||boss.IsDead))StopEncounter();}
         private void OnDestroy(){StopEncounter();if(beamMaterial!=null)Destroy(beamMaterial);}
     }
 }

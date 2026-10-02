@@ -33,7 +33,7 @@ namespace Emberfall
     }
 
     /// <summary>Owns the character's persistent progression. It has no scene dependencies.</summary>
-    public class ProgressionService
+    public partial class ProgressionService
     {
         public const int MaximumLevel = 100;
         // Limits stop new writes instead of evicting existing characters or equipment.
@@ -134,6 +134,7 @@ namespace Emberfall
             // A deleted character has no autosave destination. An explicit new game
             // gets a fresh ID rather than recycling its deleted filename.
             if (activeSlotDeleted || File.Exists(savePath + DeletionSuffix)) { CreateNewSlot(heroClass); return; }
+            CancelChapterRun();
             Profile = CreateProfile(heroClass);
             collectedLootIds.Clear();
             Commit();
@@ -160,6 +161,7 @@ namespace Emberfall
                 if (currentSlotId != normalized) collectedLootIds.Clear();
                 SelectSlotPath(normalized);
                 attachedSaveExists = true;
+                CancelChapterRun();
                 Profile = loaded;
                 LastError = failure;
                 RaiseChanged();
@@ -354,6 +356,7 @@ namespace Emberfall
                 // the new active profile/path and notify the UI.
                 SelectSlotPath(id);
                 attachedSaveExists = true;
+                CancelChapterRun();
                 Profile = candidate;
                 if (newCharacter) collectedLootIds.Clear();
                 LastError = string.Empty;
@@ -1597,6 +1600,7 @@ namespace Emberfall
             candidate.clearedRuns = Math.Min(999999, candidate.clearedRuns + 1);
             candidate.bestFloor = Math.Max(candidate.bestFloor, tier);
             candidate.highestAdventureTier = Math.Max(candidate.highestAdventureTier,tier);
+            candidate.chapterPriorAdventureTier = Math.Max(candidate.chapterPriorAdventureTier,tier);
             candidate.gold = (int)Math.Min(MaximumGold, (long)candidate.gold + gold);
             long xp = (long)candidate.xp + experience;
             while (candidate.level < MaximumLevel && xp >= GameBalance.XpToNext(candidate.level))
@@ -1626,6 +1630,7 @@ namespace Emberfall
             if(completedTier>0)
             {
                 candidate.highestAdventureTier=Math.Max(candidate.highestAdventureTier,completedTier);
+                candidate.chapterPriorAdventureTier=Math.Max(candidate.chapterPriorAdventureTier,completedTier);
                 candidate.pendingFirstClearReward=!candidate.firstClearRewardClaimed;
             }
             if(!CommitCandidate(candidate))return false;
@@ -2300,6 +2305,7 @@ namespace Emberfall
             EnsureBuildPresetSlots(profile);
             if (!Enum.IsDefined(typeof(HeroClass), profile.heroClass)) profile.heroClass = HeroClass.Vanguard;
             profile.version = 1;
+            ChapterProgression.Normalize(profile);
             profile.level = Clamp(profile.level, 1, MaximumLevel);
             profile.xp = profile.level >= MaximumLevel ? 0 : Clamp(profile.xp, 0, GameBalance.XpToNext(profile.level) - 1);
             profile.gold = Clamp(profile.gold, 0, MaximumGold);
@@ -2321,7 +2327,7 @@ namespace Emberfall
                 profile.specialization = ElementalistSpecialization.None;
             profile.mechanicMaterials = Clamp(profile.mechanicMaterials, 0, 999999);
             profile.materialRewardedClears = Clamp(profile.materialRewardedClears, 0, profile.clearedRuns);
-            profile.pendingFirstClearReward = (profile.clearedRuns > 0 || profile.highestAdventureTier>0) && !profile.firstClearRewardClaimed;
+            profile.pendingFirstClearReward = (profile.clearedRuns > 0 || profile.chapterPriorAdventureTier>0 || profile.highestAdventureTier>profile.chapterHighestAdventureTier) && !profile.firstClearRewardClaimed;
             profile.pendingChestTier = TierRewardRules.ClampTier(profile.pendingChestTier);
             ChestReward receipt = profile.lastChestReward;
             if (receipt == null || string.IsNullOrWhiteSpace(receipt.id) || receipt.id.Length > 80 ||

@@ -7,13 +7,13 @@ namespace Emberfall
  {
   public int SelectedArenaMode {get;set;}=-1;
   public ExpeditionModeState ModeRun {get;private set;}
-  public bool ModeFinished {get{return RoomChainRun!=null?RoomChainRun.Finished:ModeRun!=null&&ModeRun.IsTerminal&&ModeRun.Status!=ExpeditionModeStatus.Disposed;}}
-  public bool ModeRewardPending {get{return RoomChainRun!=null?RoomChainRun.Finished&&!RoomChainRun.Failed&&!RoomChainRun.RewardClaimed:ModeRun!=null&&ModeRun.RewardPending;}}
-  public bool SpecialAdventure {get{return ModeRun!=null||RoomChainRun!=null;}}
-  public string ModeName {get{return RoomChainRun!=null?"回廊远征":ModeRun==null?"沉星遗迹":ArenaModeName((int)ModeRun.Mode);}}
+  public bool ModeFinished {get{return ChapterActive?ChapterFinished:RoomChainRun!=null?RoomChainRun.Finished:ModeRun!=null&&ModeRun.IsTerminal&&ModeRun.Status!=ExpeditionModeStatus.Disposed;}}
+  public bool ModeRewardPending {get{return ChapterActive?ChapterRewardPending:RoomChainRun!=null?RoomChainRun.Finished&&!RoomChainRun.Failed&&!RoomChainRun.RewardClaimed:ModeRun!=null&&ModeRun.RewardPending;}}
+  public bool SpecialAdventure {get{return ChapterActive||ModeRun!=null||RoomChainRun!=null;}}
+  public string ModeName {get{return ChapterActive?"首章 · "+ChapterDefinition.Get(ActiveChapterNode).Name:RoomChainRun!=null?"回廊远征":ModeRun==null?"沉星遗迹":ArenaModeName((int)ModeRun.Mode);}}
   public static string ArenaModeName(int mode){return mode==0?"守望林庭":mode==1?"烬河突围":mode==2?"蚀星斗场":"沉星遗迹";}
   public string ModeObjectiveStatus
-  {get{if(RoomChainRun!=null)return RoomObjectiveStatus;if(ModeRun==null)return "";if(ModeRun.Status==ExpeditionModeStatus.Won)return ModeRewardPending?"挑战完成 · 奖励待保存":"挑战完成 · 奖励已保存";
+  {get{if(ChapterActive)return ChapterObjectiveStatus;if(RoomChainRun!=null)return RoomObjectiveStatus;if(ModeRun==null)return "";if(ModeRun.Status==ExpeditionModeStatus.Won)return ModeRewardPending?"挑战完成 · 奖励待保存":"挑战完成 · 奖励已保存";
    if(ModeRun.Status==ExpeditionModeStatus.Failed)return ModeRun.Failure==ExpeditionModeFailure.TimeExpired?"时限已到 · 返回营地再试":"挑战结束 · 返回营地";
    return "阶段 "+(ModeRun.PhaseIndex+1)+" / 3  ·  "+Mathf.CeilToInt(ModeRun.RemainingSeconds)+"秒"+(ModeRun.Mode==ExpeditionModeKind.HoldPoint?"  ·  "+ModeRun.HoldStateLabel+" "+Mathf.RoundToInt(ModeRun.ObjectiveProgress*100)+"%":"");}}
   private sealed class ArenaEnemyReceipt {public ExpeditionPhasePlan Plan;public int Index;}
@@ -30,7 +30,7 @@ namespace Emberfall
    if(ModeRun!=null)ModeRun.Dispose();ModeRun=null;arenaEnemies.Clear();arenaHazards=null;
    modeGoldReward=modeXpReward=modeMaterialReward=0;arenaAwaitingBlessing=arenaResultRecorded=false;nextArenaEnemy=0;arenaSpawnDelay=arenaSpawnBlocked=0;
    ResetRoomChain(dungeon);
-   if(!dungeon||SelectedArenaMode<0||RoomChainRun!=null)return;
+   if(!dungeon||ChapterActive||SelectedArenaMode<0||RoomChainRun!=null)return;
    SelectedArenaMode=Mathf.Clamp(SelectedArenaMode,0,2);
    ModeRun=new ExpeditionModeState((ExpeditionModeKind)SelectedArenaMode,DungeonTier,runSeed);
    modeReceipt=Guid.NewGuid().ToString("N");DungeonLayout=SelectedArenaMode+2;
@@ -110,6 +110,7 @@ namespace Emberfall
   {long result=profile.xp;for(int level=1;level<profile.level;level++)result+=GameBalance.XpToNext(level);return result;}
   public bool TrySettleArenaReward()
   {
+   if(ChapterActive)return TrySettleChapterReward();
    if(RoomChainRun!=null)return TrySettleRoomReward();
    if(ModeRun==null||!ModeRun.RewardPending)return true;
    ExpeditionRewardTicket ticket;if(!ModeRun.TryReserveReward(out ticket))return false;

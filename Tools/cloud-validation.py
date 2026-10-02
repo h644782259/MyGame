@@ -303,6 +303,10 @@ def main():
             'using System; internal static class Program { static void Main() { Console.WriteLine(CombatReviewRulesTests.Run()); } }'))
         checks.append(("hotbar-reset",[ROOT/"Assets/Scripts/Core/GameTypes.cs",ROOT/"Assets/Scripts/Core/ProgressionService.cs",ROOT/"Tests/ProgressionTests.cs",ROOT/"Tests/HotbarResetTests.cs"],
             'using System; internal static class Program { static void Main(string[] args) { Console.WriteLine(HotbarResetTests.Run(args[0])); } }'))
+        checks.append(("chapter-room-geometry",[ROOT/"Assets/Scripts/World/WorldTraversal.cs",ROOT/"Assets/Scripts/World/ChapterRoomGeometry.cs",ROOT/"Assets/Scripts/Core/ChapterProgression.cs",ROOT/"Assets/Scripts/Core/RoomTactics.cs",ROOT/"Assets/Scripts/Core/ArenaPulseRules.cs",ROOT/"Assets/Scripts/World/ChapterHazardGeometry.cs",ROOT/"Assets/Scripts/World/TacticalRoomGeometry.cs",ROOT/"Tests/DestructibleTraversalTests.cs",ROOT/"Tests/ChapterGeometryFixture.cs",ROOT/"Tests/ChapterRoomGeometryTests.cs",ROOT/"Tests/ChapterFormationGeometryTests.cs"],
+            'using System; internal static class Program { static void Main() { Console.WriteLine(ChapterRoomGeometryTests.Run()); Console.WriteLine(ChapterFormationGeometryTests.Run()); } }'))
+        checks.append(("chapter-presentation",[ROOT/"Assets/Scripts/Core/GameTypes.cs",ROOT/"Assets/Scripts/Core/ProgressionService.cs",ROOT/"Assets/Scripts/UI/ChapterEntryPresentation.cs",ROOT/"Tests/ProgressionTests.cs",ROOT/"Tests/ChapterPresentationTests.cs"],
+            'using System; internal static class Program { static void Main() { Console.WriteLine(ChapterPresentationTests.Run()); } }'))
         for _, sources, _ in checks:
             if ROOT / "Assets/Scripts/Core/RoomChainState.cs" in sources:
                 sources.append(ROOT / "Assets/Scripts/Core/RoomTactics.cs")
@@ -314,8 +318,10 @@ def main():
                 sources.append(ROOT / "Assets/Scripts/Core/CombatBalance.cs")
         for _,sources,_ in checks:
             if ROOT/"Assets/Scripts/Core/ProgressionService.cs" in sources:
-                for helper in ["HubTravelRules","MasteryCoreRuntime","TierRewardRules","TierRewardBand","ProgressionGoalState"]:sources.append(ROOT/("Assets/Scripts/Core/"+helper+".cs"))
+                for helper in ["HubTravelRules","MasteryCoreRuntime","TierRewardRules","TierRewardBand","ProgressionGoalState","ChapterProgression","ProgressionService.Chapter","RoomTactics"]:sources.append(ROOT/("Assets/Scripts/Core/"+helper+".cs"))
             if ROOT/"Tests/CombatBalanceTests.cs" in sources:sources.append(ROOT/"Assets/Scripts/Core/SkillDamageBudgets.cs")
+        for _, sources, _ in checks:
+            sources[:] = list(dict.fromkeys(sources))
         for name, sources, program in checks:
             project = write_project(workspace / name, sources, program, defines={"collection-render-lifecycle-modern":"UNITY_2023_1_OR_NEWER", "combat-review-object-id-modern-contract":"UNITY_6000_6_OR_NEWER", "game-font-android":"UNITY_ANDROID", "game-font-ios":"UNITY_IOS"}.get(name, ""))
             commands = [[dotnet, "restore", str(project), "--configfile", str(config), "--verbosity", "quiet"],
@@ -330,7 +336,7 @@ def main():
         failed = failed or not passed
         passed = run_check("chest-pause-back-production", [[sys.executable, str(ROOT / "Tests/ChestPauseBackProductionTests.py"), dotnet]], env, output, report)
         failed = failed or not passed
-        for name, script in [("companion-intent-production","CompanionIntentProductionTests.py"),("contract-snapshot-production","ContractSnapshotProductionTests.py"),("filled-vfx-allocation","FilledVfxAllocationTests.py"),("side-event-production","SideEventProductionTests.py"),("skill-readability-production","SkillReadabilityProductionTests.py"),("milestone-goal-surface","MilestoneGoalSurfaceTests.py"),("skill-panel-navigation","SkillPanelNavigationProductionTests.py"),("room-blessing-usability-negative","RoomBlessingUsabilityNegativeTests.py"),("collection-stage-recovery-negative","CollectionStageRecoveryNegativeTests.py"),("mobile-inventory-back-production","MobileInventoryBackProductionTests.py"),("elemental-field-continuity","ElementalFieldContinuityTests.py"),("blocked-combat-update-production","BlockedCombatUpdateProductionTests.py"),("mobile-blessing-preview-production","MobileBlessingPreviewProductionTests.py"),("room-preview-ui-contract","RoomBlessingPreviewSourceTests.py"),("room-tactical-los-production","RoomTacticalLosProductionTests.py")]:
+        for name, script in [("companion-intent-production","CompanionIntentProductionTests.py"),("contract-snapshot-production","ContractSnapshotProductionTests.py"),("filled-vfx-allocation","FilledVfxAllocationTests.py"),("side-event-production","SideEventProductionTests.py"),("skill-readability-production","SkillReadabilityProductionTests.py"),("milestone-goal-surface","MilestoneGoalSurfaceTests.py"),("skill-panel-navigation","SkillPanelNavigationProductionTests.py"),("room-blessing-usability-negative","RoomBlessingUsabilityNegativeTests.py"),("collection-stage-recovery-negative","CollectionStageRecoveryNegativeTests.py"),("mobile-inventory-back-production","MobileInventoryBackProductionTests.py"),("elemental-field-continuity","ElementalFieldContinuityTests.py"),("blocked-combat-update-production","BlockedCombatUpdateProductionTests.py"),("mobile-blessing-preview-production","MobileBlessingPreviewProductionTests.py"),("room-preview-ui-contract","RoomBlessingPreviewSourceTests.py"),("room-tactical-los-production","RoomTacticalLosProductionTests.py"),("chapter-progression","ChapterProgressionTests.py"),("chapter-combat-production","ChapterCombatProductionTests.py"),("chapter-entry-production","ChapterEntryProductionTests.py"),("chapter-ui-wiring","ChapterUIWiringTests.py"),("chapter-host-production","ChapterHostProductionTests.py"),("chapter-return-time-scale","ChapterReturnTimeScaleTests.py")]:
             passed = run_check(name, [[sys.executable,str(ROOT/"Tests"/script),dotnet]], dict(env,DOTNET=dotnet), output, report)
             failed = failed or not passed
         if args.compile or args.download_references or args.compile_android:

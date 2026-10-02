@@ -12,6 +12,10 @@ try {
         (Join-Path $projectDirectory 'Assets/Scripts/Core/MasteryCoreRuntime.cs'),
         (Join-Path $projectDirectory 'Assets/Scripts/Core/TierRewardRules.cs'),
         (Join-Path $projectDirectory 'Assets/Scripts/Core/TierRewardBand.cs'),
+        (Join-Path $projectDirectory 'Assets/Scripts/Core/ProgressionGoalState.cs'),
+        (Join-Path $projectDirectory 'Assets/Scripts/Core/ChapterProgression.cs'),
+        (Join-Path $projectDirectory 'Assets/Scripts/Core/ProgressionService.Chapter.cs'),
+        (Join-Path $projectDirectory 'Assets/Scripts/Core/RoomTactics.cs'),
         (Join-Path $PSScriptRoot 'ProgressionTests.cs')
     )
     [ProgressionTests]::Run($testDirectory)

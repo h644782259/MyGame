@@ -6,7 +6,7 @@ namespace Emberfall
     /// <summary>Resolution-independent runtime interface; no scene or package dependencies.</summary>
     public sealed partial class GameUI : MonoBehaviour
     {
-        private enum Panel { None, Inventory, Skills, Bindings, SaveLocation, Controls, SaveSelection, PotionAssignment, Fashion, Chests, Camp, Summary, TravelMap, Notice }
+        private enum Panel { None, Inventory, Skills, Bindings, SaveLocation, Controls, SaveSelection, PotionAssignment, Fashion, Chests, Camp, Summary, TravelMap, Notice, Chapter }
         private GameSession session;
         private Panel panel;
         private HeroClass selectedClass;
@@ -228,7 +228,7 @@ namespace Emberfall
                 else session.SetPaused(!session.Paused);
             }
             if (session.Paused || session.DungeonSelectionOpen || session.RunChoices.AwaitingChoice) return;
-            if (panel == Panel.Controls || panel == Panel.SaveLocation || panel == Panel.Bindings || panel == Panel.PotionAssignment || panel == Panel.Chests || panel == Panel.Camp || panel == Panel.TravelMap || panel == Panel.Notice) return;
+            if (panel == Panel.Controls || panel == Panel.SaveLocation || panel == Panel.Bindings || panel == Panel.PotionAssignment || panel == Panel.Chests || panel == Panel.Camp || panel == Panel.TravelMap || panel == Panel.Notice || panel == Panel.Chapter) return;
             if (Input.GetKeyDown(KeyCode.I)) TogglePanel(Panel.Inventory);
             if (Input.GetKeyDown(KeyCode.K)) TogglePanel(Panel.Skills);
 
@@ -288,6 +288,7 @@ namespace Emberfall
                 else if (session.IsDead) DrawDeath();
                 else if (session.DungeonSelectionOpen) DrawDungeonSelection();
                 else if (session.RunChoices.AwaitingChoice) DrawBlessingChoice();
+                else if(session.ChapterFinished)DrawChapterResult();
                 else if(session.ModeFinished){if(DrawStructuredRunRecap(false))session.ReturnToCamp();}
                 else if (panel == Panel.Inventory) DrawInventory();
                 else if (panel == Panel.Skills) DrawSkills();
@@ -301,6 +302,7 @@ namespace Emberfall
                 else if (panel == Panel.Summary) DrawRunSummary();
                 else if (panel == Panel.TravelMap) DrawTravelMap();
                 else if (panel == Panel.Notice) DrawMobileNotice();
+                else if (panel == Panel.Chapter) DrawChapterSelection();
                 DrawNotification();
             }
             if (hotbarDragging && hotbarPointerSkill != -1)
@@ -726,7 +728,8 @@ namespace Emberfall
                 : p.level < 2 ? "经验 " + p.xp + " / " + GameBalance.XpToNext(p.level)
                 : p.skillRanks[0] == 0 ? "可用技能点 " + p.skillPoints + " · K"
                 : "收集装备，进入传送门 · T";
-            string growthTitle,growthDetail;if(TryGrowthHudHint(out growthTitle,out growthDetail)){objectiveText=growthTitle;objectiveProgress=growthDetail;}
+            if(session.ChapterActive){objectiveText=ChapterDefinition.Get(session.ActiveChapterNode).Name;objectiveProgress=session.ChapterObjectiveStatus;}
+            string growthTitle,growthDetail;if(!session.ChapterActive&&TryGrowthHudHint(out growthTitle,out growthDetail)){objectiveText=growthTitle;objectiveProgress=growthDetail;}
             float bodyHeight=Mathf.Max(24,Style(15,true,true).CalcHeight(new GUIContent(objectiveText),255));
             string progressText=PlatformText(objectiveProgress);
             float progressHeight=Mathf.Max(18,Style(12,false,true).CalcHeight(new GUIContent(progressText),255));
@@ -848,7 +851,7 @@ namespace Emberfall
 
         private void DrawDungeonStatus()
         {
-            if (!session.InDungeon) return;
+            if (!session.InDungeon || session.ChapterFinished) return;
             if (session.DungeonCleared)
             {
                 if (panel == Panel.Chests) return;
@@ -1738,6 +1741,7 @@ namespace Emberfall
 
         private void DrawNotification()
         {
+            if(panel==Panel.Chapter||session.ChapterFinished)return;
             if (string.IsNullOrEmpty(session.Notification)) return;
             if(MobileControls.Active && (MobilePanelOwnsNotification || session.Paused || panel==Panel.Controls || panel==Panel.SaveSelection || panel==Panel.TravelMap || panel==Panel.Summary || session.IsDead || session.ModeFinished)) return;
             if(MobileControls.Active)
@@ -1771,6 +1775,7 @@ namespace Emberfall
 
         private void ClosePanel()
         {
+            if(CloseChapterSelection())return;
             if(CloseMobileInventoryDetail())return;
             if(CloseMobileSkillDetail())return;
             if(CloseProgressionGoalSurface())return;

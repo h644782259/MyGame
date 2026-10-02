@@ -6,7 +6,7 @@ namespace Emberfall
     // Entire prototype scene is authored here so a fresh checkout needs no imported art.
     public static partial class WorldBuilder
     {
-        public static GameObject Build(ZoneKind zone, int dungeonLayout = 0, int campProgress = 0, int hub = 0)
+        public static GameObject Build(ZoneKind zone, int dungeonLayout = 0, int campProgress = 0, int hub = 0, int chapterSeed = 0)
         {
             WorldTraversal.Reset(zone);
             GameObject root = new GameObject(zone == ZoneKind.Wilderness ? "Windwhisper Fields" : "Fallen Star Sanctum");
@@ -38,7 +38,7 @@ namespace Emberfall
             rim.color = dungeon ? new Color(.34f,.43f,.8f) : new Color(.44f,.65f,.77f);
             rim.intensity = dungeon ? .28f : .32f; rim.shadows = LightShadows.None;
             ApplyEnvironmentLighting(dungeon,hub,light,rim);
-            if (dungeon) { if(dungeonLayout>=20)BuildTacticalRoom(root.transform,resources,dungeonLayout);else if(dungeonLayout>=10)BuildLinkedRoom(root.transform,resources,dungeonLayout-10);else if(dungeonLayout>=2)BuildChallengeArena(root.transform,resources,dungeonLayout-2);else BuildDungeon(root.transform, resources, dungeonLayout); } else { if(hub==0){BuildWilderness(root.transform, resources); BuildCampFacilities(root.transform, resources, campProgress);BuildHubNpcs(root.transform,resources);}else BuildTown(root.transform,resources,hub); }
+            if (dungeon) { if(ChapterRoomGeometry.IsChapterLayout(dungeonLayout))BuildChapterRoom(root.transform,resources,ChapterRoomGeometry.FromLayout(dungeonLayout,chapterSeed));else if(dungeonLayout>=20)BuildTacticalRoom(root.transform,resources,dungeonLayout);else if(dungeonLayout>=10)BuildLinkedRoom(root.transform,resources,dungeonLayout-10);else if(dungeonLayout>=2)BuildChallengeArena(root.transform,resources,dungeonLayout-2);else BuildDungeon(root.transform, resources, dungeonLayout); } else { if(hub==0){BuildWilderness(root.transform, resources); BuildCampFacilities(root.transform, resources, campProgress);BuildHubNpcs(root.transform,resources);}else BuildTown(root.transform,resources,hub); }
             if(!dungeon)BuildHubLightPools(root.transform,hub);
             if(dungeon)BuildBreakablePockets(root.transform,dungeonLayout);
             return root;

@@ -1,0 +1,133 @@
+// Production components run intact; Unity rendering/objects and the final player damage recipient are managed substitutes.
+using System;using System.Collections.Generic;using System.Reflection;using Emberfall;using UnityEngine;
+namespace UnityEngine
+{
+    public class Object {public static void Destroy(Object value){if(value is GameObject go)go.SetActive(false);}}
+    public class MonoBehaviour:Object
+    {public GameObject gameObject=new GameObject();public Transform transform=>gameObject.transform;public bool enabled=true;public T GetComponent<T>() where T:class=>gameObject.GetComponent<T>();}
+    public class GameObject:Object
+    {
+        public string name;public bool activeInHierarchy=true;public Transform transform=new Transform();private readonly Dictionary<Type,object> components=new Dictionary<Type,object>();
+        public GameObject(string name="object"){this.name=name;}
+        public void SetActive(bool value){activeInHierarchy=value;}
+        public T AddComponent<T>() where T:new(){var value=new T();if(value is MonoBehaviour mb)mb.gameObject=this;components[typeof(T)]=value;return value;}
+        public T GetComponent<T>() where T:class {return components.TryGetValue(typeof(T),out var value)?value as T:null;}
+    }
+    public class Transform {public Vector3 position,localPosition;public Quaternion localRotation;public GameObject gameObject;public Transform(){ }public void SetParent(Transform parent,bool world){} }
+    public struct Color{public float r,g,b,a;public Color(float r,float g,float b,float a=1){this.r=r;this.g=g;this.b=b;this.a=a;}}
+    public enum PrimitiveType{Cylinder,Cube,Capsule}
+    public class Shader:Object{}
+    public class Material:Object{public int renderQueue;public Material(){}public Material(Shader shader){}}
+    public static class Resources{public static T Load<T>(string path) where T:class{return null;}}
+    public class LineRenderer:MonoBehaviour{public Material sharedMaterial;public bool useWorldSpace,loop;public int positionCount,numCapVertices,sortingOrder;public float widthMultiplier;public Color startColor,endColor;public Rendering.ShadowCastingMode shadowCastingMode;public readonly Dictionary<int,Vector3> points=new Dictionary<int,Vector3>();public void SetPosition(int i,Vector3 p){points[i]=p;}public void SetPositions(Vector3[] values){for(int i=0;i<values.Length;i++)points[i]=values[i];}}
+    public struct Quaternion{float yaw;public static Quaternion Euler(float x,float y,float z){return new Quaternion{yaw=y*Mathf.Deg2Rad};}public static Vector3 operator *(Quaternion q,Vector3 v){return new Vector3(v.x*Mathf.Cos(q.yaw)+v.z*Mathf.Sin(q.yaw),v.y,-v.x*Mathf.Sin(q.yaw)+v.z*Mathf.Cos(q.yaw));}}
+    public static partial class Time{public static float deltaTime=.05f;}
+    public partial struct Vector2{public static Vector2 zero=>new Vector2();}
+    public partial struct Vector3{public static Vector3 up=>new Vector3(0,1,0);public static Vector3 forward=>new Vector3(0,0,1);public static Vector3 operator -(Vector3 a)=>a*-1;public static Vector3 Cross(Vector3 a,Vector3 b)=>new Vector3(a.y*b.z-a.z*b.y,a.z*b.x-a.x*b.z,a.x*b.y-a.y*b.x);}
+    public static partial class Mathf{public const float Deg2Rad=(float)(Math.PI/180),Rad2Deg=1/Deg2Rad;public static float Clamp01(float f)=>Clamp(f,0,1);public static float Atan2(float x,float y)=>(float)Math.Atan2(x,y);}
+}
+namespace UnityEngine.Rendering{public enum ShadowCastingMode{Off}}
+namespace Emberfall
+{
+    public class GameSession
+    {public static GameSession Instance;public bool HasStarted=true,ChapterActive=true,ChapterFinished,InputBlocked,IsDead,ModeFinished;public PlayerController Player=new PlayerController();public int ChapterRoomIndex,ChapterSeed;public ChapterNode ActiveChapterNode;public ProgressionService Progression=new ProgressionService();public List<string> Logs=new List<string>();public void LogSystem(string s){Logs.Add(s);}public void SpawnMechanismText(Vector3 p,string s,Color c){} }
+    public class PlayerController:MonoBehaviour {public bool IsDead;public int CombatEpoch=1,DamageCalls;public float MaxHealth=100,Health=100;public void TakeDamageFrom(float value,string reason){Health-=value;DamageCalls++;}}
+    public class EnemyController:MonoBehaviour{public bool IsBoss=true,IsDead,IsStunned;public bool CanBeSkillInterrupted=true;public float Health=70,MaxHealth=100,AttackDamage=20;public int BeginCalls;public void ConfigureLargeExpedition(LargeExpeditionBoss boss){}public void BeginLargeBossMechanic(){BeginCalls++;}}
+    public class ProgressionService{public Profile Profile=new Profile();}public class Profile{public int level=1;}
+    public enum VisualSurface{Metal,Crystal}public enum DestructibleKind{Crate}public enum PropRecovery{None}
+    public class WorldResources:MonoBehaviour{public Material Material(Color c,bool glow,VisualSurface surface)=>new Material();}
+    public static class LargeBossRig
+    {public static Transform Joint(Transform parent,string name,Vector3 p){var go=new GameObject(name);go.transform.gameObject=go;go.transform.position=p;return go.transform;}public static Transform Part(Transform t,string n,PrimitiveType type,Vector3 p,Vector3 size,Material m)=>Joint(t,n,p);}
+    public class DestructibleProp:MonoBehaviour{public static bool AllowPlacement=true;public bool Broken;public static bool CanPlace(Vector3 p,float radius)=>AllowPlacement&&WorldTraversal.IsWalkable(p,radius);public void Initialize(DestructibleKind k,int level,float radius,bool loot,PropRecovery r,Transform model,Material m){} }
+    public static class EffectPreferences{public static bool ReducedEffects;}
+    public static partial class CombatFx{public static Material NewGlow()=>new Material();public static void Ring(Vector3 p,float r,Color c,float t,float w){} }
+}
+public static class ChapterCombatProductionTests
+{
+    static int checks;
+    static void Check(bool okay,string why){checks++;if(!okay)throw new Exception(why);}
+    static T Field<T>(object o,string field)=>(T)o.GetType().GetField(field,BindingFlags.NonPublic|BindingFlags.Instance).GetValue(o);
+    static void Update(object o)=>o.GetType().GetMethod("Update",BindingFlags.NonPublic|BindingFlags.Instance).Invoke(o,null);
+    static GameSession Game(ChapterNode node=ChapterNode.StarPlatform){WorldTraversal.Reset(ZoneKind.Dungeon);DestructibleProp.AllowPlacement=true;return GameSession.Instance=new GameSession{ActiveChapterNode=node};}
+    static void Steps(LargeExpeditionBoss boss,int steps){for(int i=0;i<steps;i++)boss.Tick(.05f);}
+    public static string Run()
+    {
+        checks=0;
+        // Exact component configuration is exercised, including legacy non-chapter opt-out.
+        var game=Game();var enemy=new EnemyController();game.Player.transform.position=new Vector3(0,0,5);
+        var normal=LargeExpeditionBoss.Configure(enemy,1,0);normal.Tick(.05f);Steps(normal,390);
+        Check(enemy.BeginCalls==1&&!normal.State.IsFollowup,"legacy default must not add followup");
+        foreach(var difficulty in new[]{ChapterDifficulty.Normal,ChapterDifficulty.Hard,ChapterDifficulty.Heroic})
+        {
+            game=Game();game.Player.transform.position=new Vector3(0,0,5);enemy=new EnemyController();
+            var boss=LargeExpeditionBoss.ConfigureChapter(enemy,1,0,difficulty);boss.Tick(.05f);
+            Check(boss.State.Phase==LargeBossPhase.Windup&&boss.State.PhaseNumber==1,"chapter phase starts at original 70 percent threshold");
+            Check(boss.State.Remaining>2.1f,"chapter starts with full warning");
+            float angle=boss.BeamWorldAngle;game.InputBlocked=true;Steps(boss,100);
+            Check(boss.State.Remaining>2.1f&&boss.BeamWorldAngle==angle,"blocked component freezes phase clock");game.InputBlocked=false;
+            Steps(boss,360); // 18 seconds: original beam complete and recovery almost done.
+            while(boss.State.Phase==LargeBossPhase.Recovery)boss.Tick(.05f);
+            if(difficulty==ChapterDifficulty.Normal)Check(enemy.BeginCalls==1&&!boss.State.IsFollowup,"chapter Normal keeps original single sequence");
+            else
+            {
+                Check(enemy.BeginCalls==2&&boss.State.IsFollowup&&boss.State.Phase==LargeBossPhase.Windup,"hard component must create exactly one full warned followup");
+                Check(boss.State.Remaining==2.2f&&boss.State.LiveAnchorMask!=0&&!boss.State.DamagePulse,"followup commits fresh anchors without immediate damage");
+                Steps(boss,40);Check(boss.State.Phase==LargeBossPhase.Windup,"followup retains readable 2.2 second warning");
+                for(int i=0;i<3;i++)boss.State.DestroyAnchor(boss.State.PhaseNumber,i);
+                Check(boss.State.Phase==LargeBossPhase.Exposed,"followup anchors still counter the attack");
+                Steps(boss,230);Check(enemy.BeginCalls==2&&!boss.State.OwnsAttacks,"followup never chains indefinitely");
+            }
+        }
+        game=Game();game.Player.transform.position=new Vector3(0,0,5);enemy=new EnemyController();var complete=LargeExpeditionBoss.ConfigureChapter(enemy,1,0,ChapterDifficulty.Hard);Steps(complete,900);
+        Check(enemy.BeginCalls==2&&complete.State.Phase==LargeBossPhase.Combat,"unbroken hard sequence ends after one followup");
+        enemy.Health=35;Steps(complete,900);
+        Check(enemy.BeginCalls==4&&complete.State.PhaseNumber==2&&complete.State.Phase==LargeBossPhase.Combat,"35 percent gets one bounded followup and no third health phase");
+        game=Game();game.Player.transform.position=new Vector3(0,0,5);enemy=new EnemyController();var reverse=LargeExpeditionBoss.ConfigureChapter(enemy,1,0,ChapterDifficulty.Heroic);reverse.Tick(.05f);
+        float initial=reverse.BeamWorldAngle;
+        var arrows=Field<LineRenderer[]>(reverse,"beamLines");Vector3 direction=Quaternion.Euler(0,initial,0)*Vector3.forward;
+        Vector3 arrowHead=(arrows[3].points[0]+arrows[3].points[2])*.5f;
+        Check(Vector3.Dot(arrows[3].points[1]-arrowHead,Vector3.Cross(Vector3.up,direction))<0,"heroic warning arrow matches actual reverse beam sign");
+        Steps(reverse,50);
+        Check(reverse.BeamWorldAngle<initial&&game.Logs.Exists(s=>s.Contains("逆时针")),"heroic actual beam follows the announced reverse direction");
+        game=Game();game.Player.transform.position=new Vector3(0,0,5);enemy=new EnemyController();var hard=LargeExpeditionBoss.ConfigureChapter(enemy,1,0,ChapterDifficulty.Hard);hard.Tick(.05f);hard.InterruptWindup();Steps(hard,600);
+        Check(enemy.BeginCalls==1&&hard.State.Phase==LargeBossPhase.Combat,"interrupt cancels pending followup and rewards exposure");
+        game=Game();enemy=new EnemyController();DestructibleProp.AllowPlacement=false;hard=LargeExpeditionBoss.ConfigureChapter(enemy,1,0,ChapterDifficulty.Hard);hard.Tick(.05f);
+        Check(hard.State.Phase==LargeBossPhase.Exposed,"no safe anchors degrades to exposure");
+        game.InputBlocked=true;game.Player.CombatEpoch++;hard.Tick(.05f);
+        Check(hard.State.Phase==LargeBossPhase.Finished,"chapter old owner retires before blocked simulation");
+        for(int seed=0;seed<4;seed++)for(int phase=1;phase<=2;phase++)
+        {Check(ChapterBossPattern.StartOffset(false,seed,phase)==35&&ChapterBossPattern.SweepSign(false,seed,phase)==1,"legacy angle preserved");Check(ChapterBossPattern.SweepSign(true,seed,phase)==-ChapterBossPattern.SweepSign(true,seed,3-phase),"heroic phase direction changes reproducibly");}
+        foreach(var node in new[]{ChapterNode.ForestCourt,ChapterNode.Redrock})
+        {
+            game=Game(node);var plan=ChapterRoomGeometry.Plan(node,0,0);
+            foreach(var obstacle in plan.Obstacles){if(obstacle.Radius>0)WorldTraversal.AddCircle(obstacle.Center,obstacle.Radius);else WorldTraversal.AddBox(obstacle.Center,obstacle.Size);}
+            Check(ChapterHazards.Configure(game,node,ChapterDifficulty.Hard,0,0,plan)==null,"non heroic rooms have no new floor hazard");
+            var hazard=ChapterHazards.Configure(game,node,ChapterDifficulty.Heroic,0,0,plan);Check(hazard!=null,"heroic room gets one optional hazard");
+            var center=Field<Vector3>(hazard,"center");game.Player.transform.position=center;
+            game.InputBlocked=true;for(int i=0;i<200;i++)Update(hazard);
+            Check(Field<float>(hazard,"age")==0&&game.Player.DamageCalls==0,"blocked chapter hazard must preserve clock and health");
+            game.InputBlocked=false;for(int i=0;i<120;i++)Update(hazard);
+            Check(game.Player.DamageCalls==0&&Field<LineRenderer>(hazard,"boundary").enabled,"visible warning precedes hazard damage");
+            for(int i=0;i<8;i++)Update(hazard);
+            Check(game.Player.DamageCalls==1&&game.Player.Health==93.5f,"single active window damages at most once");
+            if(node==ChapterNode.Redrock)Check(Field<Vector3>(hazard,"end").x<-2,"actual rock clips single heat line and damage endpoint");
+            game.Player.transform.position=new Vector3(12,0,12);for(int i=0;i<140;i++)Update(hazard);
+            Check(game.Player.DamageCalls==1,"outside hazard remains safe on later cycle");
+            game.InputBlocked=true;game.ChapterFinished=true;Time.deltaTime=0;Update(hazard);
+            Check(!hazard.gameObject.activeInHierarchy&&Field<bool>(hazard,"retired"),"finished chapter retires hazard at zero delta while blocked");Time.deltaTime=.05f;
+        }
+        foreach(var node in new[]{ChapterNode.ForestCourt,ChapterNode.Redrock})foreach(float offset in new[]{-.001f,0,.001f})
+        {
+            game=Game(node);var plan=ChapterRoomGeometry.Plan(node,0,0);
+            foreach(var obstacle in plan.Obstacles){if(obstacle.Radius>0)WorldTraversal.AddCircle(obstacle.Center,obstacle.Radius);else WorldTraversal.AddBox(obstacle.Center,obstacle.Size);}
+            var hazard=ChapterHazards.Configure(game,node,ChapterDifficulty.Heroic,0,0,plan);
+            Vector3 center=Field<Vector3>(hazard,"center");
+            game.Player.transform.position=center+(node==ChapterNode.ForestCourt?new Vector3(ArenaPulseRules.Radius+offset,0,0):new Vector3(0,0,ChapterHazardGeometry.HeatHalfWidth+offset));
+            for(int i=0;i<128;i++)Update(hazard);
+            Check(game.Player.DamageCalls==(offset<=0?1:0),"actual hazard footprint matches circle or capsule boundary at plus/minus .001");
+        }
+        game=Game(ChapterNode.ForestCourt);var old=ChapterHazards.Configure(game,ChapterNode.ForestCourt,ChapterDifficulty.Heroic,0,0,ChapterRoomGeometry.Plan(ChapterNode.ForestCourt,0,0));game.InputBlocked=true;game.Player.CombatEpoch++;Update(old);
+        Check(!old.gameObject.activeInHierarchy,"old epoch hazard retires before pause gate");
+        return "PASS: "+checks+" chapter component/pattern checks (managed substitutes; not Unity play)";
+    }
+}
