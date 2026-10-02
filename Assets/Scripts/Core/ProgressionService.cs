@@ -1221,6 +1221,29 @@ namespace Emberfall
             Profile = candidate; LastError = string.Empty; RaiseChanged(); return true;
         }
 
+        public const int SideEventReceiptLimit=32;
+        public bool TryGrantSideEventReward(string receipt) { bool newlyCommitted;return TryGrantSideEventReward(receipt,out newlyCommitted); }
+        public bool TryGrantSideEventReward(string receipt,out bool newlyCommitted)
+        {
+            newlyCommitted=false;Guid parsed;
+            if(receipt==null||!Guid.TryParseExact(receipt,"N",out parsed))return Fail("晶核奖励收据无效。");
+            receipt=parsed.ToString("N");
+            List<string> receipts=NormalizeSideEventReceipts(Profile.sideEventRewardReceipts);
+            if(receipts.Contains(receipt)){LastError=string.Empty;return true;}
+            GameProfile candidate=Snapshot();candidate.sideEventRewardReceipts=receipts;
+            if(receipts.Count==SideEventReceiptLimit)receipts.RemoveAt(0);
+            receipts.Add(receipt);candidate.mechanicMaterials=Math.Min(999999,candidate.mechanicMaterials+1);
+            if(!CommitCandidate(candidate))return false;
+            newlyCommitted=true;return true;
+        }
+        private static List<string> NormalizeSideEventReceipts(List<string> source)
+        {
+            var result=new List<string>();if(source==null)return result;
+            for(int i=source.Count-1;i>=0&&result.Count<SideEventReceiptLimit;i--)
+            {Guid parsed;if(source[i]==null||!Guid.TryParseExact(source[i],"N",out parsed))continue;string id=parsed.ToString("N");if(!result.Contains(id))result.Add(id);}
+            result.Reverse();return result;
+        }
+
         public bool SetSummonerRoute(SummonerRoute route, bool inCamp)
         {
             if (!inCamp || Profile.heroClass != HeroClass.Summoner || !Enum.IsDefined(typeof(SummonerRoute), route))
@@ -2206,6 +2229,7 @@ namespace Emberfall
             profile.currentHub=HubTravelRules.SafeCurrent(profile.currentHub,profile.unlockedHubMask);
             Guid modeReceipt;profile.lastModeRewardId=Guid.TryParseExact(profile.lastModeRewardId,"N",out modeReceipt)?modeReceipt.ToString("N"):null;
             Guid dungeonReceipt;profile.lastDungeonRewardId=Guid.TryParseExact(profile.lastDungeonRewardId,"N",out dungeonReceipt)?dungeonReceipt.ToString("N"):null;
+            profile.sideEventRewardReceipts=NormalizeSideEventReceipts(profile.sideEventRewardReceipts);
             profile.tutorialMask = Math.Max(0, profile.tutorialMask) & 15;
             if (profile.heroClass != HeroClass.Arcanist || !Enum.IsDefined(typeof(ElementalistSpecialization), profile.specialization))
                 profile.specialization = ElementalistSpecialization.None;

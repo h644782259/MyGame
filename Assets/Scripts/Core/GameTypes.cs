@@ -243,6 +243,7 @@ namespace Emberfall
         public int bestFloor;
         public string lastModeRewardId;
         public string lastDungeonRewardId;
+        public List<string> sideEventRewardReceipts = new List<string>();
         public int currentHub;
         public int unlockedHubMask=1;
         public List<ItemData> inventory = new List<ItemData>();
