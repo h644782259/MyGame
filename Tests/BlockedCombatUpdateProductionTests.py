@@ -57,7 +57,7 @@ def main():
             directory.mkdir()
             enemy = current['enemy']
             declarations = ['void Update()', 'void ResolveAttack()', 'void DamageTarget(float amount)',
-                            'bool InsideImpact(Vector3 point)', 'void FinishAttack()', 'Vector3 WalkForAnimation(Vector3 displacement)']
+                            'bool RegroupMobileSupport(float dt,float speed)', 'bool InsideImpact(Vector3 point)', 'void FinishAttack()', 'Vector3 WalkForAnimation(Vector3 displacement)']
             body = '\n'.join(without_simulation_gate(method(enemy, name)) if old == 'enemy' and name == 'void Update()' else method(enemy, name) for name in declarations)
             (directory / 'EnemyMethods.cs').write_text('using UnityEngine;namespace Emberfall{public partial class EnemyController{' + body + '}}')
             projectile = current['projectile']
