@@ -159,7 +159,7 @@ namespace Emberfall
                 amount *= .65f;
             float previousHealth = Health;
             Health = Mathf.Max(0,Health-amount);
-            CombatReviewEvents.Emit("damage",0,GetInstanceID(),previousHealth-Health,detail:"enemy_health_loss");
+            CombatReviewEvents.Emit("damage","0",CombatReviewObjectId.Get(this),previousHealth-Health,detail:"enemy_health_loss");
             aggro = true;
             hurtTime = .15f;
             if (impact && (critical || Time.time >= nextImpactTime))
@@ -185,7 +185,7 @@ namespace Emberfall
             session.SpawnCombatDamage(transform.position+Vector3.up*(IsBoss?3.6f:1.9f),Mathf.CeilToInt(amount).ToString(),critical);
             if (Health <= 0 && !deathReported)
             {
-                CombatReviewEvents.Emit("enemydeath",0,GetInstanceID());
+                CombatReviewEvents.Emit("enemydeath","0",CombatReviewObjectId.Get(this));
                 deathReported = true;
                 if (largeBoss != null) largeBoss.StopEncounter();
                 CancelAttack();

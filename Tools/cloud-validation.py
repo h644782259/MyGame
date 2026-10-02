@@ -251,6 +251,10 @@ def main():
             'using System; internal static class Program { static void Main() { Console.WriteLine(HoldPointStateTests.Run()); } }'))
         checks.append(("room-blessing-routes",[ROOT/"Assets/Scripts/Core/GameTypes.cs",ROOT/"Assets/Scripts/Core/RunChoices.cs",ROOT/"Assets/Scripts/Core/CampRouteCards.cs",ROOT/"Assets/Scripts/Core/SkillRuntime.cs",ROOT/"Tests/SkillRuntimeTests.cs",ROOT/"Tests/RoomBlessingRouteTests.cs"],
             'using System; internal static class Program { static void Main() { Console.WriteLine(RoomBlessingRouteTests.Run()); } }'))
+        checks.append(("combat-review-object-id-modern-contract",[ROOT/"Assets/Scripts/Core/CombatReviewObjectId.cs",ROOT/"Tests/CombatReviewObjectIdTests.cs"],
+            'using System; internal static class Program { static void Main() { Console.WriteLine(CombatReviewObjectIdTests.Run()); } }'))
+        checks.append(("combat-review-object-id-legacy",[ROOT/"Assets/Scripts/Core/CombatReviewObjectId.cs",ROOT/"Tests/CombatReviewObjectIdTests.cs"],
+            'using System; internal static class Program { static void Main() { Console.WriteLine(CombatReviewObjectIdTests.Run()); } }'))
         checks.append(("combat-review-events",[ROOT/"Assets/Scripts/Core/GameTypes.cs",ROOT/"Assets/Scripts/Core/CombatReviewEvents.cs",ROOT/"Assets/Scripts/Core/CombatReviewConfigurations.cs",ROOT/"Assets/Scripts/Core/SkillRuntime.cs",ROOT/"Tests/SkillRuntimeTests.cs",ROOT/"Tests/CombatReviewEventsTests.cs"],
             'using System; internal static class Program { static void Main() { Console.WriteLine(CombatReviewEventsTests.Run()); } }'))
         checks.append(("combat-review-rules",[ROOT/"Assets/Scripts/Core/GameTypes.cs",ROOT/"Assets/Scripts/Core/SkillRuntime.cs",ROOT/"Assets/Scripts/Core/SkillDamageBudgets.cs",ROOT/"Assets/Scripts/Core/AudioVoicePolicy.cs",ROOT/"Assets/Scripts/Core/LockedImpactMarkPolicy.cs",ROOT/"Assets/Scripts/Core/BasicActionTimeline.cs",ROOT/"Assets/Scripts/Combat/BossAttackPolicy.cs",ROOT/"Tests/SkillRuntimeTests.cs",ROOT/"Tests/CombatReviewRulesTests.cs"],
@@ -269,7 +273,7 @@ def main():
                 for helper in ["HubTravelRules","MasteryCoreRuntime","TierRewardRules","TierRewardBand"]:sources.append(ROOT/("Assets/Scripts/Core/"+helper+".cs"))
             if ROOT/"Tests/CombatBalanceTests.cs" in sources:sources.append(ROOT/"Assets/Scripts/Core/SkillDamageBudgets.cs")
         for name, sources, program in checks:
-            project = write_project(workspace / name, sources, program)
+            project = write_project(workspace / name, sources, program, defines="UNITY_6000_6_OR_NEWER" if name == "combat-review-object-id-modern-contract" else "")
             commands = [[dotnet, "restore", str(project), "--configfile", str(config), "--verbosity", "quiet"],
                         [dotnet, "run", "--project", str(project), "--no-restore", "--configuration", "Release", "--", str(workspace / "saves")]]
             passed = run_check(name, commands, env, output, report)

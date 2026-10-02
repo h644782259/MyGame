@@ -120,7 +120,7 @@ namespace Emberfall
                     break;
                 case 9: // The main judgment lands first; the unchanged sword budget follows.
                     if (step == 0) GameAudio.Play(SoundCue.Judgment);
-                    if (CombatReviewEvents.Enabled) CombatReviewEvents.Emit("skillimpact",owner.GetInstanceID(),skill:skill,detail:step==0?"judgment":"sword-array");
+                    if (CombatReviewEvents.Enabled) CombatReviewEvents.Emit("skillimpact",CombatReviewObjectId.Get(owner),skill:skill,detail:step==0?"judgment":"sword-array");
                     if (step > 0)
                     {
                         float radius = (2.4f+(step-1)*.55f)*range;

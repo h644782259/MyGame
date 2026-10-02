@@ -7,6 +7,19 @@ import re
 from pathlib import Path
 
 
+def normalize_object_id(value):
+    """Keep v2 full-width decimal strings; also accept exact legacy signed int IDs."""
+    if isinstance(value, bool) or not isinstance(value, (str, int)):
+        raise ValueError('Object IDs must be decimal strings or legacy integers, never floats')
+    text = str(value)
+    if not re.fullmatch(r'0|[1-9]\d*|-[1-9]\d*', text):
+        raise ValueError('Invalid object ID')
+    number = int(text)
+    if not -(1 << 31) <= number <= (1 << 64) - 1:
+        raise ValueError('Object ID outside supported range')
+    return text
+
+
 def summarize(path):
     counts = collections.Counter()
     damage = 0.0
@@ -18,6 +31,9 @@ def summarize(path):
         row = json.loads(line)
         if not isinstance(row, dict) or 'kind' not in row or 'frame' not in row:
             raise ValueError(f'Invalid event at line {line_number}')
+        for key in ('actorId', 'targetId'):
+            if key in row:
+                row[key] = normalize_object_id(row[key])
         counts[row['kind']] += 1
         if row['kind'] == 'projectileend' and re.fullmatch(r'-?\d+:(expired|terrain):hits=0', row.get('detail', '')):
             no_enemy_hit += 1

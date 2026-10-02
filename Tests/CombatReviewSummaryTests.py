@@ -20,3 +20,13 @@ with tempfile.TemporaryDirectory() as d:
     except ValueError:pass
     else:raise AssertionError('malformed rows accepted')
 print('PASS: summary avoids duplicate damage and invented missing events; rejects malformed input')
+
+# Values differing only below a double's precision remain distinct, including ulong max.
+assert m.normalize_object_id("18446744073709551615") != m.normalize_object_id("18446744073709551614")
+assert m.normalize_object_id(-2147483648) == "-2147483648"
+assert m.normalize_object_id(0) == m.normalize_object_id("0") == "0"
+for bad in (1.0, True, "18446744073709551616", "01", "-2147483649"):
+    try: m.normalize_object_id(bad)
+    except ValueError: pass
+    else: raise AssertionError(f'Lossy/invalid ID accepted: {bad!r}')
+print('PASS: lossless 64-bit identity and legacy/null ID parser compatibility')

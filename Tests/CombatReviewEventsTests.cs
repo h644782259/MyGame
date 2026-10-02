@@ -6,11 +6,11 @@ public static class CombatReviewEventsTests
     {
         int observed=0;
         Action<CombatReviewEvents.Entry> fail=e=>{throw new Exception("sink failure");};
-        Action<CombatReviewEvents.Entry> record=e=>{if(e.kind!="hit"||e.actorId!=12||e.targetId!=34||e.amount!=5||e.skill!=2||e.detail!="actual")throw new Exception("payload changed");observed++;};
+        Action<CombatReviewEvents.Entry> record=e=>{if(e.kind!="hit"||e.actorId!="18446744073709551615"||e.targetId!="18446744073709551614"||e.amount!=5||e.skill!=2||e.detail!="actual")throw new Exception("payload changed");observed++;};
         if(CombatReviewEvents.Enabled)throw new Exception("leaked listener");
-        CombatReviewEvents.Emit("unused",0);
+        CombatReviewEvents.Emit("unused","0");
         CombatReviewEvents.Observed+=fail;CombatReviewEvents.Observed+=record;
-        try {CombatReviewEvents.Emit("hit",12,34,5,2,"actual");if(observed!=1)throw new Exception("sink failure interrupted delivery");}
+        try {CombatReviewEvents.Emit("hit","18446744073709551615","18446744073709551614",5,2,"actual");if(observed!=1)throw new Exception("sink failure interrupted delivery");}
         finally {CombatReviewEvents.Observed-=fail;CombatReviewEvents.Observed-=record;}
         if(CombatReviewEvents.Enabled)throw new Exception("unsubscribe failed");
         var configs=CombatReviewConfigurations.Create();
