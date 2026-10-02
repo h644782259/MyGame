@@ -253,6 +253,10 @@ def main():
             'using System; internal static class Program { static void Main() { Console.WriteLine(HoldPointStateTests.Run()); } }'))
         checks.append(("room-blessing-routes",[ROOT/"Assets/Scripts/Core/GameTypes.cs",ROOT/"Assets/Scripts/Core/RunChoices.cs",ROOT/"Assets/Scripts/Core/CampRouteCards.cs",ROOT/"Assets/Scripts/Core/SkillRuntime.cs",ROOT/"Tests/SkillRuntimeTests.cs",ROOT/"Tests/RoomBlessingRouteTests.cs"],
             'using System; internal static class Program { static void Main() { Console.WriteLine(RoomBlessingRouteTests.Run()); } }'))
+        checks.append(("mobile-pause-navigation",[ROOT/"Assets/Scripts/UI/GameUI.PauseNavigation.cs",ROOT/"Tests/MobilePauseNavigationTests.cs"],
+            'using System; internal static class Program { static void Main() { Console.WriteLine(MobilePauseNavigationTests.Run()); } }'))
+        checks.append(("collection-render-lifecycle",[ROOT/"Assets/Scripts/UI/CollectionModelPreview.cs",ROOT/"Assets/Scripts/UI/CollectionPreviewState.cs",ROOT/"Tests/CollectionRenderLifecycleTests.cs"],
+            'using System; internal static class Program { static void Main() { Console.WriteLine(CollectionRenderLifecycleTests.Run()); } }'))
         checks.append(("ui-render-cache",[ROOT/"Assets/Scripts/Core/GameTypes.cs",ROOT/"Assets/Scripts/Core/ProgressionService.cs",ROOT/"Tests/ProgressionTests.cs",ROOT/"Assets/Scripts/UI/CollectionPreviewState.cs",ROOT/"Assets/Scripts/Combat/CombatTextMetrics.cs",ROOT/"Assets/Scripts/Combat/CombatTextLayout.cs",ROOT/"Tests/UiRenderCacheTests.cs"],
             'using System; internal static class Program { static void Main() { Console.WriteLine(UiRenderCacheTests.Run()); } }'))
         checks.append(("ui-render-cache-lifecycle",[ROOT/"Assets/Scripts/Combat/FloatingNumber.cs",ROOT/"Assets/Scripts/Combat/CombatTextMetrics.cs",ROOT/"Assets/Scripts/Combat/CombatTextLayout.cs",ROOT/"Tests/UiRenderCacheLifecycleTests.cs"],
