@@ -194,7 +194,11 @@ rig.animation_data.action=clips['Idle']; bpy.context.scene.render.fps=50; bpy.co
 bpy.ops.object.select_all(action='DESELECT')
 for o in [rig,sw]+skins+anchors:o.select_set(True)
 bpy.context.view_layer.objects.active=rig
-bpy.ops.export_scene.fbx(filepath=str(OUT/'Vanguard.fbx'),use_selection=True,object_types={'MESH','ARMATURE','EMPTY'},axis_forward='-Z',axis_up='Y',add_leaf_bones=False,bake_anim=True,bake_anim_use_all_actions=True,bake_anim_use_nla_strips=False,bake_anim_simplify_factor=0,path_mode='STRIP')
+# One verified export path for authoring builds and source-preserving re-exports.
+import importlib.util
+_export_spec=importlib.util.spec_from_file_location('vanguard_fbx_export',Path(__file__).with_name('export_vanguard_fbx.py'))
+_export_module=importlib.util.module_from_spec(_export_spec);_export_spec.loader.exec_module(_export_module)
+_export_module.export_current_scene(OUT/'Vanguard.fbx')
 # studio is not exported
 begin(); box('Preview_Ground',(0,0,-.075),(200,200,.10),0,.01)
 world=bpy.context.scene.world; world.use_nodes=True; world.node_tree.nodes['Background'].inputs[0].default_value=(.1,.15,.21,1); world.node_tree.nodes['Background'].inputs[1].default_value=.5
