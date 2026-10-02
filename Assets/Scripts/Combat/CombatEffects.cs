@@ -32,15 +32,17 @@ namespace Emberfall
             return obj;
         }
 
+        // Remote/area/pet ornament only: it never claims the player's current sword swing.
         public static void Slash(Vector3 center, Vector3 forward, float radius, Color color)
         {
-            var game = GameSession.Instance;
-            if (game != null)
-            {
-                var model=game.Player!=null?game.Player.GetComponentInChildren<CombatModel>():null;
-                FilledSkillVfx.Crescent(game.Player, center, forward, radius, color,model!=null?model.WeaponSwingSide:1);
-                WeaponSlashRibbon.Spawn(game.Player,model,color);
-            }
+            var game=GameSession.Instance;
+            if(game!=null)FilledSkillVfx.Crescent(game.Player,center,forward,radius,color,1);
+        }
+        public static void WeaponSlash(PlayerController owner,CombatModel model,Vector3 center,Vector3 forward,float radius,Color color)
+        {
+            if(owner==null||model==null||!model.SwordActionActive)return;
+            FilledSkillVfx.Crescent(owner,center,forward,radius,color,model.WeaponSwingSide);
+            WeaponSlashRibbon.Spawn(owner,model,color);
         }
 
         public static Material NewGlow()

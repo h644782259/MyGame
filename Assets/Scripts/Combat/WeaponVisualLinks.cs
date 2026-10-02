@@ -52,7 +52,7 @@ namespace Emberfall
     internal sealed class WeaponSlashRibbon : MonoBehaviour
     {
         private static int active;
-        private CombatModel model;private PlayerController owner;private int epoch,side;
+        private CombatModel model;private PlayerController owner;private int epoch,side,action;private bool sampling=true;
         private Vector3 previousRoot,previousTip;
         private readonly Vector3[] vertices=new Vector3[8];
         private Mesh mesh;private Material material;private float age,alpha;private bool registered;
@@ -60,10 +60,11 @@ namespace Emberfall
         public static void Spawn(PlayerController owner,CombatModel model,Color color)
         {
             Vector3 root,tip;
-            if(owner==null||model==null||active>=(Application.isMobilePlatform?12:20)||
+            if(owner==null||owner.IsDead||model==null||!model.SwordActionActive||active>=(Application.isMobilePlatform?12:20)||
                 !model.TryGetWeaponVisualAnchor(WeaponVisualAnchor.SwordRoot,out root)||!model.TryGetWeaponVisualAnchor(WeaponVisualAnchor.SwordTip,out tip))return;
+            if(!model.TryClaimSwordRibbon(model.WeaponActionId))return;
             var obj=new GameObject("Sword endpoint visual ribbon");
-            var ribbon=obj.AddComponent<WeaponSlashRibbon>();ribbon.owner=owner;ribbon.epoch=owner.CombatEpoch;ribbon.model=model;ribbon.side=model.WeaponSwingSide;
+            var ribbon=obj.AddComponent<WeaponSlashRibbon>();ribbon.owner=owner;ribbon.epoch=owner.CombatEpoch;ribbon.model=model;ribbon.side=model.WeaponSwingSide;ribbon.action=model.WeaponActionId;
             ribbon.previousRoot=root-model.transform.right*.06f*ribbon.side;ribbon.previousTip=tip-model.transform.right*.06f*ribbon.side;
             ribbon.mesh=new Mesh{name="Weapon root-tip swept volume"};ribbon.mesh.vertices=ribbon.vertices;
             ribbon.mesh.triangles=new[]{0,2,1,0,3,2,4,5,6,4,6,7,0,1,5,0,5,4,1,2,6,1,6,5,2,3,7,2,7,6,3,0,4,3,4,7};
@@ -76,11 +77,13 @@ namespace Emberfall
         {
             var game=GameSession.Instance;
             if(owner==null||owner.IsDead||model==null||owner.CombatEpoch!=epoch||game==null||game.Player!=owner||!game.HasStarted||game.ModeFinished){Destroy(gameObject);return;}
+            if(model.WeaponActionId!=action||!model.SwordActionActive)sampling=false;
             if(game.InputBlocked||Time.deltaTime<=0)return;
             age+=Time.deltaTime;if(age>=.22f){Destroy(gameObject);return;}
             Vector3 root,tip;
             if(!model.TryGetWeaponVisualAnchor(WeaponVisualAnchor.SwordRoot,out root)||!model.TryGetWeaponVisualAnchor(WeaponVisualAnchor.SwordTip,out tip)){Destroy(gameObject);return;}
-            Sample(root,tip);Color color=material.color;color.a=alpha*(1-age/.22f);material.color=color;
+            if((root-previousRoot).sqrMagnitude>9||(tip-previousTip).sqrMagnitude>9)sampling=false;
+            if(sampling)Sample(root,tip);Color color=material.color;color.a=alpha*(1-age/.22f);material.color=color;
         }
         private void Sample(Vector3 root,Vector3 tip)
         {

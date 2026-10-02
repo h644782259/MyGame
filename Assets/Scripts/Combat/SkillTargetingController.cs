@@ -22,6 +22,7 @@ namespace Emberfall
         }
 
         internal bool ConfirmingContract { get; private set; }
+        public int TargetedSkillIndex {get{return skill;}}
         public bool IsTargeting { get { return skill >= 0; } }
         public bool CancelledThisFrame { get { return cancelledFrame == Time.frameCount; } }
         public bool ConsumedThisFrame { get { return CancelledThisFrame || castFrame == Time.frameCount; } }

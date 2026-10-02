@@ -32,6 +32,11 @@ namespace Emberfall
         private HeroClass heroClass;
         private bool isHero, actionBasic;
         private int actionSkill, swingCount;
+        private int weaponActionId,lastRibbonAction;
+        public int WeaponActionId {get{return weaponActionId;}}
+        public bool SwordActionActive {get{return isHero&&heroClass==HeroClass.Vanguard&&actionDuration>0&&actionAge<actionDuration;}}
+        public bool TryClaimSwordRibbon(int identity)
+        {if(!SwordActionActive||identity!=weaponActionId||lastRibbonAction==identity)return false;lastRibbonAction=identity;return true;}
         private float actionAge, actionDuration, gaitPhase;
         private int actionStartedFrame;
         private bool slime, floating, treantCompanion;
@@ -854,7 +859,8 @@ namespace Emberfall
         public void PlayAction(int skill, bool basic, float basicInterval = 0)
         {
             if (!isHero) return;
-            if (actionDuration > 0 && actionAge < actionDuration) BeginVisualRecovery();
+            if (actionDuration > 0 && actionAge < actionDuration || recoveryAge < .12f) BeginVisualRecovery(false);
+            weaponActionId++;
             actionSkill = skill;
             actionBasic = basic;
             actionAge = 0;
@@ -863,17 +869,24 @@ namespace Emberfall
             actionDuration = basic ? BasicActionTimeline.Duration(heroClass == HeroClass.Ranger, basicInterval > 0 ? basicInterval : SkillDamageBudgets.BasicInterval(heroClass))
                 : SkillDamageBudgets.SkillPoseDuration(heroClass, skill, false);
             actionAge = actionDuration * (basic ? BasicActionTimeline.Contact(heroClass == HeroClass.Ranger) : SkillDamageBudgets.SkillPoseStart(heroClass, skill, false));
+            CommitActionPose();
         }
 
         public bool BasicActionBlocked { get { return BasicActionTimeline.BlocksBasic(actionBasic, actionAge, actionDuration); } }
-        public void CancelAction() { BeginVisualRecovery(); actionAge = actionDuration = 0; }
+        public void CancelAction() { BeginVisualRecovery(); weaponActionId++; actionAge = actionDuration = 0; }
 
         public void ReleaseCharge(int skill)
         {
             PlayAction(skill, false);
             actionDuration = SkillDamageBudgets.SkillPoseDuration(heroClass, skill, true);
             actionAge = actionDuration * SkillDamageBudgets.SkillPoseStart(heroClass, skill, true);
+            CommitActionPose();
         }
+
+        // May run after Update (charged release). Evaluate without advancing any clock,
+        // so anchors and effects observe the committed pose in this same frame.
+        private void CommitActionPose()
+        {if(isHero&&spine!=null){AdvanceVisualMotion(Time.deltaTime);AnimateHero(locomotion.Speed,1,false,0);}}
 
         private static Quaternion Pose(Vector3 idle, Vector3 windup, Vector3 release, float normalizedTime)
         {
@@ -885,14 +898,13 @@ namespace Emberfall
             return Quaternion.Slerp(Quaternion.Euler(release), Quaternion.Euler(idle), Mathf.SmoothStep(0, 1, (normalizedTime - .52f) / .48f));
         }
 
-        private void AnimateHero(float speed, float attack, bool hurt)
+        private void AnimateHero(float speed, float attack, bool hurt, float dt)
         {
-            float dt = Time.deltaTime;
-            AdvanceVisualMotion(dt);
+            if(dt>0)AdvanceVisualMotion(dt);
             speed = smoothedSpeed = locomotion.Speed;
             if (tailoredCloth != null) tailoredCloth.SetMotion(speed, actionDuration > 0 && actionAge < actionDuration ? 1 : 0);
             gaitPhase = locomotion.Phase;
-            if (actionDuration > 0 && (!actionBasic || Time.frameCount != actionStartedFrame)) actionAge = Mathf.Min(actionAge + dt, actionDuration);
+            if (actionDuration > 0 && Time.frameCount != actionStartedFrame) actionAge = Mathf.Min(actionAge + dt, actionDuration);
             float t = actionDuration > 0 ? actionAge / actionDuration : 1f;
             bool acting = t < 1f;
             float stride = Mathf.Sin(gaitPhase) * speed;
@@ -1135,7 +1147,7 @@ namespace Emberfall
 
         public void Animate(float speed, float attack, bool hurt)
         {
-            if (isHero) { AnimateHero(speed, attack, hurt); return; }
+            if (isHero) { AnimateHero(speed, attack, hurt, Time.deltaTime); return; }
             // Rebuild the authored pose each frame; recoil is an additive layer, never its replacement.
             if (body != null) body.localRotation = bodyRestRotation;
             if (largeBossRig != null) { transform.localPosition = Vector3.zero; largeBossRig.Animate(speed, attack); ApplyRecoil(); return; }

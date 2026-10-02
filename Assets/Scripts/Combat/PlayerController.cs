@@ -33,7 +33,8 @@ namespace Emberfall
         internal bool GameplayCancelAllowed { get { return session != null && !session.InputBlocked && (inputUI == null || inputUI.GameplayBackAllowed); } }
         private SkillRuntime skillRuntime;
         private RunChoices ActiveRunBonuses { get { return session != null && session.InDungeon ? session.RunChoices : null; } }
-        private float CombatAttack { get { return stats.Damage * (ActiveRunBonuses == null ? 1f : ActiveRunBonuses.AttackMultiplier); } }
+        internal float RunAttackMultiplier { get { return ActiveRunBonuses == null ? 1f : ActiveRunBonuses.AttackMultiplier; } }
+        private float CombatAttack { get { return stats.Damage * RunAttackMultiplier; } }
 
         private float attackCooldown, attackAnimation, hurtTimer, dodgeCooldown, invulnerability, skillFeedbackCooldown;
         private float guardTime, guardPower, guardReduction, guardRadius, guardPulseTimer;
@@ -127,6 +128,7 @@ namespace Emberfall
             if (IsDead || amount <= 0) return;
             float healed = Mathf.Min(amount,MaxHealth - Health);
             Health += healed;
+            session.RecordActualHealing(healed);
             if (healed > .5f)
             {
                 session.SpawnFloatingText(transform.position + Vector3.up * 2.4f,"+" + Mathf.CeilToInt(healed),new Color(.42f,1f,.65f));
@@ -378,6 +380,8 @@ namespace Emberfall
             bounded.y = airborneHeight;
             transform.position = bounded;
             if (walkingDisplacement.sqrMagnitude > 0) walkingDisplacement += CombatFx.Flat(bounded-beforeBoundary);
+            // Commit actual walking before any attack samples its final weapon pose.
+            model.SetLocomotion(transform.InverseTransformDirection(walkingDisplacement),dt,stats.MoveSpeed,!TraversalStartedThisFrame,jumping,jumpAge/.55f);
             // Mouse selection uses this frame's final position. Walking only turns
             // the model; it never overwrites the independent mouse aim point.
             if ((charge == null || !charge.IsCharging) && (mobile || !session.PointerOverUI))
@@ -404,7 +408,6 @@ namespace Emberfall
                 FaceAim();
                 if (attackCooldown <= 0) BasicAttack();
             }
-            model.SetLocomotion(transform.InverseTransformDirection(walkingDisplacement),dt,stats.MoveSpeed,!TraversalStartedThisFrame,jumping,jumpAge/.55f);
             model.Animate(movement.magnitude,attackAnimation,hurtTimer > 0);
             if (charge != null && charge.IsCharging) model.AnimateCharge(charge.Progress);
         }
@@ -467,23 +470,26 @@ namespace Emberfall
 
         // Called once for a mobile skill tap before the existing cast/charge path.
         // Selection only changes aim; it never spends energy or starts a cooldown.
+        private readonly List<MobileSkillPolicy.Candidate> mobileAimCandidates=new List<MobileSkillPolicy.Candidate>();
         internal void PrepareMobileSkillAim(int skill)
+        {EnemyController enemy;Vector3 point;ResolveMobileSkillAim(skill,out enemy,out point);AimTarget=enemy;aimPoint=point;}
+        internal void ResolveMobileSkillAim(int skill,out EnemyController enemy,out Vector3 point)
         {
             var preview=SkillTargetingController.Describe(HeroClass,skill,session.Progression.Profile.skillRanks[skill]);
-            if(preview.shape==SkillTargetingController.Shape.Self){AimTarget=null;aimPoint=transform.position;return;}
+            if(preview.shape==SkillTargetingController.Shape.Self){enemy=null;point=transform.position;return;}
             float range=preview.distance>0?preview.distance:14f;
-            var candidates=new System.Collections.Generic.List<MobileSkillPolicy.Candidate>(session.Enemies.Count);
-            foreach(var enemy in session.Enemies)
+            mobileAimCandidates.Clear();
+            foreach(var candidate in session.Enemies)
             {
-                bool valid=ValidAimTarget(enemy);
-                float distance=valid?CombatFx.Flat(enemy.transform.position-transform.position).sqrMagnitude:float.PositiveInfinity;
-                bool visible=valid&&CombatSight.Direct(transform.position,enemy.transform.position);
-                candidates.Add(new MobileSkillPolicy.Candidate(distance,visible,enemy==AimTarget||enemy==FocusTarget));
+                bool valid=ValidAimTarget(candidate);
+                float distance=valid?CombatFx.Flat(candidate.transform.position-transform.position).sqrMagnitude:float.PositiveInfinity;
+                bool visible=valid&&CombatSight.Direct(transform.position,candidate.transform.position);
+                mobileAimCandidates.Add(new MobileSkillPolicy.Candidate(distance,visible,candidate==AimTarget||candidate==FocusTarget));
             }
-            int chosen=MobileSkillPolicy.SelectTarget(candidates,range);
-            AimTarget=chosen<0?null:session.Enemies[chosen];
-            aimPoint=AimTarget!=null?CombatFx.Flat(AimTarget.transform.position):CombatFx.Flat(transform.position+transform.forward*Mathf.Min(8f,range));
-            aimPoint=CombatSight.GroundPoint(transform.position,Vector3.ClampMagnitude(aimPoint,Mathf.Max(1,session.ArenaRadius-.65f)));
+            int chosen=MobileSkillPolicy.SelectTarget(mobileAimCandidates,range);
+            enemy=chosen<0?null:session.Enemies[chosen];
+            point=enemy!=null?CombatFx.Flat(enemy.transform.position):CombatFx.Flat(transform.position+transform.forward*Mathf.Min(8f,range));
+            point=CombatSight.GroundPoint(transform.position,Vector3.ClampMagnitude(point,Mathf.Max(1,session.ArenaRadius-.65f)));
         }
 
         private static bool ProjectedBounds(Camera camera,Bounds bounds,out Rect screenBounds)
@@ -598,7 +604,7 @@ namespace Emberfall
             Color color = GameBalance.ClassColor(HeroClass);
             if (HeroClass == HeroClass.Vanguard)
             {
-                CombatFx.Slash(transform.position,transform.forward,2.3f,color);
+                CombatFx.WeaponSlash(this,model,transform.position,transform.forward,2.3f,color);
                 float previousCounter = counterTime;
                 bool wasCounter = previousCounter > 0;
                 bool wasDodgeCounter = perfectDodgeCounterTime > 0;
@@ -1045,8 +1051,37 @@ namespace Emberfall
             return WorldTraversal.CanLeap(transform.position, end, .45f);
         }
 
+        internal bool SkillTargetingReady(int skill)
+        {
+            if(session==null||IsDead||!session.HasStarted||session.InputBlocked||jumping||skill<0||skill>=GameBalance.SkillCount||GameBalance.IsPassive(skill)||
+                charge!=null&&(charge.IsCharging||charge.ConsumedThisFrame))return false;
+            int rank=session.Progression.Profile.skillRanks[skill];
+            return rank>0&&skillRuntime.Remaining(skill)<=0&&Energy>=GameBalance.SkillEnergyCost(HeroClass,skill)&&CanUseMovementSkill(skill,rank);
+        }
+        internal Vector3 ResolveSkillGroundTarget(Vector3 point,float range,bool fixedPoint=false)
+        {
+            Vector3 target=fixedPoint?point:transform.position+Vector3.ClampMagnitude(CombatFx.Flat(point-transform.position),9f*range);
+            return CombatSight.GroundPoint(transform.position,Vector3.ClampMagnitude(target,session.ArenaRadius));
+        }
+        public bool CanShatterNow(int skill=1)
+        {
+            if(HeroClass!=HeroClass.Arcanist||Specialization==ElementalistSpecialization.Burn||skill!=1||!SkillTargetingReady(skill))return false;
+            Vector3 point=aimPoint;EnemyController selected;
+            if(targeting!=null&&targeting.IsTargeting)
+            {if(targeting.TargetedSkillIndex!=skill)return false;point=targeting.TargetPoint;}
+            else if(MobileControls.Active)ResolveMobileSkillAim(skill,out selected,out point);
+            float range=GameBalance.SkillRangeMultiplier(session.Progression.Profile.skillRanks[skill]);
+            Vector3 center=ResolveSkillGroundTarget(point,range);float radius=3f*range;
+            foreach(var enemy in session.Enemies)
+                if(ValidAimTarget(enemy)&&enemy.StatusEffects!=null&&enemy.StatusEffects.HasFrostMark&&
+                    CombatFx.Flat(enemy.transform.position-center).magnitude<=radius+(enemy.IsBoss?.85f:.4f)+enemy.HitFootprintBonus&&
+                    CombatSight.Area(center,enemy.transform.position))return true;
+            return false;
+        }
+
         internal bool CanBeginSkillTargeting(int skill)
         {
+            if(SkillTargetingReady(skill))return true;
             if(session==null || IsDead || !session.HasStarted || session.InputBlocked || skill<0 || skill>=GameBalance.SkillCount || GameBalance.IsPassive(skill)) return false;
             if (jumping) { session.ReportControlFailure("skill"+skill,"空中"); return false; }
             if(charge != null && (charge.IsCharging || charge.ConsumedThisFrame)) { session.ReportControlFailure("skill"+skill,"施法中"); return false; }
@@ -1160,8 +1195,7 @@ namespace Emberfall
             float power = 1f + (rank-1)*.3f;
             float range = GameBalance.SkillRangeMultiplier(rank);
             Color color = GameBalance.ClassColor(HeroClass);
-            Vector3 target = executingChargedSkill ? charge.TargetPoint : transform.position + Vector3.ClampMagnitude(CombatFx.Flat(aimPoint-transform.position),9f*range);
-            target = CombatSight.GroundPoint(transform.position,Vector3.ClampMagnitude(target,session.ArenaRadius));
+            Vector3 target = ResolveSkillGroundTarget(executingChargedSkill ? charge.TargetPoint : aimPoint,range,executingChargedSkill);
             if (HeroClass == HeroClass.Summoner)
             {
                 if (slot == 5)
@@ -1213,7 +1247,7 @@ namespace Emberfall
                 }
                 else if (slot == 1)
                 {
-                    CombatFx.Slash(transform.position,transform.forward,4.8f*range,new Color(1f,.85f,.4f));
+                    CombatFx.WeaponSlash(this,model,transform.position,transform.forward,4.8f*range,new Color(1f,.85f,.4f));
                     Melee(4.8f*range,90+(rank-1)*10,Damage(SkillDamageBudgets.OpeningImpact(HeroClass,slot,rank)),1.9f,1.3f+(rank-1)*.3f,1.3f+(rank-1)*.3f,skillIndex:slot,castId:castId);
                     CombatFx.Ring(transform.position+transform.forward*2.5f*range,2.1f*range,color,.4f,.16f);
                     if(rank>=2) CombatArea.Spawn(this,session,CombatSight.GroundPoint(transform.position,transform.position+transform.forward*3f*range),2.3f*range,Damage(SkillDamageBudgets.OpeningImpact(HeroClass,slot,rank,1)),.6f,.25f,0,1,color,false,false,0,rank==3?Damage(SkillDamageBudgets.OpeningImpact(HeroClass,slot,rank,2)):0,castId:castId,visual:SkillVisualRecipe.Steel);
