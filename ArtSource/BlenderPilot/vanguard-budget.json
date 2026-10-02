@@ -1,0 +1,53 @@
+{
+  "hero_triangles": 1940,
+  "part_groups": [
+    "Vanguard_Body",
+    "Vanguard_Clothes",
+    "Vanguard_Armor",
+    "Vanguard_Head",
+    "Vanguard_Back"
+  ],
+  "sword_triangles": 392,
+  "bones": 19,
+  "max_weights": 2,
+  "clips": {
+    "Idle": {
+      "frames": [
+        0.0,
+        100.0
+      ],
+      "seconds": 2.0
+    },
+    "Move": {
+      "frames": [
+        0.0,
+        40.0
+      ],
+      "seconds": 0.8
+    },
+    "Basic": {
+      "frames": [
+        0.0,
+        25.0
+      ],
+      "seconds": 0.5
+    },
+    "Hit": {
+      "frames": [
+        0.0,
+        20.0
+      ],
+      "seconds": 0.4
+    },
+    "Skill": {
+      "frames": [
+        0.0,
+        50.0
+      ],
+      "seconds": 1.0
+    }
+  },
+  "basic_contact_frame": 13,
+  "basic_contact_normalized": 0.52,
+  "root_motion": false
+}

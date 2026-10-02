@@ -145,6 +145,14 @@ namespace Emberfall
             if(((x>0&&y<0)||(x<0&&y>0))&&((z>0&&w<0)||(z<0&&w>0)))return 0;
             return System.Math.Min(System.Math.Min(VisualPointSegmentDistance(a,c,d),VisualPointSegmentDistance(b,c,d)),System.Math.Min(VisualPointSegmentDistance(c,a,b),VisualPointSegmentDistance(d,a,b)));
         }
+        // Exact solid clearance for the complete telegraphed sweep capsule.
+        // Sampling alone can miss a narrow pillar tangent between sample points.
+        public static bool HasClearSweepCapsule(Vector3 from,Vector3 to,float radius)
+        {
+            if(!Finite(radius)||radius<=0||!VisualInsideArena(from,arena-radius)||!VisualInsideArena(to,arena-radius))return false;
+            foreach(var obstacle in obstacles)if(!VisualFanClear(from,to,to,obstacle,radius))return false;
+            return river==null||HasGroundPath(from,to,radius); // Keep the established river/bridge policy.
+        }
         public static bool HasClearVisualFootprint(Vector3 origin, Vector3 point, float radius)
         { return ClearSegment(origin, point, Mathf.Max(.04f,radius), true); }
         public static bool HasLineOfSight(Vector3 from, Vector3 to) { return ClearSegment(from, to, .04f, true); }

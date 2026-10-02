@@ -228,7 +228,7 @@ public static class UpgradeProgressionTests
     private static void LegacyUpgradesAndRanksRemainIntact()
     {
         var service = Fresh();
-        service.Profile.level = 50; service.Profile.skillRanks[9] = 2;
+        service.Profile.level = 50; service.Profile.skillRanks[0] = 0; service.Profile.skillRanks[9] = 2;
         ItemData item = service.Equipped(ItemSlot.Weapon);
         item.upgradeLevel = 7; item.attack = 123; item.upgradeBaseInitialized = false; item.balanceRevision = 0;
         service.Profile.skillPoints = int.MaxValue;

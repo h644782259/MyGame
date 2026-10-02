@@ -12,6 +12,12 @@ public static class RunRecapPresentationTests
     public static string Run()
     {
         checks=0;
+        var actualInstances=new[]{6,4,6,0};
+        var measured=new RunRecapSnapshot(true,true,false,1,3,3,0,1,12,null,0,null,null,null,false,false,mechanismCounts:actualInstances);
+        actualInstances[1]=6;var measuredView=new RunRecapPresentation(measured);
+        Check(measured.EmberCreated==6&&measured.EmberEffective==4&&measured.FrostCreated==6&&measured.FrostEffective==0,"mechanism result snapshots copy actual instance counts");
+        Check(measuredView.MechanismEvidence.Length==2&&measuredView.MechanismEvidence[0].Contains("生成 6 / 生效 4")&&measuredView.MechanismEvidence[1].Contains("生成 6 / 生效 0"),"structured ordinary recap distinguishes generated and effective instances");
+        Check(measuredView.Tip.Contains("未造成生命损失")&&!measuredView.Tip.Contains("秒"),"one factual mechanic retry suggestion without invented timings");
         var empty=new RunRecapPresentation(Snapshot());
         Check(empty.Metrics.Length==0 && empty.ExtraActions.Length==0 && empty.Mechanics.Length==0 && empty.Blessings.Length==0,"hide empty sections");
         Check(!empty.HasDamage && !empty.HasProgress,"do not fabricate hit/reward rows");

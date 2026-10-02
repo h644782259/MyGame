@@ -15,7 +15,7 @@ check('CombatModel.LargeExpedition(transform)' in e and 'largeBossRig.Animate(sp
 check('MakeRing()' in rig and 'new Transform[4]' in rig and 'Opening core armour' in rig,'original gyroscopic four-limb core silhouette')
 check('PropRecovery.None' in m and 'DestructibleProp.CanPlace(point,.55f)' in m and 'State.CommitAnchors(mask)' in m,'anchors use shared bounded destructibles with no persistent rewards')
 check('anchorRoot.SetActive(false);Destroy(anchorRoot)' in m,'old anchors release active registry cap immediately')
-check('State.DamagePulse && !game.InputBlocked && !boss.IsDead' in m and 'WorldTraversal.HasGroundPath(from,game.Player.transform.position' in m,'real damage respects timing, terminal state and cover')
+check('State.DamagePulse && !game.InputBlocked && !boss.IsDead' in m and 'WorldTraversal.HasClearSweepCapsule(from,to,BeamDangerRadius)' in m,'real damage respects timing, terminal state and cover')
 check('game.ModeFinished' in m and 'private void OnDisable(){StopEncounter();}' in m,'completion/background disposal cannot leave delayed hazards')
 check('ConfigureArenaBoss(int pattern)' in e and 'LargeExpeditionBoss.Configure' not in read('Core/GameSession.Modes.cs'),'small trial and ordinary bosses are not globally converted')
 print('PASS: 12 large-expedition boss source contracts (not engine execution)')

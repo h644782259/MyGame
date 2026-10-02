@@ -21,6 +21,8 @@ namespace Emberfall
         private int ownerEpoch,ownerRoom,ownerSeed;
         private PlayerController owner;
         private float sweepSign=1;
+        // This is the player-center danger capsule, including existing body compensation.
+        private const float BeamDangerRadius=LargeBossPhaseState.BeamHalfWidth+.4f;
         public float BeamWorldAngle {get{return startAngle+(State==null?0:State.BeamAngle*sweepSign);}}
         private int seed;
         private bool stopped;
@@ -74,10 +76,10 @@ namespace Emberfall
             {
                 Vector3 direction=Quaternion.Euler(0,BeamWorldAngle,0)*Vector3.forward;
                 Vector3 from=phaseCenter+direction*1.5f,to=ClipBeam(from,phaseCenter+direction*LargeBossPhaseState.BeamLength);
+                if(!WorldTraversal.HasClearSweepCapsule(from,from,BeamDangerRadius)){beamRoot.SetActive(false);return State.OwnsAttacks;}
                 DrawBeam(from,to,direction);
                 if (State.DamagePulse && !game.InputBlocked && !boss.IsDead && !game.Player.IsDead &&
-                    CombatFx.SegmentDistance(game.Player.transform.position,from,to)<=LargeBossPhaseState.BeamHalfWidth+.4f &&
-                    WorldTraversal.HasGroundPath(from,game.Player.transform.position,.12f))
+                    BeamContains(game.Player.transform.position,from,to))
                     game.Player.TakeDamageFrom(boss.AttackDamage*.55f,"星环执政官 · 环流扫射");
             }
             return State.OwnsAttacks;
@@ -99,11 +101,17 @@ namespace Emberfall
                 (chapterConfigured&&chapterDifficulty!=ChapterDifficulty.Normal?" · 完整扫射后追加锁向预警；打断止连扫，断锚暴露核心":"")+
                 (heroic?(sweepSign>0?" · 本轮顺时针扫射":" · 本轮逆时针扫射"):""));
         }
+        private bool unprovenAnchorRemoval;
         private void ReconcileAnchors()
         {
             for (int i=0;i<anchors.Length;i++)
                 if ((State.LiveAnchorMask & (1<<i)) != 0 && (anchors[i]==null || anchors[i].Broken || !anchors[i].gameObject.activeInHierarchy))
-                    State.DestroyAnchor(State.PhaseNumber,i);
+                {
+                    bool playerBreak=anchors[i]!=null&&anchors[i].WasBrokenBy(owner,ownerEpoch);
+                    if(!playerBreak)unprovenAnchorRemoval=true;
+                    if(State.DestroyAnchor(State.PhaseNumber,i)&&State.Phase==LargeBossPhase.Exposed&&playerBreak&&!unprovenAnchorRemoval&&ChapterOwnerValid)
+                        game.RecordChapterAnchorExposure(boss);
+                }
         }
         internal void InterruptWindup()
         {
@@ -116,7 +124,9 @@ namespace Emberfall
             if(stopped||State==null||boss==null||boss.IsDead||!ChapterOwnerValid)return;
             // Same attack may destroy its last anchor after enumerating the boss.
             ReconcileAnchors();
+            bool anchorExposure=State.Phase==LargeBossPhase.Exposed;
             if(State.Phase!=LargeBossPhase.Exposed&&!State.InterruptWindup())return;
+            if(!anchorExposure&&chapterConfigured)game.RecordChapterInterrupt(boss);
             if(beamRoot!=null)beamRoot.SetActive(false);
             ReleaseAnchors();
             if(State.Phase==LargeBossPhase.Exposed)AnnounceExposure();
@@ -130,7 +140,7 @@ namespace Emberfall
         }
         private void CreateAnchors()
         {
-            ReleaseAnchors();
+            ReleaseAnchors();unprovenAnchorRemoval=false;
             anchorRoot=new GameObject("Large boss power anchors");anchorRoot.transform.SetParent(transform,false);
             resources=anchorRoot.AddComponent<WorldResources>();
             Material shell=resources.Material(new Color(.25f,.34f,.43f),false,VisualSurface.Metal);
@@ -179,7 +189,7 @@ namespace Emberfall
             {
                 var obj=new GameObject(i==3?"Sweep direction arrow":i==4?"Interrupt symbol":i==5?"Windup timing arc":"Beam footprint");obj.transform.SetParent(beamRoot.transform,false);
                 var line=obj.AddComponent<LineRenderer>();line.sharedMaterial=beamMaterial;line.useWorldSpace=true;
-                line.positionCount=i==5?33:i>=3?3:2;line.numCapVertices=4;line.shadowCastingMode=UnityEngine.Rendering.ShadowCastingMode.Off;
+                line.positionCount=i==5?33:i>=3?3:i==0?2:18;line.numCapVertices=4;line.shadowCastingMode=UnityEngine.Rendering.ShadowCastingMode.Off;
                 line.sortingOrder=125;beamLines[i]=line;
             }
         }
@@ -190,10 +200,17 @@ namespace Emberfall
             Color tint=new Color(1,.24f,.12f,.85f);
             for(int i=0;i<3;i++)
             {
-                float side=i==0?0:i==1?-LargeBossPhaseState.BeamHalfWidth:LargeBossPhaseState.BeamHalfWidth;
-                beamLines[i].SetPosition(0,from+right*side);
                 float fill=live||i!=0?1:1-State.Remaining/LargeBossPhaseState.WindupSeconds;
-                beamLines[i].SetPosition(1,Vector3.Lerp(from,to,fill)+right*side);
+                if(i==0){beamLines[i].SetPosition(0,from);beamLines[i].SetPosition(1,Vector3.Lerp(from,to,fill));}
+                else
+                {
+                    // Two continuous half-capsules include the end caps, not offset center rays.
+                    float side=i==1?-1:1;
+                    for(int j=0;j<18;j++)
+                    {
+                        beamLines[i].SetPosition(j,BeamBoundary(from,to,direction,side,j));
+                    }
+                }
                 beamLines[i].widthMultiplier=i==0?(live?(EffectPreferences.ReducedEffects?.22f:.7f):.06f):.09f;
                 beamLines[i].startColor=beamLines[i].endColor=tint;
             }
@@ -210,10 +227,19 @@ namespace Emberfall
             for(int i=0;i<33;i++){float a=progress*i*Mathf.PI*2/32;timer.SetPosition(i,clock+new Vector3(Mathf.Sin(a),0,Mathf.Cos(a))*.55f);}
 
         }
+        private static bool BeamContains(Vector3 point,Vector3 from,Vector3 to)
+        {return CombatFx.SegmentDistance(point,from,to)<=BeamDangerRadius&&WorldTraversal.HasClearSweepCapsule(from,to,BeamDangerRadius);}
+        private static Vector3 BeamBoundary(Vector3 from,Vector3 to,Vector3 direction,float side,int index)
+        {
+            float angle=(index<=8?index:index-1)*Mathf.PI/16;
+            Vector3 center=index<=8?to:from;
+            Vector3 right=new Vector3(direction.z,0,-direction.x);
+            return center+right*(Mathf.Sin(angle)*side*BeamDangerRadius)+direction*(Mathf.Cos(angle)*BeamDangerRadius);
+        }
         private static Vector3 ClipBeam(Vector3 from,Vector3 to)
         {
-            if(WorldTraversal.HasGroundPath(from,to,.12f))return to;
-            float low=0,high=1;for(int i=0;i<10;i++){float mid=(low+high)*.5f;if(WorldTraversal.HasGroundPath(from,Vector3.Lerp(from,to,mid),.12f))low=mid;else high=mid;}
+            if(WorldTraversal.HasClearSweepCapsule(from,to,BeamDangerRadius))return to;
+            float low=0,high=1;for(int i=0;i<10;i++){float mid=(low+high)*.5f;if(WorldTraversal.HasClearSweepCapsule(from,Vector3.Lerp(from,to,mid),BeamDangerRadius))low=mid;else high=mid;}
             return Vector3.Lerp(from,to,low);
         }
         internal void StopEncounter()

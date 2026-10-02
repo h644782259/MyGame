@@ -32,7 +32,7 @@ namespace UnityEngine.Rendering{public enum ShadowCastingMode{Off}}
 namespace Emberfall
 {
     public partial class GameSession
-    {public static GameSession Instance;public bool HasStarted=true,ChapterActive=true,ChapterFinished,InputBlocked,IsDead,ModeFinished;public PlayerController Player=new PlayerController();public int ChapterRoomIndex,ChapterSeed;public ChapterNode ActiveChapterNode;public ProgressionService Progression=new ProgressionService();public List<string> Logs=new List<string>();public void LogSystem(string s){Logs.Add(s);}public void SpawnMechanismText(Vector3 p,string s,Color c){} }
+    {public static GameSession Instance;public bool HasStarted=true,ChapterActive=true,ChapterFinished,InputBlocked,IsDead,ModeFinished;public PlayerController Player=new PlayerController();public int ChapterRoomIndex,ChapterSeed,MasteryAnchorEvents,MasteryInterruptEvents;public void RecordChapterInterrupt(EnemyController e){MasteryInterruptEvents++;}public void RecordChapterAnchorExposure(EnemyController e){MasteryAnchorEvents++;}public ChapterNode ActiveChapterNode;public ProgressionService Progression=new ProgressionService();public List<string> Logs=new List<string>();public void LogSystem(string s){Logs.Add(s);}public void SpawnMechanismText(Vector3 p,string s,Color c){} }
     public class PlayerController:MonoBehaviour {public HeroClass HeroClass=HeroClass.Vanguard;public bool IsDead;public int CombatEpoch=1,DamageCalls;public float MaxHealth=100,Health=100;public void TakeDamageFrom(float value,string reason){Health-=value;DamageCalls++;}}
     public partial class EnemyController:MonoBehaviour{public bool IsBoss=true,IsDead,IsStunned;public bool CanBeSkillInterrupted=true;public float Health=70,MaxHealth=100,AttackDamage=20;public int BeginCalls;public void ConfigureLargeExpedition(LargeExpeditionBoss boss){largeBoss=boss;session=GameSession.Instance;}public void BeginLargeBossMechanic(){BeginCalls++;attackNumber++;}}
     public partial class ProgressionService{public Profile Profile=new Profile();}public class Profile{public int level=1;}
@@ -40,7 +40,7 @@ namespace Emberfall
     public class WorldResources:MonoBehaviour{public Material Material(Color c,bool glow,VisualSurface surface)=>new Material();}
     public static class LargeBossRig
     {public static Transform Joint(Transform parent,string name,Vector3 p){var go=new GameObject(name);go.transform.gameObject=go;go.transform.position=p;return go.transform;}public static Transform Part(Transform t,string n,PrimitiveType type,Vector3 p,Vector3 size,Material m)=>Joint(t,n,p);}
-    public class DestructibleProp:MonoBehaviour{public static bool AllowPlacement=true;public bool Broken;public static bool CanPlace(Vector3 p,float radius)=>AllowPlacement&&WorldTraversal.IsWalkable(p,radius);public void Initialize(DestructibleKind k,int level,float radius,bool loot,PropRecovery r,Transform model,Material m){} }
+    public class DestructibleProp:MonoBehaviour{public static bool AllowPlacement=true;public bool Broken,PlayerBroken;public bool WasBrokenBy(PlayerController owner,int epoch)=>Broken&&PlayerBroken&&owner!=null&&owner.CombatEpoch==epoch;public static bool CanPlace(Vector3 p,float radius)=>AllowPlacement&&WorldTraversal.IsWalkable(p,radius);public void Initialize(DestructibleKind k,int level,float radius,bool loot,PropRecovery r,Transform model,Material m){} }
     public static class EffectPreferences{public static bool ReducedEffects;}
     public static partial class CombatFx{public static Material NewGlow()=>new Material();public static void Ring(Vector3 p,float r,Color c,float t,float w){} }
 }
@@ -87,7 +87,18 @@ public static class ChapterCombatProductionTests
         foreach(var difficulty in new[]{ChapterDifficulty.Hard,ChapterDifficulty.Heroic}) {
             game=Game();enemy=new EnemyController();var interrupted=LargeExpeditionBoss.ConfigureChapter(enemy,1,0,difficulty);
             do{interrupted.Tick(.05f);}while(!interrupted.State.IsFollowup);
-            interrupted.InterruptWindup();Check(interrupted.State.Phase==LargeBossPhase.Recovery&&interrupted.State.Remaining==2f&&interrupted.State.IncomingMultiplier==1,"followup interrupt is recovery not exposure");
+            interrupted.InterruptWindup();Check(game.MasteryInterruptEvents==1,"F completed real interrupt records exactly once");Check(interrupted.State.Phase==LargeBossPhase.Recovery&&interrupted.State.Remaining==2f&&interrupted.State.IncomingMultiplier==1,"followup interrupt is recovery not exposure");
+        }
+        for(int mode=0;mode<4;mode++)
+        {
+            game=Game();enemy=new EnemyController();DestructibleProp.AllowPlacement=mode!=3;
+            var mastery=LargeExpeditionBoss.ConfigureChapter(enemy,1,0,ChapterDifficulty.Hard);mastery.Tick(.05f);
+            var props=Field<DestructibleProp[]>(mastery,"anchors");
+            foreach(var prop in props)if(prop!=null){prop.Broken=true;prop.PlayerBroken=mode==0;}
+            if(mode==2&&props[0]!=null)props[0].gameObject.SetActive(false);
+            mastery.Tick(.05f);
+            Check(game.MasteryAnchorEvents==(mode==0?1:0),"F only player-proven anchor exposure grants evidence, never disappearance or failed spawn");
+            mastery.Tick(.05f);Check(game.MasteryAnchorEvents==(mode==0?1:0),"F exposure evidence bounded once per actual phase");
         }
         game=Game();game.Player.transform.position=new Vector3(0,0,5);enemy=new EnemyController();var complete=LargeExpeditionBoss.ConfigureChapter(enemy,1,0,ChapterDifficulty.Hard);Steps(complete,900);
         Check(enemy.BeginCalls==2&&complete.State.Phase==LargeBossPhase.Combat,"unbroken hard sequence ends after one followup");
@@ -114,6 +125,7 @@ public static class ChapterCombatProductionTests
                 if(!bossFirst){Check(enemy.TrySkillInterrupt(game.Player,1,91),"real hard heroic attack qualifies after anchor target");enemy.TakeDamage(10,Vector3.forward,impact:false);}
             } finally { CombatImpactBatch.End(); }
             Check(atomic.State.Phase==LargeBossPhase.Exposed&&atomic.State.Remaining==6f&&atomic.State.IncomingMultiplier==1.35f,"same attack last anchor break wins over interrupt in both target orders");
+            Check(game.MasteryInterruptEvents==0,"F anchor-winning batch does not pretend a separate actual interrupt");
             Steps(atomic,700);Check(enemy.BeginCalls==1,"anchor counter cancels the threshold followup");
         }
         game=Game();enemy=new EnemyController();DestructibleProp.AllowPlacement=false;hard=LargeExpeditionBoss.ConfigureChapter(enemy,1,0,ChapterDifficulty.Hard);hard.Tick(.05f);

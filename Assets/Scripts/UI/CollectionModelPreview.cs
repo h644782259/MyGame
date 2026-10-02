@@ -22,6 +22,9 @@ namespace Emberfall
         CollectionPreviewSurface requested=new CollectionPreviewSurface(384,480,false),allocated;
         int surfaceFrame=-1;
         bool framingDirty=true;
+        bool equipmentFraming,equipmentDetail;
+        public void SetEquipmentFraming(bool enabled,bool detail)
+        {if(equipmentFraming==enabled&&equipmentDetail==detail)return;equipmentFraming=enabled;equipmentDetail=detail;framingDirty=true;state.Invalidate();}
         public CollectionPreviewAction PreviewAction {get{return motion.Action;}}
         public void Play(CollectionPreviewAction action){motion.Play(action);state.Invalidate();}
 
@@ -49,7 +52,7 @@ namespace Emberfall
             if(texture==null)return null;
             if(!texture.IsCreated()){texture.Create();state.InvalidateTexture();}
             if(!texture.IsCreated())return null;
-            if(motion.Advance(Time.unscaledDeltaTime,Time.frameCount))state.Invalidate();
+            if(!equipmentFraming&&motion.Advance(Time.unscaledDeltaTime,Time.frameCount))state.Invalidate();
             if(!state.ShouldRender(true,Time.frameCount))return texture;
             if(state.NeedsModel)
             {
@@ -68,7 +71,8 @@ namespace Emberfall
             avatar.transform.localRotation=Quaternion.Euler(0,state.Yaw,0);
             avatar.transform.localScale=Vector3.one;
             if(framingDirty){FrameModel();framingDirty=false;}
-            model.SamplePreview(motion.Time,motion.Action,motion.Progress,motion.OrbitYaw);
+            if(equipmentFraming)model.SamplePreview(0,CollectionPreviewAction.Idle,1);
+            else model.SamplePreview(motion.Time,motion.Action,motion.Progress,motion.OrbitYaw);
 
             turnRing.localRotation=Quaternion.Euler(0,motion.RingYaw,0);
             RenderIsolated();state.Rendered(Time.frameCount);
@@ -79,13 +83,23 @@ namespace Emberfall
             if(composition==CollectionPreviewComposition.Full)return true;
             for(var t=part;t!=null&&t!=avatar.transform;t=t.parent)
             {
-                if(composition==CollectionPreviewComposition.Back&&t.name=="Fashion Wings")return true;
-                if(composition==CollectionPreviewComposition.Weapon&&(t.name=="Sword Wrist"||t.name=="Staff Wrist"||t.name=="Bow"||t.name=="Equipped Weapon"||t.name=="Fashion Weapon"))return true;
+                // Explicit authored FBX part groups; their renderer.bounds below remain
+                // authoritative, including animated skinned-mesh bounds.
+                if(composition==CollectionPreviewComposition.Back&&(t.name=="Fashion Wings"||t.name=="Vanguard_Back"))return true;
+                if(composition==CollectionPreviewComposition.Weapon&&(t.name=="Sword Wrist"||t.name=="Staff Wrist"||t.name=="Bow"||t.name=="Equipped Weapon"||t.name=="Fashion Weapon"||t.name=="Vanguard_Sword"))return true;
             }
             return false;
         }
         void FrameModel()
         {
+            if(equipmentFraming)
+            {
+                // Fixed game-unit fixture: neither candidate silhouette nor a pose changes framing.
+                camera.aspect=(float)texture.width/texture.height;
+                camera.orthographicSize=(equipmentDetail?2.1f:3.8f)*Mathf.Max(1,1/camera.aspect);
+                Vector3 target=avatar.transform.position+Vector3.up*1.25f;
+                camera.transform.position=target+new Vector3(0,6,7);camera.transform.LookAt(target);return;
+            }
             bool found=false;Bounds bounds=new Bounds();
             // Cache the envelope of actual idle/attack/cast poses. Camera bounds do not
             // chase animated limbs, breathing, cloak vertices or orbit angles each frame.

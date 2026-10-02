@@ -44,6 +44,9 @@ namespace Emberfall
         {return MaterialReward(node,tier)+((profile.chapterFirstRewardMask&(1<<(int)node))==0?1:0);}
         internal static void Normalize(GameProfile profile)
         {
+            profile.chapterMasteryMask&=15;
+            var oldMastery=profile.chapterMasteryTiers;profile.chapterMasteryTiers=new int[4];
+            for(int i=0;i<4;i++)if((profile.chapterMasteryMask&(1<<i))!=0)profile.chapterMasteryTiers[i]=Math.Max(1,Math.Min(100,oldMastery!=null&&i<oldMastery.Length?oldMastery[i]:1));
             profile.chapterRevision=Math.Max(0,Math.Min(1,profile.chapterRevision));
             profile.chapterCompletedMask&=7;profile.chapterFirstRewardMask&=profile.chapterCompletedMask;
             var previous=profile.chapterHighestDifficulties;profile.chapterHighestDifficulties=new int[3];
@@ -59,6 +62,8 @@ namespace Emberfall
         public ChapterNode Node {get;private set;} public ChapterDifficulty Difficulty {get;private set;}
         public int Tier {get;private set;} public int Materials {get;private set;}
         public string Id {get;private set;} public long Sequence {get;private set;}
+        internal int MasteryEvidence;
+        internal bool MasteryEligible;
         internal readonly string SavePath;
         internal ChapterRunReceipt(ChapterNode node,ChapterDifficulty difficulty,int tier,int materials,long sequence,string path)
         {Node=node;Difficulty=difficulty;Tier=tier;Materials=materials;Sequence=sequence;SavePath=path;Id=Guid.NewGuid().ToString("N");}

@@ -357,17 +357,7 @@ namespace Emberfall
         private static void Tree(Transform parent, WorldResources r, Vector3 p, float size, int seed)
         {
             if (p.sqrMagnitude < 22f*22f) WorldTraversal.AddCircle(p, .22f);
-            Material trunk = r.Material(new Color(.24f,.22f,.21f),false,VisualSurface.Wood);
-            Material leaves = r.Material(seed % 2 == 0 ? new Color(.12f,.29f,.29f) : new Color(.2f,.37f,.32f),false,VisualSurface.Foliage);
-            Primitive(parent, "Tree trunk", PrimitiveType.Cylinder, p + Vector3.up * size, new Vector3(.34f, size, .34f), trunk);
-            for (int j = 0; j < 3; j++)
-            {
-                GameObject crown = Primitive(parent, "Rounded evergreen crown", PrimitiveType.Sphere,
-                    p + Vector3.up * (1.65f + j * .73f) * size,
-                    new Vector3(2.2f-j*.48f,1.75f-j*.17f,1.9f-j*.42f)*size, leaves,cameraOccluder:true);
-                crown.GetComponent<MeshFilter>().sharedMesh = ProceduralVisuals.WeatheredRock;
-                crown.transform.localRotation = Quaternion.Euler(0, seed*31f+j*57f, j%2==0 ? 7f : -7f);
-            }
+            BuildBranchTree(parent, r, p, size, seed);
         }
 
         private static void Rock(Transform parent, WorldResources r, Vector3 p, float scale, int seed)
@@ -430,6 +420,8 @@ namespace Emberfall
 
         private static void BuildCampfire(Transform parent, WorldResources r, Vector3 p)
         {
+            if(BlenderPilotArt.CreateProp("StarEmberCampfire",parent,p)!=null)
+            { PointLight(parent,p+Vector3.up*1.3f,new Color(1,.52f,.19f),2,8); return; }
             Material wood=r.Material(new Color(.3f,.22f,.17f));
             for(int i=0;i<3;i++) { GameObject log=Primitive(parent,"Firewood",PrimitiveType.Cylinder,p+new Vector3(0,.17f,0),new Vector3(.23f,.8f,.23f),wood); log.transform.rotation=Quaternion.Euler(90,i*60,0); }
             GameObject flame = Primitive(parent,"Amber flame",PrimitiveType.Sphere,p+Vector3.up*.67f,
@@ -445,6 +437,7 @@ namespace Emberfall
         private static void Tent(Transform parent, WorldResources r, Vector3 p)
         {
             Material cloth=r.Material(new Color(.29f,.47f,.48f),false,VisualSurface.Cloth);
+            if(BlenderPilotArt.CreateProp("WayfarerTent",parent,p)==null)
             for(int i=0;i<2;i++) { GameObject slope=Primitive(parent,"Camp tent",PrimitiveType.Cube,p+new Vector3(i==0?-.62f:.62f,1,0),new Vector3(.08f,2.5f,2.5f),cloth); slope.transform.rotation=Quaternion.Euler(0,0,i==0?-30:30); }
             Vector3 chest = p + new Vector3(2,.45f,0);
             Material wood = r.Material(new Color(.31f,.19f,.115f),false,VisualSurface.Wood);

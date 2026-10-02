@@ -11,8 +11,9 @@ public static class ProgressionAttentionTests
   ItemData high=new ItemData{id=Guid.NewGuid().ToString("N"),name="等级锁测试",slot=ItemSlot.Weapon,rarity=Rarity.Epic,level=2,attack=100,defense=10,health=100};p.Profile.inventory.Add(high);
   string before=p.Profile.weaponId;Check(!p.Equip(high.id)&&p.Profile.weaponId==before&&p.Profile.inventory.Contains(high),"level-gated equip service preserves original gear and candidate");
   Check(!ProgressionAttention.Evaluate(p,true).Equipment,"ineligible higher-score item excluded");
-  p.GrantExperience(GameBalance.XpToNext(1));var state=ProgressionAttention.Evaluate(p,true);Check(state.Equipment&&state.HigherScoreItems.Contains(high.id),"level-up unlocks badge immediately");Check(state.Skills,"eligible level and point enables skill badge");
-  Check(p.LearnSkill(0),"eligible skill can be learned");Check(!ProgressionAttention.Evaluate(p,true).Skills,"spent last point clears badge");
+  p.GrantExperience(GameBalance.XpToNext(1));var state=ProgressionAttention.Evaluate(p,true);Check(state.Equipment&&state.HigherScoreItems.Contains(high.id),"level-up unlocks badge immediately");Check(!state.Skills,"level two adds no duplicate point or skill badge");
+  p.GrantExperience(GameBalance.XpToNext(2)+GameBalance.XpToNext(3));Check(ProgressionAttention.Evaluate(p,true).Skills,"level four branch and available points enable skill badge");
+  Check(p.LearnSkill(1)&&p.LearnSkill(3),"eligible branch skills can be learned");Check(!ProgressionAttention.Evaluate(p,true).Skills,"spent last point clears badge");
   Check(p.Equip(high.id),"exact required level equips");Check(!ProgressionAttention.Evaluate(p,true).HigherScoreItems.Contains(high.id),"equipped candidate no longer badge");
   Check(!ProgressionAttention.HigherScore(100.05f,100)&&ProgressionAttention.HigherScore(101,100),"score threshold avoids rounded-equal nags");
   Check(!ProgressionAttention.HigherScore(float.NaN,100),"invalid score excluded");

@@ -56,6 +56,7 @@ namespace Emberfall
         {
             if (dying) return;
             dying = true;
+            SetBlenderPilotVisible(false);
             foreach (Material material in palette.Values)
             {
                 if (material == null) continue;
@@ -115,11 +116,14 @@ namespace Emberfall
             if (hero == HeroClass.Summoner) model.SummonerCrown();
             model.BuildClassCostume();
             model.CaptureBaseCostume();
+            model.ConfigureBlenderPilot();
             return model;
         }
 
         public void ApplyFashion(FashionData wings, FashionData weapon)
         {
+            pilotHasFashion = wings != null || weapon != null;
+            if(pilotHasFashion)SetBlenderPilotVisible(false);
             string wingId = wings == null ? null : wings.id;
             string weaponId = weapon == null ? null : weapon.id;
             if (wingId == fashionWingsId && weaponId == fashionWeaponId) return;
@@ -151,6 +155,10 @@ namespace Emberfall
         public void ApplyEquipment(ItemData weapon, ItemData armor, ItemData relic)
         {
             if (!isHero || spine == null) return;
+            bool resumePilot=pilotVisible;
+            SetBlenderPilotVisible(false); // Restore owned renderer states before equipment builders edit them.
+            pilotHasGear = !PilotStarterCompatible(weapon,ItemSlot.Weapon) || !PilotStarterCompatible(armor,ItemSlot.Armor) || !PilotStarterCompatible(relic,ItemSlot.Relic);
+
             string weaponKey = EquipmentKey(weapon);
             string armorKey = EquipmentKey(armor);
             string relicKey = EquipmentKey(relic);
@@ -189,6 +197,7 @@ namespace Emberfall
                 equipmentRelic = null;
                 if (relic != null) BuildEquipmentRelic(new EquipmentAppearance(relic));
             }
+            if(resumePilot&&!pilotHasGear)SetBlenderPilotVisible(true); // Capture the rebuilt procedural state, then hide it.
         }
 
         private static string EquipmentKey(ItemData item)
@@ -534,14 +543,14 @@ namespace Emberfall
             }
         }
 
-        private void Cape(Color color)
+        private void Cape(Color color, HeroClass hero)
         {
             GameObject obj = new GameObject("Tailored Cloak");
             obj.transform.SetParent(transform, false);
             obj.transform.localPosition = new Vector3(0, 1.66f, -.23f);
             cloak = obj.transform;
             tailoredCloth = obj.AddComponent<TailoredCloth>();
-            tailoredCloth.Initialize(Mat(color, VisualSurface.Cloth));
+            tailoredCloth.Initialize(Mat(color, VisualSurface.Cloth), hero);
         }
 
         private void BuildHero(HeroClass hero)
@@ -550,7 +559,7 @@ namespace Emberfall
             Color skin = new Color(.94f,.76f,.59f);
             Color steel = new Color(.64f,.75f,.85f);
             Humanoid(skin, accent * .62f, hero == HeroClass.Vanguard ? steel : accent, hero == HeroClass.Vanguard ? 1.15f : 1f);
-            Cape(accent * .48f);
+            Cape(accent * .48f, hero);
             if (hero == HeroClass.Vanguard)
             {
                 Part("Helmet", PrimitiveType.Sphere, new Vector3(0,2.14f,-.03f), new Vector3(.57f,.4f,.52f), steel);
@@ -849,6 +858,7 @@ namespace Emberfall
             if (!isHero) return;
             if (actionDuration > 0 && actionAge < actionDuration || recoveryAge < .12f) BeginVisualRecovery(false);
             weaponActionId++;
+            pilotCharging=false;
             actionSkill = skill;
             actionBasic = basic;
             actionAge = 0;
@@ -895,6 +905,7 @@ namespace Emberfall
             if (actionDuration > 0 && Time.frameCount != actionStartedFrame) actionAge = Mathf.Min(actionAge + dt, actionDuration);
             float t = actionDuration > 0 ? actionAge / actionDuration : 1f;
             bool acting = t < 1f;
+            if (SampleBlenderPilot(acting,t,hurt)) return;
             float stride = Mathf.Sin(gaitPhase) * speed;
             float lift = Mathf.Abs(Mathf.Sin(gaitPhase));
             float breathing = Mathf.Sin((isolatedPreview?previewTime:Time.time) * 2f + phase);
@@ -979,6 +990,7 @@ namespace Emberfall
         public void AnimateCharge(float progress) { AnimateCharge(progress,actionSkill); }
         public void AnimateCharge(float progress,int skill)
         {
+            pilotCharging=true;SetBlenderPilotVisible(false);
             if(float.IsNaN(progress)||float.IsInfinity(progress))return;
             if (!isHero || spine == null) return;
             float ready = .3f + .7f * Mathf.SmoothStep(0, 1, Mathf.Clamp01(progress));
@@ -1138,7 +1150,7 @@ namespace Emberfall
 
         public void Animate(float speed, float attack, bool hurt)
         {
-            if (isHero) { AnimateHero(speed, attack, hurt, Time.deltaTime); return; }
+            if (isHero) { pilotCharging=false; AnimateHero(speed, attack, hurt, Time.deltaTime); return; }
             // Rebuild the authored pose each frame; recoil is an additive layer, never its replacement.
             if (body != null) body.localRotation = bodyRestRotation;
             if (largeBossRig != null) { transform.localPosition = Vector3.zero; largeBossRig.Animate(speed, attack); ApplyRecoil(); return; }

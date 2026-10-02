@@ -14,6 +14,13 @@ namespace Emberfall
             if(limitedHealing&&charges<=0)return "限疗空";
             return "";
         }
+        // Compact button captions only; combat APIs retain the complete reason.
+        public static string SkillRejectionCaption(string reason)
+        {
+            if(reason=="目标被遮挡")return "被遮挡";
+            if(reason=="距离不足")return "太远";
+            return reason??string.Empty;
+        }
         public static string Potion(int count,bool limited,bool full)
         {return count<=0?(limited?"充能空":"药剂空"):full?"满血":"";}
         public static string Dodge(float cooldown,bool airborne)

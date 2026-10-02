@@ -234,6 +234,8 @@ namespace Emberfall
         public Rarity progressionGoalMinimumRarity;
         public int progressionGoalLevel;
         public int highestAdventureTier;
+        public int chapterMasteryMask;
+        public int[] chapterMasteryTiers = new int[4];
         public int chapterRevision;
         public int chapterCompletedMask;
         public int chapterFirstRewardMask;
@@ -313,7 +315,7 @@ namespace Emberfall
         public static readonly Color[] ClassColors = {
             new Color(1f, .65f, .26f), new Color(.4f, .7f, 1f), new Color(.38f, .88f, .65f), new Color(.83f, .63f, 1f)
         };
-        public static readonly int[] SkillRequiredLevels = { 2, 4, 6, 4, 10, 6, 13, 20, 13, 30 };
+        public static readonly int[] SkillRequiredLevels = { 1, 4, 6, 4, 10, 6, 13, 20, 13, 30 };
         public static readonly int[][] SkillPrerequisites = {
             new int[0], new[] { 0 }, new[] { 1 }, new[] { 0 }, new[] { 2 },
             new[] { 3 }, new[] { 5 }, new[] { 4 }, new[] { 5 }, new[] { 7, 6 }
@@ -394,7 +396,9 @@ namespace Emberfall
         public static string SkillDescription(HeroClass value, int slot) { return SkillDescriptions[(int)value, slot] + "\n" + BuildCatalog.DamageRules; }
         public static string EnergyName(HeroClass value) { return new[] { "战意", "奥能", "专注", "灵力" }[(int)value]; }
         public static bool IsPassive(int skill) { return skill == 3 || skill == 8; }
-        public static int SkillRankRequiredLevel(int skill, int rank) { return SkillRequiredLevels[skill] + (rank <= 1 ? 0 : rank == 2 ? 8 : 18); }
+        public static int SkillPointBudget(int level) { return Math.Max(1, level - 1); }
+        public static int SkillPointsGainedAtLevel(int level) { return level <= 1 ? 0 : SkillPointBudget(level) - SkillPointBudget(level - 1); }
+        public static int SkillRankRequiredLevel(int skill, int rank) { return rank <= 1 ? SkillRequiredLevels[skill] : Math.Max(2, SkillRequiredLevels[skill]) + (rank == 2 ? 8 : 18); }
         public static float SkillRangeMultiplier(int rank) { return rank <= 1 ? 1f : rank == 2 ? 1.15f : 1.35f; }
         public static string SkillRankName(int rank) { return rank <= 0 ? "未习得" : rank == 1 ? "初习" : rank == 2 ? "强化" : "觉醒"; }
         public static SkillCategory GetSkillCategory(HeroClass hero, int skill)

@@ -28,7 +28,7 @@ namespace Emberfall
  public struct MasteryResourceProc{public float Energy,CooldownReduction;}public class Mastery{public MasteryResourceProc SkillSpent(float cost)=>default;}
  public static class WorldTraversal{public static bool CanLeap(Vector3 from,Vector3 to,float radius)=>true;}
  public class ProjectileVolleyBudget<T>{public ProjectileVolleyBudget(float attack,float cap){}}
- public static class CombatArea{public static void Spawn(PlayerController player,GameSession game,Vector3 at,float size,CombatDamage amount,float disable,float startup,float activeTime,float tickInterval,Color tint,bool followPlayer=false,bool fallingMeteor=false,float pulling=0,CombatDamage finisher=default,int statusSkill=-1,int statusRank=1,int castId=0,SkillVisualRecipe visual=SkillVisualRecipe.Neutral){player.RecordEmission(at);}}
+ public static class CombatArea{public static void Spawn(PlayerController player,GameSession game,Vector3 at,float size,CombatDamage amount,float disable,float startup,float activeTime,float tickInterval,Color tint,bool followPlayer=false,bool fallingMeteor=false,float pulling=0,CombatDamage finisher=default,int statusSkill=-1,int statusRank=1,int castId=0,SkillVisualRecipe visual=SkillVisualRecipe.Neutral,int trackedMechanic=-1){player.RecordEmission(at);}}
  public static class SummonerSpell{public static void Cast(PlayerController player,GameSession game,int skill,int rank,Vector3 point,float damage,EnemyController target=null,bool preserve=false,int castId=0){player.RecordEmission(point,target);}}
  public static class AdvancedSkillSequence{public static void Spawn(params object[] a){}}
  public class FakeProgression{public GameProfile Profile=new GameProfile{skillRanks=new int[10]};}
@@ -124,6 +124,11 @@ public static class MobilePinnedTargetProductionTests
    Check(Math.Abs(player.Energy-(before-GameBalance.SkillEnergyCost(HeroClass.Summoner,9)))<.001f&&player.skillRuntime.Remaining(9)>0&&SummonedCompanion.Commands==0,"contract release spends real skill budget once and pin never sends a free command");
   }
   CombatSight.BlockedZ=float.NaN;
+  {
+   var game=new GameSession();var warrior=new PlayerController(game);warrior.HeroClass=HeroClass.Vanguard;
+   var distant=new EnemyController(4);game.Enemies.Add(distant);warrior.PinMobileTarget(distant);
+   Check(warrior.MobilePinnedActionReason(-1)=="距离不足"&&warrior.MobilePinnedActionReason(1)=="","warrior basic rejection does not reject longer-range skill");
+  }
   foreach(bool unlearned in new[]{false,true})
   {
    Time.frameCount++;var game=new GameSession();var player=new PlayerController(game);var target=new EnemyController(8);game.Enemies.Add(target);player.PinMobileTarget(target);Check(player.targeting.Begin(1),"budget revalidation case starts a real confirmed charge");

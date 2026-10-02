@@ -59,6 +59,15 @@ namespace Emberfall
         private bool hasCommandPoint, commandHadTarget;
         private CombatModel model;
         private EnemyController target;
+        private float packTargetHoldUntil;
+        private struct PackPathProbe
+        {
+            public Vector3 From, To;
+            public float Until;
+            public int Revision;
+            public bool Reachable;
+        }
+        private readonly Dictionary<EnemyController, PackPathProbe> packPaths = new Dictionary<EnemyController, PackPathProbe>();
         private Transform healthBar;
         private Material healthMaterial;
         private readonly WorldTraversal.Route route = new WorldTraversal.Route();
@@ -288,6 +297,19 @@ namespace Emberfall
             foreach (var pet in Snapshot(owner)) { pet.commandedTarget = pet.target = null; pet.hasCommandPoint = pet.commandHadTarget = false; pet.recallVisualPending=true; }
             return true;
         }
+        public static bool IsFreeRecalled(PlayerController owner)
+        { return owner != null && !owner.IsDead && State(owner).Directive.Recalling; }
+
+        public static bool FreeAttack(PlayerController owner)
+        {
+            var game = GameSession.Instance;
+            if (owner == null || owner.IsDead || owner.HeroClass != HeroClass.Summoner || game == null || game.Player != owner || !game.HasStarted || game.InputBlocked || game.CombatEnded) return false;
+            // Resume autonomous intent only. Paid command timers, multipliers,
+            // health, lifetime, attack recovery and opportunities remain untouched.
+            State(owner).Directive.Clear();
+            foreach (var pet in Snapshot(owner)) { pet.target = null; pet.recallVisualPending = false; }
+            return true;
+        }
         public static EnemyController ExplicitFocus(PlayerController owner)
         {
             if (owner == null || owner.IsDead) return null;
@@ -509,6 +531,8 @@ namespace Emberfall
             if (explicitTarget != null) return explicitTarget;
             EnemyController focused = Owner.FocusTarget;
             if (focused != null) return focused;
+            if (Form == Kind.Wolf && !IsPermanent && !IsStarter && session.Progression.Profile.summonerRoute == SummonerRoute.Pack)
+                return AcquirePackTarget();
             EnemyController chosen = null;
             float nearest = 14f;
             foreach (var enemy in session.Enemies)
@@ -517,6 +541,58 @@ namespace Emberfall
                 float distance = CombatFx.Flat(enemy.transform.position - Owner.transform.position).magnitude;
                 if (distance < nearest) { chosen = enemy; nearest = distance; }
             }
+            return chosen;
+        }
+
+        private bool LegalPackTarget(EnemyController enemy)
+        {
+            return ValidTarget(enemy) && (session.InDungeon || enemy.IsAggro) &&
+                PackCanReach(enemy);
+        }
+
+        private bool PackCanReach(EnemyController enemy)
+        {
+            Vector3 from = transform.position, to = enemy.transform.position;
+            float radius = NavigationRadius;
+            if (!WorldTraversal.IsWalkable(from, radius) || !WorldTraversal.IsWalkable(to, radius)) return false;
+            // Direct movement is a fast success only, never an occlusion rejection.
+            if (WorldTraversal.HasGroundPath(from, to, radius)) return true;
+            PackPathProbe probe;
+            if (packPaths.TryGetValue(enemy, out probe) && probe.Revision == WorldTraversal.Revision &&
+                Time.time < probe.Until && (from-probe.From).sqrMagnitude < .25f && (to-probe.To).sqrMagnitude < .25f)
+                return probe.Reachable;
+            bool reachable = WorldTraversal.CanReach(from, to, radius);
+            // Bounded per-companion cache: terrain edits invalidate immediately;
+            // moving endpoints or 250ms expire both positive and negative results.
+            if (packPaths.Count >= 32) packPaths.Clear();
+            packPaths[enemy] = new PackPathProbe { From=from, To=to, Until=Time.time+.25f, Revision=WorldTraversal.Revision, Reachable=reachable };
+            return reachable;
+        }
+
+        private EnemyController AcquirePackTarget()
+        {
+            // Keep a legal choice for one second, but never hold a dead, distant
+            // or unreachable enemy. This lease affects target selection only.
+            if (Time.time < packTargetHoldUntil && LegalPackTarget(target)) return target;
+            EnemyController unclaimed = null, fallback = null;
+            float unclaimedDistance = float.MaxValue, fallbackDistance = float.MaxValue;
+            foreach (var enemy in session.Enemies)
+            {
+                if (!LegalPackTarget(enemy)) continue;
+                float distance = CombatFx.Flat(enemy.transform.position - Owner.transform.position).sqrMagnitude;
+                if (distance < fallbackDistance) { fallback = enemy; fallbackDistance = distance; }
+                bool claimed = false;
+                foreach (var other in active)
+                {
+                    if (other == null || other == this || !other.IsAlive || other.Owner != Owner || other.Form != Kind.Wolf) continue;
+                    // Includes the permanent base wolf and active paid overrides.
+                    EnemyController occupied = other.commandTime > 0 && other.ValidTarget(other.commandedTarget) ? other.commandedTarget : other.target;
+                    if (occupied == enemy) { claimed = true; break; }
+                }
+                if (!claimed && distance < unclaimedDistance) { unclaimed = enemy; unclaimedDistance = distance; }
+            }
+            EnemyController chosen = unclaimed ?? fallback;
+            packTargetHoldUntil = Time.time + 1f;
             return chosen;
         }
 

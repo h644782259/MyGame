@@ -21,6 +21,7 @@ namespace Emberfall
  public partial class EnemyController:MonoBehaviour
  {
   enum AttackType{Melee,Slam,Charge,Bolt,Fan}
+  EnemyController mobileSupplier,mobileFirst,mobileSecond;public bool IsAggro=>aggro;public bool isActiveAndEnabled=>gameObject.activeInHierarchy;public void Provoke(){if(!IsDead)aggro=true;}
   bool escapePost;float escapeChaseMovement;
   GameSession session;public bool IsDead,IsBoss;public EnemyKind Kind=EnemyKind.Guardian;ThreatTier Tier=ThreatTier.Elite;
   Boss largeBoss;Control controlPolicy=new Control();Telegraph telegraph;public Status StatusEffects=new Status();Material healthFillMaterial=new Material();

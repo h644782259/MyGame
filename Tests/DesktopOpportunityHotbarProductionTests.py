@@ -44,7 +44,7 @@ namespace Emberfall {
   struct Label{public Rect Rect;public string Value;public Label(Rect r,string s){Rect=r;Value=s;}}
   List<Label> labels=new List<Label>();List<int> identities=new List<int>();int utilityIcons,dispatches;List<Rect> emphasis=new List<Rect>();
   void Box(Rect r,Color c){}void Fill(Rect r,Color c){}void Border(Rect r,Color c,float width=1){if(width==2)emphasis.Add(r);}void Text(Rect r,string text,int size,Color c,bool bold=false,bool wrap=false,TextAnchor anchor=TextAnchor.MiddleCenter){labels.Add(new Label(r,text));}
-  void DrawSkillIdentity(Rect r,HeroClass hero,int skill,int rank,bool usable,int size){identities.Add(skill);}void DrawIcon(Rect r,object icon,Color tint){utilityIcons++;}object HotbarIcon(GameProfile p,int skill)=>null;
+  void DrawSkillIdentity(Rect r,HeroClass hero,int skill,int rank,bool usable,int size){identities.Add(skill);Check(r.width==32&&r.height==32&&hotbarSlots.Any(slot=>r.x==slot.center.x-16&&r.y==slot.y+1&&r.y+r.height<=slot.yMax-12)&&size==32,"fixed desktop icon footprint across status changes");}void DrawIcon(Rect r,object icon,Color tint){utilityIcons++;}object HotbarIcon(GameProfile p,int skill)=>null;
   string PotionTooltip(GameProfile p)=>"potion";string SkillTooltip(GameProfile p,int skill,int rank)=>"skill";void TogglePanel(Panel p){dispatches++;}void SelectSkill(int skill){dispatches++;}void HandleHotbarPointer(Rect[] slots,bool configuring){}
   static int checks;static void Check(bool okay,string why){checks++;if(!okay)throw new Exception(why);}
   void Draw(){labels.Clear();identities.Clear();utilityIcons=0;emphasis.Clear();session.Player.Queries.Clear();session.Player.BasicQueries=0;DrawHotbar();}
@@ -86,6 +86,7 @@ with tempfile.TemporaryDirectory(prefix='desktop-opportunity-') as t:
   if result.returncode:print(result.stdout);result.check_returncode()
  command=[dotnet,str(p/'bin/Debug/net8.0/Test.dll')];build();subprocess.run(command,check=True)
  for before,after,oracle in [
+  ('float identitySize=mobile?44:32;','float identitySize=mobile?44:actionCaption.Length>0?24:32;','fixed desktop icon footprint across status changes'),
   ('DesktopSkillOpportunityCaption(skill,locked,lacksEnergy,cooldown,out actionable)','""','actual remapped meteor slot reads skill identity not slot index'),
   ('DesktopSkillOpportunityCaption(skill,locked,lacksEnergy,cooldown,out actionable)','DesktopSkillOpportunityCaption(slotIndex,locked,lacksEnergy,cooldown,out actionable)','actual remapped meteor slot reads skill identity not slot index'),
   ('mobile?"技能快捷栏":DesktopBasicOpportunityCaption()','"技能快捷栏"','desktop basic control names left click and actual counter window')]:

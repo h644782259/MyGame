@@ -12,9 +12,9 @@ feedback=(root/'Assets/Scripts/Core/GameSession.Feedback.cs').read_text();expedi
 methods='\n'.join([method(feedback,'private string BuildRunSummary('),method(expedition,'public void RecordIncomingDamage('),method(expedition,'public void RecordActualHealing(')])
 with tempfile.TemporaryDirectory(prefix='room-failure-evidence-') as temporary:
  path=Path(temporary)
- for relative in ['Assets/Scripts/Core/RoomChainState.cs','Assets/Scripts/Core/RoomTactics.cs','Assets/Scripts/Core/SideEventRun.cs','Assets/Scripts/UI/RunRecapPresentation.cs','Tests/RoomFailureEvidenceTests.cs','Tests/RunRecapPresentationTests.cs']:
+ for relative in ['Assets/Scripts/Core/RunMechanismEvidence.cs','Assets/Scripts/Core/RoomChainState.cs','Assets/Scripts/Core/RoomTactics.cs','Assets/Scripts/Core/SideEventRun.cs','Assets/Scripts/UI/RunRecapPresentation.cs','Tests/RoomFailureEvidenceTests.cs','Tests/RunRecapPresentationTests.cs']:
   (path/Path(relative).name).write_text((root/relative).read_text())
- host=path/'Session.cs';host.write_text('using UnityEngine;using System.Collections.Generic;namespace Emberfall {public partial class GameSession { '+methods+' }}')
+ host=path/'Session.cs';host.write_text('using UnityEngine;using System.Collections.Generic;namespace Emberfall {public partial class GameSession { '+'public RunMechanismEvidence MechanismEvidence {get;}=new RunMechanismEvidence();'+methods+' }}')
  (path/'Program.cs').write_text('System.Console.WriteLine(RoomFailureEvidenceTests.Run());System.Console.WriteLine(RunRecapPresentationTests.Run());')
  project=path/'Test.csproj';project.write_text('<Project Sdk="Microsoft.NET.Sdk"><PropertyGroup><TargetFramework>net8.0</TargetFramework><OutputType>Exe</OutputType></PropertyGroup></Project>')
  config=path/'NuGet.Config';config.write_text('<configuration><packageSources><clear /></packageSources></configuration>')

@@ -8,6 +8,7 @@ namespace Emberfall
         public ChapterDifficulty SelectedChapterDifficulty {get;set;}
         public int SelectedChapterTier {get;set;}=1;
         public bool SelectedChapterLimitedHealing {get;set;}
+        public int SelectedChapterTactic {get;set;}=-1;
         public ChapterCombatRun ChapterRun {get;private set;}
         public int ChapterRewardMaterials {get{return ChapterResult!=null&&ChapterResult.Saved?ChapterResult.Materials:0;}}
         public ChapterResultSnapshot ChapterResult {get;private set;}
@@ -31,6 +32,14 @@ namespace Emberfall
         private GameObject chapterExit,chapterObjective;
         private readonly GameObject[] chapterObjectives=new GameObject[2];
         private EnemyController chapterSupplier;
+        private int previousForestLineup=-1;
+        private string forestLineupOwner;
+        public bool SelectedForestLineupB {get{return SelectedChapterNode==ChapterNode.ForestCourt&&SelectedChapterDifficulty==ChapterDifficulty.Hard&&forestLineupOwner==Progression.SaveFilePath&&previousForestLineup==0;}}
+        public string SelectedChapterLineupPreview {get{return SelectedChapterNode!=ChapterNode.ForestCourt||SelectedChapterDifficulty!=ChapterDifficulty.Hard?"":SelectedForestLineupB?
+            "编队 B · 双坛卫兵，护援者与两名哥布林结伴争夺；黏液游荡。先切断移动护援，再抢任一封印。":
+            "编队 A · 近侧卫兵受护援，远侧卫兵独立。先走无护援一侧，或引开/击败护援者。";}}
+        private bool ForestMobileLineup {get{return ChapterActive&&ActiveChapterNode==ChapterNode.ForestCourt&&ActiveChapterDifficulty==ChapterDifficulty.Hard&&ChapterRoomIndex==0&&(ChapterSeed&2)!=0;}}
+
 
         private sealed class ChapterEnemyReceipt {public ChapterCombatRun Run;public int Room,Epoch,Index;}
         private readonly Dictionary<EnemyController,ChapterEnemyReceipt> chapterEnemies=new Dictionary<EnemyController,ChapterEnemyReceipt>();
@@ -67,11 +76,15 @@ namespace Emberfall
             ChapterRunReceipt receipt;
             if(!Progression.TryBeginChapterNode(SelectedChapterNode,SelectedChapterDifficulty,SelectedChapterTier,out receipt)){Notify(Progression.LastError);return false;}
             chapterEntryPotions=Progression.Profile.potions;chapterFirstSealSeconds=chapterSecondSealSeconds=0;ChapterResult=null;chapterBossDeathFrame=-1;chapterResultSkipped=false;
-            chapterReceipt=receipt;ChapterRun=new ChapterCombatRun(receipt.Node,receipt.Difficulty,Random.Range(0,1000000));
+            int seed=Random.Range(0,1000000);
+            if(receipt.Node==ChapterNode.ForestCourt&&receipt.Difficulty==ChapterDifficulty.Hard)seed=(seed&~2)|(SelectedForestLineupB?2:0);
+            chapterReceipt=receipt;ChapterRun=new ChapterCombatRun(receipt.Node,receipt.Difficulty,seed);
             enteringChapter=true;ChallengeRun=SelectedChapterLimitedHealing;
             try {if(!ChangeZone(true)){ResetChapterRun();return false;}}
             catch(System.Exception error){FailChapter("房间 "+(ChapterRoomIndex+1)+" 生成异常："+error.Message);return InDungeon;}
             finally {enteringChapter=false;changingZone=false;}
+            if(receipt.Node==ChapterNode.ForestCourt&&receipt.Difficulty==ChapterDifficulty.Hard){forestLineupOwner=Progression.SaveFilePath;previousForestLineup=(seed&2)==0?0:1;}
+            if(ChapterRun!=null&&!ChapterRun.Finished&&!ChapterRun.Failed&&SelectedChapterTactic>=0)RunChoices.ChooseChapterTactic(Progression.Profile,receipt.Node,MobileControls.Active,SelectedChapterTactic);
             UpdateTimeScale();Notify(ChapterDefinition.Get(receipt.Node).Story+" · "+ChapterObjectiveStatus);return true;
         }
         private void ResetChapterRun()
@@ -116,15 +129,22 @@ namespace Emberfall
                 if(index==0&&!boss)chapterSupplier=enemy;
                 if(crossfire)
                     enemy.ConfigureEscapePost(index==0?EscapeRole.GateSupplier:index==1||index==5?EscapeRole.SideFlanker:index<4?EscapeRole.GateGuard:EscapeRole.Pursuer,point);
-                if(ActiveChapterNode==ChapterNode.ForestCourt&&ChapterRoomIndex==0&&index==4)
+                if(ActiveChapterNode==ChapterNode.ForestCourt&&ChapterRoomIndex==0&&(index==4||ForestMobileLineup&&index==1))
                     enemy.ConfigureEscapePost(EscapeRole.GateGuard,point);
                 TacticalEnemyVisual.Attach(enemy,this);
                 if(boss)LargeExpeditionBoss.ConfigureChapter(enemy,DungeonTier,ChapterSeed,ActiveChapterDifficulty);
+            }
+            if(ForestMobileLineup)
+            {
+                EnemyController first=null,second=null;
+                foreach(var pair in chapterEnemies){if(pair.Value.Index==2)first=pair.Key;if(pair.Value.Index==5)second=pair.Key;}
+                if(first!=null&&second!=null){chapterSupplier.ConfigureMobileSupport(null,first,second);first.ConfigureMobileSupport(chapterSupplier,null,null);second.ConfigureMobileSupport(chapterSupplier,null,null);}
             }
             ChapterHazards.Configure(this,ActiveChapterNode,ActiveChapterDifficulty,ChapterRoomIndex,ChapterSeed,chapterPlan);
         }
         private bool TryChapterSpawn(int index,bool crossfire,List<Vector3> occupied,float radius,out Vector3 point)
         {
+            if(ForestMobileLineup)return ChapterRoomGeometry.TrySpawnAt(chapterPlan,ChapterRoomGeometry.ForestMobileSpawn(ChapterSeed,index),occupied,radius,out point);
             if(!crossfire)return ChapterRoomGeometry.TrySpawn(chapterPlan,index,occupied,radius,out point);
             // The hunt target remains receipt index zero. Two existing casters occupy
             // opposite branches; stone guardians hold the exit rather than chasing across both lanes.
@@ -142,6 +162,7 @@ namespace Emberfall
                 {
                     for(int i=0;i<2;i++)ChapterRun.AdvanceSeal(i,Time.deltaTime,true,RoomTacticalRegion.ContainsPlayer(CombatFx.Flat(Player.transform.position-chapterPlan.Objectives[i]).sqrMagnitude),ChapterSealContested(i));
                     chapterFirstSealSeconds=ChapterRun.SealProgress(0);chapterSecondSealSeconds=ChapterRun.SealProgress(1);
+                    if(ChapterRoomIndex==0&&ChapterRun.Seals==2&&ChapterRun.LivingRegisteredEnemies>=2)Progression.RecordChapterMastery(chapterReceipt,1);
                 }
                 else
                 {
@@ -184,6 +205,16 @@ namespace Emberfall
         public bool IsChapterSupplier(EnemyController enemy){return ChapterHasSupport&&enemy==chapterSupplier;}
         public float ChapterSupportMultiplier(EnemyController enemy)
         {return ChapterHasSupport&&enemy!=null&&enemy!=chapterSupplier&&!enemy.IsBoss&&!enemy.IsDead&&enemy.isActiveAndEnabled&&RoomTacticalRegion.ReceivesSupport(CombatFx.Flat(enemy.transform.position-chapterSupplier.transform.position).sqrMagnitude,true)&&WorldTraversal.HasLineOfSight(enemy.transform.position,chapterSupplier.transform.position)?.7f:1;}
+        private bool IsCurrentChapterBoss(EnemyController enemy)
+        {
+            ChapterEnemyReceipt receipt;
+            return ChapterActive&&!ChapterFinished&&ActiveChapterNode==ChapterNode.StarPlatform&&Player!=null&&enemy!=null&&enemy.IsBoss&&
+                chapterEnemies.TryGetValue(enemy,out receipt)&&receipt.Run==ChapterRun&&receipt.Room==ChapterRoomIndex&&receipt.Epoch==Player.CombatEpoch&&receipt.Index==0;
+        }
+        internal void RecordChapterAnchorExposure(EnemyController enemy)
+        {if(IsCurrentChapterBoss(enemy))Progression.RecordChapterMastery(chapterReceipt,8);}
+        internal void RecordChapterInterrupt(EnemyController enemy)
+        {if(IsCurrentChapterBoss(enemy))Progression.RecordChapterMastery(chapterReceipt,4);}
         private bool RecordChapterDefeat(EnemyController enemy,out int experience)
         {
             experience=0;ChapterEnemyReceipt receipt;
@@ -191,15 +222,16 @@ namespace Emberfall
                 !ChapterRun.Defeat(receipt.Room,receipt.Epoch,receipt.Index))return false;
             if(!Progression.TryClaimChapterEnemyExperience(chapterReceipt,receipt.Room,receipt.Index,out experience))
             {FailChapter("敌人 #"+receipt.Index+" 经验收据无法确认");return false;}
+            if(ActiveChapterNode==ChapterNode.Redrock&&receipt.Room==0&&receipt.Index==0&&ChapterRun.LivingRegisteredEnemies==5)Progression.RecordChapterMastery(chapterReceipt,2);
             chapterEnemies.Remove(enemy);
             if(enemy.IsBoss)chapterBossDeathFrame=Time.frameCount;
             return true;
         }
         private void FinalizeChapterBoss(){if(ChapterActive&&ChapterRun.FinishBoss())FinalizeChapter();}
         private ChapterResultSnapshot CaptureChapterResult(bool failed,string reason)
-        {return new ChapterResultSnapshot(ActiveChapterNode,ActiveChapterDifficulty,chapterReceipt==null?DungeonTier:chapterReceipt.Tier,chapterEntryPotions,ChallengeRun,ChapterRoomIndex,(chapterFirstSealSeconds>=3?1:0)+(chapterSecondSealSeconds>=3?1:0),chapterFirstSealSeconds,chapterSecondSealSeconds,failed,reason,lastDamageSource,lastDamageAmount,Progression.ChapterKillExperienceEarned);}
+        {return new ChapterResultSnapshot(ActiveChapterNode,ActiveChapterDifficulty,chapterReceipt==null?DungeonTier:chapterReceipt.Tier,chapterEntryPotions,ChallengeRun,ChapterRoomIndex,(chapterFirstSealSeconds>=3?1:0)+(chapterSecondSealSeconds>=3?1:0),chapterFirstSealSeconds,chapterSecondSealSeconds,failed,reason,lastDamageSource,lastDamageAmount,Progression.ChapterKillExperienceEarned,MechanismEvidence.Snapshot());}
         private void FailChapter(string reason)
-        {if(!ChapterActive||ChapterFinished)return;ChapterResult=CaptureChapterResult(true,reason);ChapterRun.Fail();Progression.CancelChapterRun();Notify(reason);SuspendInputs();UpdateTimeScale();}
+        {if(!ChapterActive||ChapterFinished)return;ChapterResult=CaptureChapterResult(true,reason);ChapterRun.Fail();RunChoices.Reset();Progression.CancelChapterRun();Notify(reason);SuspendInputs();UpdateTimeScale();}
         private void FinalizeChapter()
         {ChapterResult=CaptureChapterResult(false,null);DungeonCleared=true;TrySettleChapterReward();LastRunSummary=BuildRunSummary(true);SuspendInputs();UpdateTimeScale();GameAudio.Play(SoundCue.Victory);}
         public bool TrySettleChapterReward()

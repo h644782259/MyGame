@@ -21,3 +21,8 @@ with tempfile.TemporaryDirectory(prefix='preview-pose-') as directory:
  subprocess.run([dotnet,'build',str(project),'--no-restore','-v:q'],env=env,check=True,stdout=subprocess.DEVNULL)
  result=subprocess.run(cmd+['--no-build'],env=env,capture_output=True,text=True);assert result.returncode and 'System.Exception: actual mechanical orbit remains continuous across local-clock wrap' in result.stdout+result.stderr,result.stdout+result.stderr
  print('PASS: 16-degree orbit tied to wrapped time compiled and failed exact visual-transform continuity assertion')
+
+ orbitSource.write_text(normalOrbit.replace('action==CollectionPreviewAction.Attack && heroClass!=HeroClass.Ranger','action==CollectionPreviewAction.Attack').replace('progress < BasicActionTimeline.BowRelease || progress >= BasicActionTimeline.ArrowReload','progress >= BasicActionTimeline.ArrowReload'))
+ subprocess.run([dotnet,'build',str(project),'--no-restore','-v:q'],env=env,check=True,stdout=subprocess.DEVNULL)
+ result=subprocess.run(cmd+['--no-build'],env=env,capture_output=True,text=True);assert result.returncode and 'System.Exception: preview arrow visible before draw' in result.stdout+result.stderr,result.stdout+result.stderr
+ print('PASS: old contact-only preview compiled and rejected by actual arrow visibility assertion')

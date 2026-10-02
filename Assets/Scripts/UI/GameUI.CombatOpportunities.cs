@@ -14,8 +14,9 @@ namespace Emberfall
         {
             if(!CompanionCommandsVisible||session.InputBlocked||panel!=Panel.None)return;
             var hero=session.Player;var target=hero.AimTarget;
-            bool success=recall?SummonedCompanion.FreeRecall(hero):SummonedCompanion.SetFreeFocus(hero,target);
-            commandStatus=success?(recall?"已召回":"已集火"):!recall&&(target==null||target.IsDead)?"无目标":!recall&&CombatFx.Flat(target.transform.position-hero.transform.position).sqrMagnitude>196f?"太远":"不可用";
+            bool attack=recall&&SummonedCompanion.IsFreeRecalled(hero);
+            bool success=recall?(attack?SummonedCompanion.FreeAttack(hero):SummonedCompanion.FreeRecall(hero)):SummonedCompanion.SetFreeFocus(hero,target);
+            commandStatus=success?(recall?(attack?"已出击":"已召回"):"已集火"):!recall&&(target==null||target.IsDead)?"无目标":!recall&&CombatFx.Flat(target.transform.position-hero.transform.position).sqrMagnitude>196f?"太远":"不可用";
             commandRecall=recall;commandEpoch=hero.CombatEpoch;commandStatusUntil=Time.unscaledTime+1.1f;
         }
         private void DrawCompanionCommands()
@@ -27,7 +28,7 @@ namespace Emberfall
                 bool recall=i==1;
                 Rect r=MobileControls.Active?TouchRect(recall?MobileControls.Layout.RecallCommand:MobileControls.Layout.FocusCommand):new Rect(hotbarBounds.x-76,hotbarBounds.y+27+i*50,66,46);
                 blockedRects.Add(r);if(MobileControls.Active)r=MobileVisualRect(r);
-                string caption=recall?"召回":"集火";
+                string caption=recall?(SummonedCompanion.IsFreeRecalled(session.Player)?"出击":"召回"):"集火";
                 if(!session.InputBlocked&&commandEpoch==session.Player.CombatEpoch&&Time.unscaledTime<commandStatusUntil&&commandRecall==recall)caption=commandStatus;
                 Box(r,jade,false);
                 Text(new Rect(r.x,r.y+4*(MobileControls.Active?TouchRatio:1),r.width,r.height*.5f),caption,MobileControls.Active?TouchFont(11):12,pale,true,false,TextAnchor.MiddleCenter);

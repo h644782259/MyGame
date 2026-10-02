@@ -21,6 +21,7 @@ namespace Emberfall
         public bool RewardClaimed {get;private set;}
         public RoomObjective Objective {get{return ChapterDefinition.RoomKind(Node,RoomIndex);}}
         public int EnemyCount {get{return Objective==RoomObjective.Rest?0:Objective==RoomObjective.Boss?3:6;}}
+        public int LivingRegisteredEnemies {get{return registered-kills;}}
         private int registered,kills;
         private readonly bool[] spawned=new bool[6],defeated=new bool[6];
         public ChapterCombatRun(ChapterNode node,ChapterDifficulty difficulty,int seed)

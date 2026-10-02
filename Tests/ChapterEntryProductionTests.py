@@ -25,7 +25,7 @@ namespace Emberfall {
  public sealed class SessionStub {
   public ProgressionService Progression;public bool Paused,BackgroundPaused,IsDead,HasStarted=true,Blocked,AllowConfirm=true,ChapterFinished,ChapterRewardPending;
   public bool OpenChapterSelectionAllowed=>HasStarted&&!Paused&&!BackgroundPaused&&!IsDead&&!ChapterFinished;
-  public ChapterNode SelectedChapterNode,ActiveChapterNode;public ChapterDifficulty SelectedChapterDifficulty;public int SelectedChapterTier=1;public bool SelectedChapterLimitedHealing;
+  public ChapterNode SelectedChapterNode,ActiveChapterNode;public ChapterDifficulty SelectedChapterDifficulty;public int SelectedChapterTier=1;public int SelectedChapterTactic=-1;public string SelectedChapterLineupPreview=>"";public bool SelectedChapterLimitedHealing;
   public bool ChapterResultReady=true;public ChapterResultSnapshot ChapterResult;public void ContinueChapterResult(){ChapterResultReady=true;}public void Respawn(){ReturnCalls++;}
   public RunStub ChapterRun=new RunStub();public ChapterRunReceipt Receipt;public int ChapterRewardMaterials=>Receipt==null?0:Receipt.Materials;public int ConfirmCalls,ReturnCalls;
   public bool ConfirmChapterEnter(){ConfirmCalls++;if(!AllowConfirm||!Progression.TryBeginChapterNode(SelectedChapterNode,SelectedChapterDifficulty,SelectedChapterTier,out Receipt))return false;for(int room=0;room<ChapterDefinition.RoomCount(Receipt.Node);room++)for(int i=0;i<(Receipt.Node==ChapterNode.StarPlatform?3:6);i++)if(!Progression.RegisterChapterEnemy(Receipt,room,i,Receipt.Node==ChapterNode.StarPlatform&&i==0))throw new Exception("UI host double must register actual completion budget");ChapterResult=new ChapterResultSnapshot(Receipt.Node,Receipt.Difficulty,Receipt.Tier,Progression.Profile.potions,false,0,0,0,0,false,null,null,0,0);return true;}
@@ -43,7 +43,7 @@ namespace Emberfall {
   void Fill(Rect r,Color c){if(r.width==width&&r.height==height)opaqueFrame=true;}void Text(Rect r,string s,int size,Color c,bool bold=false,bool wrap=false,TextAnchor anchor=TextAnchor.MiddleLeft){texts.Add(s);}
   bool Button(Rect r,string s,Color c,bool enabled=true){buttons.Add((s,r,insideScroll,enabled));if(enabled&&click!=null&&s.StartsWith(click)){click=null;return true;}return false;}
   GUIStyle Style(int n,bool b,bool w)=>new GUIStyle();MobilePanelLayout MobilePanelGeometry()=>new MobilePanelLayout(width/TouchRatio,height/TouchRatio);
-  Vector2 BeginTouchScroll(string key,Rect body,Vector2 p,Rect full){insideScroll=true;viewport=body;content=full;return p;}void EndTouchScroll(){insideScroll=false;}
+  Vector2 observedResultScroll;Vector2 BeginTouchScroll(string key,Rect body,Vector2 p,Rect full){if(key=="chapter-result")observedResultScroll=p;insideScroll=true;viewport=body;content=full;return p;}void EndTouchScroll(){insideScroll=false;}
   bool CloseMobileInventoryDetail()=>false;bool CloseMobileSkillDetail()=>false;bool CloseRouteSkill()=>false;bool CloseProgressionGoalSurface()=>false;bool CloseBuildPlanSurface()=>false;bool CloseTravelMap()=>false;bool CancelSaveDeletion()=>false;bool CancelActiveSaveFlow()=>false;
   void FinishChestReveal(){}void ReturnToInventory(){panel=Panel.Inventory;}
   CLOSE
@@ -91,11 +91,12 @@ namespace Emberfall {
    ui.session.AllowConfirm=true;check(ui.ConfirmSelectedChapter()&&ui.panel==Panel.None&&!ui.session.Blocked,"successful actual core Begin closes entry once");
    // Real filesystem rejection and actual core Complete, reached through production result retry method.
    ui.session.ChapterFinished=true;ui.session.ChapterRewardPending=true;ui.session.ActiveChapterNode=ChapterNode.Redrock;
+   ui.chapterScroll=new Vector2(0,99);ui.DrawChapterResult();check(ui.observedResultScroll.y==0,"new result starts at top independently from entry");ui.chapterResultScroll=new Vector2(0,47);
    Directory.CreateDirectory(p.SaveFilePath+".tmp");check(!ui.RetryChapterSettlement()&&ui.session.ChapterRewardPending,"save failure preserves pending receipt");
-   ui.texts.Clear();ui.buttons.Clear();ui.DrawChapterResult();check(ui.buttons.Exists(b=>b.text=="重试保存结算"&&b.enabled&&!b.scroll),"save failure keeps reachable fixed retry action");
+   ui.texts.Clear();ui.buttons.Clear();ui.DrawChapterResult();check(ui.observedResultScroll.y==47,"pending failed-save retry preserves result reading position");check(ui.buttons.Exists(b=>b.text=="重试保存结算"&&b.enabled&&!b.scroll),"save failure keeps reachable fixed retry action");
    check(ui.texts.Exists(t=>t.Contains("结算待保存"))&&ui.texts.Exists(t=>t.Contains(p.LastError)),"result visibly distinguishes unsaved progress and actual error");
    int capturedMaterials=ui.session.Receipt.Materials;Directory.Delete(p.SaveFilePath+".tmp");check(ui.RetryChapterSettlement()&&!ui.session.ChapterRewardPending,"same receipt retries through actual UI method and real save");
-   ui.texts.Clear();ui.DrawChapterResult();check(ui.texts.Exists(t=>t.Contains("奖励已保存 · +"+capturedMaterials+" 碎片")),"result displays original receipt amount including captured first-clear bonus");
+   ui.texts.Clear();ui.DrawChapterResult();check(ui.observedResultScroll.y==47,"successful real settlement retry preserves result reading position");check(ui.texts.Exists(t=>t.Contains("奖励已保存 · +"+capturedMaterials+" 碎片")),"result displays original receipt amount including captured first-clear bonus");
    check(!p.Profile.pendingFirstClearReward&&!ui.session.ChapterResult.FirstCoreAvailable,"actual Redrock UI settlement cannot unlock shared first core");
    check(capturedMaterials==ChapterProgression.MaterialReward(ui.session.Receipt.Node,ui.session.Receipt.Tier)+1,"first-clear receipt retains bonus after completion mask changed");
    int after=events;check(!ui.RetryChapterSettlement()&&events==after,"completed UI retry cannot grant again");
@@ -118,7 +119,7 @@ namespace Emberfall {
    check(!ui.ConfirmSelectedChapter()&&ui.session.ConfirmCalls==callsBefore,"same character reloaded profile cannot use stale UI owner");
    ui.DrawChapterSelection();check(ui.panel==Panel.None&&ui.chapterSelectionOwner==null&&!ui.session.Blocked,"drawing stale selection closes safely without entry");
    var starProgression=new ProgressionService(Path.Combine(root,"star-ui"));check(starProgression.CreateNewSlot(HeroClass.Vanguard),"fresh star UI profile");starProgression.Profile.chapterCompletedMask=3;starProgression.Profile.chapterHighestDifficulties=new[]{1,1,0};starProgression.Save();
-   var starUI=new GameUI{session=new SessionStub{Progression=starProgression,SelectedChapterNode=ChapterNode.StarPlatform,ActiveChapterNode=ChapterNode.StarPlatform}};check(starUI.OpenChapterSelection()&&starUI.ConfirmSelectedChapter(),"actual star UI confirmation starts eligible receipt");starUI.session.ChapterFinished=true;starUI.session.ChapterRewardPending=true;check(starUI.RetryChapterSettlement()&&starProgression.Profile.pendingFirstClearReward&&starUI.session.ChapterResult.FirstCoreAvailable,"actual Star UI settlement enables shared core after save");starUI.DrawChapterResult();check(starUI.texts.Exists(t=>t.Contains("首通核心已可领取（共享一次）")),"saved Star UI reveals actual new shared entitlement");
+   var starUI=new GameUI{session=new SessionStub{Progression=starProgression,SelectedChapterNode=ChapterNode.StarPlatform,ActiveChapterNode=ChapterNode.StarPlatform}};check(starUI.OpenChapterSelection()&&starUI.ConfirmSelectedChapter(),"actual star UI confirmation starts eligible receipt");starUI.session.ChapterFinished=true;starUI.session.ChapterRewardPending=true;check(starUI.RetryChapterSettlement()&&starProgression.Profile.pendingFirstClearReward&&starUI.session.ChapterResult.FirstCoreAvailable,"actual Star UI settlement enables shared core after save");starUI.chapterScroll=new Vector2(0,99);starUI.DrawChapterResult();check(starUI.observedResultScroll.y==0,"new result starts at top independently from entry");starUI.chapterResultScroll=new Vector2(0,47);starUI.RetryChapterSettlement();starUI.DrawChapterResult();check(starUI.observedResultScroll.y==47,"same result retains scroll through save retry");starUI.session.ChapterRun=new RunStub();starUI.DrawChapterResult();check(starUI.observedResultScroll.y==0,"different run resets result scroll");check(starUI.texts.Exists(t=>t.Contains("首通核心已可领取（共享一次）")),"saved Star UI reveals actual new shared entitlement");
    int starMaterials=starProgression.Profile.mechanicMaterials;check(!starUI.RetryChapterSettlement()&&starProgression.Profile.mechanicMaterials==starMaterials,"Star UI saved retry cannot duplicate reward");
    return n;
   }
@@ -126,11 +127,11 @@ namespace Emberfall {
 }
 class Program{static void Main(string[] args){Console.WriteLine("PASS: "+Emberfall.GameUI.Verify(args[0])+" chapter UI/core replay assertions");}}
 '''
-core=['GameTypes','ProgressionService','ProgressionService.Reforge','ReforgeQuote','ProgressionService.Chapter','ChapterProgression','ChapterResultSnapshot','RoomTactics','CombatBalance','HubTravelRules','MasteryCoreRuntime','TierRewardRules','TierRewardBand','ProgressionGoalState']
+core=['RunChoices','RunChoices.Rooms','RunChoices.Chapter','GameTypes','ProgressionService','ProgressionService.Reforge','ReforgeQuote','ProgressionService.Chapter','ChapterProgression','ChapterResultSnapshot','RoomTactics','CombatBalance','HubTravelRules','MasteryCoreRuntime','TierRewardRules','TierRewardBand','ProgressionGoalState']
 dispatch=member('GameUI.cs','else if (session.IsDead)');shell=shell.replace('DEAD_DISPATCH',dispatch[dispatch.index('{'):])
 close=member('GameUI.cs','private void ClosePanel()');hook='if(CloseChapterSelection())return;'
 assert hook in close,'chapter ClosePanel hook must be integrated before replay'
-files=[root/'Assets/Scripts/Core'/f'{name}.cs' for name in core]+[root/'Assets/Scripts/UI/GameUI.Chapter.cs',root/'Assets/Scripts/UI/ChapterEntryPresentation.cs',root/'Assets/Scripts/UI/MobilePanelLayout.cs',root/'Tests/ProgressionTests.cs']
+files=[root/'Assets/Scripts/Combat/EnemyControlPolicy.cs']+[root/'Assets/Scripts/Core'/f'{name}.cs' for name in core]+[root/'Assets/Scripts/UI/GameUI.Chapter.cs',root/'Assets/Scripts/UI/ChapterEntryPresentation.cs',root/'Assets/Scripts/UI/MobilePanelLayout.cs',root/'Tests/ProgressionTests.cs']
 with tempfile.TemporaryDirectory(prefix='chapter-entry-') as folder:
  out=Path(folder);config=out/'NuGet.Config';config.write_text('<configuration><packageSources><clear /></packageSources></configuration>');env=dict(os.environ,DOTNET_CLI_HOME=str(out/'cli'),DOTNET_NOLOGO='1')
  for legacy in [False,True]:
@@ -172,3 +173,19 @@ with tempfile.TemporaryDirectory(prefix='chapter-entry-') as folder:
  result=subprocess.run([dotnet,str(project.parent/'bin/Debug/net8.0/Validation.dll'),str(out/'scroll-saves')],env=env,capture_output=True,text=True)
  assert result.returncode and 'System.Exception: FIXED_NODES' in result.stdout+result.stderr,result.stdout+result.stderr
  print('PASS: old node-scroll ownership compiled and failed exact fixed-node oracle')
+
+ # Restore shared entry/result scroll; the actual result view must fail its top-of-new-run oracle.
+ mutated=out/'OldSharedResultScroll.cs';mutated.write_text(current.replace('chapterResultScroll=BeginTouchScroll("chapter-result",ChapterRect(layout.Body,u),chapterResultScroll','chapterScroll=BeginTouchScroll("chapter-result",ChapterRect(layout.Body,u),chapterScroll'))
+ project=cv.write_project(out/'old-shared-result',[mutated if f==chapter else f for f in files],program=shell.replace('CLOSE',close))
+ subprocess.run([dotnet,'build',str(project),'--configfile',str(config),'-v:q'],env=env,check=True,stdout=subprocess.DEVNULL)
+ result=subprocess.run([dotnet,str(project.parent/'bin/Debug/net8.0/Validation.dll'),str(out/'shared-scroll-saves')],env=env,capture_output=True,text=True)
+ assert result.returncode and 'new result starts at top independently from entry' in result.stdout+result.stderr,result.stdout+result.stderr
+ print('PASS: compiled shared entry/result scroll fails exact new-run scroll oracle')
+
+ # Reset-on-retry must fail while the real receipt is still pending and filesystem writes fail.
+ mutated=out/'ResetRetryScroll.cs';mutated.write_text(current.replace('bool saved=session.TrySettleChapterReward();','chapterResultScroll=Vector2.zero;bool saved=session.TrySettleChapterReward();'))
+ project=cv.write_project(out/'reset-retry-scroll',[mutated if f==chapter else f for f in files],program=shell.replace('CLOSE',close))
+ subprocess.run([dotnet,'build',str(project),'--configfile',str(config),'-v:q'],env=env,check=True,stdout=subprocess.DEVNULL)
+ result=subprocess.run([dotnet,str(project.parent/'bin/Debug/net8.0/Validation.dll'),str(out/'retry-scroll-saves')],env=env,capture_output=True,text=True)
+ assert result.returncode and 'pending failed-save retry preserves result reading position' in result.stdout+result.stderr,result.stdout+result.stderr
+ print('PASS: compiled retry-reset control fails actual pending write-failure reading-position assertion')

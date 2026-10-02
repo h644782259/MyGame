@@ -8,6 +8,8 @@ namespace Emberfall
         // for collision origins, target selection or combat reach.
         public bool TryGetWeaponVisualAnchor(WeaponVisualAnchor anchor, out Vector3 worldPosition)
         {
+            if(pilotVisible && blenderPilot != null && anchor <= WeaponVisualAnchor.SwordTip)
+                return blenderPilot.Anchor(anchor,out worldPosition);
             Transform rig = anchor <= WeaponVisualAnchor.SwordTip ? swordRig :
                 anchor <= WeaponVisualAnchor.StaffTop ? staffRig : bowRig;
             worldPosition = transform.position;
@@ -16,7 +18,7 @@ namespace Emberfall
             return true;
         }
         // Alternating swing direction is shared by pose and its visual ribbon.
-        public int WeaponSwingSide { get { return swingCount % 2 == 0 ? 1 : -1; } }
+        public int WeaponSwingSide { get { return pilotVisible ? -1 : swingCount % 2 == 0 ? 1 : -1; } }
         private Vector3 WeaponAnchorLocal(WeaponVisualAnchor anchor)
         {
             switch (anchor)

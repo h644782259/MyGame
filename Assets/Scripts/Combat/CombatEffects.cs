@@ -436,6 +436,9 @@ namespace Emberfall
 
     internal sealed class CombatArea : MonoBehaviour
     {
+        private RunMechanismEvidence.Instance mechanismInstance;
+        private void RecordMechanismHealthLoss(float amount)
+        {if(IsCurrentCast&&mechanismInstance!=null)mechanismInstance.Record(session.Player,owner.CombatEpoch,amount);}
         private PlayerController owner;
         private GameSession session;
         private float radius, stun, delay, duration, interval, age, nextTick, pullStrength;
@@ -452,7 +455,7 @@ namespace Emberfall
         private bool IsCurrentCast { get { return owner != null && session != null && session.Player == owner && !owner.IsDead && session.HasStarted && !session.CombatEnded && owner.CombatEpoch == epoch; } }
 
         public static void Spawn(PlayerController player, GameSession game, Vector3 at, float size, CombatDamage amount, float disable,
-            float startup, float activeTime, float tickInterval, Color tint, bool followPlayer = false, bool fallingMeteor = false, float pulling = 0f, CombatDamage finisher = default(CombatDamage), int statusSkill = -1, int statusRank = 1, int castId = 0, SkillVisualRecipe visual = SkillVisualRecipe.Neutral)
+            float startup, float activeTime, float tickInterval, Color tint, bool followPlayer = false, bool fallingMeteor = false, float pulling = 0f, CombatDamage finisher = default(CombatDamage), int statusSkill = -1, int statusRank = 1, int castId = 0, SkillVisualRecipe visual = SkillVisualRecipe.Neutral, int trackedMechanic = -1)
         {
             GameObject obj = new GameObject("Skill Area");
             obj.transform.position = new Vector3(at.x,0,at.z);
@@ -464,6 +467,7 @@ namespace Emberfall
             area.pullStrength = pulling; area.finalDamage = finisher;
             area.statusSkill = statusSkill; area.statusRank = statusRank; area.castId = castId==0?player.NewCastId():castId;
             area.nextTick = startup;
+            if(area.IsCurrentCast&&game.InDungeon&&trackedMechanic>=0)area.mechanismInstance=game.MechanismEvidence.Register(player,area.epoch,trackedMechanic);
             if (startup > 0) FilledSkillVfx.Charge(obj.transform, player, obj.transform.position, size, tint, startup);
             area.marker = CombatFx.Ring(at, size, tint, startup + activeTime + .2f, .075f, false, respectCover:true);
             area.visualRecipe = visual;
@@ -566,7 +570,7 @@ namespace Emberfall
                             ElementalCombatVfx.OnEnemy(enemy, ElementalCombatVfx.Element.Fire, 2.5f);
                         if (poisonVisual)
                             ElementalCombatVfx.OnEnemy(enemy, ElementalCombatVfx.Element.Poison, 2f);
-                        enemy.TakeDamage(owner.ResolveSkillImpact(enemy, statusSkill, castId, damage.Amount, damage.IsCritical, damage.CriticalMultiplier),delta.normalized,.3f,stun,critical:damage.IsCritical);
+                        enemy.TakeDamage(owner.ResolveSkillImpact(enemy, statusSkill, castId, damage.Amount, damage.IsCritical, damage.CriticalMultiplier),delta.normalized,.3f,stun,critical:damage.IsCritical,actualHealthLoss:mechanismInstance==null?(System.Action<float>)null:RecordMechanismHealthLoss);
                         owner.RegisterSkillHit(castId);
                         if (tick == 0 && lightningVisual)
                             ElementalCombatVfx.Lightning(transform.position + Vector3.up * 2f,
@@ -589,7 +593,7 @@ namespace Emberfall
             if (!finished && finalDamage.Amount>0 && age>=delay+duration && ticksDrained)
             {
                 finished=true;
-                if(visualRecipe==SkillVisualRecipe.ArrowRain)FilledSkillVfx.ArrowRain(owner,transform.position,radius*1.1f,color,true,CombatVisualPriority.Finale);
+                if(visualRecipe==SkillVisualRecipe.ArrowRain)FilledSkillVfx.ArrowRain(owner,transform.position,radius*1.1f,color,true,CombatVisualPriority.Finale,castId);
                 else AdvancedSkillVfx.Rune(owner,transform.position,radius*1.1f,color,.65f,3);
                 owner.HitArea(transform.position,radius*1.1f,finalDamage,.7f,.65f,castId);
             }
