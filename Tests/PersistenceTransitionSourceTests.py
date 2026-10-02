@@ -12,12 +12,17 @@ def check(ok, why):
 
 session = read("Assets/Scripts/Core/GameSession.cs")
 zone = session[session.index("private bool ChangeZone("):session.index("private void SpawnWildernessEnemy(")]
-preflight = zone.index("if (!loadingSaveSnapshot && !SaveBeforeLeaving()) return false;")
+preflight = zone.index("if (!loadingSaveSnapshot && !enteringChapter && !SaveBeforeLeaving()) return false;")
 for mutation in ["changingZone = true;", "StopCoroutine(waveRoutine)", "Enemies.Clear();",
                  "Destroy(world)", "InDungeon = dungeon;", "ResetExpedition(dungeon);",
                  "WorldBuilder.Build(", "Player.Teleport(", "Player.RefreshStats(true);",
                  "Player.ResetCooldownsForDungeonEntry();", "BeginRoomChainScene()", "SpawnWildernessEnemy();"]:
     check(preflight < zone.index(mutation), "checked save precedes " + mutation)
+chapter = read("Assets/Scripts/Core/GameSession.Chapter.cs")
+chapterEntry=chapter[chapter.index("public bool ConfirmChapterEnter()"):chapter.index("private void ResetChapterRun()")]
+check(chapterEntry.index("if(!SaveBeforeLeaving())return false;")<chapterEntry.index("Progression.TryBeginChapterNode(")<chapterEntry.index("enteringChapter=true;")<chapterEntry.index("ChangeZone(true)"),
+      "chapter entry saves before adopting run identity and invoking its preflighted transition")
+check("finally {enteringChapter=false;" in chapterEntry,"chapter preflight bypass is scoped and always restored")
 check("Progression.Save(" not in zone, "no unchecked or duplicate tail save after world transition")
 check(zone.count("ResetCooldownsForDungeonEntry()") == 1 and "if(dungeon)Player.ResetCooldownsForDungeonEntry();" in zone,
       "only successful dungeon entry resets cooldowns, once")
