@@ -26,19 +26,21 @@ namespace Emberfall {
   public ProgressionService Progression;public bool Paused,BackgroundPaused,IsDead,HasStarted=true,Blocked,AllowConfirm=true,ChapterFinished,ChapterRewardPending;
   public bool OpenChapterSelectionAllowed=>HasStarted&&!Paused&&!BackgroundPaused&&!IsDead&&!ChapterFinished;
   public ChapterNode SelectedChapterNode,ActiveChapterNode;public ChapterDifficulty SelectedChapterDifficulty;public int SelectedChapterTier=1;public bool SelectedChapterLimitedHealing;
+  public bool ChapterResultReady=true;public ChapterResultSnapshot ChapterResult;public void ContinueChapterResult(){ChapterResultReady=true;}public void Respawn(){ReturnCalls++;}
   public RunStub ChapterRun=new RunStub();public ChapterRunReceipt Receipt;public int ChapterRewardMaterials=>Receipt==null?0:Receipt.Materials;public int ConfirmCalls,ReturnCalls;
-  public bool ConfirmChapterEnter(){ConfirmCalls++;return AllowConfirm&&Progression.TryBeginChapterNode(SelectedChapterNode,SelectedChapterDifficulty,SelectedChapterTier,out Receipt);}
-  public bool TrySettleChapterReward(){bool ok=Progression.TryCompleteChapterNode(Receipt);if(ok)ChapterRewardPending=false;return ok;}
-  public void ReturnToCamp(){ReturnCalls++;}public void SetUIBlocking(bool b){Blocked=b;}public void SetPaused(bool b){Paused=b;}
+  public bool ConfirmChapterEnter(){ConfirmCalls++;if(!AllowConfirm||!Progression.TryBeginChapterNode(SelectedChapterNode,SelectedChapterDifficulty,SelectedChapterTier,out Receipt))return false;for(int room=0;room<ChapterDefinition.RoomCount(Receipt.Node);room++)for(int i=0;i<(Receipt.Node==ChapterNode.StarPlatform?3:6);i++)if(!Progression.RegisterChapterEnemy(Receipt,room,i,Receipt.Node==ChapterNode.StarPlatform&&i==0))throw new Exception("UI host double must register actual completion budget");ChapterResult=new ChapterResultSnapshot(Receipt.Node,Receipt.Difficulty,Receipt.Tier,Progression.Profile.potions,false,0,0,0,0,false,null,null,0,0);return true;}
+  public bool TrySettleChapterReward(){int before=Progression.Profile.mechanicMaterials;bool ok=Progression.TryCompleteChapterNode(Receipt);if(ok){ChapterRewardPending=false;ChapterResult.RecordSaved(Progression.Profile.mechanicMaterials-before,true,-1,-1,0,0,Progression.ChapterCompletionExperience);}return ok;}
+  public bool LeaveSucceeds=true;public void ReturnToCamp(){ReturnCalls++;if(LeaveSucceeds)ChapterFinished=false;}public void SetUIBlocking(bool b){Blocked=b;}public void SetPaused(bool b){Paused=b;}
  }
  public sealed partial class GameUI {
   enum Panel{None,Chapter,Camp,Inventory,Skills,Chests,Fashion,PotionAssignment,Bindings,SaveLocation,SaveSelection,Controls,TravelMap}
+  int ordinaryDeaths;void DrawDeath(){ordinaryDeaths++;}void ReplayDeadSurface() DEAD_DISPATCH
   Panel panel,bindingReturnPanel;SessionStub session;int campTab,rebindingSlot,blocks,cancels;
-  bool UITransitionBlocked=false,saveSelectionFromPause,chestDetails,bindingReturnPause,saveReturnPause,controlsReturnPause;float chestRevealedAt;const float ChestDuration=1;bool ChestAnimationDone=>true;
+  bool opaqueFrame;bool UITransitionBlocked=false,saveSelectionFromPause,chestDetails,bindingReturnPause,saveReturnPause,controlsReturnPause;float chestRevealedAt;const float ChestDuration=1;bool ChestAnimationDone=>true;
   float width=568,height=320,TouchRatio=1;Color gold=new Color(),jade=new Color(),pale=new Color(),muted=new Color();string click;bool insideScroll;Rect viewport,content;
   List<(string text,Rect rect,bool scroll,bool enabled)> buttons=new List<(string,Rect,bool,bool)>();List<string> texts=new List<string>();
   void CancelHotbarPointer(){}void CancelMobileScroll(){cancels++;}void BlockUITransition(){blocks++;}
-  void Fill(Rect r,Color c){}void Text(Rect r,string s,int size,Color c,bool bold=false,bool wrap=false,TextAnchor anchor=TextAnchor.MiddleLeft){texts.Add(s);}
+  void Fill(Rect r,Color c){if(r.width==width&&r.height==height)opaqueFrame=true;}void Text(Rect r,string s,int size,Color c,bool bold=false,bool wrap=false,TextAnchor anchor=TextAnchor.MiddleLeft){texts.Add(s);}
   bool Button(Rect r,string s,Color c,bool enabled=true){buttons.Add((s,r,insideScroll,enabled));if(enabled&&click!=null&&s.StartsWith(click)){click=null;return true;}return false;}
   GUIStyle Style(int n,bool b,bool w)=>new GUIStyle();MobilePanelLayout MobilePanelGeometry()=>new MobilePanelLayout(width/TouchRatio,height/TouchRatio);
   Vector2 BeginTouchScroll(string key,Rect body,Vector2 p,Rect full){insideScroll=true;viewport=body;content=full;return p;}void EndTouchScroll(){insideScroll=false;}
@@ -85,7 +87,20 @@ namespace Emberfall {
    ui.texts.Clear();ui.DrawChapterResult();check(ui.texts.Exists(t=>t.Contains("奖励已保存 · +"+capturedMaterials+" 碎片")),"result displays original receipt amount including captured first-clear bonus");
    check(capturedMaterials==ChapterProgression.MaterialReward(ui.session.Receipt.Node,ui.session.Receipt.Tier)+1,"first-clear receipt retains bonus after completion mask changed");
    int after=events;check(!ui.RetryChapterSettlement()&&events==after,"completed UI retry cannot grant again");
+   ui.session.ChapterResultReady=false;ui.opaqueFrame=false;ui.texts.Clear();ui.buttons.Clear();ui.DrawChapterResult();
+   check(!ui.opaqueFrame&&ui.buttons.Exists(b=>b.text=="继续 · 查看结果")&&ui.texts.Exists(t=>t.Contains("奖励已保存")),"BOSS_EXIT_OVERLAY must preserve battlefield with saved badge and explicit continue");
+   ui.click="继续 · 查看结果";ui.DrawChapterResult();check(ui.session.ChapterResultReady,"explicit continue only switches presentation state");
+   ui.session.ChapterResultReady=true;
+   var failure=new ChapterResultSnapshot(ChapterNode.ForestCourt,ChapterDifficulty.Hard,7,4,true,0,0,1,2,true,"spawn #4 unreachable","guardian",17,7);
+   string evidence=ChapterEntryPresentation.Result(failure);check(evidence.Contains("困难")&&evidence.Contains("第 7 阶")&&evidence.Contains("携带药剂 4")&&evidence.Contains("限疗规则")&&evidence.Contains("spawn #4 unreachable")&&evidence.Contains("guardian"),"failure UI uses separated attempt identity healing and concrete evidence");
+   ui.session.IsDead=true;ui.session.ChapterFinished=false;ui.ReplayDeadSurface();check(ui.ordinaryDeaths==1,"ordinary nonchapter death still dispatches original death screen");
+   var previousResult=ui.session.ChapterResult;ui.session.ChapterFinished=true;ui.session.ChapterRun.Failed=true;ui.session.ChapterResult=failure;ui.texts.Clear();ui.ReplayDeadSurface();check(ui.ordinaryDeaths==1&&ui.texts.Exists(t=>t.Contains("spawn #4 unreachable")),"chapter death dispatches retained failure evidence instead of ordinary death screen");ui.session.IsDead=false;ui.session.ChapterRun.Failed=false;ui.session.ChapterResult=previousResult;
+   var repeat=new ChapterResultSnapshot(ChapterNode.ForestCourt,ChapterDifficulty.Normal,1,3,false,1,2,3,3,false,null,null,0,14);repeat.RecordSaved(1,false,-1,-1,2,2,140);
+   string repeatText=ChapterEntryPresentation.Result(repeat);check(repeatText.Contains("+1 碎片")&&!repeatText.Contains(ChapterDefinition.Get(ChapterNode.ForestCourt).Outcome)&&!repeatText.Contains("新节点"),"repeat completion displays actual gain without invented first-clear reveal");
    ui.ReturnFromChapter();check(ui.session.ReturnCalls==1,"result return delegates to host guarded leave path");
+   ui.session.ChapterFinished=true;ui.session.LeaveSucceeds=false;var selectedBefore=ui.session.SelectedChapterNode;int confirmsBefore=ui.session.ConfirmCalls;
+   check(!ui.ReturnAndSelectNextChapter()&&ui.session.ChapterFinished&&ui.session.SelectedChapterNode==selectedBefore,"next-node save rejection keeps terminal view and prior selection");
+   ui.session.LeaveSucceeds=true;check(ui.ReturnAndSelectNextChapter()&&ui.panel==Panel.Chapter&&ui.session.SelectedChapterNode==ChapterNode.StarPlatform&&ui.session.ConfirmCalls==confirmsBefore,"next node returns to camp selection without auto entering combat");
    ui.session.ChapterFinished=false;check(ui.OpenChapterSelection(),"open new selection after completed run");
    check(p.LoadSlot(p.CurrentSlotId),"replace profile through real slot load");int callsBefore=ui.session.ConfirmCalls;
    check(!ui.ConfirmSelectedChapter()&&ui.session.ConfirmCalls==callsBefore,"same character reloaded profile cannot use stale UI owner");
@@ -96,7 +111,8 @@ namespace Emberfall {
 }
 class Program{static void Main(string[] args){Console.WriteLine("PASS: "+Emberfall.GameUI.Verify(args[0])+" chapter UI/core replay assertions");}}
 '''
-core=['GameTypes','ProgressionService','ProgressionService.Reforge','ReforgeQuote','ProgressionService.Chapter','ChapterProgression','RoomTactics','CombatBalance','HubTravelRules','MasteryCoreRuntime','TierRewardRules','TierRewardBand','ProgressionGoalState']
+core=['GameTypes','ProgressionService','ProgressionService.Reforge','ReforgeQuote','ProgressionService.Chapter','ChapterProgression','ChapterResultSnapshot','RoomTactics','CombatBalance','HubTravelRules','MasteryCoreRuntime','TierRewardRules','TierRewardBand','ProgressionGoalState']
+dispatch=member('GameUI.cs','else if (session.IsDead)');shell=shell.replace('DEAD_DISPATCH',dispatch[dispatch.index('{'):])
 close=member('GameUI.cs','private void ClosePanel()');hook='if(CloseChapterSelection())return;'
 assert hook in close,'chapter ClosePanel hook must be integrated before replay'
 files=[root/'Assets/Scripts/Core'/f'{name}.cs' for name in core]+[root/'Assets/Scripts/UI/GameUI.Chapter.cs',root/'Assets/Scripts/UI/ChapterEntryPresentation.cs',root/'Assets/Scripts/UI/MobilePanelLayout.cs',root/'Tests/ProgressionTests.cs']
@@ -112,3 +128,13 @@ with tempfile.TemporaryDirectory(prefix='chapter-entry-') as folder:
    expected='Unhandled exception. System.Exception: chapter Back must clear owner and cancel input without entering combat'
    if result.returncode==0 or not error.splitlines() or error.splitlines()[0]!=expected or any('Exception:' in line for line in error.splitlines()[1:]):raise RuntimeError('legacy hook removal did not fail intended assertion: '+error)
    print('PASS: old chapter Back hook negative control compiled and failed specified navigation assertion')
+
+ # The old opaque-first result must reach the production presentation oracle.
+ chapter=root/'Assets/Scripts/UI/GameUI.Chapter.cs'
+ current=chapter.read_text();assert current.count('if(!session.ChapterResultReady)')==1
+ mutated=out/'OldOpaque.cs';mutated.write_text(current.replace('if(!session.ChapterResultReady)','if(false)'))
+ project=cv.write_project(out/'old-opaque',[mutated if f==chapter else f for f in files],program=shell.replace('CLOSE',close))
+ subprocess.run([dotnet,'build',str(project),'--configfile',str(config),'-v:q'],env=env,check=True,stdout=subprocess.DEVNULL)
+ result=subprocess.run([dotnet,str(project.parent/'bin/Debug/net8.0/Validation.dll'),str(out/'opaque-saves')],env=env,capture_output=True,text=True)
+ assert result.returncode and 'System.Exception: BOSS_EXIT_OVERLAY' in result.stdout+result.stderr,result.stdout+result.stderr
+ print('PASS: old opaque-first result compiled and failed exact boss-exit UI assertion')

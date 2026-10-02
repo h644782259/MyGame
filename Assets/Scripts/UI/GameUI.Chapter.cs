@@ -56,7 +56,17 @@ namespace Emberfall
         private bool RetryChapterSettlement()
         {if(!session.ChapterFinished||!session.ChapterRewardPending)return false;bool saved=session.TrySettleChapterReward();BlockUITransition();return saved;}
         private void ReturnFromChapter()
-        {if(!session.ChapterFinished)return;session.ReturnToCamp();BlockUITransition();}
+        {if(!session.ChapterFinished)return;if(session.IsDead)session.Respawn();else session.ReturnToCamp();BlockUITransition();}
+        private bool ReturnAndSelectNextChapter()
+        {
+            if(!session.ChapterFinished||session.ChapterRewardPending||session.ChapterRun.Failed)return false;
+            int next=(int)session.ActiveChapterNode+1;
+            if(next>=3||!ChapterProgression.IsUnlocked(session.Progression.Profile,(ChapterNode)next))return false;
+            session.ReturnToCamp();
+            if(!session.OpenChapterSelectionAllowed){BlockUITransition();return false;}
+            session.SelectedChapterNode=(ChapterNode)next;session.SelectedChapterDifficulty=ChapterDifficulty.Normal;
+            return OpenChapterSelection();
+        }
         private void DrawChapterSelection()
         {
             if(!ChapterSelectionIsCurrent()){CloseChapterSelection();return;}
@@ -116,16 +126,25 @@ namespace Emberfall
         private void DrawChapterResult()
         {
             float u=MobileControls.Active?TouchRatio:1;var layout=ChapterPanelGeometry();
+            if(!session.ChapterResultReady)
+            {
+                // Preserve the battlefield while the already-dead boss's actual visual retires.
+                Rect badge=new Rect((width-300*u)*.5f,14*u,300*u,42*u);
+                Fill(badge,new Color(.025f,.06f,.08f,.85f));Text(badge,session.ChapterRewardPending?"节点完成 · 奖励待保存":"节点完成 · 奖励已保存",Mathf.RoundToInt(14*u),jade,true);
+                if(Button(new Rect((width-180*u)*.5f,height-62*u,180*u,48*u),"继续 · 查看结果",jade)){session.ContinueChapterResult();BlockUITransition();}
+                return;
+            }
             bool failed=session.ChapterRun==null||session.ChapterRun.Failed,pending=session.ChapterRewardPending;
             DrawChapterFrame(layout,u,failed?"本次星路止步":pending?"结算待保存":"星路线索已记录",ChapterDefinition.Get(session.ActiveChapterNode).Name);
-            string copy=ChapterEntryPresentation.Result(session.ActiveChapterNode,failed,pending);
-            if(!failed&&!pending)copy="奖励已保存 · +"+session.ChapterRewardMaterials+" 碎片\n\n"+copy;
+            string copy=ChapterEntryPresentation.Result(session.ChapterResult);
             if(!string.IsNullOrEmpty(session.Progression.LastError))copy=session.Progression.LastError+"\n\n"+copy;
             float h=Style(Mathf.RoundToInt(16*u),false,true).CalcHeight(new GUIContent(copy),(layout.Body.Width-26)*u)+16*u;
             chapterScroll=BeginTouchScroll("chapter-result",ChapterRect(layout.Body,u),chapterScroll,new Rect(0,0,(layout.Body.Width-16)*u,Mathf.Max(layout.Body.Height*u,h)));
             Text(new Rect(8*u,8*u,(layout.Body.Width-26)*u,h),copy,Mathf.RoundToInt(16*u),pale,false,true);EndTouchScroll();
             if(pending&&Button(ChapterRect(layout.FooterButton(0,2),u),"重试保存结算",gold)){RetryChapterSettlement();return;}
-            if(Button(ChapterRect(layout.FooterButton(pending?1:0,pending?2:1),u),"返回营地",jade)){ReturnFromChapter();return;}
+            bool next=!failed&&!pending&&(int)session.ActiveChapterNode<2;
+            if(next&&Button(ChapterRect(layout.FooterButton(1,2),u),"下一节点 · 回营准备",gold)){ReturnAndSelectNextChapter();return;}
+            if(Button(ChapterRect(layout.FooterButton(pending?1:0,pending||next?2:1),u),"返回营地",jade)){ReturnFromChapter();return;}
         }
     }
 }

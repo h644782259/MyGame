@@ -284,7 +284,7 @@ namespace Emberfall
                 if (session.Paused) DrawPause();
                 else if(PauseUtilityVisible)
                 {if(panel==Panel.Controls)DrawControls();else if(panel==Panel.Bindings)DrawBindings();else if(panel==Panel.SaveLocation)DrawSaveLocation();else DrawTravelMap();}
-                else if (session.IsDead) DrawDeath();
+                else if (session.IsDead) {if(session.ChapterFinished)DrawChapterResult();else DrawDeath();}
                 else if (session.DungeonSelectionOpen) DrawDungeonSelection();
                 else if (session.RunChoices.AwaitingChoice) DrawBlessingChoice();
                 else if(session.ChapterFinished)DrawChapterResult();

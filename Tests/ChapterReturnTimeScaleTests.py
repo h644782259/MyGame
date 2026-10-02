@@ -7,7 +7,7 @@ def member(file,signature):
  s=(root/file).read_text();a=s.index(signature);b=s.index('{',a)+1;d=1
  while d:d+=(s[b]=='{')-(s[b]=='}');b+=1
  return s[a:b]
-core=['GameTypes','ProgressionService','ProgressionService.Chapter','ProgressionService.Reforge','ReforgeQuote','ChapterProgression','ChapterCombatRun','RoomTactics','RoomTacticalRegion','CombatBalance','HubTravelRules','MasteryCoreRuntime','TierRewardRules','TierRewardBand','ProgressionGoalState','AdventureResultPolicy','GameSession.Chapter','EscapePostPolicy','ApplicationPauseState','SafeSaveFlow','SaveLifecycleGate','RoomChainState','ExpeditionModeState']
+core=['GameTypes','ProgressionService','ProgressionService.Chapter','ProgressionService.Reforge','ReforgeQuote','ChapterProgression','ChapterResultSnapshot','ChapterCombatRun','RoomTactics','RoomTacticalRegion','CombatBalance','HubTravelRules','MasteryCoreRuntime','TierRewardRules','TierRewardBand','ProgressionGoalState','AdventureResultPolicy','GameSession.Chapter','EscapePostPolicy','ApplicationPauseState','SafeSaveFlow','SaveLifecycleGate','RoomChainState','ExpeditionModeState']
 with tempfile.TemporaryDirectory(prefix='chapter-return-clock-') as t:
  p=Path(t)
  for n in core:(p/(n+'.cs')).write_text((root/'Assets/Scripts/Core'/(n+'.cs')).read_text())
