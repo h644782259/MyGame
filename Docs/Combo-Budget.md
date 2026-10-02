@@ -90,22 +90,22 @@ Tests compare repeated runs, verify legal ranks/prerequisites, reject locked ski
 
 Changing any coefficient or event schedule requires regenerating the CSV and this summary. Fingerprints capture the exact source inspected for this artifact, not a released build ID.
 
-- `Assets/Scripts/Core/SkillDamageBudgets.cs`: `7612982bc3e1ee3539e7088822b13c07909ecefd6b9aeea6d90186c772a0c2d6`
+- `Assets/Scripts/Core/SkillDamageBudgets.cs`: `294f358ae35868369f8f43a49996b7a83050b78122f7851121d68418892410ec`
 - `Assets/Scripts/Core/SkillRuntime.cs`: `ae08b98e0d51fc4a45eb41341e10dd03124349076061a2a3fd52301823336afb`
-- `Assets/Scripts/Core/GameTypes.cs`: `4c2d39db931e5132bd6a56190e8b7bc06a7e39e89ad8c4c121cf6207aee7e804`
-- `Assets/Scripts/Combat/PlayerController.cs`: `b9dec630a4d64700147d1f77fb1575be0f3a4b26a0de7e0f5f11c76eb7a02581`
+- `Assets/Scripts/Core/GameTypes.cs`: `ef39cd2d72e89aa12faa7c7f4eaddedea8e5b44036988b15ec83626fd32e70dd`
+- `Assets/Scripts/Combat/PlayerController.cs`: `8e6e5e6198d9b7fe2e4b4d4cc73a7e0e5eb2d579272260025f8954f236bb0332`
 - `Assets/Scripts/Combat/PlayerUpgradeRules.cs`: `a96588f20e187a04d991f9fa778e0a7558127ba8a09423bb8c98e418d4210e54`
-- `Assets/Scripts/Combat/AdvancedSkillSequence.cs`: `a96fd4e147736148b2c71ce09cef7001ee9a99bb2bda9c74d2c1c8d22acb7b6c`
+- `Assets/Scripts/Combat/AdvancedSkillSequence.cs`: `b1c1e8a6c35e7226e91e594f2feed3b3ce91685f31c739b46e7a2e9b789c064c`
 - `Assets/Scripts/Combat/SummonerDamageRules.cs`: `175c6a26d84e8c89d697d131772bb2a1cfbb4347024eca154f6d058036d3d834`
-- `Assets/Scripts/Combat/SummonerSpell.cs`: `95378b538d34b5be5380b87c3094927dffc1d22a839af7040f5e3335a721b0ce`
+- `Assets/Scripts/Combat/SummonerSpell.cs`: `2cb2c25535b4d41de4ab0a8e868334ac76c572734f471425b82ce5b7c8d471cd`
 - `Assets/Scripts/Combat/CompanionRules.cs`: `396a6278308ec9e802203719671c8a586571fc1a011d4a138595e2452d098373`
-- `Assets/Scripts/Combat/SummonedCompanion.cs`: `bffc12cbe7fcb95e6b0c5ed40c1335de9628eb35cd4f48295300d126f5a7da14`
-- `Assets/Scripts/Combat/EnemyStatusEffects.cs`: `bd860b55f7a29b63b603d977cee4358964534f92346f22b2af610a9917b5f865`
+- `Assets/Scripts/Combat/SummonedCompanion.cs`: `d84e24acf5b634b9e0218c5607157e2ddbf543b092d5d7d4b3462aba81ad39cb`
+- `Assets/Scripts/Combat/EnemyStatusEffects.cs`: `c16530fd810e2068e42b0518c5bbc6fc14df3132e5ee70379c4e4d24cf125a5d`
 - `Assets/Scripts/Core/ScheduledTickWindow.cs`: `7156afe825b8af1e5cd659044b3578460347da1605250568e5c5a4407a47617d`
-- `Assets/Scripts/Combat/CombatEffects.cs`: `4c4f7bb92640fda445f415953452c31d499172094a6a290eae424d89297d0d8a`
+- `Assets/Scripts/Combat/CombatEffects.cs`: `dbb62b8b83c47d707306e7f1eb89ec9cf4b52bb691653fc8de3ce02a87b6b9e9`
 - `Assets/Scripts/Combat/ProjectileVolleyBudget.cs`: `94fd1d71f0f630128656d342a396e301e11fc1e6def135a8dd1ebefb76813492`
-- `Tests/ComboBudgetSimulation.cs`: `e52e63b35450e865f1c47508f914a514190ca16eacbf0f8c65ca2cbb065c3c79`
-- `Tests/ComboBudgetTests.cs`: `a91367d060572c79b796ade5f103a81bc75c4e60033183dcb5d764759375a217`
+- `Tests/ComboBudgetSimulation.cs`: `b4e191e6aebfd6593b8d4f07af16072ba686901d87c63ae938a597ac00261e49`
+- `Tests/ComboBudgetTests.cs`: `6f395ff4e2f0eabee178ed8be4da525f71269173862850bec8d4779688b4e5f2`
 
 
 ## Recovery boundary validation
