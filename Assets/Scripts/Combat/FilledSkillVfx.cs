@@ -196,7 +196,7 @@ namespace Emberfall
                 case 12: at.y-=Mathf.Max(0,local-.22f)*.3f;break;
                 case 10: scale*=t<.18f?Mathf.Lerp(1,.58f,t/.18f):t<.42f?Mathf.Lerp(.58f,1.08f,(t-.18f)/.24f):1.08f-(t-.42f)*.55f;rotation*=Quaternion.Euler(t*30,t*55,0);break;
             }
-            if(p.Anchored){at=p.Position;rotation=p.Rotation;scale.x=Mathf.Min(1,scale.x);scale.z=Mathf.Min(1,scale.z);} // Anchored clipped geometry never drifts back through cover.
+            if(p.Anchored){at=p.Position;rotation=p.Rotation;float radial=Mathf.Min(1,Mathf.Min(scale.x,scale.z));scale.x=scale.z=radial;} // Uniform radial contraction preserves each certified LOS ray; anisotropic scaling does not.
             p.Transform.localPosition=at;p.Transform.localScale=scale;p.Transform.localRotation=rotation;
             // Placement reserved the complete motion footprint once. Do not toggle a whole
             // primary silhouette each frame when a growing bounds circle grazes a wall.
