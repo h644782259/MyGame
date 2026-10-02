@@ -12,3 +12,16 @@
 - 祝福试验为战意10%、鹰眼+20个百分点、锋芒215%暴击倍率（基础165%不变）；伙伴只继承一次战意，暴击卡仅玩家直接伤害。固定假设收益是规则预算，不是实战DPS。
 
 新增默认生产回放与旧行为负对照覆盖姿势顺序、剑轨身份、守岗预警、实际碎冰HUD、失败证据、祝福组合/伙伴路径、箭雨批次/优先池、墙与河桥预警轮廓、对象文字生命周期。最终聚合结果在PR冻结记录中报告。托管引擎替身、文字bounds和数值规则不能替代Unity6000.6、GPU/材质、真机触控、中文实渲、画面节奏或帧时验收；本环境无Editor，不报告这些通过。
+
+
+## Independent review corrections
+
+Successful world transitions reconcile the complete session pause state, including chapter return; save failure does not release the terminal gate. The default runner includes the real UI/session return chain and two compiled old-behavior negative controls.
+
+Elemental main shapes acquire their priority lease before optional particles. Aura shapes and particles have independent sibling ownership, so evicting a decorative particle cannot destroy the sustained shape. The default priority regression runs actual Area/OnEnemy/component lifecycles at full mobile capacity (111 assertions plus two compiled negative controls).
+
+Anchored spell meshes certify the entire horizontal triangle footprint conservatively, subdivide only within bounded depth/work, and omit uncertified pieces. Horizontal animation contracts radially on the original visibility rays. Actual WorldTraversal/CombatSight coverage tests sample triangle interiors and animation vertices independently, retain unobstructed shapes and nonempty narrow-corridor shapes, and compile two exact old-behavior controls. The managed matrix checked 27,608,071 LOS assertions and 240 initially visible Lightning cases at age 0.2.
+
+Clipping has a per-mesh ceiling of 4,096 certification queries, 4,096 output faces, and depth 6; budgets are shared fairly among source faces. Three main pieces together are bounded by 12,288 certification queries/faces, with source-vertex BoundaryPoint LOS work additional. In the managed creation matrix the largest actual Impact used 12,047 WorldTraversal segment calls, 65,031 solid probes and 1,674 output faces. These are creation-work counts, not device frame times; mobile rendering/performance remains unverified.
+
+Five pre-existing fixtures were aligned with actual production dependencies and the explicitly changed blessing values without dropping assertions. Original aggregate failures are retained separately; final passing counts are reported only after the new full run completes.
