@@ -45,7 +45,7 @@ check('SetSummonerRoute((SummonerRoute)index,true)' in route and 'if(!session.Is
 for call in ['MasteryLockReason(mastery)', 'LearnMastery(mastery)', 'SelectMasteryCore(mastery, session.IsInCamp)', 'RefundSkillRanks(session.IsInCamp)', 'ResetMastery(session.IsInCamp)']:
     check(call in camp, 'camp preserves ' + call)
 check('MasteryCoreRules.InitialInvestment' in camp and 'MasteryCoreRules.EnhancedInvestment' in camp and 'MasteryCoreTier(mastery)' in camp, 'core actions use shared initial and enhanced thresholds')
-for call in ['ClaimFirstClearReward(mechanic)', 'ExchangeMechanic(mechanic)', 'ReforgeMechanic(quote, session.IsInCamp)', 'ToggleMechanicVariant(id, session.IsInCamp)', 'AscensionLockReason(id, session.IsInCamp)', 'AscendMechanic(id, session.IsInCamp)']:
+for call in ['ClaimFirstClearReward(mechanic)', 'ExchangeMechanic(mechanic)', 'ToggleMechanicVariant(id, session.IsInCamp)', 'AscensionLockReason(id, session.IsInCamp)', 'AscendMechanic(id, session.IsInCamp)']:
     check(call in camp, 'mechanism panel preserves ' + call)
 check('string id = item.id;' in camp and '编号：' in camp, 'equipment actions and labels use stable item identity')
 check('ClaimRecoveryLoot(id)' in camp and 'ClaimPendingLoot(id)' in camp and 'InventoryCapacity' in camp, 'both mailboxes preserve stable-ID claims and capacity checks')
@@ -64,3 +64,6 @@ check('GUI.BeginScrollView' not in skills + camp and 'GUI.matrix' not in skills 
 check('mobileWorkshopStatus' not in method(camp, 'private float DrawMobileWorkshopContent('), 'result feedback does not insert content above the current scroll anchor')
 
 print(f'PASS: {checks} mobile skills/workshop source contracts (not Unity execution)')
+
+reforge=(root / "Assets/Scripts/UI/GameUI.Reforge.cs").read_text()
+check("()=>OpenReforgeSurface(id)" in camp and "reforgeOwner.ReforgeMechanic(reforgeSelected,session.IsInCamp)" in reforge,"mechanic operation retains mobile entry -> captured quote -> existing camp service")

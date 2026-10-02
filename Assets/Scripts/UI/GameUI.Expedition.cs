@@ -46,6 +46,7 @@ namespace Emberfall
 
         private void DrawCampWorkshop()
         {
+            if(DrawReforgeSurface())return;
             if(DrawProgressionGoalSurface())return;
             if(DrawBuildPlanSurface())return;
             if(MobileControls.Active){DrawMobileCampWorkshop();return;}
@@ -98,9 +99,7 @@ namespace Emberfall
                     ItemData equipped=p.Equipped(BuildCatalog.MechanicSlot(mechanic));
                     if(equipped!=null&&equipped.mechanic==mechanic)
                     {
-                        var quote=p.QuoteReforge(equipped.id);
-                        string reforgeReason=p.ReforgeLockReason(quote,session.IsInCamp);
-                        if(Button(new Rect(c.x+660,c.y+55,99,36),quote==null?"重铸暂不可用":"重铸 "+quote.GoldCost+"金",jade,string.IsNullOrEmpty(reforgeReason),!string.IsNullOrEmpty(reforgeReason)?reforgeReason:"保留身份、机制与部位强化；固定成长至 "+quote.TargetLevel+"级"))Feedback(p.ReforgeMechanic(quote,session.IsInCamp),"核心装备已成长");
+                        if(Button(new Rect(c.x+660,c.y+55,99,36),"重铸档位",jade,session.IsInCamp&&p.QuoteReforge(equipped.id)!=null,"选择提升5级、金币可达或追平等级"))OpenReforgeSurface(equipped.id);
                         if(p.Profile.heroClass==HeroClass.Arcanist&&Button(new Rect(c.x+766,c.y+55,99,36),equipped.mechanicVariantUnlocked?(equipped.mechanicVariant==0?"变体 A":"变体 B"):"变体 · 4",jade,string.IsNullOrEmpty(p.VariantLockReason(equipped.id,session.IsInCamp)),"首次解锁4碎片，之后免费切换互斥效果"))Feedback(p.ToggleMechanicVariant(equipped.id,session.IsInCamp),"装备变体已切换");
                         string ascension = p.AscensionLockReason(equipped.id,session.IsInCamp);
                         if(Button(new Rect(c.x+660,c.y+101,205,36),equipped.rarity==Rarity.Legendary?"已是传说品质":"传说升华 · 24碎片",gold,string.IsNullOrEmpty(ascension),string.IsNullOrEmpty(ascension)?"保留物品编号、等级、机制变体和部位强化；基础属性按25/18提升，无随机重抽。":ascension))Feedback(p.AscendMechanic(equipped.id,session.IsInCamp),"机制装备已升华为传说；身份、变体与部位强化保留");

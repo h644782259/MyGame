@@ -15,11 +15,13 @@ namespace Emberfall
         }
         private void ReconcileProgressionGoalSurface()
         {
+            ReconcileReforgeSurface();
             if(progressionGoalsOpen&&(panel!=Panel.Camp||progressionGoalOwner!=session.Progression||progressionGoalCharacter!=session.Progression.CurrentSlotId))
                 progressionGoalsOpen=false;
         }
         private bool CloseProgressionGoalSurface()
         {
+            if(CloseReforgeSurface())return true;
             if(!progressionGoalsOpen)return false;
             progressionGoalsOpen=false;CancelMobileScroll();BlockUITransition();return true;
         }
@@ -108,7 +110,7 @@ namespace Emberfall
                 (kind!=ProgressionGoalKind.Tier||session.Progression.Profile.progressionGoalTier==tier) &&
                 (kind!=ProgressionGoalKind.Reforge||session.Progression.Profile.progressionGoalLevel==session.Progression.Profile.level);
             if(draw&&Button(new Rect(8*u,y*u,(w-16)*u,48*u),text+(selected?" ✓":""),selected?gold:jade))
-            {Feedback(session.Progression.SelectProgressionGoal(kind,id,tier),"成长目标已保存");progressionGoalHeaderScroll=Vector2.zero;CancelMobileScroll();BlockUITransition();}
+            {Feedback(session.Progression.SelectProgressionGoal(kind,id,tier,kind==ProgressionGoalKind.Reforge?session.Progression.Profile.level:0),"成长目标已保存");progressionGoalHeaderScroll=Vector2.zero;CancelMobileScroll();BlockUITransition();}
             y+=56;
         }
         private void GoalUnavailable(ref float y,float w,float u,string text,bool draw)
