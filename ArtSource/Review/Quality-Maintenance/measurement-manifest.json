@@ -1,0 +1,28 @@
+{
+  "candidate": "d1e1606ccddec402862141346f6fefa364f77d87",
+  "sourceSha256": {
+    "Assets/Scripts/UI/GameUI.cs": "16806fde5e1ca08b75d66752d9a5203b2b1054a928cc142b3e21ed69028892ad",
+    "Assets/Scripts/UI/GameUI.Modes.cs": "cb34a8fca6c36bc770c16074df3d3296dacd939ec59a9c3a1ac1b962dbb554a1",
+    "Assets/Scripts/UI/GameUI.ChapterSeals.cs": "cf8fa109986bce4ad5302f914f8863dfe142de108dfb7b801d3b5dce37dd7d64",
+    "Assets/Scripts/UI/ChapterSealPresentation.cs": "b1af91428568582477d049002d678e866f30e226bd2fe091170509d37e8f82b0",
+    "Assets/Scripts/UI/RoomObjectivePresentation.cs": "c0fc03bdbafd05ec38a70db6ec2a1ce4456ec62170ca0ba0100d3a907ad6ed65",
+    "Assets/Scripts/World/WorldTraversal.cs": "88e4548e65ecf37418ed3424ddb94c6158df3399fec9c2f695b41ac60e84c298",
+    "Assets/Scripts/Combat/SummonedCompanion.cs": "f4c5e3dca004d27e16d6452d9c349e2daad5ecf352cae1365abe3948aa4ec0ea",
+    "Tests/CompanionPathAllocationTests.py": "805b5b8b8517f2001b0b62822744e388eee184a0560d839ae3ab53a528bdb0de",
+    "Tests/HudAllocationProbe.py": "857a344c6b2aef2e63a8c461ea2ff738559d5e365c1a7895f2f732023688bf66"
+  },
+  "artifacts": {
+    "HUD-before.json": "8d25836a289731278814a706dbb12659b536eb0241761b7035d76c856d548cfb",
+    "HUD-after.json": "5257dedfd1158ca9aa74b2b8d68a3ec3e193416d8fa54219755910a3cf8ec907",
+    "companion-baseline.log": "297dce21bfa792538c3eba0714f6b2b0ccfeda3654cf457883a84c1fbb7a4eb0",
+    "companion-comparison.log": "29fe4e3f87cefc0841e6eb18fe8a890766b9efd6aed0e935af931e7a172ad5bf",
+    "scenery-scoped.log": "39d5d93c71641af25148393738b9ee8b757a9136a8656b75907e3805d156b6d4",
+    "combat-scoped-handoff.json": "16e7c4eb594853045556c01281c41f26705115154d66be95fd48bf8f8f3f403c",
+    "hud-integrated.log": "74def0573fa324d462eb1d41799ffd1dbadc20a01c8c4b11152e21ac205dde12",
+    "impact-integrated.log": "80bd63c6baff333814528cce141655c8631b8cfdbb383b380de6b240642a346e",
+    "opportunity-integrated.log": "2289995fde1bcadb4f28ca4c0d20ccda13720622aa9b8fb8785810d96b02bcf6",
+    "choice-integrated.log": "b05e3130ec61c7d40fa97ffdd07e0bf5663b60c798820f13b2aee677964a66f3",
+    "platform-sync.json": "b6da2dc4978026633596c329b35e777921a1dd498df45a47b13d96247f1fe2c0"
+  },
+  "scope": "Managed allocation evidence, not Unity or device performance; author-scoped logs and root-integrated checks identified separately."
+}

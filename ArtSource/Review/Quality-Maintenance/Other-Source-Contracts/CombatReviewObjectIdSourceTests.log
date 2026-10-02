@@ -1,0 +1,1 @@
+PASS: all runtime/editor IDs route through compatible adapter, fixture retains full-width keys

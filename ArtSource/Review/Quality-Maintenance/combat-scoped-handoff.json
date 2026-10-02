@@ -1,0 +1,27 @@
+{
+  "base": "3d2c33ea3a4262d1186e0bede073d2041cc551cb",
+  "runtime_changed": false,
+  "registration": "Root must register CombatReviewImpactProductionTests.py; registered CombatOpportunitySlotProductionTests.py now executes all CombatOpportunitySourceTests contracts",
+  "results": {
+    "opportunity_assertions": 28,
+    "opportunity_source_contracts": 22,
+    "opportunity_compiled_negatives": 5,
+    "impact_assertions": 13,
+    "combat_review_prior_source_contracts": 10,
+    "impact_compiled_negatives": 4
+  },
+  "sha256": {
+    "Tests/CombatOpportunitySourceTests.py": "2ddedec00f658aa9de1925d1770b5b9179f93221a577caf502aa70a10528d40a",
+    "Tests/CombatOpportunitySlotProductionTests.py": "b7189b33c1dc1ffbd1f31fd15e1c76752391abb1f674cbc974c74157995ae624",
+    "Tests/CombatReviewSourceTests.py": "69ce25ba95cbb93f2aee92ccf8ad385ef68e3bfbf4e97ddd20fa88634441e96a",
+    "Tests/CombatReviewImpactProductionTests.py": "bec3f6f6152033c9daebbda85fab1c2a9f345911f20d221f0ed0f6bebdbc37b3",
+    "Tests/CombatReviewImpactProductionTests.cs": "765958cade6d4d874771462aca3e33b085a0eaf2383075c5100eb261496427c6",
+    "Assets/Scripts/Combat/CombatEffects.cs": "ab28391cd606c877e595572cd727747a26ef51ebe07f7c0d334f63961fef9314",
+    "Assets/Scripts/UI/GameUI.MobileFeedback.cs": "8f4a059531c31f4431723df5dc42ee91541a8adcbc469c64b72c18b693cbc3ee"
+  },
+  "limits": [
+    "Managed rendering/scene/damage boundaries, not Unity physics/rendering",
+    "Friendly contact branch includes collision/LOS/prop/volley/pierce; Update lifecycle/movement/hostile path remains outside this new probe",
+    "No aggregate runner edits/full-suite run; other3source failures untouched"
+  ]
+}

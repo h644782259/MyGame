@@ -1,0 +1,250 @@
+[
+  {
+    "name": "AdventureIntegrationSourceTests.py",
+    "exit": 0
+  },
+  {
+    "name": "AdventureProgressionSourceTests.py",
+    "exit": 0
+  },
+  {
+    "name": "AndroidLifecycleSourceTests.py",
+    "exit": 0
+  },
+  {
+    "name": "BalanceIntegrationSourceTests.py",
+    "exit": 0
+  },
+  {
+    "name": "BasicActionTimelineSourceTests.py",
+    "exit": 0
+  },
+  {
+    "name": "BuildPlanUISourceTests.py",
+    "exit": 0
+  },
+  {
+    "name": "BuildTransitionSourceTests.py",
+    "exit": 0
+  },
+  {
+    "name": "CameraVisibilitySourceTests.py",
+    "exit": 0
+  },
+  {
+    "name": "ChapterWorldSourceTests.py",
+    "exit": 0
+  },
+  {
+    "name": "CollectionPreviewSourceTests.py",
+    "exit": 0
+  },
+  {
+    "name": "CombatOpportunityHookSourceTests.py",
+    "exit": 0
+  },
+  {
+    "name": "CombatOpportunitySourceTests.py",
+    "exit": 0
+  },
+  {
+    "name": "CombatPrioritySourceTests.py",
+    "exit": 0
+  },
+  {
+    "name": "CombatReviewFixtureSourceTests.py",
+    "exit": 0
+  },
+  {
+    "name": "CombatReviewInstrumentationSourceTests.py",
+    "exit": 0
+  },
+  {
+    "name": "CombatReviewObjectIdSourceTests.py",
+    "exit": 0
+  },
+  {
+    "name": "CombatReviewSourceTests.py",
+    "exit": 0
+  },
+  {
+    "name": "CombatTimingSourceTests.py",
+    "exit": 0
+  },
+  {
+    "name": "CompanionLifetimeSourceTests.py",
+    "exit": 0
+  },
+  {
+    "name": "CostumeLayersSourceTests.py",
+    "exit": 0
+  },
+  {
+    "name": "CostumeSourceTests.py",
+    "exit": 0
+  },
+  {
+    "name": "DeferredRoomChoiceSourceTests.py",
+    "exit": 0
+  },
+  {
+    "name": "EnemyKillRewardSourceTests.py",
+    "exit": 0
+  },
+  {
+    "name": "EnvironmentReadabilitySourceTests.py",
+    "exit": 0
+  },
+  {
+    "name": "EquipmentAttachmentSourceTests.py",
+    "exit": 0
+  },
+  {
+    "name": "EscapePostSourceTests.py",
+    "exit": 0
+  },
+  {
+    "name": "FeedbackAllocationSourceTests.py",
+    "exit": 0
+  },
+  {
+    "name": "FilledVfxSourceTests.py",
+    "exit": 0
+  },
+  {
+    "name": "GameFontSourceTests.py",
+    "exit": 0
+  },
+  {
+    "name": "GrowthNavigationSourceTests.py",
+    "exit": 0
+  },
+  {
+    "name": "GuardianChargePoseSourceTests.py",
+    "exit": 0
+  },
+  {
+    "name": "HazardEffectsSourceTests.py",
+    "exit": 0
+  },
+  {
+    "name": "HoldPointSourceTests.py",
+    "exit": 0
+  },
+  {
+    "name": "HotbarResetSourceTests.py",
+    "exit": 0
+  },
+  {
+    "name": "HubTravelSourceTests.py",
+    "exit": 0
+  },
+  {
+    "name": "LargeBossMotionSourceTests.py",
+    "exit": 0
+  },
+  {
+    "name": "LargeBossSourceTests.py",
+    "exit": 0
+  },
+  {
+    "name": "LocomotionSourceTests.py",
+    "exit": 0
+  },
+  {
+    "name": "MinimapGeometrySourceTests.py",
+    "exit": 0
+  },
+  {
+    "name": "MobileCollectionSourceTests.py",
+    "exit": 0
+  },
+  {
+    "name": "MobileInteractionSafetySourceTests.py",
+    "exit": 0
+  },
+  {
+    "name": "MobilePanelSafetySourceTests.py",
+    "exit": 0
+  },
+  {
+    "name": "MobilePauseNavigationSourceTests.py",
+    "exit": 0
+  },
+  {
+    "name": "MobileSaveLocationSourceTests.py",
+    "exit": 0
+  },
+  {
+    "name": "MobileSkillsWorkshopSourceTests.py",
+    "exit": 0
+  },
+  {
+    "name": "PanelReadabilitySourceTests.py",
+    "exit": 0
+  },
+  {
+    "name": "PersistenceTransitionSourceTests.py",
+    "exit": 0
+  },
+  {
+    "name": "PlayerPauseCancelSourceTests.py",
+    "exit": 0
+  },
+  {
+    "name": "ProgressionGrowthSourceTests.py",
+    "exit": 0
+  },
+  {
+    "name": "RoomBlessingPreviewSourceTests.py",
+    "exit": 0
+  },
+  {
+    "name": "RoomBlessingRouteSourceTests.py",
+    "exit": 0
+  },
+  {
+    "name": "RoomTacticsSourceTests.py",
+    "exit": 0
+  },
+  {
+    "name": "RunCombatSourceTests.py",
+    "exit": 0
+  },
+  {
+    "name": "SaveFlowSourceTests.py",
+    "exit": 0
+  },
+  {
+    "name": "SideEventSourceTests.py",
+    "exit": 0
+  },
+  {
+    "name": "SkillReadabilitySourceTests.py",
+    "exit": 0
+  },
+  {
+    "name": "VisualIdentitySourceTests.py",
+    "exit": 0
+  },
+  {
+    "name": "VisualRecoverySourceTests.py",
+    "exit": 0
+  },
+  {
+    "name": "WaterPresentationSourceTests.py",
+    "exit": 0
+  },
+  {
+    "name": "WeaponRigSourceTests.py",
+    "exit": 0
+  },
+  {
+    "name": "WeaponVisualLinksSourceTests.py",
+    "exit": 0
+  },
+  {
+    "name": "WorldLootReceiptSourceTests.py",
+    "exit": 0
+  }
+]

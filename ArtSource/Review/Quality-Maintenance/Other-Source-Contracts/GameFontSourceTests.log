@@ -1,0 +1,1 @@
+PASS: all runtime Chinese text uses resolver; mobile has no OS fallback; consumers do not destroy shared fonts

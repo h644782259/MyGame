@@ -1,0 +1,9 @@
+PASS:3 explicit source-link guards for unexecuted water/bank wiring and1 noncombat damage boundary
+PASS: hub partition 40 production NPC/props/pause/cosmetic-ground checks
+PASS: 40 total production scenery assertions; managed Unity APIs, no rendered/GPU/pathfinding acceptance
+PASS: compiled hub control rejected: each NPC registers body and role-prop footprint exactly once
+PASS: compiled hub control rejected: same NPC simulation state ignores wall clock during active idle
+PASS: compiled hub control rejected: actual NPC pose and age freeze while paused despite wall clock
+PASS: compiled hub control rejected: ground and bank detail do not mutate navigation or occlusion
+PASS: compiled hub control rejected: actual NPC initializer binds articulated arms and exchange dial
+PASS: compiled hub control rejected: NPC rendering and session interaction share authored positions

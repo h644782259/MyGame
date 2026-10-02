@@ -1,0 +1,67 @@
+{
+  "scope": "managed .NET8 Release default JIT; real constructor/draw bodies; no-allocation UI doubles; host snapshot getters managed doubles; excludes Unity/native/fonts/device timing",
+  "warmupCalls": 3000,
+  "callsPerSample": 10000,
+  "sampleCount": 5,
+  "statistic": "bytes/call for each of five samples",
+  "allocations": {
+    "seal_snapshot_bytes": [
+      200,
+      200,
+      200,
+      200,
+      200
+    ],
+    "room_mobile_draw_bytes": [
+      784,
+      784,
+      784,
+      784,
+      784
+    ],
+    "room_desktop_draw_bytes": [
+      1272,
+      1272,
+      1272,
+      1272,
+      1272
+    ],
+    "room_mobile_two_event_frame_bytes": [
+      1568,
+      1568,
+      1568,
+      1568,
+      1568
+    ],
+    "room_mobile_four_event_frame_bytes": [
+      3136,
+      3136,
+      3136,
+      3136,
+      3136
+    ],
+    "chapter_mobile_draw_bytes": [
+      392,
+      392,
+      392,
+      392,
+      392
+    ],
+    "chapter_desktop_draw_bytes": [
+      880,
+      880,
+      880,
+      880,
+      880
+    ]
+  },
+  "sourceRevision": "518d73b33dd2c2e3614d6e65257c1aded745f342",
+  "workingTreeSources": false,
+  "sourceSha256": {
+    "Assets/Scripts/UI/GameUI.cs": "16806fde5e1ca08b75d66752d9a5203b2b1054a928cc142b3e21ed69028892ad",
+    "Assets/Scripts/UI/GameUI.Modes.cs": "cb34a8fca6c36bc770c16074df3d3296dacd939ec59a9c3a1ac1b962dbb554a1",
+    "Assets/Scripts/UI/GameUI.ChapterSeals.cs": "cf8fa109986bce4ad5302f914f8863dfe142de108dfb7b801d3b5dce37dd7d64",
+    "Assets/Scripts/UI/ChapterSealPresentation.cs": "b1af91428568582477d049002d678e866f30e226bd2fe091170509d37e8f82b0",
+    "Assets/Scripts/UI/RoomObjectivePresentation.cs": "c0fc03bdbafd05ec38a70db6ec2a1ce4456ec62170ca0ba0100d3a907ad6ed65"
+  }
+}

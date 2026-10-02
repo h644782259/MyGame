@@ -1,0 +1,44 @@
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:02.28
+[
+  {
+    "scenario": "open-moving",
+    "companions": 1,
+    "enemies": 6,
+    "queryTicks": 240,
+    "bytes": 0,
+    "bytesPerTick": 0,
+    "checksum": 20291.814392089844
+  },
+  {
+    "scenario": "open-moving",
+    "companions": 4,
+    "enemies": 6,
+    "queryTicks": 240,
+    "bytes": 0,
+    "bytesPerTick": 0,
+    "checksum": 81060.32430648804
+  },
+  {
+    "scenario": "blocked-moving",
+    "companions": 1,
+    "enemies": 6,
+    "queryTicks": 240,
+    "bytes": 1746560,
+    "bytesPerTick": 7277.333333333333,
+    "checksum": 19829.6446685791
+  },
+  {
+    "scenario": "blocked-moving",
+    "companions": 4,
+    "enemies": 6,
+    "queryTicks": 240,
+    "bytes": 7204560,
+    "bytesPerTick": 30019,
+    "checksum": 79506.83010482788
+  }
+]

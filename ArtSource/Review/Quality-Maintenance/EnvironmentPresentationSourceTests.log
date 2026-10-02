@@ -1,0 +1,10 @@
+PASS:3 explicit source-link guards for unexecuted water/bank wiring and1 noncombat damage boundary
+PASS: environment partition 66 production material/light/focus checks
+PASS: 66 total production scenery assertions; managed Unity APIs, no rendered/GPU/pathfinding acceptance
+PASS: compiled environment control rejected: actual tree assigns Foliage and Wood categories
+PASS: compiled environment control rejected: actual tree assigns Foliage and Wood categories
+PASS: compiled environment control rejected: factory applies actual environment light profile
+PASS: compiled environment control rejected: actual point lights remain unshadowed vertex accents
+PASS: compiled environment control rejected: town portal invokes six focus insets
+PASS: compiled environment control rejected: focus and light pools remain cosmetic without traversal physics or occlusion
+PASS: compiled behavior-preserving control: tree bark color may change without losing Wood category

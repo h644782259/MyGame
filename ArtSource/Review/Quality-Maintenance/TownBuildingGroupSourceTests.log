@@ -1,0 +1,9 @@
+PASS: town partition 170 full production town/group/registry wiring checks
+PASS: 170 total production scenery assertions; managed Unity APIs, no rendered/GPU/pathfinding acceptance
+PASS: compiled town control rejected: complete upper building parts include roof helper and late ornaments
+PASS: compiled town control rejected: town registers each building solid exactly once
+PASS: compiled town control rejected: town registers each building solid exactly once
+PASS: compiled town control rejected: all upper parts enter real registry and own building group
+PASS: compiled town control rejected: all upper parts enter real registry and own building group
+PASS: compiled town control rejected: building root preserves parent and identity transform
+PASS: compiled behavior-preserving control: late building group owns roof registration even without redundant flags
