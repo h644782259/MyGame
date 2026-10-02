@@ -38,6 +38,30 @@ namespace Emberfall
             }
             controlOpacity=previousOpacity;
         }
+        // Slot indices belong to keyboard layout; this receives the learned,
+        // remapped skill identity so moving a skill never moves its mechanic.
+        private string DesktopSkillOpportunityCaption(int skill,bool locked,bool lacksEnergy,float cooldown,out bool actionable)
+        {
+            actionable=false;var hero=session.Player;
+            if(skill<0||locked||hero==null||hero.IsDead||session.InputBlocked||!session.HasStarted)return "";
+            string failure=session.ControlFailure("skill"+skill);
+            if(!string.IsNullOrEmpty(failure))return failure;
+            var pending=hero.GetComponent<SkillChargeController>();
+            if(pending!=null&&(pending.IsCharging||pending.ConsumedThisFrame))return pending.IsCharging&&pending.SkillIndex==skill?"蓄力":"";
+            if(cooldown>.01f)return ""; // Preserve the existing central cooldown overlay.
+            if(lacksEnergy)return "缺能";
+            var opportunity=hero.SkillOpportunity(skill);actionable=opportunity.Actionable;
+            return actionable?opportunity.Caption:"";
+        }
+        private string DesktopBasicOpportunityCaption()
+        {
+            var hero=session.Player;
+            if(hero==null||hero.IsDead||session.InputBlocked||!session.HasStarted)return "技能快捷栏";
+            string failure=session.ControlFailure("attack");
+            if(!string.IsNullOrEmpty(failure))return "左键普攻 · "+failure;
+            var opportunity=hero.BasicOpportunity();
+            return opportunity.Actionable?"左键普攻 · "+opportunity.Caption:"技能快捷栏";
+        }
         private string CurrentCombatOpportunity()
         {
             var hero=session.Player;

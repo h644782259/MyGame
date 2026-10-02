@@ -15,3 +15,9 @@
 - 原锁敌 36 项 + 3 负对照、触控生命周期 26 项、BlockedCombatUpdate、ContractSnapshot、HeroPoseCommit、SkillReadability 和相关源码契约继续通过。
 
 以上是托管生产方法回放；未执行 Unity/真机触控、GPU 画面或手感验收。当前环境没有 Unity 6000.6 精确引用，不把旧引用兼容性代替 Unity 6 验收。没有新增控制配置、玩法费用、伤害倍率、粒子系统或空间索引。
+
+## 桌面接线复审修正
+
+`DrawHotbar` 通过既有 `LearnedSkillAtSlot(profile, slotIndex)` 读取重映射后的技能，再查询 `SkillOpportunity(skill)`。槽位序号只负责键名与既有槽位冷却；空槽、被动、未学技能和药剂不查询技能机会。有效机会强调当前槽位边框，并在底部留出的短条显示名称/实际剩余时间。有短条时仍保留既有 24 规格技能图标、键名与冷却遮罩；失败、蓄力、冷却、缺能优先，不被机会文字覆盖。普攻没有额外创建技能槽；现标题行在有效反击时明确显示“左键普攻 · 反击 [剩余秒数]”，到期恢复原标题。
+
+`DesktopOpportunityHotbarProductionTests.py` 编译真实 DrawHotbar、实际装备映射和新桌面 helper，记录绘制边界。21 项覆盖重映射陨星/契约、空/药剂/被动、图标/十键保留、到期、冷却/缺能/蓄力/失败/阻断及普攻；3 个先编译的负对照分别恢复仅通用 HUD、错误槽位索引、缺失普攻接线，必须按精确断言失败。该脚本不替代真实机会查询测试或 Unity 渲染验收。
