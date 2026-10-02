@@ -11,7 +11,8 @@ namespace Emberfall
         private float age;
         private Vector3 center,start,end;
         private LineRenderer boundary,clock,glyph;
-        private Material material;
+        private Material material,bodyMaterial;
+        private Mesh bodyMesh;private Transform[] bodies;private bool hasPulsed;
         private bool retired;
         private readonly Vector3[] outline=new Vector3[48];
         public static ChapterHazards Configure(GameSession owner,ChapterNode node,ChapterDifficulty difficulty,int roomIndex,int seed,ChapterRoomPlan plan)
@@ -73,7 +74,33 @@ namespace Emberfall
             Vector3[] shape=node==ChapterNode.ForestCourt?new[]{new Vector3(-.35f,0,.2f),Vector3.zero,new Vector3(-.3f,0,-.25f),Vector3.zero,new Vector3(.3f,0,-.2f),Vector3.zero,new Vector3(.35f,0,.25f)}:
                 new[]{new Vector3(-.4f,0,-.2f),new Vector3(-.15f,0,.25f),new Vector3(.1f,0,-.2f),new Vector3(.35f,0,.25f)};
             glyph.positionCount=shape.Length;for(int i=0;i<shape.Length;i++)glyph.SetPosition(i,center+shape[i]+Vector3.up*.2f);
-            Draw(false,false,0);
+            CreateBodies();Draw(false,false,0);
+        }
+        private void CreateBodies()
+        {
+            // One shared static cone mesh, at most eight rooted thorns / six heat vents.
+            bodyMesh=new Mesh{name="Chapter hazard rooted body",vertices=new[]{new Vector3(-.5f,0,-.5f),new Vector3(.5f,0,-.5f),new Vector3(.5f,0,.5f),new Vector3(-.5f,0,.5f),Vector3.up},triangles=new[]{0,4,1,1,4,2,2,4,3,3,4,0,0,2,1,0,3,2}};
+            bodyMesh.RecalculateNormals();bodyMesh.RecalculateBounds();
+            Shader shader=Shader.Find("Standard");if(shader==null)shader=Shader.Find("Sprites/Default");
+            bodyMaterial=new Material(shader);bodyMaterial.color=new Color(.22f,.18f,.12f);
+            int count=node==ChapterNode.ForestCourt?8:6;bodies=new Transform[count];
+            for(int i=0;i<count;i++)
+            {
+                float a=i*Mathf.PI/4;
+                Vector3 at=node==ChapterNode.ForestCourt?center+new Vector3(Mathf.Sin(a),0,Mathf.Cos(a))*1.35f:Vector3.Lerp(start,end,(i+.5f)/count);
+                Vector3 origin=node==ChapterNode.ForestCourt?center:ClosestLinePoint(at);
+                if(!CombatSight.VisualFootprint(origin,at,.30f))continue;
+                var go=new GameObject(node==ChapterNode.ForestCourt?"Rooted thorn growth":"Heat fissure vent");go.transform.SetParent(transform,false);go.transform.position=at+Vector3.up*.025f;
+                go.AddComponent<MeshFilter>().sharedMesh=bodyMesh;go.AddComponent<MeshRenderer>().sharedMaterial=bodyMaterial;bodies[i]=go.transform;
+            }
+        }
+        private void DrawBodies(bool warning,bool active,float progress)
+        {
+            if(active)hasPulsed=true;
+            float phase=ArenaPulseRules.Phase(age);
+            float height=active?1.05f:warning?.08f+progress*.27f:hasPulsed&&phase<.4f?1.05f*(1-phase/.4f):.025f;
+            foreach(var body in bodies)if(body!=null)body.localScale=new Vector3(.24f,Mathf.Max(.025f,height),.24f);
+            bodyMaterial.color=active?new Color(.9f,.33f,.08f):warning?new Color(.40f,.28f,.12f):new Color(.20f,.18f,.14f);
         }
         private LineRenderer Line(string name,bool loop,float width)
         {
@@ -84,6 +111,7 @@ namespace Emberfall
         }
         private void Draw(bool warning,bool active,float progress)
         {
+            DrawBodies(warning,active,progress);
             boundary.enabled=clock.enabled=glyph.enabled=warning;if(!warning)return;
             if(node==ChapterNode.ForestCourt)
             {CombatSight.FillAreaBoundary(outline,center+Vector3.up*.16f,ArenaPulseRules.Radius);boundary.positionCount=outline.Length;boundary.SetPositions(outline);}
@@ -101,6 +129,6 @@ namespace Emberfall
         private void Retire()
         {if(retired)return;retired=true;gameObject.SetActive(false);Destroy(gameObject);}
         private void OnDisable(){retired=true;}
-        private void OnDestroy(){if(material!=null)Destroy(material);}
+        private void OnDestroy(){if(material!=null)Destroy(material);if(bodyMaterial!=null)Destroy(bodyMaterial);if(bodyMesh!=null)Destroy(bodyMesh);}
     }
 }

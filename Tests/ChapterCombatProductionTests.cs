@@ -2,7 +2,7 @@
 using System;using System.Collections.Generic;using System.Reflection;using Emberfall;using UnityEngine;
 namespace UnityEngine
 {
-    public class Object {public static void Destroy(Object value){if(value is GameObject go)go.SetActive(false);}}
+    public class Object {public bool Destroyed;public static void Destroy(Object value){if(value==null)return;value.Destroyed=true;if(value is GameObject go)go.SetActive(false);}}
     public class MonoBehaviour:Object
     {public GameObject gameObject=new GameObject();public Transform transform=>gameObject.transform;public bool enabled=true;public T GetComponent<T>() where T:class=>gameObject.GetComponent<T>();}
     public class GameObject:Object
@@ -13,11 +13,13 @@ namespace UnityEngine
         public T AddComponent<T>() where T:new(){var value=new T();if(value is MonoBehaviour mb)mb.gameObject=this;components[typeof(T)]=value;return value;}
         public T GetComponent<T>() where T:class {return components.TryGetValue(typeof(T),out var value)?value as T:null;}
     }
-    public class Transform {public Vector3 position,localPosition;public Quaternion localRotation;public GameObject gameObject;public Transform(){ }public void SetParent(Transform parent,bool world){} }
+    public class Transform {public Vector3 position,localPosition,localScale;public Quaternion localRotation;public GameObject gameObject;public Transform(){ }public void SetParent(Transform parent,bool world){} }
     public struct Color{public float r,g,b,a;public Color(float r,float g,float b,float a=1){this.r=r;this.g=g;this.b=b;this.a=a;}}
     public enum PrimitiveType{Cylinder,Cube,Capsule}
-    public class Shader:Object{}
-    public class Material:Object{public int renderQueue;public Material(){}public Material(Shader shader){}}
+    public class Shader:Object{public static Shader Find(string n)=>new Shader();}
+    public class Mesh:Object{public string name;public Vector3[] vertices;public int[] triangles;public void RecalculateNormals(){}public void RecalculateBounds(){}}
+    public class MeshFilter:MonoBehaviour{public Mesh sharedMesh;}public class MeshRenderer:MonoBehaviour{public Material sharedMaterial;}
+    public class Material:Object{public Color color;public int renderQueue;public Material(){}public Material(Shader shader){}}
     public static class Resources{public static T Load<T>(string path) where T:class{return null;}}
     public class LineRenderer:MonoBehaviour{public Material sharedMaterial;public bool useWorldSpace,loop;public int positionCount,numCapVertices,sortingOrder;public float widthMultiplier;public Color startColor,endColor;public Rendering.ShadowCastingMode shadowCastingMode;public readonly Dictionary<int,Vector3> points=new Dictionary<int,Vector3>();public void SetPosition(int i,Vector3 p){points[i]=p;}public void SetPositions(Vector3[] values){for(int i=0;i<values.Length;i++)points[i]=values[i];}}
     public struct Quaternion{float yaw;public static Quaternion Euler(float x,float y,float z){return new Quaternion{yaw=y*Mathf.Deg2Rad};}public static Vector3 operator *(Quaternion q,Vector3 v){return new Vector3(v.x*Mathf.Cos(q.yaw)+v.z*Mathf.Sin(q.yaw),v.y,-v.x*Mathf.Sin(q.yaw)+v.z*Mathf.Cos(q.yaw));}}
@@ -104,17 +106,35 @@ public static class ChapterCombatProductionTests
             Check(ChapterHazards.Configure(game,node,ChapterDifficulty.Hard,0,0,plan)==null,"non heroic rooms have no new floor hazard");
             var hazard=ChapterHazards.Configure(game,node,ChapterDifficulty.Heroic,0,0,plan);Check(hazard!=null,"heroic room gets one optional hazard");
             var center=Field<Vector3>(hazard,"center");game.Player.transform.position=center;
+            var bodies=Field<Transform[]>(hazard,"bodies");int retained=0;
+            foreach(var body in bodies)if(body!=null)
+            {
+                retained++;Check(body.localScale.y==.025f,"heroic body starts dormant rather than faking active damage");
+                foreach(var vertex in Field<Mesh>(hazard,"bodyMesh").vertices)
+                {
+                    var point=body.position+new Vector3(vertex.x*.24f,0,vertex.z*.24f);
+                    bool inside=node==ChapterNode.ForestCourt?ArenaPulseRules.Contains(CombatFx.Flat(point-center).sqrMagnitude,CombatSight.Area(center,point)):CombatFx.SegmentDistance(point,Field<Vector3>(hazard,"start"),Field<Vector3>(hazard,"end"))<=ChapterHazardGeometry.HeatHalfWidth&&CombatSight.Area(body.position,point);
+                    Check(inside,"heroic body footprint stays inside actual clipped hazard region");
+                }
+            }
+            Check(retained>0&&retained<=(node==ChapterNode.ForestCourt?8:6),"heroic physical feedback is nonempty and bounded");
+
             game.InputBlocked=true;for(int i=0;i<200;i++)Update(hazard);
             Check(Field<float>(hazard,"age")==0&&game.Player.DamageCalls==0,"blocked chapter hazard must preserve clock and health");
             game.InputBlocked=false;for(int i=0;i<120;i++)Update(hazard);
             Check(game.Player.DamageCalls==0&&Field<LineRenderer>(hazard,"boundary").enabled,"visible warning precedes hazard damage");
+            Check(bodies[0].localScale.y>.025f&&bodies[0].localScale.y<1.05f,"physical hazard grows during warning before active damage");
             for(int i=0;i<8;i++)Update(hazard);
             Check(game.Player.DamageCalls==1&&game.Player.Health==93.5f,"single active window damages at most once");
-            if(node==ChapterNode.Redrock)Check(Field<Vector3>(hazard,"end").x<-2,"actual rock clips single heat line and damage endpoint");
+            Check(bodies[0].localScale.y==1.05f,"physical thorn or heat body reaches active height on actual damage window");
+            if(node==ChapterNode.Redrock)Check(Vector3.Distance(Field<Vector3>(hazard,"end"),ChapterHazardGeometry.ClipLine(plan.HazardStart,plan.HazardEnd))<.0001f&&Vector3.Distance(plan.HazardStart,Field<Vector3>(hazard,"end"))<Vector3.Distance(plan.HazardStart,plan.HazardEnd),"actual rock clips single heat line and damage endpoint");
             game.Player.transform.position=new Vector3(12,0,12);for(int i=0;i<140;i++)Update(hazard);
             Check(game.Player.DamageCalls==1,"outside hazard remains safe on later cycle");
+            Check(bodies[0].localScale.y<.15f,"physical hazard retracts through cooldown without new damage");
             game.InputBlocked=true;game.ChapterFinished=true;Time.deltaTime=0;Update(hazard);
             Check(!hazard.gameObject.activeInHierarchy&&Field<bool>(hazard,"retired"),"finished chapter retires hazard at zero delta while blocked");Time.deltaTime=.05f;
+            hazard.GetType().GetMethod("OnDestroy",BindingFlags.NonPublic|BindingFlags.Instance).Invoke(hazard,null);
+            Check(Field<Mesh>(hazard,"bodyMesh").Destroyed&&Field<Material>(hazard,"bodyMaterial").Destroyed,"hazard retirement releases owned static body mesh and material");
         }
         foreach(var node in new[]{ChapterNode.ForestCourt,ChapterNode.Redrock})foreach(float offset in new[]{-.001f,0,.001f})
         {
