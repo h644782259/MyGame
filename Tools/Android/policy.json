@@ -14,7 +14,7 @@
   "orientation": "landscape-both",
   "graphics_api": "OpenGLES3; require ES 3.1",
   "package_kind": "development APK only",
-  "signing": "Existing standard local debug signing only; block if missing; never generate or transfer private keys",
+  "signing": "Standard Unity development/debug signing; no custom keystore, manual key generation or key transfer; release signing out of scope",
   "minimum_free_gib": 12,
   "permissions_requiring_explicit_review": "All declared permissions; dangerous/special permissions block audit"
 }

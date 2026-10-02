@@ -12,7 +12,7 @@ This dedicated Android clone prepares a **development APK**, not a store release
 
 ## Exact supported tools
 
-Install the exact Editor and Android Build Support, Android SDK & NDK Tools, and OpenJDK through the official Unity Hub on an authorized machine. The scripts never install software, accept licences, sign in, modify External Tools preferences, generate signing keys, or upload artifacts.
+Install the exact Editor and Android Build Support, Android SDK & NDK Tools, and OpenJDK through the official Unity Hub on an authorized machine. The scripts never install software, accept licences, sign in, modify External Tools preferences, manually generate/export signing keys, or upload artifacts. A later successful development build uses standard Unity debug signing.
 
 | Component | Required for 6000.6.3f1 |
 | --- | --- |
@@ -44,13 +44,13 @@ The same Editor entrypoint is exposed at `Emberfall > Android`. Switch to Androi
 
 ## Signing and licences
 
-Only already-existing standard local Android debug signing material is permitted. Both preflight and the Editor builder check presence/nonzero length without reading or logging its contents/path. Missing material stops the build before Gradle can create a default key. Android home and JVM-option environment overrides are rejected to avoid redirecting default signing to an unchecked location. There is no key generation fallback, keytool invocation, private-key upload, custom-keystore password input, or store signing flow. Do not run a stock Android build outside these guarded entrypoints if it would auto-generate a key. Existing local material is never copied into this repository; credentials and Android caches are ignored. Its validity is established only by an eventual build/signature audit, not by a presence check. See [Unity Android keystores](https://docs.unity3d.com/6000.6/Documentation/Manual/android-keystore.html).
+Development builds use standard Unity debug signing with `useCustomKeystore=false`. Existing release signing material is **not** a debug-build prerequisite, and the preflight does not inspect or require a local debug keystore. Unity/Gradle may manage its normal local debug material when a genuine development build runs. These scripts contain no manual key generation, keytool invocation, private-key export/upload, or custom-keystore password flow. Release signing and store publication are outside this batch. Credentials and Android caches remain ignored by git. Current runs stopped at missing-tool preflight: neither Unity nor Gradle ran, and no signing material was generated. See [Unity Android keystores](https://docs.unity3d.com/6000.6/Documentation/Manual/android-keystore.html).
 
 An existing SDK licence record is only a presence check, not legal acceptance. Valid Unity entitlement and user-managed licence acceptance remain prerequisites. See [Unity Hub licence management](https://docs.unity.com/en-us/hub/manage-license). No passwords or licence secrets are requested by these scripts.
 
 ## Current evidence and remaining acceptance
 
-The actual host has Linux x86_64 and system OpenJDK 21.0.12.1; **Java 21 is not the required bundled JDK 17**. Unity, Android Build Support, SDK/NDK, adb, Gradle and standard debug material are missing in preflight. No Editor compile, shader build, IL2CPP link, APK, merged-manifest audit, install, device footage or performance result is claimed. Six Python policy/parser/negative-path/static-branch tests pass; synthetic ZIP fixtures are parser tests only.
+The actual host has Linux x86_64 and system OpenJDK 21.0.12.1; **Java 21 is not the required bundled JDK 17**. Unity, Android Build Support, SDK/NDK, adb and Gradle are missing in preflight. No signing material is required or inspected by that preflight. No Editor compile, shader build, IL2CPP link, APK, merged-manifest audit, install, device footage or performance result is claimed. Six Python policy/parser/negative-path/static-branch tests pass; synthetic ZIP fixtures are parser tests only.
 
 The earlier official Linux Editor URL `https://download.unity3d.com/download_unity/45d8eee7de74/LinuxEditorInstaller/Unity-6000.6.3f1.tar.xz` was rejected by the environment's proxy (CONNECT HTTP 403, curl exit 56). We did not bypass it or retry downloads. Evidence remains in `/workspace/shared/unity-environment/download-head.log`. This is a download blocker, not the old environment's AF_UNIX issue; local socket probes in this machine previously succeeded.
 

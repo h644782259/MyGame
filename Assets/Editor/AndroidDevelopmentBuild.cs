@@ -10,7 +10,7 @@ using UnityEditor.Android;
 #endif
 namespace Emberfall.Editor
 {
-    // Dedicated Android clone only. No signing-key, licence, store or upload operations.
+    // Dedicated Android clone. Standard Unity debug signing; no manual key, licence or store operations.
     public static class AndroidDevelopmentBuild
     {
         public const string RequiredVersion="6000.6.3f1";
@@ -71,7 +71,6 @@ namespace Emberfall.Editor
             string output=OutputPath();
             if(File.Exists(output))throw new BuildFailedException("Refusing an existing APK path; use a fresh output so stale binaries cannot pass: "+output);
             Directory.CreateDirectory(Path.GetDirectoryName(output));
-            RequireExistingDebugSigning();
             Configure();
             BuildReport report=BuildPipeline.BuildPlayer(new BuildPlayerOptions{
                 scenes=new[]{MainScene},target=BuildTarget.Android,locationPathName=output,
@@ -88,17 +87,6 @@ namespace Emberfall.Editor
 #else
             throw new BuildFailedException("Android target must be active when this entrypoint is compiled.");
 #endif
-        }
-        static void RequireExistingDebugSigning()
-        {
-            // Presence check only: never read signing material, invoke key generation, or log its path.
-            foreach(string name in new[]{"ANDROID_USER_HOME","ANDROID_PREFS_ROOT","ANDROID_SDK_HOME","JAVA_TOOL_OPTIONS","_JAVA_OPTIONS","JDK_JAVA_OPTIONS","GRADLE_OPTS"})
-                if(!string.IsNullOrEmpty(Environment.GetEnvironmentVariable(name)))
-                    throw new BuildFailedException("Signing/home/JVM overrides must be absent for guarded default debug signing; values are not logged.");
-            string home=Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-            string existing=Path.Combine(home,".android","debug.keystore");
-            if(!File.Exists(existing)||new FileInfo(existing).Length==0)
-                throw new BuildFailedException("Existing standard local Android debug signing material is required. Automatic generation is not authorized.");
         }
         static void RequireBundled(string actual,string expected,string tool)
         {

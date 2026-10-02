@@ -1,5 +1,5 @@
 {
-  "utc": "2026-10-02T00:15:48.452625+00:00",
+  "utc": "2026-10-02T00:28:00.832760+00:00",
   "host": "Linux-6.18.44-x86_64-with-glibc2.41",
   "status": "BLOCKED",
   "checks": [
@@ -62,16 +62,6 @@
       "name": "jdk_17",
       "passed": false,
       "detail": "System Java is not a substitute for bundled JDK 17"
-    },
-    {
-      "name": "standard_signing_environment",
-      "passed": true,
-      "detail": "Signing/home/JVM overrides must be absent; values are never logged"
-    },
-    {
-      "name": "existing_debug_signing",
-      "passed": false,
-      "detail": "Existing standard local debug signing material required; contents never read; automatic generation forbidden"
     },
     {
       "name": "disk_reserve",

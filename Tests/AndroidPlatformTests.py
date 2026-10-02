@@ -15,9 +15,15 @@ import build_debug
 class AndroidPlatformTests(unittest.TestCase):
     def test_missing_editor_blocks_without_generating_signing(self):
         with tempfile.TemporaryDirectory() as home:
-            report=preflight.probe('/nonexistent/Unity',home)
+            with patch.object(Path, 'home', return_value=Path(home)):
+                report=preflight.probe('/nonexistent/Unity')
             self.assertEqual(report['status'],'BLOCKED')
             self.assertFalse(report['apk_produced'])
+            self.assertFalse(any('signing' in item['name'] for item in report['checks']))
+            builder=(ROOT/'Assets/Editor/AndroidDevelopmentBuild.cs').read_text()
+            self.assertIn('PlayerSettings.Android.useCustomKeystore=false;',builder)
+            self.assertNotIn('debug.keystore',builder)
+            self.assertNotIn('RequireExistingDebugSigning',builder)
             self.assertFalse((Path(home)/'.android').exists())
             self.assertNotIn(home,json.dumps(report))
     def test_policy_matches_serialized_android(self):
