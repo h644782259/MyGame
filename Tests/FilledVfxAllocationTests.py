@@ -9,10 +9,10 @@ dotnet=os.environ.get('DOTNET','dotnet')
 source=(root/'Assets/Scripts/Combat/FilledSkillVfx.cs').read_text()
 with tempfile.TemporaryDirectory(prefix='emberfall-filled-vfx-') as temp:
     temp=Path(temp)
-    for path in ['Assets/Scripts/Core/FilledVfxRecipes.cs','Assets/Scripts/Combat/CoveredAreaParticles.cs','Assets/Scripts/Core/FilledVfxPlacement.cs','Tests/FilledVfxAllocationTests.cs','Tests/FilledVfxRecipeTests.cs']:
+    for path in ['Assets/Scripts/Core/FilledVfxRecipes.cs','Assets/Scripts/Combat/CoveredAreaParticles.cs','Assets/Scripts/Core/FilledVfxPlacement.cs','Tests/FilledVfxAllocationTests.cs','Tests/FilledVfxRecipeTests.cs','Assets/Scripts/Combat/WeaponVisualLinks.cs','Assets/Scripts/Core/WeaponStructure.cs','Tests/WeaponVisualLinkTests.cs']:
         (temp/Path(path).name).write_text((root/path).read_text())
     production=temp/'FilledSkillVfx.cs';production.write_text(source)
-    (temp/'Program.cs').write_text('System.Console.WriteLine(FilledVfxRecipeTests.Run());System.Console.WriteLine(FilledVfxAllocationTests.Run());')
+    (temp/'Program.cs').write_text('System.Console.WriteLine(FilledVfxRecipeTests.Run());System.Console.WriteLine(FilledVfxAllocationTests.Run());System.Console.WriteLine(WeaponVisualLinkTests.Run());')
     project=temp/'Validation.csproj';project.write_text('<Project Sdk="Microsoft.NET.Sdk"><PropertyGroup><OutputType>Exe</OutputType><TargetFramework>net8.0</TargetFramework></PropertyGroup></Project>')
     config=temp/'NuGet.Config';config.write_text('<configuration><packageSources><clear /></packageSources></configuration>')
     subprocess.run([dotnet,'restore',str(project),'--configfile',str(config)],check=True)
@@ -29,3 +29,11 @@ with tempfile.TemporaryDirectory(prefix='emberfall-filled-vfx-') as temp:
     if failed.returncode==0 or 'landing base must survive actual allocation' not in failed.stdout+failed.stderr:
         raise AssertionError('Old-order negative control did not fail for the allocation regression: '+failed.stdout+failed.stderr)
     print('PASS: old-order mutation fails actual mobile retained-base allocation; no Unity/GPU execution')
+
+    production.write_text(source)
+    bridge=temp/'WeaponVisualLinks.cs';original=bridge.read_text()
+    bridge.write_text(original.replace('            transform.position=candidate;', '            simulation.position=candidate; transform.position=candidate;'))
+    failed=subprocess.run(command,capture_output=True,text=True)
+    if failed.returncode==0 or 'visual convergence never changes trajectory root' not in failed.stdout+failed.stderr:
+        raise AssertionError('Logical-root mutation did not fail: '+failed.stdout+failed.stderr)
+    print('PASS: visual-writing-logical-root negative control fails the production transform invariant')

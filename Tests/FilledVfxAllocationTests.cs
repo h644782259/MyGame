@@ -92,6 +92,7 @@ namespace Emberfall
     public static class CombatSight
     {
         public static float Wall=float.PositiveInfinity;
+        public static bool Direct(Vector3 from,Vector3 to)=>Area(from,to);
         public static bool Area(Vector3 from,Vector3 to)=>from.x<=Wall&&to.x<=Wall;
         public static bool VisualFootprint(Vector3 from,Vector3 to,float radius)=>to.x+radius<=Wall;
     }
@@ -101,8 +102,8 @@ namespace UnityEngine
     public enum RuntimeInitializeLoadType{SubsystemRegistration}
     [AttributeUsage(AttributeTargets.Method)]public sealed class RuntimeInitializeOnLoadMethodAttribute:Attribute{public RuntimeInitializeOnLoadMethodAttribute(RuntimeInitializeLoadType value){}}
     public static class Application{public static bool isMobilePlatform;}
-    public static class Time{public static float deltaTime;}
-    public class Object{public string name;public static void Destroy(Object value){if(value is GameObject go)go.SetActive(false);}}
+    public static class Time{public static float deltaTime;public static int frameCount;}
+    public class Object{public string name;public bool Destroyed;public static void Destroy(Object value){value.Destroyed=true;if(value is GameObject go)go.SetActive(false);}}
     public class Component:Object{public GameObject gameObject;public Transform transform=>gameObject.transform;public T GetComponent<T>()where T:Component=>gameObject.GetComponent<T>();}
     public class MonoBehaviour:Component{}
     public class GameObject:Object
@@ -118,16 +119,19 @@ namespace UnityEngine
     public sealed class Transform
     {
         public GameObject gameObject;public Transform parent;public Vector3 localPosition,localScale=Vector3.one;public Quaternion localRotation=Quaternion.identity;
-        public Vector3 position{get=>parent==null?localPosition:parent.TransformPoint(localPosition);set=>localPosition=value;}
+        public Vector3 position{get=>parent==null?localPosition:parent.TransformPoint(localPosition);set=>localPosition=parent==null?value:parent.InverseTransformPoint(value);}
+        public Vector3 right=>localRotation.Rotate(new Vector3(1,0,0));
+        public Vector3 InverseTransformPoint(Vector3 value){if(parent!=null)value=parent.InverseTransformPoint(value);value=localRotation.InverseRotate(value-localPosition);return new Vector3(value.x/localScale.x,value.y/localScale.y,value.z/localScale.z);}
         public Quaternion rotation{get=>localRotation;set=>localRotation=value;}
         public void SetParent(Transform value,bool worldPositionStays){parent=value;}
         public Vector3 TransformPoint(Vector3 value){var point=localRotation.Rotate(new Vector3(value.x*localScale.x,value.y*localScale.y,value.z*localScale.z))+localPosition;return parent==null?point:parent.TransformPoint(point);}
     }
     public sealed class Mesh:Object{public Vector3[] vertices;public Vector2[] uv;public int[] triangles;public void RecalculateNormals(){}public void RecalculateBounds(){}}
+    public sealed class TrailRenderer:Component{public bool emitting;public int ClearCount;public void Clear(){ClearCount++;}}
     public sealed class MeshFilter:Component{public Mesh sharedMesh;}
     public class Renderer:Component{public bool enabled=true,receiveShadows;public int sortingOrder;public Rendering.ShadowCastingMode shadowCastingMode;public Material sharedMaterial;public float Opacity;public void SetPropertyBlock(MaterialPropertyBlock block){Opacity=block.Opacity;}}
     public sealed class MeshRenderer:Renderer{}
-    public sealed class Material:Object{public int renderQueue;public Material(Shader shader){}}
+    public sealed class Material:Object{public int renderQueue;public Color color;public Material(Shader shader){}}
     public sealed class Shader:Object{public static Shader Find(string name)=>new Shader();}
     public static class Resources{public static T Load<T>(string name)where T:new()=>new T();}
     public sealed class MaterialPropertyBlock{public float Opacity;public void SetColor(string name,Color value){}public void SetFloat(string name,float value){if(name=="_Opacity")Opacity=value;}}
@@ -139,6 +143,7 @@ namespace UnityEngine
         public float x,y,z;public Vector3(float x,float y,float z){this.x=x;this.y=y;this.z=z;}
         public static Vector3 zero=>new Vector3();public static Vector3 one=>new Vector3(1,1,1);public static Vector3 up=>new Vector3(0,1,0);public static Vector3 forward=>new Vector3(0,0,1);
         public float sqrMagnitude=>x*x+y*y+z*z;public float magnitude=>(float)Math.Sqrt(sqrMagnitude);public Vector3 normalized=>this*(1/magnitude);
+        public static Vector3 Cross(Vector3 a,Vector3 b)=>new Vector3(a.y*b.z-a.z*b.y,a.z*b.x-a.x*b.z,a.x*b.y-a.y*b.x);
         public static Vector3 operator+(Vector3 a,Vector3 b)=>new Vector3(a.x+b.x,a.y+b.y,a.z+b.z);
         public static Vector3 operator-(Vector3 a,Vector3 b)=>new Vector3(a.x-b.x,a.y-b.y,a.z-b.z);
         public static Vector3 operator*(Vector3 a,float b)=>new Vector3(a.x*b,a.y*b,a.z*b);
@@ -150,12 +155,14 @@ namespace UnityEngine
         public static Quaternion Euler(float x,float y,float z)=>new Quaternion{value=System.Numerics.Quaternion.CreateFromYawPitchRoll(y*Mathf.PI/180,x*Mathf.PI/180,z*Mathf.PI/180)};
         public static Quaternion LookRotation(Vector3 forward)=>identity;public static Quaternion FromToRotation(Vector3 from,Vector3 to)=>identity;
         public static Quaternion operator*(Quaternion a,Quaternion b)=>new Quaternion{value=a.value*b.value};
+        public Vector3 InverseRotate(Vector3 vector){var r=System.Numerics.Vector3.Transform(new System.Numerics.Vector3(vector.x,vector.y,vector.z),System.Numerics.Quaternion.Inverse(value));return new Vector3(r.X,r.Y,r.Z);}
         public Vector3 Rotate(Vector3 vector){var r=System.Numerics.Vector3.Transform(new System.Numerics.Vector3(vector.x,vector.y,vector.z),value);return new Vector3(r.X,r.Y,r.Z);}
     }
     public static class Mathf
     {
         public const float PI=(float)Math.PI,Rad2Deg=180/PI;
         public static float Min(float a,float b)=>Math.Min(a,b);public static float Max(float a,float b)=>Math.Max(a,b);public static int Max(int a,int b)=>Math.Max(a,b);
+        public static float Clamp01(float value)=>Math.Max(0,Math.Min(1,value));
         public static float Clamp(float value,float low,float high)=>Math.Max(low,Math.Min(high,value));public static float Lerp(float a,float b,float t)=>a+(b-a)*Clamp(t,0,1);
         public static float Cos(float value)=>(float)Math.Cos(value);public static float Sin(float value)=>(float)Math.Sin(value);
     }

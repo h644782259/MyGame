@@ -58,11 +58,11 @@ namespace Emberfall
             var fx=root.AddComponent<FilledSkillVfx>();fx.owner=hero;fx.epoch=hero.CombatEpoch;fx.kind=type;fx.size=Mathf.Clamp(radius,.15f,8);
             fx.tint=color;fx.life=Mathf.Clamp(duration,.12f,12);fx.Register();return fx;
         }
-        public static void Crescent(PlayerController hero,Vector3 at,Vector3 forward,float radius,Color color)
+        public static void Crescent(PlayerController hero,Vector3 at,Vector3 forward,float radius,Color color,int swingSide=1)
         {
             var fx=Create(hero,at+Vector3.up*.82f,forward,FilledVfxKind.Crescent,radius,color,.34f);if(fx==null)return;
-            fx.Add(crescent,Vector3.zero,new Vector3(fx.size,fx.size*.7f,fx.size),Quaternion.Euler(-12,0,0),0,0,0);
-            fx.Add(crescent,new Vector3(0,.08f,-.1f),Vector3.one*fx.size*.88f,Quaternion.Euler(8,-16,0),.02f,0,1);
+            fx.Add(crescent,Vector3.zero,new Vector3(fx.size,fx.size*.7f,fx.size),Quaternion.Euler(-12,0,0),0,0,swingSide);
+            fx.Add(crescent,new Vector3(0,.08f,-.1f),Vector3.one*fx.size*.88f,Quaternion.Euler(8,-16*swingSide,0),.02f,0,swingSide);
             for(int i=0;i<4;i++)fx.Add(crystal,new Vector3((i-1.5f)*.25f,.1f,.8f)*fx.size,new Vector3(.09f,.4f,.12f)*fx.size,Quaternion.Euler(85,i*33,0),.02f+i*.018f,4,i);
         }
         public static void Impact(PlayerController hero,Vector3 at,float radius,FilledVfxKind type,Color color)
@@ -143,7 +143,7 @@ namespace Emberfall
             float t=f.Progress;
             switch(p.Motion)
             {
-                case 0: scale*=.85f+t*.3f;rotation*=Quaternion.Euler(0,Mathf.Lerp(-18,38,t),-t*11);break;
+                case 0: float handed=p.Phase<0?-1:1;scale*=.85f+t*.3f;rotation*=Quaternion.Euler(0,Mathf.Lerp(-18,38,t)*handed,-t*11*handed);break;
                 case 1: scale.y*=.25f+.75f*Mathf.Min(1,local*18);at.y-=Mathf.Max(0,t-.55f)*1.3f;break;
                 case 2: scale*=f.Expansion;scale.y*=1+t*.55f;at.y+=t*.65f;rotation*=Quaternion.Euler(0,t*45,0);break;
                 case 3: at+=new Vector3(Mathf.Cos(p.Phase),0,Mathf.Sin(p.Phase))*t*size*.3f*p.TravelScale;at.y+=Mathf.Sin(t*Mathf.PI)*1.1f;scale*=1-t*.4f;rotation*=Quaternion.Euler(t*65,t*35,0);break;
