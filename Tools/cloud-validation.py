@@ -349,6 +349,8 @@ def main():
             failed = failed or not passed
         passed = run_check("authored-scenery-production", [[sys.executable,str(ROOT/"Tests/AuthoredSceneryProductionTests.py"),dotnet]], dict(env,DOTNET=dotnet), output, report)
         failed = failed or not passed
+        passed = run_check("tree-occlusion-registry", [[sys.executable,str(ROOT/"Tests/TreeOcclusionRegistryTests.py"),dotnet]], dict(env,DOTNET=dotnet), output, report)
+        failed = failed or not passed
         passed = run_check("blender-pilot-pose", [[sys.executable,str(ROOT/"Tools/test-blender-pilot.py")]], dict(env,DOTNET=dotnet), output, report)
         failed = failed or not passed
         for pilot_test in ["BlenderPilotAdapterProductionTests.py","PilotStarterCompatibilityTests.py"]:

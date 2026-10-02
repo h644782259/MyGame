@@ -2,7 +2,7 @@ using System;using System.Linq;using System.Collections.Generic;using UnityEngin
 namespace Emberfall {
  public class WorldResources {public List<Mesh> owned=new List<Mesh>();internal Material Material(Color c,bool e=false,VisualSurface s=VisualSurface.Stone)=>new Material(Shader.Find("test"));public void Own(Mesh m){owned.Add(m);}}
  public static class WorldTraversal {public static int circles;public static float radius;public static void AddCircle(Vector3 p,float r){circles++;radius=r;}}
- public static class CameraOcclusionSurface {public static readonly HashSet<GameObject> marked=new HashSet<GameObject>();public static void Mark(GameObject o){marked.Add(o);}}
+ public static class CameraOcclusionSurface {public static readonly HashSet<GameObject> marked=new HashSet<GameObject>();public static void Mark(GameObject o){marked.Add(o);}public static void MarkHierarchy(GameObject o){marked.Add(o);}}
  public static partial class WorldBuilder {
   static Transform Region(Transform p,string n){var o=new GameObject(n);o.transform.SetParent(p,false);return o.transform;}
   static GameObject Primitive(Transform p,string n,PrimitiveType type,Vector3 pos,Vector3 size,Material m,bool cameraOccluder=false){var o=new GameObject(n);o.transform.SetParent(p,false);o.transform.localPosition=pos;o.transform.localScale=size;o.AddComponent<MeshFilter>().sharedMesh=ProceduralVisuals.Shape(type);if(cameraOccluder)CameraOcclusionSurface.Mark(o);return o;}
@@ -18,7 +18,7 @@ class AuthoredSceneryProductionTests {
  Check(WorldTraversal.circles==1&&WorldTraversal.radius==.22f,"preserve exactly original trunk navigation footprint");Check(r.owned.Count==5,"tree owns exactly five leaf fan meshes");
  signatures.Add(string.Join("/",r.owned[0].vertices.Select(v=>v.ToString())));
  foreach(var m in r.owned){Check(m.vertices.Length==14&&m.triangles.Length==72,"bounded closed leaf fan topology");Check(m.triangles.All(i=>i>=0&&i<m.vertices.Length),"valid fan indices");}
- var fans=host.GetComponentsInChildren<MeshFilter>(false).Where(f=>f.transform.name=="Open canopy leaf fan").ToArray();Check(fans.Length==5&&fans.All(f=>CameraOcclusionSurface.marked.Contains(f.gameObject)),"all leaf fans participate in camera occlusion");Check(fans.Select(f=>f.transform.position.y).Distinct().Count()==5,"canopies occupy five distinct branch levels");
+ var fans=host.GetComponentsInChildren<MeshFilter>(false).Where(f=>f.transform.name=="Open canopy leaf fan").ToArray();Check(fans.Length==5&&CameraOcclusionSurface.marked.Contains(host.transform.Find("Branching open canopy tree").gameObject)&&fans.All(f=>!CameraOcclusionSurface.marked.Contains(f.gameObject)),"leaf fans belong to one logical whole-tree occlusion entry");Check(fans.Select(f=>f.transform.position.y).Distinct().Count()==5,"canopies occupy five distinct branch levels");
  Check(host.GetComponentsInChildren<Transform>(false).Count(t=>t.name=="Ascending branch"||t.name=="Exposed branch fork")==10,"branches actually fork beneath open crown");
  }
  Check(signatures.Count==3,"three authored canopy variants differ geometrically");var distant=new GameObject("outside");WorldTraversal.circles=0;WorldBuilder.TestTree(distant.transform,new WorldResources(),new Vector3(23,0,0),1,-2);Check(WorldTraversal.circles==0,"outside world tree adds no new obstacle");

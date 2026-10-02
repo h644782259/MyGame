@@ -26,13 +26,13 @@ namespace Emberfall
                 go.transform.localRotation=Quaternion.Euler(0,-i*137,0);
                 Mesh mesh=LeafFan(variant,i);r.Own(mesh);
                 go.AddComponent<MeshFilter>().sharedMesh=mesh;go.AddComponent<MeshRenderer>().sharedMaterial=leaf;
-                CameraOcclusionSurface.Mark(go);
             }
+            CameraOcclusionSurface.MarkHierarchy(root.gameObject);
         }
         private static void TreeLimb(Transform root,string name,Vector3 a,Vector3 b,float radius,Material material)
         {
             Vector3 direction=b-a;
-            GameObject limb=Primitive(root,name,PrimitiveType.Cylinder,(a+b)*.5f,new Vector3(radius*2,direction.magnitude*.5f,radius*2),material,cameraOccluder:true);
+            GameObject limb=Primitive(root,name,PrimitiveType.Cylinder,(a+b)*.5f,new Vector3(radius*2,direction.magnitude*.5f,radius*2),material);
             limb.transform.localRotation=Quaternion.FromToRotation(Vector3.up,direction.normalized);
         }
         private static Mesh LeafFan(int variant,int layer)
