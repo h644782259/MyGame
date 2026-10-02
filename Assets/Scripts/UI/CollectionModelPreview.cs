@@ -30,7 +30,7 @@ namespace Emberfall
         public void Invalidate(){state.Invalidate();sceneLights=null;}
         public Texture Render(HeroClass hero,ItemData weapon,ItemData armor,ItemData relic,FashionData wings,FashionData fashionWeapon)
         {
-            if(Event.current==null||Event.current.type!=EventType.Repaint)return texture;
+            if(Event.current==null||Event.current.type!=EventType.Repaint)return texture!=null&&texture.IsCreated()?texture:null;
             if(stage==null||camera==null)
             {
                 float yaw=state.Yaw;var mode=composition;var surface=requested;
