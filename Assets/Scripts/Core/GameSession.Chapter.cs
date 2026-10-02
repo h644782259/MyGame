@@ -34,8 +34,8 @@ namespace Emberfall
         private EnemyController chapterSupplier;
         private int previousForestLineup=-1;
         private string forestLineupOwner;
-        // Bounded session-only history for the current save owner, like Forest formation.
-        // Restarting the host or admitting another save owner starts with split again.
+        // Session-only history of the last successfully admitted eligible Redrock replay.
+        // Another owner's eligible replay or a new host starts split; other visits do not replace history.
         private string redrockRouteOwner;
         private bool previousRedrockSplit;
 

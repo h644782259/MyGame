@@ -189,8 +189,17 @@ namespace Emberfall
    var oldOwner=route.Progression;
    route.Progression=new ProgressionService(Path.Combine(folder,"red-route-other-owner"));check(route.Progression.CreateNewSlot(HeroClass.Vanguard),"second route owner save");route.FixtureUnlock();
    check(route.ConfirmChapterEnter()&&ChapterRoomGeometry.RedrockSplitRoute(route.ChapterSeed),"different owner starts split instead of inheriting route");route.FailForTest();route.Camp();
+   var otherOwner=route.Progression;
    route.Progression=oldOwner;
    check(route.ConfirmChapterEnter()&&ChapterRoomGeometry.RedrockSplitRoute(route.ChapterSeed),"bounded last-owner policy resets after another owner admitted");route.FailForTest();route.Camp();
+   foreach(var node in new[]{ChapterNode.Redrock,ChapterNode.ForestCourt})
+   {
+    route.Progression=otherOwner;route.SelectedChapterNode=node;route.SelectedChapterDifficulty=node==ChapterNode.Redrock?ChapterDifficulty.Normal:ChapterDifficulty.Hard;
+    check(route.ConfirmChapterEnter(),"other owner noneligible visit admitted");route.FailForTest();route.Camp();
+    check(route.redrockRouteOwner==oldOwner.SaveFilePath,"Normal or other chapter owner visit does not replace eligible Redrock history");
+    route.Progression=oldOwner;route.SelectedChapterNode=ChapterNode.Redrock;route.SelectedChapterDifficulty=ChapterDifficulty.Hard;
+    check(route.ConfirmChapterEnter()&&ChapterRoomGeometry.RedrockSplitRoute(route.ChapterSeed)==(node==ChapterNode.ForestCourt),"eligible owner resumes alternation after ignored visit");route.FailForTest();route.Camp();
+   }
    return "PASS: "+n+" actual chapter result persistence, independent seal evidence and boss presentation-gate checks";
   }
   public void FixtureUnlock(){Progression.Profile.chapterCompletedMask=7;Progression.Profile.chapterHighestDifficulties=new[]{3,3,3};Progression.Save();}
