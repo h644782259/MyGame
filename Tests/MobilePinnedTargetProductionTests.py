@@ -62,6 +62,6 @@ assert 'MobilePinnedActionReason' not in head and 'pinned.DisplayName' in head
 assert 'LabelControl(Attack,basicReason,true)' in feedback
 feedback=(r/'Assets/Scripts/UI/GameUI.MobileFeedback.cs').read_text()
 assert 'state.Length==0&&session.Player!=null?session.Player.MobilePinnedActionReason(skill)' in feedback
-assert 'Text(caption,targetReason' in feedback and 'Text(caption,state' in feedback
+assert 'Text(caption,MobileCombatPresentation.SkillRejectionCaption(targetReason)' in feedback and 'Text(caption,state' in feedback
 assert '点敌人固定目标；点战场空白取消' in (r/'Assets/Scripts/UI/GameUI.Mobile.cs').read_text()
 print('PASS: source wiring for identity-only pin, per-action target/resource reasons and touch help (not rendered UI)')
