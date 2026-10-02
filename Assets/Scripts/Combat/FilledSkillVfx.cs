@@ -10,9 +10,9 @@ namespace Emberfall
         {
             public Transform Transform; public Renderer Renderer;
             public Vector3 Position, Scale; public Quaternion Rotation;
-            public float Delay, Phase, TravelScale=1; public int Motion;
+            public float Delay, Phase, TravelScale=1; public int Motion; public bool Anchored; public Mesh OwnedMesh;
         }
-        private static Mesh crescent, crystal, flame, sword, lightning, arcane, rupture, arcaneShard;
+        private static Mesh crescent, crystal, flame, sword, lightning, arcane, rupture, arcaneShard, arrow, vine;
         private static Material sharedMaterial;
         private static int active;
         private readonly Piece[] pieces=new Piece[FilledVfxRecipes.MaximumParts];
@@ -23,11 +23,13 @@ namespace Emberfall
         private Color tint;
         private float age,life,size;
         private bool registered;
+        private CombatVisualLease lease;
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetAssets()
         {
             if(crescent!=null)Destroy(crescent);if(crystal!=null)Destroy(crystal);if(flame!=null)Destroy(flame);
             if(sword!=null)Destroy(sword);if(lightning!=null)Destroy(lightning);if(arcane!=null)Destroy(arcane);if(rupture!=null)Destroy(rupture);if(arcaneShard!=null)Destroy(arcaneShard);
+            if(arrow!=null)Destroy(arrow);if(vine!=null)Destroy(vine);arrow=vine=null;
             if(sharedMaterial!=null)Destroy(sharedMaterial);crescent=crystal=flame=sword=lightning=arcane=rupture=arcaneShard=null;sharedMaterial=null;active=0;
         }
         private static Mesh Mesh(FilledMeshRecipe data,string name)
@@ -46,16 +48,18 @@ namespace Emberfall
             if(arcane==null)arcane=Mesh(FilledVfxRecipes.Arcane(),"Arcane cubical lattice");
             if(rupture==null)rupture=Mesh(FilledVfxRecipes.Rupture(),"Ground rupture branches");
             if(arcaneShard==null)arcaneShard=Mesh(FilledVfxRecipes.ArcaneShard(),"Broken arcane strut");
+            if(arrow==null)arrow=Mesh(FilledVfxRecipes.Arrow(),"Narrow arrow shaft head and fletching");
+            if(vine==null)vine=Mesh(FilledVfxRecipes.Vine(),"Branching poison vine");
             if(sharedMaterial==null)
             {Shader shader=Resources.Load<Shader>("FilledSpell");sharedMaterial=new Material(shader!=null?shader:Shader.Find("Sprites/Default"));sharedMaterial.renderQueue=3070;}
         }
-        private static FilledSkillVfx Create(PlayerController hero,Vector3 at,Vector3 forward,FilledVfxKind type,float radius,Color color,float duration,Transform parent=null)
+        private static FilledSkillVfx Create(PlayerController hero,Vector3 at,Vector3 forward,FilledVfxKind type,float radius,Color color,float duration,Transform parent=null,CombatVisualPriority priority=CombatVisualPriority.Primary)
         {
-            int maximum=Application.isMobilePlatform?FilledVfxRecipes.MobileEffects:FilledVfxRecipes.DesktopEffects;
-            if(hero==null||hero.IsDead||active>=maximum||!Finite(radius)||radius<=0||!Finite(forward.x)||!Finite(forward.y)||!Finite(forward.z)||!Finite(duration)||duration<=0||!Finite(at.x)||!Finite(at.y)||!Finite(at.z))return null;
+            if(hero==null||hero.IsDead||!Finite(radius)||radius<=0||!Finite(forward.x)||!Finite(forward.y)||!Finite(forward.z)||!Finite(duration)||duration<=0||!Finite(at.x)||!Finite(at.y)||!Finite(at.z))return null;
             EnsureAssets();var root=new GameObject("Filled "+type+" effect");if(parent!=null)root.transform.SetParent(parent,true);root.transform.position=at;
             root.transform.rotation=Quaternion.LookRotation(forward.sqrMagnitude>.0001f?forward.normalized:Vector3.forward);
-            var fx=root.AddComponent<FilledSkillVfx>();fx.owner=hero;fx.epoch=hero.CombatEpoch;fx.kind=type;fx.size=Mathf.Clamp(radius,.15f,8);
+            var ticket=CombatVisualLease.Attach(root,priority);if(ticket==null)return null;
+            var fx=root.AddComponent<FilledSkillVfx>();fx.lease=ticket;fx.owner=hero;fx.epoch=hero.CombatEpoch;fx.kind=type;fx.size=Mathf.Clamp(radius,.15f,8);
             fx.tint=color;fx.life=Mathf.Clamp(duration,.12f,12);fx.Register();return fx;
         }
         public static void Crescent(PlayerController hero,Vector3 at,Vector3 forward,float radius,Color color,int swingSide=1)
@@ -72,13 +76,13 @@ namespace Emberfall
             float unit=Mathf.Min(1.6f,fx.size*.55f);
             // Allocate landing base, identity silhouette and contact flash BEFORE repeated ornaments.
             // Add's actual budget is still the last authority: mobile 10, reduced 7.
-            fx.Add(rupture,Vector3.up*.07f,new Vector3(fx.size*.58f,.8f,fx.size*.58f),Quaternion.identity,0,5,0,fx.size*.7f,"Landing base");
+            fx.Add(rupture,Vector3.up*.07f,new Vector3(fx.size*.58f,.8f,fx.size*.58f),Quaternion.identity,0,5,0,fx.size*.7f,"Landing base",true);
             Mesh main=type==FilledVfxKind.Sword?sword:type==FilledVfxKind.Lightning?lightning:type==FilledVfxKind.Arcane?arcane:type==FilledVfxKind.Ice?crystal:type==FilledVfxKind.Fire?flame:crescent;
             int motion=type==FilledVfxKind.Sword?8:type==FilledVfxKind.Lightning?9:type==FilledVfxKind.Arcane?10:type==FilledVfxKind.Ice?1:type==FilledVfxKind.Fire?2:3;
             Vector3 dimensions=type==FilledVfxKind.Sword?new Vector3(.95f,3.2f,.95f)*unit:type==FilledVfxKind.Lightning?new Vector3(1.3f,2.2f,1.3f)*unit:Vector3.one*unit*1.65f;
             fx.Add(main,Vector3.zero,dimensions,Quaternion.identity,0,motion,0,
-                type==FilledVfxKind.Sword?unit*.55f:type==FilledVfxKind.Lightning?unit*.85f:type==FilledVfxKind.Summon?unit*1.8f+fx.size*.3f:unit*2f,"Primary "+type);
-            fx.Add(rupture,Vector3.up*.11f,new Vector3(fx.size*.3f,.65f,fx.size*.3f),Quaternion.Euler(0,65,0),0,5,1,fx.size*.38f,"Contact flash");
+                type==FilledVfxKind.Sword?unit*.55f:type==FilledVfxKind.Lightning?unit*.85f:type==FilledVfxKind.Summon?unit*1.8f+fx.size*.3f:unit*2f,"Primary "+type,true);
+            fx.Add(rupture,Vector3.up*.11f,new Vector3(fx.size*.3f,.65f,fx.size*.3f),Quaternion.Euler(0,65,0),0,5,1,fx.size*.38f,"Contact flash",true);
             int n=EffectPreferences.ReducedEffects?5:type==FilledVfxKind.Summon?6:10;
             for(int i=0;i<n;i++)
             {
@@ -93,9 +97,37 @@ namespace Emberfall
                     fx.Add(type==FilledVfxKind.Sword?rupture:type==FilledVfxKind.Arcane?arcaneShard:main,radial*r+Vector3.up*.16f,Vector3.one*unit*.35f,Quaternion.Euler(0,i*51,0),(type==FilledVfxKind.Arcane?.34f:.08f)+i*.018f,type==FilledVfxKind.Sword?5:type==FilledVfxKind.Arcane?3:motion,angle,unit*.6f+(type==FilledVfxKind.Arcane?fx.size*.3f:0));
             }
         }
+        internal static FilledSkillVfx BeginArrowBatch(PlayerController hero,Vector3 at,float radius,Color color,bool final=false)
+        {
+            var fx=Create(hero,at,Vector3.forward,FilledVfxKind.ArrowRain,radius,color,12,priority:final?CombatVisualPriority.Finale:CombatVisualPriority.Primary);
+            if(fx!=null){fx.kind=FilledVfxKind.Charge;fx.Add(crescent,Vector3.up*.18f,new Vector3(radius*.3f,.2f,radius*.3f),Quaternion.identity,0,6,0,radius*.4f,"Arrow charge envelope",true);}
+            return fx;
+        }
+        internal static void ArrowRain(PlayerController hero,Vector3 at,float radius,Color color,bool final=false)
+        {var fx=BeginArrowBatch(hero,at,radius,color,final);if(fx!=null)fx.ArrowBeat(at,radius,final);}
+        internal void ArrowBeat(Vector3 at,float radius,bool final)
+        {
+            if(!gameObject.activeInHierarchy||owner==null||owner.IsDead||owner.CombatEpoch!=epoch)return;
+            ClearPieces();kind=FilledVfxKind.ArrowRain;transform.position=at;age=0;life=final?1.05f:.65f;size=Mathf.Clamp(radius,.15f,8);
+            if(final&&lease!=null)lease.Promote(CombatVisualPriority.Finale);
+            Add(rupture,Vector3.up*.08f,Vector3.one*(final?size*.65f:.3f),Quaternion.identity,0,5,0,final?size:.4f,"Arrow landing contact",true);
+            Add(arrow,Vector3.zero,new Vector3(final?1.7f:.8f,final?3.2f:1.1f,final?1.7f:.8f),Quaternion.identity,0,11,0,.3f,"Primary falling arrow",true);
+            Add(rupture,Vector3.up*.1f,Vector3.one*.22f,Quaternion.identity,0,4,0,final?3.5f:2.3f,"Arrow impact fragments");
+            int maximum=EffectPreferences.ReducedEffects?3:4;
+            for(int i=0;i<maximum;i++)
+            {
+                float a=i*2.39996f,r=size*(.15f+(i%3)*.2f);var offset=new Vector3(Mathf.Cos(a)*r,.02f,Mathf.Sin(a)*r);
+                Add(arrow,offset,new Vector3(.7f,.55f+(i%2)*.2f,.7f),Quaternion.Euler(0,i*47,0),0,12,0,.25f,"Short embedded arrow");
+            }
+        }
+        internal static void PoisonVines(PlayerController hero,Vector3 at,float radius,Color color)
+        {
+            var fx=Create(hero,at,Vector3.forward,FilledVfxKind.Vine,radius,color,1.05f,priority:CombatVisualPriority.Sustained);if(fx==null)return;
+            for(int i=0;i<3;i++)fx.Add(vine,Vector3.zero,new Vector3(radius*.5f,1,radius*.5f),Quaternion.Euler(0,i*120,0),0,0,0,radius,"Poison branch vine",true);
+        }
         public static void Charge(Transform parent,PlayerController hero,Vector3 at,float radius,Color color,float duration)
         {
-            var fx=Create(hero,at,Vector3.forward,FilledVfxKind.Charge,Mathf.Min(radius,3.5f),color,duration,parent);if(fx==null)return;
+            var fx=Create(hero,at,Vector3.forward,FilledVfxKind.Charge,Mathf.Min(radius,3.5f),color,duration,parent,CombatVisualPriority.Sustained);if(fx==null)return;
             for(int i=0;i<3;i++)fx.Add(crescent,Vector3.up*(.18f+i*.2f),new Vector3(fx.size*.65f,.8f,fx.size*.65f),Quaternion.Euler(i*12,i*120,0),0,6,i);
         }
         public static void Thrust(PlayerController hero,Vector3 start,Vector3 end,Color color,float lifetime,float width)
@@ -106,12 +138,12 @@ namespace Emberfall
             fx.Add(flame,Vector3.zero,new Vector3(Mathf.Clamp(width*3,.22f,1.5f),Mathf.Min(24,delta.magnitude),Mathf.Clamp(width*3,.22f,1.5f)),Quaternion.FromToRotation(Vector3.up,delta),0,7,0);
             fx.Add(crystal,delta*.84f,new Vector3(width*1.4f,Mathf.Min(3,delta.magnitude*.3f),width*1.4f),Quaternion.FromToRotation(Vector3.up,delta),0,7,1);
         }
-        private void Add(Mesh mesh,Vector3 at,Vector3 dimensions,Quaternion rotation,float delay,int motion,float phase,float footprint=0,string label="Repeated ornament")
+        private void Add(Mesh mesh,Vector3 at,Vector3 dimensions,Quaternion rotation,float delay,int motion,float phase,float footprint=0,string label="Repeated ornament",bool anchored=false)
         {
             int cap=EffectPreferences.ReducedEffects?FilledVfxRecipes.ReducedParts:Application.isMobilePlatform?10:FilledVfxRecipes.MaximumParts;
             if(count>=cap)return;
             float fit=1;
-            if(footprint>0)
+            if(footprint>0&&!anchored)
             {
                 float px,pz;
                 if(!FilledVfxPlacement.TryPlace(at.x,at.z,size,footprint,(x,z,r)=>{
@@ -121,18 +153,24 @@ namespace Emberfall
                 },out px,out pz,out fit))return;
                 at.x=px;at.z=pz;dimensions*=fit;
             }
+            Mesh owned=null;
+            if(anchored)
+            {
+                owned=AnchoredImpactMesh.Create(mesh,transform,at,dimensions*1.15f,rotation);
+                mesh=owned;at=Vector3.zero;dimensions=Vector3.one/1.15f;rotation=Quaternion.identity;
+            }
             var obj=new GameObject("Filled spell surface / "+label);obj.transform.SetParent(transform,false);
             obj.AddComponent<MeshFilter>().sharedMesh=mesh;var renderer=obj.AddComponent<MeshRenderer>();renderer.sharedMaterial=sharedMaterial;
             renderer.shadowCastingMode=UnityEngine.Rendering.ShadowCastingMode.Off;renderer.receiveShadows=false;renderer.sortingOrder=10;
-            var piece=new Piece{Transform=obj.transform,Renderer=renderer,Position=at,Scale=dimensions,Rotation=rotation,Delay=delay,Motion=motion,Phase=phase,TravelScale=footprint>0?fit:1};pieces[count++]=piece;
+            var piece=new Piece{Transform=obj.transform,Renderer=renderer,Position=at,Scale=dimensions,Rotation=rotation,Delay=delay,Motion=motion,Phase=phase,TravelScale=footprint>0?fit:1,Anchored=anchored,OwnedMesh=owned};pieces[count++]=piece;
             Animate(piece); // The mesh exists at the actual hit frame, before the next Update.
         }
         private void Update()
         {
             var game=GameSession.Instance;
-            if(owner==null||owner.IsDead||owner.CombatEpoch!=epoch||game==null||game.Player!=owner||!game.HasStarted||game.ModeFinished){Destroy(gameObject);return;}
+            if(owner==null||owner.IsDead||owner.CombatEpoch!=epoch||game==null||game.Player!=owner||!game.HasStarted||game.ModeFinished){Retire();return;}
             if(game.InputBlocked||Time.deltaTime<=0)return;
-            age+=Time.deltaTime;if(age>=life){Destroy(gameObject);return;}
+            age+=Time.deltaTime;if(age>=life){Retire();return;}
             for(int i=0;i<count;i++)Animate(pieces[i]);
         }
         private void Animate(Piece p)
@@ -147,15 +185,18 @@ namespace Emberfall
                 case 1: scale.y*=.25f+.75f*Mathf.Min(1,local*18);at.y-=Mathf.Max(0,t-.55f)*1.3f;break;
                 case 2: scale*=f.Expansion;scale.y*=1+t*.55f;at.y+=t*.65f;rotation*=Quaternion.Euler(0,t*45,0);break;
                 case 3: at+=new Vector3(Mathf.Cos(p.Phase),0,Mathf.Sin(p.Phase))*t*size*.3f*p.TravelScale;at.y+=Mathf.Sin(t*Mathf.PI)*1.1f;scale*=1-t*.4f;rotation*=Quaternion.Euler(t*65,t*35,0);break;
-                case 4: at+=new Vector3(Mathf.Sin(p.Phase),.4f,Mathf.Cos(p.Phase))*local*3;scale*=1-t*.8f;break;
+                case 4: at+=new Vector3(Mathf.Sin(p.Phase),.4f,Mathf.Cos(p.Phase))*local*3*p.TravelScale;scale*=1-t*.8f;break;
                 case 5: scale*=f.Expansion;rotation*=Quaternion.Euler(0,t*45,0);break;
                 case 6: scale*=.8f+Mathf.Sin(t*Mathf.PI)*.2f;rotation*=Quaternion.Euler(0,local*(p.Phase%2==0?95:-80),0);at.y+=Mathf.Sin(local*3+p.Phase)*.06f;break;
                 case 7: scale.x*=1-t*.75f;scale.z*=1-t*.75f;break;
                 // The tip is already on the real landing frame; settle does not fake a delayed hit.
                 case 8: at.y-=Mathf.Min(.12f,t*.5f)*p.TravelScale;scale.y*=1-Mathf.Max(0,t-.55f)*.3f;break;
                 case 9: scale.x*=t<.12f?1:t<.28f?.78f:1-t*.5f;scale.z*=1-t*.4f;break;
+                case 11: scale.y*=1-Mathf.Clamp01(local*8)*.75f;break; // The shaft collapses into an already visible contact, never a late fake hit.
+                case 12: at.y-=Mathf.Max(0,local-.22f)*.3f;break;
                 case 10: scale*=t<.18f?Mathf.Lerp(1,.58f,t/.18f):t<.42f?Mathf.Lerp(.58f,1.08f,(t-.18f)/.24f):1.08f-(t-.42f)*.55f;rotation*=Quaternion.Euler(t*30,t*55,0);break;
             }
+            if(p.Anchored){at=p.Position;rotation=p.Rotation;scale.x=Mathf.Min(1,scale.x);scale.z=Mathf.Min(1,scale.z);} // Anchored clipped geometry never drifts back through cover.
             p.Transform.localPosition=at;p.Transform.localScale=scale;p.Transform.localRotation=rotation;
             // Placement reserved the complete motion footprint once. Do not toggle a whole
             // primary silhouette each frame when a growing bounds circle grazes a wall.
@@ -168,11 +209,13 @@ namespace Emberfall
         private void OnDisable(){Release();}
         private void OnEnable()
         {
-            if(owner==null||registered)return;
-            if(active>=(Application.isMobilePlatform?FilledVfxRecipes.MobileEffects:FilledVfxRecipes.DesktopEffects)){Destroy(gameObject);return;}
+            if(!gameObject.activeInHierarchy||owner==null||registered)return;
             Register();
         }
-        private void OnDestroy(){Release();}
+        internal void Retire(){gameObject.SetActive(false);Destroy(gameObject);}
+        private void ClearPieces()
+        {for(int i=0;i<count;i++){var piece=pieces[i];if(piece.Transform!=null){piece.Transform.gameObject.SetActive(false);Destroy(piece.Transform.gameObject);}if(piece.OwnedMesh!=null)Destroy(piece.OwnedMesh);pieces[i]=null;}count=0;}
+        private void OnDestroy(){Release();ClearPieces();}
         private static bool Finite(float value){return !float.IsNaN(value)&&!float.IsInfinity(value);}
     }
 }

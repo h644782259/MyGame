@@ -57,7 +57,6 @@ namespace Emberfall
     public static class MobileControls{public static bool Active=true;}
     public static class ElementalCombatVfx{public enum Element{Fire,Lightning,Poison}}
     public static class WorldTraversal{public static int Revision;}
-    public static class CombatFx{public static Material NewGlow()=>new Material(new Shader());}
     public static class ProceduralVisuals
     {public static GameObject Create(string name,PrimitiveType type,Material material){var obj=new GameObject(name);obj.AddComponent<MeshRenderer>().sharedMaterial=material;return obj;}}
 }

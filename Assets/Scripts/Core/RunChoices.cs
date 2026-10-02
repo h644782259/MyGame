@@ -20,8 +20,8 @@ namespace Emberfall
         public IEnumerable<RunBlessing> Active { get { return active; } }
         public bool Has(RunBlessing blessing) { return active.Contains(blessing); }
         public static int StackLimit(RunBlessing blessing) { return Enum.IsDefined(typeof(RunBlessing), blessing) ? 1 : 0; }
-        public float AttackMultiplier { get { return Has(RunBlessing.BattleFervor) ? 1.15f : 1f; } }
-        public float CriticalMultiplier { get { return Has(RunBlessing.DeadlyEdge) ? 1.95f : 1.65f; } }
+        public float AttackMultiplier { get { return Has(RunBlessing.BattleFervor) ? 1.10f : 1f; } }
+        public float CriticalMultiplier { get { return Has(RunBlessing.DeadlyEdge) ? 2.15f : 1.65f; } }
         public float CooldownMultiplier { get { return Has(RunBlessing.QuickRecovery) ? .85f : 1f; } }
         public float AttackSpeedMultiplier { get { return Has(RunBlessing.SwiftHands) ? 1.18f : 1f; } }
         public float ExtraEnergyPerSecond { get { return Has(RunBlessing.FlowingEssence) ? 2f : 0f; } }
@@ -29,7 +29,7 @@ namespace Emberfall
         {
             if (float.IsNaN(baseChance) || float.IsInfinity(baseChance)) baseChance = 0;
             baseChance = Math.Max(0f, Math.Min(1f, baseChance));
-            return Has(RunBlessing.KeenSight) ? Math.Max(baseChance, Math.Min(.8f, baseChance + .1f)) : baseChance;
+            return Has(RunBlessing.KeenSight) ? Math.Max(baseChance, Math.Min(.8f, baseChance + .2f)) : baseChance;
         }
         public float IncomingDamageMultiplier(float healthFraction)
         {
@@ -110,9 +110,9 @@ namespace Emberfall
                 "击杀带狩猎标记的目标，获得2.5秒20%移速；首领房可借护卫触发。",
                 "击败每波的守卫或首领，恢复12%最大生命（每波一次）。",
                 "本局受到伤害+15%，通关金币+30%；撤离或失败不发额外奖励。",
-                "本局暴击率+10个百分点，最高80%。玩家普攻与可暴击直伤技能生效；持续伤害与伙伴不继承。",
-                "本局暴击倍率由165%提高至195%。持续伤害与伙伴不继承暴击加成。",
-                "本局玩家攻击伤害+15%，技能按攻击计算部分同效；不改变永久装备。",
+                "本局暴击率+20个百分点，最高80%。玩家普攻与可暴击直伤技能生效；持续伤害与伙伴不继承。",
+                "本局玩家普攻与可暴击直伤技能的暴击倍率由165%提高至215%。持续伤害与伙伴不继承暴击加成。",
+                "本局玩家攻击伤害+10%，技能按攻击计算部分同效；伙伴伤害+10%（仅一次），不继承暴击祝福。不改变永久装备。",
                 "本局新施放技能冷却缩短15%，最低1秒。不会清空正在运行的冷却。",
                 "本局普通攻击速度+18%；不加速技能、持续伤害或召唤物攻击。",
                 "本局额外减伤10%；与背水守护相加最多25%，保留整体减伤下限。",

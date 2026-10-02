@@ -35,6 +35,7 @@ namespace Emberfall
             if(activeCount>=(MobileControls.Active?12:20))return null;
             GameObject obj = new GameObject(type + " Silhouette");
             obj.transform.SetParent(parent, false);
+            if(CombatVisualLease.Attach(obj,CombatVisualPriority.Sustained)==null)return null;
             ElementalFieldVisual effect = obj.AddComponent<ElementalFieldVisual>();
             effect.Initialize(type, size, body);
             return effect;
@@ -146,7 +147,7 @@ namespace Emberfall
 
         private void Release(){if(!counted)return;counted=false;activeCount=Mathf.Max(0,activeCount-1);}
         private void OnDisable(){Release();}
-        private void OnEnable(){if(material==null||counted)return;if(activeCount>=(MobileControls.Active?12:20)){gameObject.SetActive(false);return;}activeCount++;counted=true;}
+        private void OnEnable(){if(!gameObject.activeInHierarchy||material==null||counted)return;if(activeCount>=(MobileControls.Active?12:20)){gameObject.SetActive(false);return;}activeCount++;counted=true;}
         private void OnDestroy() { Release();if (material != null) Destroy(material); }
     }
 }

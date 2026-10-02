@@ -5,7 +5,7 @@ assert 'walkingDisplacement = CombatFx.Flat(transform.position - walkingStart);'
 assert 'walkingDisplacement += CombatFx.Flat(bounded-beforeBoundary)' in p
 assert 'transform.InverseTransformDirection(walkingDisplacement)' in p and '!TraversalStartedThisFrame,jumping,jumpAge/.55f' in p
 assert 'model.ResetLocomotion();' in p
-assert 'knockVelocity * dt, NavigationRadius)' in e and 'walkingDisplacement += CombatFx.Flat(next-transform.position);' in e
+assert 'knockVelocity * dt, NavigationRadius)' in e and 'Vector3 actual=CombatFx.Flat(next-transform.position);' in e and 'walkingDisplacement += actual;' in e
 assert e.index('if (windup <= 0) ResolveAttack();')<e.index('AnimateModel(0,preparing?.95f:attackAnimation,hurtTime>0);')
 assert 'model.SetEnemyAttackPose(EnemyActionPose.Select(preparing,activeChargePose,attackAnimation)' in e
 assert 'speed = smoothedSpeed = locomotion.Speed' in m and 'gaitPhase = locomotion.Phase' in m

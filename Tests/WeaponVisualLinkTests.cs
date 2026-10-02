@@ -45,6 +45,11 @@ public static class WeaponVisualLinkTests
             model.Root+=new Vector3(.15f,0,0);model.Tip+=new Vector3(.25f,0,0);ribbon.Call("LateUpdate");
             Check(Near((mesh.vertices[0]+mesh.vertices[4])*.5f,model.Root)&&Near((mesh.vertices[1]+mesh.vertices[5])*.5f,model.Tip),"ribbon follows new endpoints after animation");
             Check(ribbon.GetComponent<MeshRenderer>().sharedMaterial.color.a<=.4f,"fade preserves requested alpha");
+            int beforeDuplicate=GameObject.All.Count;WeaponSlashRibbon.Spawn(owner,model,new Color(1,1,1,.4f));
+            Check(GameObject.All.Count==beforeDuplicate,"one physical swing can create only one endpoint ribbon");
+            var frozen=(Vector3[])mesh.vertices.Clone();model.WeaponActionId++;model.Root+=new Vector3(.3f,0,0);model.Tip+=new Vector3(.3f,0,0);
+            ribbon.Call("LateUpdate");Check(mesh.vertices.SequenceEqual(frozen)&&ribbon.activeSelf,"action change stops sampling while the existing afterimage fades");
+            model.WeaponActionId--;ribbon.Call("LateUpdate");Check(mesh.vertices.SequenceEqual(frozen),"stopped sampling cannot resume when an old identity reappears");
             owner.CombatEpoch++;Time.deltaTime=0;ribbon.Call("LateUpdate");Check(!ribbon.activeSelf,"stale sword ribbon retires even during pause");
         }
         return "PASS: "+checks+" production visual-child/root-invariance and sword-endpoint checks (managed, not GPU)";
@@ -56,6 +61,8 @@ namespace Emberfall
     public sealed class CombatModel:MonoBehaviour
     {
         public Vector3 Staff,Bow,Root,Tip;public int Side=1;public int WeaponSwingSide=>Side;
+        public bool SwordActionActive=true;public int WeaponActionId=1;private int claimed;
+        public bool TryClaimSwordRibbon(int action){if(!SwordActionActive||action!=WeaponActionId||claimed==action)return false;claimed=action;return true;}
         public bool TryGetWeaponVisualAnchor(WeaponVisualAnchor anchor,out Vector3 point)
         {point=anchor==WeaponVisualAnchor.StaffCore?Staff:anchor==WeaponVisualAnchor.BowArrowRest?Bow:anchor==WeaponVisualAnchor.SwordRoot?Root:Tip;return true;}
     }

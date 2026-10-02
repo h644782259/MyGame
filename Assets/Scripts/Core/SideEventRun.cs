@@ -19,6 +19,8 @@ namespace Emberfall
         {this.context=context;this.owner=owner;this.epoch=epoch;Receipt=receipt;}
         public bool Register(object enemy)
         {if(enemy==null||registered>=EnemyCount||Abandoned||Completed||!remaining.Add(enemy))return false;registered++;return true;}
+        public bool Contains(object enemy,object currentContext,object currentOwner,int currentEpoch,bool active)
+        {return active&&!Abandoned&&!Completed&&registered==EnemyCount&&ReferenceEquals(context,currentContext)&&ReferenceEquals(owner,currentOwner)&&epoch==currentEpoch&&enemy!=null&&remaining.Contains(enemy);}
         public bool Defeat(object enemy,object currentContext,object currentOwner,int currentEpoch,bool active)
         {
             if(!active||Abandoned||Completed||registered!=EnemyCount||!ReferenceEquals(context,currentContext)||

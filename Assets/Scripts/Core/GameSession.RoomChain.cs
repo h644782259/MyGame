@@ -33,7 +33,7 @@ namespace Emberfall
     if(escape)kind=index==0?EnemyKind.Wisp:index==1||index==3?EnemyKind.Guardian:index==2||index==4?EnemyKind.Goblin:EnemyKind.Slime;
     float angle=index*2.39996f+plan.Index*.42f;Vector3 desired=new Vector3(Mathf.Sin(angle)*10,0,Mathf.Cos(angle)*9+2),point;
     bool safe=plan.Boss?TrySafeSpawn(desired,boss?1.3f:.65f,5.5f,out point):escape?EscapeRoomFormation.TrySpawn(runSeed,index,occupied,out point):TacticalRoomGeometry.TrySpawn(runSeed,plan.Index,index,occupied,out point);
-    if(!safe||!WorldTraversal.CanReach(TacticalRoomGeometry.Entrance,point,boss?1.3f:.65f)||!RoomChainRun.Register(plan,index)){RoomChainRun.Fail();FinalizeRoomChain();return;}
+    if(!safe||!WorldTraversal.CanReach(TacticalRoomGeometry.Entrance,point,boss?1.3f:.65f)||!RoomChainRun.Register(plan,index)){RoomChainRun.Fail(RoomFailureReason.GenerationOrPathFailure);FinalizeRoomChain();return;}
     try
     {
      occupied.Add(point);SpawnEnemy(kind,DungeonEntryLevel,point,boss);EnemyController enemy=Enemies[Enemies.Count-1];
@@ -42,7 +42,7 @@ namespace Emberfall
      if(boss)LargeExpeditionBoss.Configure(enemy,DungeonTier,runSeed+plan.Index*911);
      roomEnemies.Add(enemy,new RoomEnemyReceipt{Plan=plan,Index=index});
     }
-    catch(System.Exception error){RoomChainRun.Fail();Notify("房间生成失败："+error.Message);FinalizeRoomChain();return;}
+    catch(System.Exception error){RoomChainRun.Fail(RoomFailureReason.GenerationOrPathFailure);Notify("房间生成失败："+error.Message);FinalizeRoomChain();return;}
    }
   }
   private void RecordRoomDefeat(EnemyController enemy)

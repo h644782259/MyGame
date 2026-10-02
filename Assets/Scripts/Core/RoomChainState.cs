@@ -1,6 +1,7 @@
 using System;
 namespace Emberfall
 {
+    public enum RoomFailureReason { None, Death, Timeout, Abandoned, GenerationOrPathFailure }
     public sealed class RoomChainPlan
     {
         public readonly int Index, EnemyCount, Layout, Seed;
@@ -19,6 +20,7 @@ namespace Emberfall
         public bool DoorUnlocked {get;private set;}
         public bool Finished {get;private set;}
         public bool Failed {get;private set;}
+        public RoomFailureReason Failure {get;private set;}
         public bool RewardClaimed {get;private set;}
         public int Seals {get;private set;}
         public float Progress {get;private set;}
@@ -57,7 +59,7 @@ namespace Emberfall
         public bool Next(bool nearDoor,bool blocked)
         {if(Finished||!DoorUnlocked||!nearDoor||blocked||Room.Index>=4)return false;SetRoom(new RoomChainPlan(Room.Index+1,Room.Seed));return true;}
         public bool ClaimReward(bool durable){if(!Finished||Failed||RewardClaimed||!durable)return false;RewardClaimed=true;return true;}
-        public void Fail(){if(Finished)return;Failed=Finished=true;DoorUnlocked=false;}
-        public void Dispose(){Failed=Finished=true;DoorUnlocked=false;Room=null;spawned=defeated=new bool[0];}
+        public void Fail(RoomFailureReason reason=RoomFailureReason.Abandoned){if(Finished)return;Failure=reason==RoomFailureReason.None?RoomFailureReason.Abandoned:reason;Failed=Finished=true;DoorUnlocked=false;}
+        public void Dispose(){if(!Finished)Failure=RoomFailureReason.Abandoned;Failed=Finished=true;DoorUnlocked=false;Room=null;spawned=defeated=new bool[0];}
     }
 }

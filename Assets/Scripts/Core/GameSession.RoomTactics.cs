@@ -51,12 +51,12 @@ namespace Emberfall
             var plan=RoomChainRun.Room;
             if(plan.Interlude||plan.Boss)return;
             if(!WorldTraversal.IsWalkable(new Vector3(0,0,14),.65f)||!WorldTraversal.CanReach(TacticalRoomGeometry.Entrance,new Vector3(0,0,14),.65f))
-            {RoomChainRun.Fail();Notify("房间路线不可达，已安全结束远征");return;}
+            {RoomChainRun.Fail(RoomFailureReason.GenerationOrPathFailure);Notify("房间路线不可达，已安全结束远征");return;}
             if(plan.Objective==RoomObjective.Hunt)return;
             Vector3 first=RoomObjectivePoint;
             Vector3 second=new Vector3(RoomTactics.Mirror(RoomRunSeed)*8,0,9);
             if(!WorldTraversal.CanReach(TacticalRoomGeometry.Entrance,first,.65f)||!WorldTraversal.CanReach(first,second,.65f))
-            {RoomChainRun.Fail();Notify("目标路线不可达，已安全结束远征");return;}
+            {RoomChainRun.Fail(RoomFailureReason.GenerationOrPathFailure);Notify("目标路线不可达，已安全结束远征");return;}
             roomObjectiveMarker=WorldBuilder.MakeRoomObjective(first);
             roomObjectiveMarker.name="Room objective: stand within 2.4m";
             roomObjectiveMarker.transform.SetParent(world.transform,true);

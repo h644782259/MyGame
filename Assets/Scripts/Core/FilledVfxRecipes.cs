@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace Emberfall
 {
-    public enum FilledVfxKind { Crescent, Ice, Fire, Summon, Charge, Thrust, Sword, Lightning, Arcane }
+    public enum FilledVfxKind { Crescent, Ice, Fire, Summon, Charge, Thrust, Sword, Lightning, Arcane, ArrowRain, Vine }
     public sealed class FilledMeshRecipe
     {
         public readonly float[] Positions, Uv;
@@ -140,6 +140,18 @@ namespace Emberfall
                 for(int i=1;i<=3;i++)
                 {float x=dx*i*.28f-dz*(i%2==0?-.09f:.09f),z=dz*i*.28f+dx*(i%2==0?-.09f:.09f);b.Beam(px,.025f,pz,x,.025f,z,.027f);px=x;pz=z;}
             }
+            return b.Build();
+        }
+        public static FilledMeshRecipe Arrow()
+        {
+            var b=new VolumeBuilder();b.Beam(0,.08f,0,0,1.7f,0,.022f);
+            b.Beam(-.13f,.25f,0,0,0,0,.026f);b.Beam(0,0,0,.13f,.25f,0,.026f);
+            b.Beam(0,1.38f,0,-.14f,1.64f,0,.018f);b.Beam(0,1.38f,0,.14f,1.64f,0,.018f);return b.Build();
+        }
+        public static FilledMeshRecipe Vine()
+        {
+            var b=new VolumeBuilder();float x=0,z=0;
+            for(int i=1;i<=7;i++){float nx=(float)Math.Sin(i*.9f)*.55f,nz=i*.25f;b.Beam(x,.04f,z,nx,.04f,nz,.035f);if(i%2!=0)b.Beam(nx,.04f,nz,nx+(i%4==1?.3f:-.3f),.14f,nz+.18f,.024f);x=nx;z=nz;}
             return b.Build();
         }
         private sealed class VolumeBuilder

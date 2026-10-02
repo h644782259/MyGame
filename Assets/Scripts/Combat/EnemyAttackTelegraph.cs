@@ -12,22 +12,38 @@ namespace Emberfall
         private bool interruptible;
         private LineRenderer clock,interruptMark;
         private Vector3 timingCenter;
+        private Transform attacker;private Vector3 impactCenter,lastAttacker;private float impactRadius;private int lastRevision=-1;
+        private Mesh impactMesh;private MeshFilter impactFilter;
         private readonly Vector3[] timingPoints=new Vector3[33];
         private static readonly Color Danger=ThreatVisualStyle.Danger;
 
-        public static EnemyAttackTelegraph Circle(Vector3 center, float radius)
+        public static EnemyAttackTelegraph Circle(Vector3 center,float radius,Transform attacker)
         {
-            EnemyAttackTelegraph warning = Create("Enemy Warning - Impact Circle");
-            var points = new Vector3[72];
-            for (int i = 0; i < points.Length; i++)
-            {
-                float angle = i * Mathf.PI * 2f / points.Length;
-                points[i] = center + new Vector3(Mathf.Sin(angle), 0, Mathf.Cos(angle)) * radius;
-            }
-            warning.Line(points, true, .11f);
-            warning.Timing(center);
-            return warning;
+            var warning=Create("Enemy Warning - Reachable Impact Circle");warning.attacker=attacker;warning.impactCenter=center;warning.impactRadius=radius;
+            var obj=new GameObject("Actual reachable impact contour");obj.transform.SetParent(warning.transform,false);
+            warning.impactFilter=obj.AddComponent<MeshFilter>();var renderer=obj.AddComponent<MeshRenderer>();renderer.sharedMaterial=warning.material;
+            renderer.shadowCastingMode=UnityEngine.Rendering.ShadowCastingMode.Off;renderer.sortingOrder=120;
+            warning.RefreshCircle();warning.Timing(center);return warning;
         }
+        private void RefreshCircle()
+        {
+            if(attacker==null||impactFilter==null)return;
+            Vector3 from=attacker.position;if(lastRevision==WorldTraversal.Revision&&(from-lastAttacker).sqrMagnitude<.000001f)return;
+            lastRevision=WorldTraversal.Revision;lastAttacker=from;
+            var segments=EnemyImpactRegion.Outline(from,impactCenter,impactRadius);
+            var vertices=new Vector3[segments.Count*2];var colors=new Color[vertices.Length];var triangles=new int[segments.Count*3];
+            for(int i=0;i<segments.Count;i+=2)
+            {
+                Vector3 a=CombatFx.Flat(segments[i])+Vector3.up*.16f,b=CombatFx.Flat(segments[i+1])+Vector3.up*.16f;
+                Vector3 side=Vector3.Cross(Vector3.up,(b-a).normalized)*.055f;int v=i*2,t=i*3;
+                vertices[v]=a-side;vertices[v+1]=a+side;vertices[v+2]=b-side;vertices[v+3]=b+side;
+                for(int n=0;n<4;n++)colors[v+n]=Danger;
+                triangles[t]=v;triangles[t+1]=v+1;triangles[t+2]=v+2;triangles[t+3]=v+2;triangles[t+4]=v+1;triangles[t+5]=v+3;
+            }
+            if(impactMesh!=null)Destroy(impactMesh);
+            impactMesh=new Mesh{name="Clipped actual enemy damage boundary",vertices=vertices,colors=colors,triangles=triangles};impactMesh.RecalculateBounds();impactFilter.sharedMesh=impactMesh;
+        }
+        private void LateUpdate(){RefreshCircle();}
 
         public static EnemyAttackTelegraph Charge(Vector3 start, Vector3 end, float halfWidth)
         {
@@ -119,6 +135,6 @@ namespace Emberfall
             if(interruptMark!=null)interruptMark.enabled=interruptible;
         }
 
-        private void OnDestroy() { if (material != null) Destroy(material); }
+        private void OnDestroy() { if (material != null) Destroy(material);if(impactMesh!=null)Destroy(impactMesh); }
     }
 }

@@ -14,7 +14,7 @@ public static class CombatOpportunityTests
         Check(CombatOpportunityPresentation.Arcanist(false,true,true,true)=="灼烧 · 陨星续燃","Burn route offers actual meteor refresh");
         Check(CombatOpportunityPresentation.Arcanist(true,true,true,true)=="灼烧 · 陨星续燃","Unrelated frost cannot mask Burn opportunity");
         Check(CombatOpportunityPresentation.Arcanist(true,true,true,false)=="目标灼烧","Blocked Burn route keeps its relevant current status");
-        Check(CombatOpportunityPresentation.Arcanist(false,true,false,true)=="目标灼烧","Other routes never claim reignition");
+        Check(CombatOpportunityPresentation.Arcanist(false,true,false,true)=="当前落点可碎冰","Actual AoE shatter can be available beyond the displayed target");
         Check(CombatOpportunityPresentation.Arcanist(true,false,true,true)=="目标霜痕","Burn route cannot claim shatter or refresh absent burn");
         Check(CombatOpportunityPresentation.Arcanist(false,false,true,true)=="","No burning target means no refresh opportunity");
         Check(CombatOpportunityPresentation.MeteorReady(true,0,20,20,false),"Exact sufficient energy is ready");

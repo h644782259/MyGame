@@ -37,7 +37,7 @@ namespace Emberfall
             recapGoldLost=Mathf.Max(0,amount);
             if(IsDead)LastRunSummary=BuildRunSummary(false);
         }
-        private string BuildRunSummary(bool won)
+        private string BuildRunSummary(bool won,string explicitFailure=null)
         {
             if(won)recapGoldLost=0;
             var blessings=new List<string>();
@@ -48,8 +48,10 @@ namespace Emberfall
             LastRunRecap=new RunRecapSnapshot(won,InDungeon,ChallengeRun,DungeonTier,DungeonWave,TotalWaves,runSeed,
                 Progression.Profile.mechanicMaterials,ProgressionService.MechanicExchangeCost,lastDamageSource,lastDamageAmount,
                 combatActions,mechanics,blessings,!SpecialAdventure&&Progression.Profile.pendingFashionChest,!SpecialAdventure&&Progression.Profile.pendingFirstClearReward,
-                won?0:recapGoldLost,SpecialAdventure?ModeName:null,RoomChainRun!=null?(RoomChainRun.Failed?"Abandoned":null):ModeRun==null?null:ModeRun.Failure.ToString(),
-                modeGoldReward,modeXpReward,modeMaterialReward);
+                won?0:recapGoldLost,SpecialAdventure?ModeName:null,explicitFailure??(RoomChainRun!=null?RoomChainRun.Failure.ToString():ModeRun==null?(IsDead?"Death":null):ModeRun.Failure.ToString()),
+                modeGoldReward,modeXpReward,modeMaterialReward,
+                new RunFailureEvidence(runDamageTaken,runHealingReceived,RoomChainRun!=null&&RoomChainRun.Room!=null?RoomChainRun.Room.Index+1:DungeonWave,
+                    RoomChainRun!=null&&RoomChainRun.Room!=null?RoomTactics.Name(RoomChainRun.Room.Objective)+" · 已完成印记 "+RoomChainRun.Seals+" · 当前进度 "+RoomChainRun.Progress.ToString("0.0")+"秒":ModeRun!=null?"阶段 "+(ModeRun.PhaseIndex+1)+" · 目标 "+Mathf.RoundToInt(ModeRun.ObjectiveProgress*100)+"%":""));
             // Retain a concise compatibility summary for older consumers. The UI renders the snapshot.
             return won?"遗迹通关 · 第 "+DungeonTier+" 阶":"本次止步 · 最后受击："+lastDamageSource;
         }
