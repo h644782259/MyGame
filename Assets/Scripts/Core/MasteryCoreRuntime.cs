@@ -3,7 +3,7 @@ namespace Emberfall
 {
     public static class MasteryCoreRules
     {
-        public const int InitialInvestment = 10, EnhancedInvestment = 20;
+        public const int InitialInvestment = MasteryProgressionRules.InitialInvestment, EnhancedInvestment = MasteryProgressionRules.EnhancedInvestment;
         public static int Tier(int invested) { return invested < InitialInvestment ? 0 : invested < EnhancedInvestment ? 1 : 2; }
     }
     public struct MasteryResourceProc

@@ -96,7 +96,7 @@ namespace Emberfall {
 }
 class Program{static void Main(string[] args){Console.WriteLine("PASS: "+Emberfall.GameUI.Verify(args[0])+" chapter UI/core replay assertions");}}
 '''
-core=['GameTypes','ProgressionService','ProgressionService.Chapter','ChapterProgression','RoomTactics','CombatBalance','HubTravelRules','MasteryCoreRuntime','TierRewardRules','TierRewardBand','ProgressionGoalState']
+core=['GameTypes','ProgressionService','ProgressionService.Reforge','ReforgeQuote','ProgressionService.Chapter','ChapterProgression','RoomTactics','CombatBalance','HubTravelRules','MasteryCoreRuntime','TierRewardRules','TierRewardBand','ProgressionGoalState']
 close=member('GameUI.cs','private void ClosePanel()');hook='if(CloseChapterSelection())return;'
 assert hook in close,'chapter ClosePanel hook must be integrated before replay'
 files=[root/'Assets/Scripts/Core'/f'{name}.cs' for name in core]+[root/'Assets/Scripts/UI/GameUI.Chapter.cs',root/'Assets/Scripts/UI/ChapterEntryPresentation.cs',root/'Assets/Scripts/UI/MobilePanelLayout.cs',root/'Tests/ProgressionTests.cs']

@@ -48,10 +48,9 @@ namespace Emberfall
         public const int PendingLootCapacity = 24;
         public const int RecoveryLootCapacity = 256;
         public const int MechanicExchangeCost = 12;
-        public const int MaximumMasteryRank = 35;
+        public const int MaximumMasteryRank = MasteryProgressionRules.MaximumRank;
         public const int BuildPresetCount = 2;
         public const int FashionChoiceCost = 30;
-        public const int ReforgeCost = 6;
         public const int AscensionCost = 24;
         public const int AscensionMilestone = 5;
         public const int VariantCost = 4;
@@ -944,7 +943,7 @@ namespace Emberfall
         }
 
         public static int MasteryCap(int level)
-        { return level < 50 ? 0 : level < 65 ? 10 : level < 80 ? 20 : level < 95 ? 30 : MaximumMasteryRank; }
+        { return MasteryProgressionRules.Cap(level); }
 
         public int MasteryCoreTier(MasteryType mastery)
         {
@@ -970,8 +969,8 @@ namespace Emberfall
         {
             if (!Enum.IsDefined(typeof(MasteryType), mastery)) return "无效的精通。";
             int cap = MasteryCap(Profile.level);
-            if (cap == 0) return "50级开放精通；与技能共用点数，营地免费重置。";
-            if (Profile.masteryRanks[(int)mastery] >= cap) return "已达当前等级精通上限 " + cap + "；65/80/95级继续开放。";
+            if (cap == 0) return MasteryProgressionRules.TierSummary+"；与技能共用点数，营地免费重置。";
+            if (Profile.masteryRanks[(int)mastery] >= cap) return "已达当前等级精通上限 " + cap + "；"+MasteryProgressionRules.TierSummary;
             if (Profile.skillPoints < 1) return "需要1点技能点；可在营地重置精通。";
             return string.Empty;
         }
@@ -989,7 +988,7 @@ namespace Emberfall
         {
             if (!inCamp) return Fail("只能在营地切换精通核心。");
             if (!Enum.IsDefined(typeof(MasteryType), mastery) || Profile.masteryRanks[(int)mastery] < MasteryCoreRules.InitialInvestment)
-                return Fail("该方向投入10点启用初阶核心，20点增强；只能启用一个。");
+                return Fail(MasteryProgressionRules.CoreSummary);
             GameProfile candidate = Snapshot(); candidate.masteryCore = (int)mastery;
             return CommitCandidate(candidate);
         }
@@ -1274,14 +1273,7 @@ namespace Emberfall
         }
 
         public bool ReforgeMechanic(string id, bool inCamp)
-        {
-            string reason=ReforgeLockReason(id,inCamp);if(reason.Length>0)return Fail(reason);
-            GameProfile candidate = Snapshot(); candidate.mechanicMaterials -= ReforgeCost;
-            ItemData item = candidate.inventory.Find(x => x.id == id); item.level = candidate.level;
-            item.upgradeLevel = 0; item.upgradeBaseInitialized = false; SetRolledStats(item); EnsureUpgradeBasis(item);
-            if (IsEquipped(candidate, id)) ApplyUpgradeRank(item, candidate.slotUpgradeRanks[(int)item.slot]);
-            return CommitCandidate(candidate);
-        }
+        { return ReforgeMechanic(QuoteReforge(id),inCamp); }
 
         public string AscensionLockReason(string id, bool inCamp)
         {
@@ -1466,11 +1458,7 @@ namespace Emberfall
             return string.Empty;
         }
         public string ReforgeLockReason(string id,bool inCamp)
-        {
-            if(!inCamp)return "只能在营地重铸机制装备。";
-            string reason=MechanicGoalEligibility(id,ProgressionGoalKind.Reforge);if(reason.Length>0)return reason;
-            return Profile.mechanicMaterials<ReforgeCost?"重铸需要6枚星烬碎片。":string.Empty;
-        }
+        { return ReforgeLockReason(QuoteReforge(id),inCamp); }
         public string VariantLockReason(string id,bool inCamp)
         {
             if(!inCamp)return "只能在营地切换元素机制变体。";
@@ -1549,11 +1537,12 @@ namespace Emberfall
                     if(item==null){goal.Step="原目标装备不在背包；同名装备不会替代它";break;}
                     goal.Done=Profile.progressionGoal==ProgressionGoalKind.Variant?item.mechanicVariantUnlocked:Profile.progressionGoal==ProgressionGoalKind.Ascension?item.rarity==Rarity.Legendary:item.level>=Profile.progressionGoalLevel;
                     if(goal.Done){goal.Step="保留当前目标，可自行选择下一目标";break;}
-                    goal.MaterialCost=Profile.progressionGoal==ProgressionGoalKind.Variant?VariantCost:Profile.progressionGoal==ProgressionGoalKind.Ascension?AscensionCost:ReforgeCost;
+                    goal.MaterialCost=Profile.progressionGoal==ProgressionGoalKind.Variant?VariantCost:Profile.progressionGoal==ProgressionGoalKind.Ascension?AscensionCost:0;
                     goal.Action=Profile.progressionGoal==ProgressionGoalKind.Variant?ProgressionGoalAction.UnlockVariant:Profile.progressionGoal==ProgressionGoalKind.Ascension?ProgressionGoalAction.Ascend:ProgressionGoalAction.Reforge;
-                    string reason=Profile.progressionGoal==ProgressionGoalKind.Variant?VariantLockReason(item.id,inCamp):Profile.progressionGoal==ProgressionGoalKind.Ascension?AscensionLockReason(item.id,inCamp):ReforgeLockReason(item.id,inCamp);
+                    if(Profile.progressionGoal==ProgressionGoalKind.Reforge){goal.ReforgeQuote=QuoteReforge(item.id,Profile.progressionGoalLevel);goal.GoldCost=goal.ReforgeQuote==null?0:goal.ReforgeQuote.GoldCost;}
+                    string reason=Profile.progressionGoal==ProgressionGoalKind.Variant?VariantLockReason(item.id,inCamp):Profile.progressionGoal==ProgressionGoalKind.Ascension?AscensionLockReason(item.id,inCamp):ReforgeLockReason(goal.ReforgeQuote,inCamp);
                     goal.CanAct=reason.Length==0;goal.Step=goal.CanAct?"营地可执行这件装备的操作":reason;
-                    if(Profile.progressionGoal==ProgressionGoalKind.Ascension)goal.Step+=" · 冒险5阶 "+Math.Min(5,HighestAdventureTier)+"/5";
+                    if(Profile.progressionGoal==ProgressionGoalKind.Ascension)goal.RequiredAdventureTier=AscensionMilestone;
                     break;
                 case ProgressionGoalKind.SecondPreset:
                     goal.Title="保存第二套配装";goal.Done=HasBuildPreset(0)&&HasBuildPreset(1);goal.Step=goal.Done?"两份方案已保存":"在营地保存方案 A 与 B";goal.Action=ProgressionGoalAction.OpenPresets;goal.CanAct=inCamp;break;
@@ -1562,6 +1551,8 @@ namespace Emberfall
                 case ProgressionGoalKind.ClassTutorial:
                     goal.Identity+="/"+(int)Profile.heroClass;goal.Title="职业练习";goal.Step=ClassTutorialText;goal.Done=Profile.classTutorialCompleted;break;
             }
+            goal.Requirements=goal.ResourceRequirements(Profile,HighestAdventureTier);
+            if(!goal.Done&&goal.Action!=ProgressionGoalAction.None){goal.Requirements+=(goal.Requirements.Length>0?" · ":"")+(inCamp?"营地已到达":"需返回营地");goal.Step+=(goal.Requirements.Length>0?" · "+goal.Requirements:"");}
             return goal;
         }
         public bool ExecuteProgressionGoal(string expectedActionIdentity,bool inCamp)
@@ -1579,14 +1570,14 @@ namespace Emberfall
                 case ProgressionGoalAction.Equip:return Equip(goal.ItemId);
                 case ProgressionGoalAction.UnlockVariant:return UnlockMechanicVariant(goal.ItemId,inCamp);
                 case ProgressionGoalAction.Ascend:return AscendMechanic(goal.ItemId,inCamp);
-                case ProgressionGoalAction.Reforge:return ReforgeMechanic(goal.ItemId,inCamp);
+                case ProgressionGoalAction.Reforge:return ReforgeMechanic(goal.ReforgeQuote,inCamp);
                 default:return Fail("请打开对应营地入口继续。");
             }
         }
-        public string ProgressionGoalStatus(int runMaterials=0)
+        public string ProgressionGoalStatus(int runMaterials=0,bool inCamp=false)
         {
-            ProgressionGoalState goal=SelectedProgressionGoal(true);
-            return goal.Title+(goal.Done?" ✓ 已完成":"")+" · 碎片 "+Profile.mechanicMaterials+(goal.MaterialCost>0?"/"+goal.MaterialCost:"")+" · "+goal.Step+
+            ProgressionGoalState goal=SelectedProgressionGoal(inCamp);
+            return goal.Title+(goal.Done?" ✓ 已完成":"")+" · "+goal.Step+
                 (runMaterials>0?" · 本局 +"+runMaterials+"碎片":"");
         }
 
@@ -2246,9 +2237,9 @@ namespace Emberfall
                 if (data == null || data.format != SaveFormat || data.version != 1 || data.profile == null || data.profile.version != 1)
                 { error = "unsupported format"; return false; }
                 bool balanceChanged = HasLegacyEnhancement(data.profile.inventory) || HasLegacyEnhancement(data.profile.pendingLoot) || HasLegacyEnhancement(data.profile.recoveryLoot);
-                bool masteryRefund = data.profile.masteryRevision < 1 && data.profile.masteryRanks != null && Array.Exists(data.profile.masteryRanks, rank => rank > 0);
+                bool masteryMigrated = data.profile.masteryRevision < 1 && data.profile.masteryRanks != null && Array.Exists(data.profile.masteryRanks, rank => rank > 0);
                 int refundedRanks = ValidateProfile(data.profile);
-                if (balanceChanged || masteryRefund) error = "战斗平衡已更新：部位强化等级与装备基础保留，强化属性按新曲线重算；旧精通投入已返还，可在营地重新选择。";
+                if (balanceChanged || masteryMigrated) error = "成长规则已更新：部位强化等级与装备基础保留，强化属性按新曲线重算；合法精通投入保留，超出等级或点数预算的部分退回可用点数。";
                 if (refundedRanks > 0) error = "部分技能阶级尚未达到新的解锁等级，已调整并返还技能点；角色与装备进度均已保留。";
                 profile = data.profile;
                 return true;
@@ -2363,9 +2354,9 @@ namespace Emberfall
             }
             profile.skillRanks = ranks;
             int[] mastery = new int[4];
-            // Old three-track maximum-level allocations are refunded once: the new
-            // four-track capacity and exclusive core require a deliberate choice.
-            if (profile.masteryRevision >= 1 && profile.level >= 50)
+            // Preserve legal legacy investments, including old three-track saves.
+            // Only invalid ranks, level caps and the shared lifetime budget constrain migration.
+            if (profile.level >= 30)
                 for (int track = 0; track < mastery.Length; track++)
                 {
                     int oldRank = profile.masteryRanks != null && track < profile.masteryRanks.Length ? profile.masteryRanks[track] : 0;
@@ -2373,7 +2364,7 @@ namespace Emberfall
                     remaining -= mastery[track];
                 }
             profile.masteryRanks = mastery;
-            if (profile.masteryRevision < 1 || profile.masteryCore < 0 || profile.masteryCore >= mastery.Length || mastery[profile.masteryCore] < MasteryCoreRules.InitialInvestment)
+            if (profile.masteryCore < 0 || profile.masteryCore >= mastery.Length || mastery[profile.masteryCore] < MasteryCoreRules.InitialInvestment)
                 profile.masteryCore = -1;
             profile.masteryRevision = 1;
             profile.fashionThreads = Clamp(profile.fashionThreads, 0, 999999);

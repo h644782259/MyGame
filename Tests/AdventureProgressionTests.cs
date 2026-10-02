@@ -37,7 +37,7 @@ public static class AdventureProgressionTests
     }
     static void VariantRoundTrip(string root)
     {
-        var p=Fresh(root);p.Profile.level=50;p.Profile.mechanicMaterials=200;p.Save();Check(p.ExchangeMechanic(EquipmentMechanic.FrostEcho),"get variant item");
+        var p=Fresh(root);p.Profile.level=50;p.Profile.mechanicMaterials=200;p.Profile.gold=99999;p.Save();Check(p.ExchangeMechanic(EquipmentMechanic.FrostEcho),"get variant item");
         var item=p.Profile.inventory.Find(x=>x.mechanic==EquipmentMechanic.FrostEcho);string id=item.id;Check(p.Equip(id),"equip variant");
         Check(p.ToggleMechanicVariant(id,true)&&p.SaveBuildPreset(0,true),"capture unlocked B");
         Check(p.ToggleMechanicVariant(id,true)&&p.SaveBuildPreset(1,true),"capture A");

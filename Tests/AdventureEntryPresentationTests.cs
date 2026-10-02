@@ -20,7 +20,7 @@ public static class AdventureEntryPresentationTests
   check(AdventureEntryPresentation.Materials(0,1)==1,"hold reward proposal does not silently change economy");
   var profile=new GameProfile{progressionGoal=ProgressionGoalKind.Core,mechanicMaterials=3};
   var goal=new ProgressionGoalState{Identity="Core/2/0",Title="具体核心",MaterialCost=8};
-  check(AdventureEntryPresentation.GoalFit(profile,goal,0,1).Contains("保底1")&&AdventureEntryPresentation.GoalFit(profile,goal,0,1).Contains("还缺5"),"fit reports exact guaranteed materials and current deficit");
+  check(AdventureEntryPresentation.GoalFit(profile,goal,0,1).Contains("保底1")&&AdventureEntryPresentation.GoalFit(profile,goal,0,1).Contains("仍缺 5"),"fit reports exact guaranteed materials and current deficit");
   goal.MaterialCost=0;profile.progressionGoal=ProgressionGoalKind.SecondPreset;
   check(AdventureEntryPresentation.GoalFit(profile,goal,3,40).Contains("保存两套"),"high tier never pretends to complete a preset target");
   profile.progressionGoal=ProgressionGoalKind.Tier;profile.progressionGoalTier=20;

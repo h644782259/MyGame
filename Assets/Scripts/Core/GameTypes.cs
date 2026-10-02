@@ -4,6 +4,21 @@ using UnityEngine;
 
 namespace Emberfall
 {
+    public static class MasteryProgressionRules
+    {
+        public const int MaximumRank=35,InitialInvestment=10,EnhancedInvestment=20;
+        public static int Cap(int level)
+        {return level<30?0:level<35?5:level<50?10:level<65?15:level<80?20:level<95?30:MaximumRank;}
+        public static readonly string TierSummary=BuildTierSummary();
+        public static readonly string CoreSummary=InitialInvestment+"点初阶 / "+EnhancedInvestment+"点增强 · 仅启用一个核心";
+        private static string BuildTierSummary()
+        {
+            string levels="",caps="";int previous=Cap(0);
+            for(int level=1;level<=100;level++)
+            {int cap=Cap(level);if(cap==previous)continue;levels+=(levels.Length>0?"/":"")+level;caps+=(caps.Length>0?"/":"")+cap;previous=cap;}
+            return levels+"级 → 上限"+caps+"点";
+        }
+    }
     public enum HeroClass { Vanguard, Arcanist, Ranger, Summoner }
     public enum ItemSlot { Weapon, Armor, Relic }
     public enum Rarity { Common, Rare, Epic, Legendary }
@@ -107,7 +122,7 @@ namespace Emberfall
                 "每点生命 +0.5%；核心：受到实际伤害后生命低于50%且存活时，恢复3% / 5%最大生命；冷却12 / 10秒，不会复活。",
                 "每点护甲 +0.75%；核心：完美闪避获得15% / 25%减伤，持续2 / 3秒；冷却8 / 6秒。",
                 "每点普攻回能 +0.1；核心：技能实际消耗累计60 / 45能量，回复8 / 12能量并减冷却0.4 / 0.7秒；冷却8 / 6秒，冷却中不累计。" }[(int)mastery]
-                + "50/65/80/95级开放10/20/30/35点上限；10点启用初阶、20点自动增强，只能启用1个。营地可退还技能2/3阶或重置精通。";
+                + MasteryProgressionRules.TierSummary+"；"+MasteryProgressionRules.CoreSummary+"。营地可退还技能2/3阶或重置精通。";
         }
         public const string DamageRules = "暴击：普攻与直接技能每次施法掷骰，延迟命中继承结果；持续伤害、反应和伙伴不暴击。伙伴继承当前攻击与生命及契约阶数，数量与指令影响输出。";
 
