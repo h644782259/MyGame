@@ -540,14 +540,14 @@ namespace Emberfall
             }
         }
 
-        private void Cape(Color color)
+        private void Cape(Color color, HeroClass hero)
         {
             GameObject obj = new GameObject("Tailored Cloak");
             obj.transform.SetParent(transform, false);
             obj.transform.localPosition = new Vector3(0, 1.66f, -.23f);
             cloak = obj.transform;
             tailoredCloth = obj.AddComponent<TailoredCloth>();
-            tailoredCloth.Initialize(Mat(color, VisualSurface.Cloth));
+            tailoredCloth.Initialize(Mat(color, VisualSurface.Cloth), hero);
         }
 
         private void BuildHero(HeroClass hero)
@@ -556,7 +556,7 @@ namespace Emberfall
             Color skin = new Color(.94f,.76f,.59f);
             Color steel = new Color(.64f,.75f,.85f);
             Humanoid(skin, accent * .62f, hero == HeroClass.Vanguard ? steel : accent, hero == HeroClass.Vanguard ? 1.15f : 1f);
-            Cape(accent * .48f);
+            Cape(accent * .48f, hero);
             if (hero == HeroClass.Vanguard)
             {
                 Part("Helmet", PrimitiveType.Sphere, new Vector3(0,2.14f,-.03f), new Vector3(.57f,.4f,.52f), steel);

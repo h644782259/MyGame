@@ -1,5 +1,5 @@
 using System;using UnityEngine;using Emberfall;
-namespace Emberfall {public sealed partial class CombatModel {public Vector3 PreviewSpine=>spine.localPosition;public Quaternion PreviewDecoration=>decoration.localRotation;
+namespace Emberfall {public sealed partial class CombatModel {public bool PreviewArrow=>arrowRig.gameObject.active;public float PreviewNock=>arrowRig.localPosition.z;public Vector3 PreviewSpine=>spine.localPosition;public Quaternion PreviewDecoration=>decoration.localRotation;
  public Transform InstallPreviewOrbit(){var orbit=new Transform();fashionWings=new Transform{childName="Mechanical star-ring orbit",namedChild=orbit};ConfigurePreview();return orbit;}} }
 public static class CollectionPoseIsolationProductionTests
 {
@@ -20,6 +20,12 @@ public static class CollectionPoseIsolationProductionTests
    }
    model.SamplePreview(0,CollectionPreviewAction.Idle,1);float before=model.PreviewSpine.y;model.SamplePreview(.3f,CollectionPreviewAction.Idle,1);Check(Math.Abs(before-model.PreviewSpine.y)>.00001f,"local idle clock actually animates model joints");
   }
+  var archer=new CombatModel(HeroClass.Ranger);archer.ConfigurePreview();
+  archer.SamplePreview(0,CollectionPreviewAction.Attack,0);float resting=archer.PreviewNock;Check(archer.PreviewArrow,"preview arrow visible before draw");
+  archer.SamplePreview(0,CollectionPreviewAction.Attack,.16f);Check(archer.PreviewArrow&&archer.PreviewNock<resting-.1f,"preview arrow stays nocked during actual pullback");
+  archer.SamplePreview(0,CollectionPreviewAction.Attack,.32f);Check(!archer.PreviewArrow,"preview arrow disappears at release");
+  archer.SamplePreview(0,CollectionPreviewAction.Attack,.60f);Check(!archer.PreviewArrow&&Math.Abs(archer.PreviewNock-resting)<.001f,"preview released bow returns before reload");
+  archer.SamplePreview(0,CollectionPreviewAction.Attack,.83f);Check(archer.PreviewArrow,"preview reload restores nocked arrow");
   var clock=new CollectionPreviewMotion();var mannequin=new CombatModel(HeroClass.Arcanist);var orbit=mannequin.InstallPreviewOrbit();bool crossed=false;float previousTime=0,previousRing=0;Quaternion previousOrbit=Quaternion.identity;
   for(int frame=0;frame<2500;frame++)
   {

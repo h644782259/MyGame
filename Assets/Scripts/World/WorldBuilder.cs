@@ -357,17 +357,7 @@ namespace Emberfall
         private static void Tree(Transform parent, WorldResources r, Vector3 p, float size, int seed)
         {
             if (p.sqrMagnitude < 22f*22f) WorldTraversal.AddCircle(p, .22f);
-            Material trunk = r.Material(new Color(.24f,.22f,.21f),false,VisualSurface.Wood);
-            Material leaves = r.Material(seed % 2 == 0 ? new Color(.12f,.29f,.29f) : new Color(.2f,.37f,.32f),false,VisualSurface.Foliage);
-            Primitive(parent, "Tree trunk", PrimitiveType.Cylinder, p + Vector3.up * size, new Vector3(.34f, size, .34f), trunk);
-            for (int j = 0; j < 3; j++)
-            {
-                GameObject crown = Primitive(parent, "Rounded evergreen crown", PrimitiveType.Sphere,
-                    p + Vector3.up * (1.65f + j * .73f) * size,
-                    new Vector3(2.2f-j*.48f,1.75f-j*.17f,1.9f-j*.42f)*size, leaves,cameraOccluder:true);
-                crown.GetComponent<MeshFilter>().sharedMesh = ProceduralVisuals.WeatheredRock;
-                crown.transform.localRotation = Quaternion.Euler(0, seed*31f+j*57f, j%2==0 ? 7f : -7f);
-            }
+            BuildBranchTree(parent, r, p, size, seed);
         }
 
         private static void Rock(Transform parent, WorldResources r, Vector3 p, float scale, int seed)

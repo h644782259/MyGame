@@ -17,13 +17,14 @@ namespace Emberfall
     Vector3 p=HubSettlementPlan.Building(hub,index);int side=p.x<0?-1:1;
     var building=new GameObject("Town building occlusion group");building.transform.SetParent(parent,false);
     Primitive(building.transform,quarry?"Quarry workshop":"Observatory arcade",PrimitiveType.Cube,p+Vector3.up*1.9f,new Vector3(HubSettlementPlan.BuildingWidth,3.8f,HubSettlementPlan.BuildingWidth),stone,cameraOccluder:true);
-    Primitive(building.transform,quarry?"Workshop sloping eave":"Astral dome",quarry?PrimitiveType.Cube:PrimitiveType.Sphere,p+Vector3.up*4,new Vector3(6.2f,quarry?.45f:2,6.2f),roof,cameraOccluder:true);
+    if(quarry) BuildWorkshopRoof(building.transform,r,p,side,roof,stone);
+    else Primitive(building.transform,"Astral dome",PrimitiveType.Sphere,p+Vector3.up*4,new Vector3(6.2f,2,6.2f),roof,cameraOccluder:true);
     Primitive(building.transform,"Lit doorway",PrimitiveType.Cube,p+new Vector3(-side*2.78f,1.3f,0),new Vector3(.04f,2.4f,1.6f),glow);
     // Flush footing panels remain inside the building's registered solid footprint.
     for(int j=0;j<4;j++)Primitive(building.transform,"Weathered wall footing",PrimitiveType.Cube,p+new Vector3(-side*2.72f,.16f,-1.95f+j*1.3f),new Vector3(.045f,.3f,1.2f),floor);
     if(quarry)
     {
-     Primitive(building.transform,"Kiln chimney",PrimitiveType.Cube,p+new Vector3(side*1.5f,4.1f,1.2f),new Vector3(.8f,2,.8f),stone,cameraOccluder:true);
+
      Primitive(building.transform,"Timber storage beam",PrimitiveType.Cube,p+new Vector3(-side*2.65f,.65f,1.1f),new Vector3(.18f,.3f,1.8f),roof);
     }
     else
