@@ -1600,6 +1600,7 @@ namespace Emberfall
             candidate.clearedRuns = Math.Min(999999, candidate.clearedRuns + 1);
             candidate.bestFloor = Math.Max(candidate.bestFloor, tier);
             candidate.highestAdventureTier = Math.Max(candidate.highestAdventureTier,tier);
+            candidate.chapterPriorAdventureTier = Math.Max(candidate.chapterPriorAdventureTier,tier);
             candidate.gold = (int)Math.Min(MaximumGold, (long)candidate.gold + gold);
             long xp = (long)candidate.xp + experience;
             while (candidate.level < MaximumLevel && xp >= GameBalance.XpToNext(candidate.level))
@@ -1629,6 +1630,7 @@ namespace Emberfall
             if(completedTier>0)
             {
                 candidate.highestAdventureTier=Math.Max(candidate.highestAdventureTier,completedTier);
+                candidate.chapterPriorAdventureTier=Math.Max(candidate.chapterPriorAdventureTier,completedTier);
                 candidate.pendingFirstClearReward=!candidate.firstClearRewardClaimed;
             }
             if(!CommitCandidate(candidate))return false;
@@ -2325,7 +2327,7 @@ namespace Emberfall
                 profile.specialization = ElementalistSpecialization.None;
             profile.mechanicMaterials = Clamp(profile.mechanicMaterials, 0, 999999);
             profile.materialRewardedClears = Clamp(profile.materialRewardedClears, 0, profile.clearedRuns);
-            profile.pendingFirstClearReward = (profile.pendingFirstClearReward || profile.clearedRuns > 0 || profile.chapterPriorAdventureTier>0 || profile.highestAdventureTier>profile.chapterHighestAdventureTier) && !profile.firstClearRewardClaimed;
+            profile.pendingFirstClearReward = (profile.clearedRuns > 0 || profile.chapterPriorAdventureTier>0 || profile.highestAdventureTier>profile.chapterHighestAdventureTier) && !profile.firstClearRewardClaimed;
             profile.pendingChestTier = TierRewardRules.ClampTier(profile.pendingChestTier);
             ChestReward receipt = profile.lastChestReward;
             if (receipt == null || string.IsNullOrWhiteSpace(receipt.id) || receipt.id.Length > 80 ||

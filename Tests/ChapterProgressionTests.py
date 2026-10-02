@@ -16,7 +16,7 @@ with tempfile.TemporaryDirectory(prefix='chapter-transactions-') as folder:
     command=[dotnet,'run','--project',str(project),'--no-restore','--',str(folder/'saves')]
     subprocess.run(command,check=True)
     p=folder/'ProgressionService.cs';original=p.read_text()
-    old='(profile.pendingFirstClearReward || profile.clearedRuns > 0 || profile.chapterPriorAdventureTier>0 || profile.highestAdventureTier>profile.chapterHighestAdventureTier)'
+    old='(profile.clearedRuns > 0 || profile.chapterPriorAdventureTier>0 || profile.highestAdventureTier>profile.chapterHighestAdventureTier)'
     assert old in original
     p.write_text(original.replace(old,'(profile.clearedRuns > 0 || profile.highestAdventureTier>0)'))
     result=subprocess.run(command,capture_output=True,text=True)
