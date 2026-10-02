@@ -1,6 +1,6 @@
 # Production scenery presentation regression coverage
 
-`SceneryPresentationProductionTests.py DOTNET_EXECUTABLE` executes all three named partitions and compiles the shared managed harness once before running the current source. Each mutation then compiles independently and must fail its named behavioral assertion. Aggregate validation should register this **one** driver, not also the three wrappers.
+`SceneryPresentationProductionTests.py DOTNET_EXECUTABLE` executes all three named partitions and compiles the shared managed harness once before running the current source. Each mutation then compiles independently and must fail its named behavioral assertion. Aggregate validation registers this **one** driver as `scenery-presentation-production`, not also the three wrappers.
 
 The original standalone script paths remain runnable with the same positional .NET executable argument (or `DOTNET` environment variable):
 
