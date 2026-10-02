@@ -120,6 +120,7 @@ namespace Emberfall
             MaxHealth = Mathf.Max(1f, stats.MaxHealth);
             if (heal) Health = MaxHealth;
             else if (!wasDead) Health = Mathf.Clamp(Health, 1, MaxHealth);
+            if(model!=null)model.SetBlenderPilotOwnerAlive(!IsDead);
             SummonedCompanion.RefreshBuild(this);
         }
 
@@ -254,6 +255,7 @@ namespace Emberfall
                 jumping = false;
                 AimTarget = null;
                 focusedEnemy = null; focusTime = blinkBufferTime = 0;
+                model.SetBlenderPilotOwnerAlive(false); // Restore procedural visuals before the final death pose.
                 model.transform.localRotation = Quaternion.Euler(0,0,75f);
                 session.OnPlayerDied();
             }

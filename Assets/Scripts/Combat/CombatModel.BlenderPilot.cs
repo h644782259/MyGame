@@ -14,7 +14,9 @@ namespace Emberfall
                 item.upgradeLevel==0 && item.mechanic==EquipmentMechanic.None && !item.mechanicVariantUnlocked;
         }
         private bool pilotHasGear, pilotHasFashion, pilotAirborne, pilotCharging;
-        private bool pilotVisible, pilotWasHurt;
+        private bool pilotVisible, pilotWasHurt, pilotOwnerDead;
+        internal void SetBlenderPilotOwnerAlive(bool alive)
+        {pilotOwnerDead=!alive;if(!alive)SetBlenderPilotVisible(false);}
         private float pilotHurtStarted=-10;
         private Renderer[] pilotHiddenRenderers;
         private bool[] pilotRendererStates;
@@ -31,8 +33,9 @@ namespace Emberfall
             // Five pilot clips are deliberately bounded: ordinary forward movement,
             // base outfit, basic attack and representative skill 7 (earth rupture).
             bool supported = BlenderPilotArt.Enabled && !pilotHasGear && !pilotHasFashion &&
-                !pilotAirborne && !pilotCharging && !dying && locomotion.Landing <= 0 &&
+                !pilotAirborne && !pilotCharging && !dying && !pilotOwnerDead && locomotion.Landing <= 0 &&
                 Mathf.Abs(locomotion.Side) < .1f && locomotion.Forward >= -.05f &&
+                (!acting || locomotion.Speed <= .05f) && // Full-body pilot attacks have no moving lower-body layer.
                 (!acting || actionBasic || actionSkill == 7);
             SetBlenderPilotVisible(supported);
             if (!supported) return false;
