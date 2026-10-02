@@ -19,6 +19,7 @@ with tempfile.TemporaryDirectory(prefix='chapter-host-production-') as temp:
     for name in ['ProgressionTests','ChapterHostFixture']:(folder/(name+'.cs')).write_text((root/'Tests'/(name+'.cs')).read_text())
     methods=[method('Assets/Scripts/Core/GameSession.cs',signature) for signature in ['private bool ChangeZone(bool dungeon)','public bool SaveBeforeLeaving()','private void SpawnEnemy(','public void OnEnemyKilled(']]
     methods.append(method('Assets/Scripts/Core/GameSession.Modes.cs','public bool ModeFinished'))
+    methods.append(method('Assets/Scripts/Core/GameSession.RoomTactics.cs','private static bool LiveRoomEnemy('))
     methods.append(method('Assets/Scripts/Core/GameSession.Expedition.cs','private void ResetExpedition('))
     (folder/'Lifecycle.cs').write_text('using System.Collections.Generic;using UnityEngine;namespace Emberfall {public sealed partial class GameSession {'+'\n'.join(methods)+'}}')
     enemy=(root/'Assets/Scripts/Combat/EnemyController.cs').read_text()
