@@ -101,11 +101,17 @@ namespace Emberfall
                 (chapterConfigured&&chapterDifficulty!=ChapterDifficulty.Normal?" · 完整扫射后追加锁向预警；打断止连扫，断锚暴露核心":"")+
                 (heroic?(sweepSign>0?" · 本轮顺时针扫射":" · 本轮逆时针扫射"):""));
         }
+        private bool unprovenAnchorRemoval;
         private void ReconcileAnchors()
         {
             for (int i=0;i<anchors.Length;i++)
                 if ((State.LiveAnchorMask & (1<<i)) != 0 && (anchors[i]==null || anchors[i].Broken || !anchors[i].gameObject.activeInHierarchy))
-                    State.DestroyAnchor(State.PhaseNumber,i);
+                {
+                    bool playerBreak=anchors[i]!=null&&anchors[i].WasBrokenBy(owner,ownerEpoch);
+                    if(!playerBreak)unprovenAnchorRemoval=true;
+                    if(State.DestroyAnchor(State.PhaseNumber,i)&&State.Phase==LargeBossPhase.Exposed&&playerBreak&&!unprovenAnchorRemoval&&ChapterOwnerValid)
+                        game.RecordChapterAnchorExposure(boss);
+                }
         }
         internal void InterruptWindup()
         {
@@ -118,7 +124,9 @@ namespace Emberfall
             if(stopped||State==null||boss==null||boss.IsDead||!ChapterOwnerValid)return;
             // Same attack may destroy its last anchor after enumerating the boss.
             ReconcileAnchors();
+            bool anchorExposure=State.Phase==LargeBossPhase.Exposed;
             if(State.Phase!=LargeBossPhase.Exposed&&!State.InterruptWindup())return;
+            if(!anchorExposure&&chapterConfigured)game.RecordChapterInterrupt(boss);
             if(beamRoot!=null)beamRoot.SetActive(false);
             ReleaseAnchors();
             if(State.Phase==LargeBossPhase.Exposed)AnnounceExposure();
@@ -132,7 +140,7 @@ namespace Emberfall
         }
         private void CreateAnchors()
         {
-            ReleaseAnchors();
+            ReleaseAnchors();unprovenAnchorRemoval=false;
             anchorRoot=new GameObject("Large boss power anchors");anchorRoot.transform.SetParent(transform,false);
             resources=anchorRoot.AddComponent<WorldResources>();
             Material shell=resources.Material(new Color(.25f,.34f,.43f),false,VisualSurface.Metal);

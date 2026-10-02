@@ -156,6 +156,7 @@ namespace Emberfall
                 }
                 y+=cardHeight+18;
             }
+            y=DrawRecapChips("机制实例 · 生效须实际扣血",data.MechanismEvidence,y,w,unit,jade);
             y=DrawRecapChips("机制装备",data.Mechanics,y,w,unit,gold);
             y=DrawRecapChips("本局祝福",data.Blessings,y,w,unit,jade);
             y=DrawRecapChips("更多操作",data.ExtraActions,y,w,unit,muted);
@@ -192,7 +193,7 @@ namespace Emberfall
             float result=RecapGoalHeight(layout,MobileControls.Active?TouchRatio:1,data)+(data.HasDamage?80:0)+(data.HasFailureBanner?76:0);
             if(data.Metrics.Length>0)result+=28+layout.MetricRowsHeight(data.Metrics.Length)+18;
             if(data.HasProgress)result+=28+ProgressCardHeight(data.Snapshot)+18;
-            foreach(string[] values in new[]{data.Mechanics,data.Blessings,data.ExtraActions})
+            foreach(string[] values in new[]{data.MechanismEvidence,data.Mechanics,data.Blessings,data.ExtraActions})
                 if(values.Length>0)result+=28+RunRecapChipLayout.Height(RunRecapChipLayout.Pack(values,layout.ContentWidth))+18;
             return result+(!string.IsNullOrEmpty(data.Tip)?56:0)+6;
         }

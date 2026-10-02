@@ -19,7 +19,14 @@ namespace Emberfall
             if(!HasActiveSave||!ChapterProgression.CanEnter(Profile,node,difficulty)||tier<1||tier>Math.Min(100,HighestAdventureTier+1)||Profile.chapterRewardSequence==long.MaxValue)return Fail("章节或难度尚未解锁。");
             int materials=ChapterProgression.CompletionMaterials(Profile,node,tier);
             receipt=new ChapterRunReceipt(node,difficulty,tier,materials,Profile.chapterRewardSequence+1,SaveFilePath);
+            receipt.MasteryEligible=difficulty!=ChapterDifficulty.Normal&&(Profile.chapterCompletedMask&(1<<(int)node))!=0;
             chapterAttempt=receipt;chapterExperience=new ChapterExperienceBudget(node,Profile.level);LastError=string.Empty;return true;
+        }
+        internal void RecordChapterMastery(ChapterRunReceipt receipt,int evidence)
+        {
+            if(receipt==null||!ReferenceEquals(receipt,chapterAttempt)||receipt.SavePath!=SaveFilePath||!receipt.MasteryEligible)return;
+            int allowed=receipt.Node==ChapterNode.ForestCourt?1:receipt.Node==ChapterNode.Redrock?2:12;
+            receipt.MasteryEvidence|=evidence&allowed;
         }
         public void CancelChapterRun(){chapterAttempt=null;chapterExperience=null;}
         public bool TryCompleteChapterNode(ChapterRunReceipt receipt)
@@ -34,6 +41,11 @@ namespace Emberfall
             {experience-=GameBalance.XpToNext(candidate.level);candidate.level++;candidate.skillPoints += GameBalance.SkillPointsGainedAtLevel(candidate.level);}
             candidate.xp=candidate.level>=MaximumLevel?0:(int)experience;
             int index=(int)receipt.Node,bit=1<<index;
+            if(receipt.MasteryEligible)
+            {
+                candidate.chapterMasteryMask|=receipt.MasteryEvidence;
+                for(int i=0;i<4;i++)if((receipt.MasteryEvidence&(1<<i))!=0)candidate.chapterMasteryTiers[i]=Math.Max(candidate.chapterMasteryTiers[i],receipt.Tier);
+            }
             candidate.chapterRevision=1;candidate.chapterCompletedMask|=bit;candidate.chapterFirstRewardMask|=bit;
             candidate.chapterHighestDifficulties[index]=Math.Max(candidate.chapterHighestDifficulties[index],(int)receipt.Difficulty+1);
             candidate.mechanicMaterials=(int)Math.Min(999999L,(long)candidate.mechanicMaterials+receipt.Materials);

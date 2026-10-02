@@ -234,6 +234,8 @@ namespace Emberfall
         public Rarity progressionGoalMinimumRarity;
         public int progressionGoalLevel;
         public int highestAdventureTier;
+        public int chapterMasteryMask;
+        public int[] chapterMasteryTiers = new int[4];
         public int chapterRevision;
         public int chapterCompletedMask;
         public int chapterFirstRewardMask;

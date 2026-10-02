@@ -5,6 +5,7 @@ namespace Emberfall
 {
     public sealed partial class GameSession
     {
+        public RunMechanismEvidence MechanismEvidence {get;}=new RunMechanismEvidence();
         public RunChoices RunChoices { get; private set; } = new RunChoices();
         public bool DungeonSelectionOpen { get; private set; }
         public int SelectedDungeonTier { get; set; } = 1;
@@ -48,7 +49,7 @@ namespace Emberfall
         {
             ClearDungeonSettlement();
             if(!enteringChapter)ResetChapterRun();
-            RunChoices.Reset(); reinforcementQueue.Clear(); nextReinforcementAt=0; DungeonSelectionOpen = false; AbandonSideEvent();
+            MechanismEvidence.Reset();RunChoices.Reset(); reinforcementQueue.Clear(); nextReinforcementAt=0; DungeonSelectionOpen = false; AbandonSideEvent();
             runDamageTaken=runHealingReceived=0;
             combatActions.Clear(); lastDamageSource = "未记录"; lastDamageAmount = 0; lastInterruptAt = -10; recapGoldLost = 0;
             if (dungeon)
@@ -119,6 +120,7 @@ namespace Emberfall
         public void OnEnemyInterrupted(EnemyController enemy)
         {
             if (enemy == null || Player == null) return;
+            if(!enemy.IsLargeBossCounterWindow)RecordChapterInterrupt(enemy);
             RecordCombatAction("打断");
             if (HasBlessing(RunBlessing.InterruptFlow) && Time.time - lastInterruptAt >= 1f)
             {

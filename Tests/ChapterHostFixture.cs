@@ -39,7 +39,7 @@ namespace Emberfall
   public int CurrentHub,DungeonTier=1,DungeonWave,DungeonLayout,DungeonEntryLevel=2,SelectedDungeonTier=1,HealingCharges;public int MaximumDungeonTier=>100;
   public bool DungeonCleared,ChallengeRun;public string LastRunSummary,Notice;public List<EnemyController> Enemies=new List<EnemyController>();
   ExpeditionModeState ModeRun;RoomChainState RoomChainRun;bool loadingSaveSnapshot,changingZone;object waveRoutine;GameObject world=new GameObject("Camp");readonly List<GameObject> transientObjects=new List<GameObject>();
-  int runSeed,wavePopulation,recapGoldLost;float nextReinforcementAt,lastDamageAmount,lastInterruptAt,respawnTimer,runDamageTaken,runHealingReceived;string lastDamageSource;bool objectiveHealedThisWave,DungeonSelectionOpen;Queue<object> reinforcementQueue=new Queue<object>();Dictionary<string,int> combatActions=new Dictionary<string,int>();RunChoices RunChoices=new RunChoices();FakeChoices pendingRoomChoice=new FakeChoices();
+  int runSeed,wavePopulation,recapGoldLost;float nextReinforcementAt,lastDamageAmount,lastInterruptAt,respawnTimer,runDamageTaken,runHealingReceived;string lastDamageSource;bool objectiveHealedThisWave,DungeonSelectionOpen;Queue<object> reinforcementQueue=new Queue<object>();Dictionary<string,int> combatActions=new Dictionary<string,int>();public RunMechanismEvidence MechanismEvidence=new RunMechanismEvidence();RunChoices RunChoices=new RunChoices();FakeChoices pendingRoomChoice=new FakeChoices();
   public int LastEnemyExperience;public int OldWaveCalls,OldBuildCalls;public bool DungeonRewardPending=>false;public bool ModeRewardPending=>ChapterRewardPending;public bool WorldAlive=>world.activeInHierarchy;
   public void Notify(string s){Notice=s;}void SuspendInputs(){}void UpdateTimeScale(){}void AbandonSideEvent(){}void RetireWorldLootReceipts(int epoch){}string BuildRunSummary(bool success,string failure=null)=>"summary";
   void RecordRecapGoldLoss(int amount){recapGoldLost+=amount;}
@@ -104,6 +104,26 @@ namespace Emberfall
     var choices=new RunChoices();check(choices.ChooseChapterTactic(p,ChapterNode.ForestCourt,mobile,0)&&!choices.ChooseChapterTactic(p,ChapterNode.ForestCourt,mobile,2),"C at most one tactic");
     p.chapterCompletedMask=3;choices.Reset();check(!choices.ChooseChapterTactic(p,ChapterNode.ForestCourt,mobile,0),"C first story has no tactic");
    }
+   s=new GameSession{Progression=new ProgressionService(Path.Combine(folder,"mechanism-result"))};check(s.Progression.CreateNewSlot(HeroClass.Arcanist),"mechanism result save");s.FixtureUnlock();s.SelectedChapterNode=ChapterNode.StarPlatform;check(s.ConfirmChapterEnter(),"mechanism result enters");
+   for(int i=0;i<6;i++){var token=s.MechanismEvidence.Register(s.Player,s.Player.CombatEpoch,0);if(i<4)token.Record(s.Player,s.Player.CombatEpoch,1);}
+   foreach(var enemy in new List<EnemyController>(s.Enemies))s.OnEnemyKilled(enemy);
+   check(s.ChapterResult.EmberCreated==6&&s.ChapterResult.EmberEffective==4&&ChapterEntryPresentation.Result(s.ChapterResult).Contains("生成 6 / 生效 4"),"E chapter structured snapshot and result use distinct effective instances");
+   for(int alive=1;alive<=2;alive++)
+   {
+    s=new GameSession{Progression=new ProgressionService(Path.Combine(folder,"forest-mastery-"+alive))};check(s.Progression.CreateNewSlot(HeroClass.Vanguard),"forest mastery slot");s.FixtureUnlock();s.SelectedChapterDifficulty=ChapterDifficulty.Hard;check(s.ConfirmChapterEnter(),"forest mastery enters Hard");
+    while(s.Enemies.Count>alive)s.OnEnemyKilled(s.Enemies[s.Enemies.Count-1]);foreach(var enemy in s.Enemies)enemy.transform.position=new Vector3(99,0,99);
+    for(int seal=0;seal<2;seal++){s.Player.transform.position=s.chapterPlan.Objectives[seal];for(int tick=0;tick<12;tick++)s.Tick();}
+    check(s.chapterReceipt.MasteryEvidence==(alive==2?1:0),"F forest real seal completion requires at least two living first-room enemies");
+    s.FailForTest();check(s.Progression.Profile.chapterMasteryMask==0,"F forest failure publishes no staged mastery");
+   }
+   for(int otherKills=0;otherKills<=1;otherKills++)
+   {
+    s=new GameSession{Progression=new ProgressionService(Path.Combine(folder,"red-mastery-"+otherKills))};check(s.Progression.CreateNewSlot(HeroClass.Vanguard),"red mastery slot");s.FixtureUnlock();s.SelectedChapterNode=ChapterNode.Redrock;s.SelectedChapterDifficulty=ChapterDifficulty.Heroic;check(s.ConfirmChapterEnter(),"red mastery enters Heroic");
+    if(otherKills==1)s.OnEnemyKilled(s.Enemies[5]);s.OnEnemyKilled(s.Enemies[0]);check(s.chapterReceipt.MasteryEvidence==(otherKills==0?2:0)&&s.ChapterRun.DoorUnlocked,"F designated hunt death with other five alive stages mastery without blocking bypass");
+   }
+   s=new GameSession{Progression=new ProgressionService(Path.Combine(folder,"star-mastery-owner"))};check(s.Progression.CreateNewSlot(HeroClass.Vanguard),"star mastery slot");s.FixtureUnlock();s.SelectedChapterNode=ChapterNode.StarPlatform;s.SelectedChapterDifficulty=ChapterDifficulty.Hard;check(s.ConfirmChapterEnter(),"star mastery enters");
+   var realBoss=s.Enemies[0];s.RecordChapterInterrupt(s.Enemies[1]);s.RecordChapterAnchorExposure(new EnemyController{IsBoss=true});check(s.chapterReceipt.MasteryEvidence==0,"F guards and unregistered boss cannot earn star mastery");
+   s.RecordChapterInterrupt(realBoss);s.RecordChapterAnchorExposure(realBoss);check(s.chapterReceipt.MasteryEvidence==12,"F current registered boss admits actual counter evidence");s.Player.RetireCombatForWorldTransition();s.chapterReceipt.MasteryEvidence=0;s.RecordChapterAnchorExposure(realBoss);check(s.chapterReceipt.MasteryEvidence==0,"F stale epoch boss cannot earn mastery");
    return "PASS: "+n+" actual chapter result persistence, independent seal evidence and boss presentation-gate checks";
   }
   public void FixtureUnlock(){Progression.Profile.chapterCompletedMask=7;Progression.Profile.chapterHighestDifficulties=new[]{3,3,3};Progression.Save();}

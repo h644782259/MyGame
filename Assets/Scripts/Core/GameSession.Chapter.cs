@@ -162,6 +162,7 @@ namespace Emberfall
                 {
                     for(int i=0;i<2;i++)ChapterRun.AdvanceSeal(i,Time.deltaTime,true,RoomTacticalRegion.ContainsPlayer(CombatFx.Flat(Player.transform.position-chapterPlan.Objectives[i]).sqrMagnitude),ChapterSealContested(i));
                     chapterFirstSealSeconds=ChapterRun.SealProgress(0);chapterSecondSealSeconds=ChapterRun.SealProgress(1);
+                    if(ChapterRoomIndex==0&&ChapterRun.Seals==2&&ChapterRun.LivingRegisteredEnemies>=2)Progression.RecordChapterMastery(chapterReceipt,1);
                 }
                 else
                 {
@@ -204,6 +205,16 @@ namespace Emberfall
         public bool IsChapterSupplier(EnemyController enemy){return ChapterHasSupport&&enemy==chapterSupplier;}
         public float ChapterSupportMultiplier(EnemyController enemy)
         {return ChapterHasSupport&&enemy!=null&&enemy!=chapterSupplier&&!enemy.IsBoss&&!enemy.IsDead&&enemy.isActiveAndEnabled&&RoomTacticalRegion.ReceivesSupport(CombatFx.Flat(enemy.transform.position-chapterSupplier.transform.position).sqrMagnitude,true)&&WorldTraversal.HasLineOfSight(enemy.transform.position,chapterSupplier.transform.position)?.7f:1;}
+        private bool IsCurrentChapterBoss(EnemyController enemy)
+        {
+            ChapterEnemyReceipt receipt;
+            return ChapterActive&&!ChapterFinished&&ActiveChapterNode==ChapterNode.StarPlatform&&Player!=null&&enemy!=null&&enemy.IsBoss&&
+                chapterEnemies.TryGetValue(enemy,out receipt)&&receipt.Run==ChapterRun&&receipt.Room==ChapterRoomIndex&&receipt.Epoch==Player.CombatEpoch&&receipt.Index==0;
+        }
+        internal void RecordChapterAnchorExposure(EnemyController enemy)
+        {if(IsCurrentChapterBoss(enemy))Progression.RecordChapterMastery(chapterReceipt,8);}
+        internal void RecordChapterInterrupt(EnemyController enemy)
+        {if(IsCurrentChapterBoss(enemy))Progression.RecordChapterMastery(chapterReceipt,4);}
         private bool RecordChapterDefeat(EnemyController enemy,out int experience)
         {
             experience=0;ChapterEnemyReceipt receipt;
@@ -211,13 +222,14 @@ namespace Emberfall
                 !ChapterRun.Defeat(receipt.Room,receipt.Epoch,receipt.Index))return false;
             if(!Progression.TryClaimChapterEnemyExperience(chapterReceipt,receipt.Room,receipt.Index,out experience))
             {FailChapter("敌人 #"+receipt.Index+" 经验收据无法确认");return false;}
+            if(ActiveChapterNode==ChapterNode.Redrock&&receipt.Room==0&&receipt.Index==0&&ChapterRun.LivingRegisteredEnemies==5)Progression.RecordChapterMastery(chapterReceipt,2);
             chapterEnemies.Remove(enemy);
             if(enemy.IsBoss)chapterBossDeathFrame=Time.frameCount;
             return true;
         }
         private void FinalizeChapterBoss(){if(ChapterActive&&ChapterRun.FinishBoss())FinalizeChapter();}
         private ChapterResultSnapshot CaptureChapterResult(bool failed,string reason)
-        {return new ChapterResultSnapshot(ActiveChapterNode,ActiveChapterDifficulty,chapterReceipt==null?DungeonTier:chapterReceipt.Tier,chapterEntryPotions,ChallengeRun,ChapterRoomIndex,(chapterFirstSealSeconds>=3?1:0)+(chapterSecondSealSeconds>=3?1:0),chapterFirstSealSeconds,chapterSecondSealSeconds,failed,reason,lastDamageSource,lastDamageAmount,Progression.ChapterKillExperienceEarned);}
+        {return new ChapterResultSnapshot(ActiveChapterNode,ActiveChapterDifficulty,chapterReceipt==null?DungeonTier:chapterReceipt.Tier,chapterEntryPotions,ChallengeRun,ChapterRoomIndex,(chapterFirstSealSeconds>=3?1:0)+(chapterSecondSealSeconds>=3?1:0),chapterFirstSealSeconds,chapterSecondSealSeconds,failed,reason,lastDamageSource,lastDamageAmount,Progression.ChapterKillExperienceEarned,MechanismEvidence.Snapshot());}
         private void FailChapter(string reason)
         {if(!ChapterActive||ChapterFinished)return;ChapterResult=CaptureChapterResult(true,reason);ChapterRun.Fail();RunChoices.Reset();Progression.CancelChapterRun();Notify(reason);SuspendInputs();UpdateTimeScale();}
         private void FinalizeChapter()
