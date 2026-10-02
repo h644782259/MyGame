@@ -42,3 +42,9 @@ Thumbs.db
 # Generated Python caches are never game assets.
 __pycache__/
 *.pyc
+
+# Android local tool/build caches and signing material. Keep source manifests tracked.
+.gradle/
+.android/
+*.jks
+local.properties
