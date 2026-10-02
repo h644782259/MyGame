@@ -139,6 +139,7 @@ namespace Emberfall
         private void RefreshLayout()
         {
             Rect safe = MobileControls.SafeArea;
+            ObserveTouchViewport(safe);
             scale = Mathf.Min(safe.width / 1280f, safe.height / 720f);
             scale = Mathf.Max(.3f, scale);
             width = safe.width / scale;
@@ -169,6 +170,8 @@ namespace Emberfall
             if (session == null || session.BackgroundPaused) return;
             ReconcileBuildPlanSurface();
             ReconcileProgressionGoalSurface();
+            bool gameplayBackAllowed=GameplayBackAllowed;
+            if(Input.GetKeyDown(KeyCode.Escape))backConsumedFrame=Time.frameCount;
             if(exitRequest.Open){if(Input.GetKeyDown(KeyCode.Escape)){exitRequest.Cancel();exitError=null;BlockUITransition();}return;}
             if(mobileCastFinger!=-1000&&(session.InputBlocked||panel!=Panel.None))CancelMobileCast();
             if (suppressHotbarMouse && !Input.GetMouseButton(0)) suppressHotbarMouse = false;
@@ -177,7 +180,11 @@ namespace Emberfall
                 (hotbarPointerConfiguring ? panel != Panel.Skills || GameBalance.IsPassive(selectedSkill) : panel != Panel.None))) CancelHotbarPointer();
             if (!session.HasStarted)
             {
-                if (Input.GetKeyDown(KeyCode.Escape) && panel == Panel.SaveSelection) ClosePanel();
+                if (Input.GetKeyDown(KeyCode.Escape))
+                {
+                    if(panel==Panel.SaveSelection)ClosePanel();
+                    else if(AndroidBackExitEnabled&&panel==Panel.None)RequestExit(false);
+                }
                 return;
             }
             if (session.IsDead && !session.Paused && !PauseUtilityVisible)
@@ -204,13 +211,13 @@ namespace Emberfall
             {
                 if (hotbarPointerSlot >= 0) { CancelHotbarPointer(); return; }
                 SkillChargeController charge = session.Player == null ? null : session.Player.GetComponent<SkillChargeController>();
-                if (charge != null && (charge.IsCharging || charge.CancelledThisFrame))
+                if (gameplayBackAllowed && charge != null && (charge.IsCharging || charge.CancelledThisFrame))
                 {
                     charge.Cancel();
                     return;
                 }
                 SkillTargetingController targeting = session.Player == null ? null : session.Player.GetComponent<SkillTargetingController>();
-                if (targeting != null && (targeting.IsTargeting || targeting.CancelledThisFrame))
+                if (gameplayBackAllowed && targeting != null && (targeting.IsTargeting || targeting.CancelledThisFrame))
                 {
                     targeting.Cancel();
                     return;
@@ -253,7 +260,7 @@ namespace Emberfall
             GUI.matrix = Matrix4x4.TRS(guiOffset, Quaternion.identity, new Vector3(scale, scale, 1));
             GUI.color = Color.white;
             GUI.contentColor = Color.white;
-            GUI.enabled = !UITransitionBlocked;
+            GUI.enabled = !session.BackgroundPaused && !LifecycleTouchBlocked && !UITransitionBlocked;
             blockedRects.Clear();
             tooltip = null;
             if(exitRequest.Open)

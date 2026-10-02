@@ -18,6 +18,9 @@ namespace Emberfall
         private static GameAudio instance;
         private static bool muted;
         private static bool quitting;
+        private static readonly AudioLifecycleGate lifecycle=new AudioLifecycleGate();
+        private bool ambientPaused;
+        private int ambientResumeSample=-1;
         private static float masterVolume = 1f;
         private AudioSource[] voices;
         private AudioClip[] clips;
@@ -79,6 +82,7 @@ namespace Emberfall
             muted = false;
             masterVolume = 1f;
             quitting = false;
+            lifecycle.Reset();
         }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
@@ -96,7 +100,7 @@ namespace Emberfall
         public static void Play(SoundCue cue)
         {
             int index = (int)cue;
-            if (muted || quitting || index < 0 || index >= CueCount || !Application.isPlaying) return;
+            if (muted || quitting || lifecycle.BackgroundPaused || index < 0 || index >= CueCount || !Application.isPlaying) return;
             EnsureInstance();
             instance.PlayInternal(index);
         }
@@ -187,7 +191,7 @@ namespace Emberfall
                 nextListenerCheck = Time.unscaledTime + .5f;
                 EnsureListener();
             }
-            if (!muted && !quitting && ambientSource != null && !ambientSource.isPlaying) StartBackground();
+            if (!muted && !quitting && !lifecycle.BackgroundPaused && ambientSource != null && !ambientSource.isPlaying) StartBackground();
         }
 
         private void EnsureListener()
@@ -211,13 +215,17 @@ namespace Emberfall
 
         private void StartBackground()
         {
-            if (muted || quitting || !isActiveAndEnabled) return;
+            if (muted || quitting || lifecycle.BackgroundPaused || !isActiveAndEnabled) return;
             EnsurePool();
             if (ambientClip == null) ambientClip = SynthesizeBackground();
             ambientSource.clip = ambientClip;
             ambientSource.volume = BackgroundVolume * masterVolume;
             ambientSource.mute = false;
-            if (!ambientSource.isPlaying) ambientSource.Play();
+            if (!ambientSource.isPlaying)
+            {
+                if(ambientResumeSample>=0&&ambientClip.samples>0)ambientSource.timeSamples=ambientResumeSample%ambientClip.samples;
+                ambientResumeSample=-1;ambientPaused=false;ambientSource.Play();
+            }
         }
 
         private void ApplyVolumes()
@@ -378,8 +386,29 @@ namespace Emberfall
             return (Math.Sin(Tau * frequency * time) + .18 * Math.Sin(Tau * frequency * 2 * time)) * Math.Exp(-time * 8.5) * attack;
         }
 
+        public static void SetBackgroundPaused(bool paused)
+        {
+            AudioLifecycleTransition transition=lifecycle.Observe(paused);
+            if(transition==AudioLifecycleTransition.None||instance==null)return;
+            if(transition==AudioLifecycleTransition.Suspend)
+            {
+                // Discard old one-shots. Preserve the loop cursor, including the
+                // ambient source which deliberately ignores AudioListener.pause.
+                if(instance.voices!=null)foreach(var voice in instance.voices)if(voice!=null)voice.Stop();
+                instance.ambientPaused=instance.ambientSource!=null&&instance.ambientSource.isPlaying;
+                if(instance.ambientPaused)instance.ambientSource.Pause();
+            }
+            else if(!muted&&instance.isActiveAndEnabled)
+            {
+                if(instance.ambientPaused&&instance.ambientSource!=null)
+                {instance.ambientSource.UnPause();instance.ambientPaused=false;}
+                else instance.StartBackground();
+            }
+        }
+
         private void StopVoices()
         {
+            ambientPaused=false;ambientResumeSample=-1;
             if (voices == null) return;
             foreach (AudioSource voice in voices) if (voice != null) voice.Stop();
             if (ambientSource != null) ambientSource.Stop();
@@ -419,7 +448,13 @@ namespace Emberfall
         {
             listener = null;
             nextListenerCheck = 0;
-            if (ambientSource != null) ambientSource.Stop();
+            if (ambientSource != null)
+            {
+                if(ambientResumeSample<0&&ambientSource.clip!=null)ambientResumeSample=ambientSource.timeSamples;
+                ambientSource.Stop();ambientPaused=false;
+            }
+            // StartBackground is gated during suspension; resume seeks to the
+            // preserved sample rather than restarting the loop from zero.
             StartBackground();
         }
 

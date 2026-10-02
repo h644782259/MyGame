@@ -123,6 +123,8 @@ namespace Emberfall
         public bool ProcessPointer(int finger, TouchPhase phase, Vector2 screen)
         {
             if (!Active || session == null || !session.HasStarted) return false;
+            if(ui!=null)ui.RefreshTouchViewport();
+            if(ui!=null&&ui.LifecycleTouchBlocked){ResetInput();return false;}
             Vector2 point = ToUI(screen);
             SkillTargetingController targeting = session.Player == null ? null : session.Player.GetComponent<SkillTargetingController>();
             Role role;
@@ -225,6 +227,7 @@ namespace Emberfall
             GUI.DrawTexture(centered, UIIconAtlas.Utility(icon), ScaleMode.ScaleToFit, true);
         }
         private void OnApplicationFocus(bool focus) { if (!focus) ResetInput(); }
+        private void OnApplicationPause(bool paused) { if(paused)ResetInput(); }
         private void OnDisable() { ResetInput(); }
         private void OnDestroy() { if (disc != null) Destroy(disc); if (instance == this) { ResetInput(); instance = null; } }
     }
