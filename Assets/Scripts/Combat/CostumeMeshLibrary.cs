@@ -10,7 +10,15 @@ namespace Emberfall
             var data=style==WingSilhouette.Feather?CostumeRecipes.Feather():style==WingSilhouette.Crystal?CostumeRecipes.Crystal():CostumeRecipes.Ring();
             var vertices=new Vector3[data.Positions.Length/3];
             for(int i=0;i<vertices.Length;i++)vertices[i]=new Vector3(data.Positions[i*3],data.Positions[i*3+1],data.Positions[i*3+2]);
-            var mesh=new Mesh{name="Shared costume "+style,vertices=vertices,triangles=data.Triangles};mesh.RecalculateNormals();mesh.RecalculateBounds();meshes[index]=mesh;return mesh;
+            int[] triangles=data.Triangles;
+            if(style==WingSilhouette.Crystal)
+            {
+                // Independent triangle vertices retain sharp facet normals after RecalculateNormals.
+                var faceted=new Vector3[triangles.Length];var indices=new int[triangles.Length];
+                for(int i=0;i<triangles.Length;i++){faceted[i]=vertices[triangles[i]];indices[i]=i;}
+                vertices=faceted;triangles=indices;
+            }
+            var mesh=new Mesh{name="Shared costume "+style,vertices=vertices,triangles=triangles};mesh.RecalculateNormals();mesh.RecalculateBounds();meshes[index]=mesh;return mesh;
         }
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void Reset(){for(int i=0;i<meshes.Length;i++){if(meshes[i]!=null)Object.Destroy(meshes[i]);meshes[i]=null;}}

@@ -107,6 +107,7 @@ namespace Emberfall
             model.EnhanceHero(hero);
             if (hero == HeroClass.Summoner) model.SummonerCrown();
             model.BuildClassCostume();
+            model.CaptureBaseCostume();
             return model;
         }
 
@@ -117,8 +118,9 @@ namespace Emberfall
             if (wingId == fashionWingsId && weaponId == fashionWeaponId) return;
             fashionWingsId = wingId;
             fashionWeaponId = weaponId;
-            if (fashionWings != null) Destroy(fashionWings.gameObject);
-            if (fashionWeapon != null) Destroy(fashionWeapon.gameObject);
+            activeWeaponFashion = weapon;
+            if (fashionWings != null) { fashionWings.gameObject.SetActive(false); Destroy(fashionWings.gameObject); }
+            if (fashionWeapon != null) { fashionWeapon.gameObject.SetActive(false); Destroy(fashionWeapon.gameObject); }
             fashionWings = fashionWeapon = null;
             if (wings != null && spine != null)
             {
@@ -135,15 +137,7 @@ namespace Emberfall
                 fashionWeapon = new GameObject("Fashion Weapon").transform;
                 fashionWeapon.SetParent(weaponAnchor == null ? rightElbow : weaponAnchor, false);
                 fashionWeapon.localPosition = weaponAnchor == null ? new Vector3(0, -.26f, .17f) : Vector3.zero;
-                Color color = GameBalance.RarityColor(weapon.rarity);
-                Part("Weapon aura", PrimitiveType.Capsule, new Vector3(0, .4f, 0),
-                    new Vector3(.09f + (int)weapon.rarity * .018f, .63f, .09f), color, fashionWeapon);
-                Part("Weapon crystal", PrimitiveType.Sphere, new Vector3(0, .98f, 0),
-                    Vector3.one * (.19f + (int)weapon.rarity * .045f), color, fashionWeapon);
-                for (int i = 0; i <= (int)weapon.rarity; i++)
-                    Part("Weapon spark", PrimitiveType.Sphere,
-                        new Vector3((i - (int)weapon.rarity * .5f) * .18f, .48f, -.12f),
-                        Vector3.one * .09f, Color.white, fashionWeapon);
+                BuildWeaponFashionShape(weapon);
             }
         }
 
@@ -166,15 +160,17 @@ namespace Emberfall
                     bowstring.SetPosition(2, WeaponAnchorLocal(WeaponVisualAnchor.BowLowerTip));
                 }
                 if (weapon != null) BuildEquipmentWeapon(new EquipmentAppearance(weapon));
+                RefreshWeaponFashion();
             }
             if (armorKey != equipmentArmorKey)
             {
                 equipmentArmorKey = armorKey;
-                if (equipmentArmor != null) Destroy(equipmentArmor.gameObject);
-                if (equipmentLeftShoulder != null) Destroy(equipmentLeftShoulder.gameObject);
-                if (equipmentRightShoulder != null) Destroy(equipmentRightShoulder.gameObject);
+                if (equipmentArmor != null) { equipmentArmor.gameObject.SetActive(false); Destroy(equipmentArmor.gameObject); }
+                if (equipmentLeftShoulder != null) { equipmentLeftShoulder.gameObject.SetActive(false); Destroy(equipmentLeftShoulder.gameObject); }
+                if (equipmentRightShoulder != null) { equipmentRightShoulder.gameObject.SetActive(false); Destroy(equipmentRightShoulder.gameObject); }
                 equipmentArmor = null;
                 equipmentLeftShoulder = equipmentRightShoulder = null;
+                SetBaseCostumeVisible(armor == null);
                 if (armor != null) BuildEquipmentArmor(new EquipmentAppearance(armor));
             }
             if (relicKey != equipmentRelicKey)
