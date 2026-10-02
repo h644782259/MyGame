@@ -1,0 +1,69 @@
+{
+  "passed": true,
+  "completedUtc": "2026-10-02T22:18:17.960538+00:00",
+  "platforms": [
+    {
+      "platform": "Windows",
+      "head": "fcdd97bfbcbeca6b9cf022c86a30766de6c93597",
+      "wholeTrackedFiles": 1142,
+      "baseline": "Immutable frozen commit git archive, not an initial whole-worktree snapshot",
+      "manifest": "/workspace/scratch/guid-fix/candidate-validation/Windows-tracked-post-vs-frozen.json",
+      "manifestSha256": "df290e882cdd4b8be43ddf22a9eb0bc9b2352bfbf0cc47f6ef27fc83c7fb6b88",
+      "ps1EolOnlyDifferences": [],
+      "otherDifferences": [],
+      "allMetaCount": 306,
+      "freshScanner": {
+        "passed": true,
+        "scope": "All authored Assets files/folders and meta identities; no Unity import or external reference resolution",
+        "assetFiles": 294,
+        "assetFolders": 12,
+        "metaFiles": 306,
+        "validUniqueGuidCount": 306,
+        "emptyFolderMetas": [],
+        "failures": []
+      }
+    },
+    {
+      "platform": "iOS",
+      "head": "887cbbe84bac1f9b26d6aa7ee3d725b742453c93",
+      "wholeTrackedFiles": 1153,
+      "baseline": "Immutable frozen commit git archive, not an initial whole-worktree snapshot",
+      "manifest": "/workspace/scratch/guid-fix/candidate-validation/iOS-tracked-post-vs-frozen.json",
+      "manifestSha256": "735bb2330ffb43ceab9bf8dfeb849ed8924db00e549fdba4631c7fe490549bda",
+      "ps1EolOnlyDifferences": [],
+      "otherDifferences": [],
+      "allMetaCount": 309,
+      "freshScanner": {
+        "passed": true,
+        "scope": "All authored Assets files/folders and meta identities; no Unity import or external reference resolution",
+        "assetFiles": 297,
+        "assetFolders": 12,
+        "metaFiles": 309,
+        "validUniqueGuidCount": 309,
+        "emptyFolderMetas": [],
+        "failures": []
+      }
+    },
+    {
+      "platform": "Android",
+      "head": "8654c803eb29b87dea7d69f09678ec21e1955f6d",
+      "wholeTrackedFiles": 1155,
+      "baseline": "Immutable frozen commit git archive, not an initial whole-worktree snapshot",
+      "manifest": "/workspace/scratch/guid-fix/candidate-validation/Android-tracked-post-vs-frozen.json",
+      "manifestSha256": "a7796e0e185ec0621984f16ce16dbbba7917ae9f8171a2a44d61e70a1d90703d",
+      "ps1EolOnlyDifferences": [],
+      "otherDifferences": [],
+      "allMetaCount": 309,
+      "freshScanner": {
+        "passed": true,
+        "scope": "All authored Assets files/folders and meta identities; no Unity import or external reference resolution",
+        "assetFiles": 297,
+        "assetFolders": 12,
+        "metaFiles": 309,
+        "validUniqueGuidCount": 309,
+        "emptyFolderMetas": [],
+        "failures": []
+      }
+    }
+  ]
+}

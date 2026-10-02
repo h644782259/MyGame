@@ -1,0 +1,93 @@
+{
+  "head": "fcdd97bfbcbeca6b9cf022c86a30766de6c93597",
+  "tree": "bb3e61eefd9cb3822fa149283f9100d1f81e3a39",
+  "defaultJIT": true,
+  "fullSuite": {
+    "passed": true,
+    "passedCount": 200,
+    "totalCount": 200,
+    "startedUtc": "20261002T220121705270Z",
+    "completedUtc": "2026-10-02T22:17:09.831440+00:00",
+    "report": "/workspace/scratch/guid-fix/candidate-validation/final-report/report.json",
+    "reportSha256": "90c0327807e1f98c985729908075f82f8f92162e49880ec7207132ba52c458e4",
+    "log": "/workspace/scratch/guid-fix/candidate-validation/full.log",
+    "sourceChangedDuringRun": [],
+    "coverageNote": "Cloud sourceSha256 excludes .meta; independent whole-tracked immutable-commit comparison below covers all metadata."
+  },
+  "platformAPI": {
+    "passed": true,
+    "runtimeSourceCount": 256,
+    "report": "/workspace/scratch/guid-fix/candidate-validation/platform-api-report.json",
+    "runtimeParity": true,
+    "runtimeManifestSha256": "f2c717aa5858cc7df8d248a82e3a13627136982146fdf546adf85f50b1e5df52",
+    "platformHeadsAfterRun": [
+      {
+        "head": "fcdd97bfbcbeca6b9cf022c86a30766de6c93597",
+        "tree": "bb3e61eefd9cb3822fa149283f9100d1f81e3a39",
+        "runtimeAndArtUnchangedDuringRun": true,
+        "trackedStatus": ""
+      },
+      {
+        "head": "887cbbe84bac1f9b26d6aa7ee3d725b742453c93",
+        "tree": "d3ba8ee71ad43add9b2e9ba80a9970ed9931f24b",
+        "runtimeAndArtUnchangedDuringRun": true,
+        "trackedStatus": ""
+      },
+      {
+        "head": "8654c803eb29b87dea7d69f09678ec21e1955f6d",
+        "tree": "c7926098ca59898153d6caff28cc56be4cdabb48",
+        "runtimeAndArtUnchangedDuringRun": true,
+        "trackedStatus": ""
+      }
+    ]
+  },
+  "parityProtection": {
+    "report": "/workspace/scratch/guid-fix/candidate-validation/parity-protection.json",
+    "passed": true,
+    "runtimeAndMetaFiles": 516,
+    "artAndPilotAssetFiles": 70,
+    "artManifestSha256": "f1b31341cbb0f7c9a95b4b7857f21a07d9dc070653ef4687b3b4604c48fcc768",
+    "runtimeCsArtAndPlatformUnchangedFromBase": true,
+    "changedPaths": [
+      "Assets/Scripts/Combat/WeaponVisualLinks.cs.meta",
+      "Assets/Scripts/Core/FilledVfxPlacement.cs.meta",
+      "Docs/Metadata-Guid-Repair.md",
+      "Tests/MetaGuidAuditTests.py",
+      "Tools/cloud-validation.py",
+      "Tools/validate-meta-guids.py"
+    ],
+    "platforms": [
+      {
+        "path": "/workspace/emberfall_ios_guid_fix",
+        "head": "887cbbe84bac1f9b26d6aa7ee3d725b742453c93",
+        "roundBase": "a9caf3776d80439c7c559202b531dc4a3df4518e",
+        "protectedVsRoundBase": 24,
+        "protectedVsPriorOriginalLedger": 24,
+        "syncedPaths": 6
+      },
+      {
+        "path": "/workspace/emberfall_android_guid_fix",
+        "head": "8654c803eb29b87dea7d69f09678ec21e1955f6d",
+        "roundBase": "b1104bbd05e4f7f360ace83ec6d8ccc16ed1b0e1",
+        "protectedVsRoundBase": 24,
+        "protectedVsPriorOriginalLedger": 24,
+        "syncedPaths": 6
+      }
+    ]
+  },
+  "wholeTrackedPostAudit": {
+    "report": "/workspace/scratch/guid-fix/candidate-validation/whole-tracked-post-audit.json",
+    "sha256": "d2781281597a9634910da44101d60ef8a8ad41eb5bc9ff6a2724a14056ac32a2",
+    "passed": true,
+    "coversAllMeta": true,
+    "baseline": "Immutable frozen commit manifests; initial snapshots existed only for runtime/meta and art subsets, not whole tracked tree.",
+    "freshScannersAllThreePassed": true
+  },
+  "externalReferenceSymlink": "Tools/ReferenceAssemblies/UnityEngine -> /workspace/emberfall_win/Tools/ReferenceAssemblies/UnityEngine",
+  "limitations": [
+    "Registered200 checks only, not all repository test scripts.",
+    "Cached Unity2021 API references and managed doubles; no Unity Editor/import/render or Android package/device validation. Metadata scanners prove static identity validity, not Unity import success."
+  ],
+  "candidateEdits": false,
+  "archiveCreated": false
+}
