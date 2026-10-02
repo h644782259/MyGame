@@ -14,6 +14,11 @@ ROOT=Path(__file__).resolve().parents[1]
 def once(source,old,new):
     assert source.count(old)==1, 'expected unique seam: '+old
     return source.replace(old,new,1)
+def member(source,signature):
+    a=source.index(signature); b=source.index('{',a)+1;depth=1
+    while depth:
+        depth+=(source[b]=='{')-(source[b]=='}');b+=1
+    return source[a:b]
 def main():
     parser=argparse.ArgumentParser();parser.add_argument('dotnet_path',nargs='?');parser.add_argument('--dotnet');args=parser.parse_args()
     dotnet=args.dotnet or args.dotnet_path or os.environ.get('DOTNET','dotnet')
@@ -22,14 +27,16 @@ def main():
         fixture=fixture.replace(declaration,declaration.replace('class ','partial class ').replace('struct ','partial struct '))
     enums=(ROOT/'Assets/Scripts/Core/ChapterProgression.cs').read_text()
     enums='namespace Emberfall{'+''.join(re.findall(r'public enum Chapter(?:Node|Difficulty)\s*\{[^}]*\}',enums))+'}'
-    cases=[('current',None),('no-body-activation','physical hazard grows during warning before active damage'),('no-anchor-reconcile','same attack last anchor break wins over interrupt in both target orders'),('immediate-interrupt','same attack last anchor break wins over interrupt in both target orders'),('old-interrupt-exposure','followup interrupt is recovery not exposure'),('long-followup','followup never chains indefinitely'),('no-followup','hard component must create exactly one full warned followup'),('no-hazard-pause','blocked chapter hazard must preserve clock and health'),('late-owner-cleanup','finished chapter retires hazard at zero delta while blocked')]
+    cases=[('current',None),('defer-normal-interrupt','legacy and normal triggering hit retain immediate 1.35 multiplier; hard heroic defer without vulnerability'),('defer-legacy-interrupt','legacy and normal triggering hit retain immediate 1.35 multiplier; hard heroic defer without vulnerability'),('no-body-activation','physical hazard grows during warning before active damage'),('no-anchor-reconcile','same attack last anchor break wins over interrupt in both target orders'),('immediate-interrupt','same attack last anchor break wins over interrupt in both target orders'),('old-interrupt-exposure','followup interrupt is recovery not exposure'),('long-followup','followup never chains indefinitely'),('no-followup','hard component must create exactly one full warned followup'),('no-hazard-pause','blocked chapter hazard must preserve clock and health'),('late-owner-cleanup','finished chapter retires hazard at zero delta while blocked')]
     with tempfile.TemporaryDirectory(prefix='chapter-combat-') as temporary:
         for title,expected in cases:
             directory=Path(temporary)/title;directory.mkdir()
             (directory/'FixtureMath.cs').write_text(fixture);(directory/'ChapterEnums.cs').write_text(enums)
-            files=['Core/CombatImpactBatch','Core/LargeBossPhaseState','Core/ChapterBossPattern','Core/ArenaPulseRules','Core/CombatSightRules','World/ChapterRoomGeometry','World/WorldTraversal','World/ChapterHazards','World/ChapterHazardGeometry','Combat/LargeExpeditionBoss','Combat/CombatSight','Combat/ThreatVisualStyle']
+            files=['Combat/EnemyControlPolicy','Core/GuardArmorRules','Core/AdventureResultPolicy','Core/CombatVisualBudget','Core/CombatImpactBatch','Core/LargeBossPhaseState','Core/ChapterBossPattern','Core/ArenaPulseRules','Core/CombatSightRules','World/ChapterRoomGeometry','World/WorldTraversal','World/ChapterHazards','World/ChapterHazardGeometry','Combat/LargeExpeditionBoss','Combat/CombatSight','Combat/ThreatVisualStyle']
             for name in files:
                 source=(ROOT/('Assets/Scripts/'+name+'.cs')).read_text()
+                if title=='defer-normal-interrupt' and name=='Combat/LargeExpeditionBoss':source=once(source,'if(chapterConfigured&&chapterDifficulty!=ChapterDifficulty.Normal) CombatImpactBatch.Resolve(ResolveInterrupt);','if(chapterConfigured) CombatImpactBatch.Resolve(ResolveInterrupt);')
+                if title=='defer-legacy-interrupt' and name=='Combat/LargeExpeditionBoss':source=once(source,'if(chapterConfigured&&chapterDifficulty!=ChapterDifficulty.Normal) CombatImpactBatch.Resolve(ResolveInterrupt);\n            else ResolveInterrupt();','CombatImpactBatch.Resolve(ResolveInterrupt);')
                 if title=='no-anchor-reconcile' and name=='Combat/LargeExpeditionBoss':source=once(source,'            ReconcileAnchors();\n            if(State.Phase!=LargeBossPhase.Exposed', '            if(State.Phase!=LargeBossPhase.Exposed')
                 if title=='immediate-interrupt' and name=='Combat/LargeExpeditionBoss':source=once(source,'CombatImpactBatch.Resolve(ResolveInterrupt);','ResolveInterrupt();')
                 if title=='old-interrupt-exposure' and name=='Core/LargeBossPhaseState':source=once(source,'if (chapterFollowup) { followupPending=false;', 'if (false) { followupPending=false;')
@@ -39,7 +46,9 @@ def main():
                 if title=='no-hazard-pause' and name=='World/ChapterHazards':source=once(source,'            if(game.InputBlocked)return;\n','')
                 if title=='late-owner-cleanup' and name=='World/ChapterHazards':source=once(source,'            if(!ValidOwner){Retire();return;}\n            if(game.InputBlocked)return;','            if(game.InputBlocked)return;\n            if(!ValidOwner){Retire();return;}')
                 (directory/(Path(name).name+'.cs')).write_text(source)
-            for name in ['ChapterCombatProductionTests','LargeBossPhaseTests']:(directory/(name+'.cs')).write_text((ROOT/('Tests/'+name+'.cs')).read_text())
+            for name in ['ChapterCombatProductionTests','ChapterCombatProductionAttackFixture','LargeBossPhaseTests']:(directory/(name+'.cs')).write_text((ROOT/('Tests/'+name+'.cs')).read_text())
+            enemy=(ROOT/'Assets/Scripts/Combat/EnemyController.cs').read_text()
+            (directory/'ActualEnemyAttack.cs').write_text('using UnityEngine;namespace Emberfall{public partial class EnemyController{'+member(enemy,'public void TakeDamage(')+member(enemy,'internal bool TrySkillInterrupt(')+'}}')
             (directory/'Program.cs').write_text('System.Console.WriteLine(LargeBossPhaseTests.Run());System.Console.WriteLine(ChapterCombatProductionTests.Run());')
             (directory/'NuGet.Config').write_text('<configuration><packageSources><clear /></packageSources></configuration>')
             project=directory/'Validation.csproj';project.write_text('<Project Sdk="Microsoft.NET.Sdk"><PropertyGroup><TargetFramework>net8.0</TargetFramework><OutputType>Exe</OutputType></PropertyGroup></Project>')
