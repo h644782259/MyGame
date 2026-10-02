@@ -726,6 +726,7 @@ namespace Emberfall
                 : p.level < 2 ? "经验 " + p.xp + " / " + GameBalance.XpToNext(p.level)
                 : p.skillRanks[0] == 0 ? "可用技能点 " + p.skillPoints + " · K"
                 : "收集装备，进入传送门 · T";
+            string growthTitle,growthDetail;if(TryGrowthHudHint(out growthTitle,out growthDetail)){objectiveText=growthTitle;objectiveProgress=growthDetail;}
             float bodyHeight=Mathf.Max(24,Style(15,true,true).CalcHeight(new GUIContent(objectiveText),255));
             string progressText=PlatformText(objectiveProgress);
             float progressHeight=Mathf.Max(18,Style(12,false,true).CalcHeight(new GUIContent(progressText),255));
