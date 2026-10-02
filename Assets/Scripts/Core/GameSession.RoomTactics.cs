@@ -13,8 +13,8 @@ namespace Emberfall
         public bool IsRoomContesting(EnemyController enemy)
         {
             return RoomCaptureActive&&LiveRoomEnemy(enemy)&&RoomTacticalRegion.Contests(
-                CombatFx.Flat(enemy.transform.position-RoomObjectivePoint).sqrMagnitude,enemy.NavigationRadius,
-                WorldTraversal.HasLineOfSight(enemy.transform.position,RoomObjectivePoint));
+                CombatFx.Flat(enemy.transform.position-RoomObjectivePoint).sqrMagnitude,enemy.NavigationRadius,true)&&
+                WorldTraversal.HasLineOfSight(enemy.transform.position,RoomObjectivePoint);
         }
         private static bool LiveRoomEnemy(EnemyController enemy)
         {return enemy!=null&&!enemy.IsDead&&enemy.isActiveAndEnabled&&enemy.gameObject.activeInHierarchy;}
@@ -82,8 +82,8 @@ namespace Emberfall
         public float RoomSupportMultiplier(EnemyController enemy)
         {
             if(!RoomSupplyActive||!LiveRoomEnemy(enemy)||enemy==roomSupplier||enemy.IsBoss)return 1;
-            return RoomTacticalRegion.ReceivesSupport(CombatFx.Flat(enemy.transform.position-roomSupplier.transform.position).sqrMagnitude,
-                WorldTraversal.HasLineOfSight(enemy.transform.position,roomSupplier.transform.position)) ? .7f : 1;
+            return RoomTacticalRegion.ReceivesSupport(CombatFx.Flat(enemy.transform.position-roomSupplier.transform.position).sqrMagnitude,true)&&
+                WorldTraversal.HasLineOfSight(enemy.transform.position,roomSupplier.transform.position) ? .7f : 1;
         }
         public RoomSupportSnapshot RoomSupport
         {
