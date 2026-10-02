@@ -243,7 +243,7 @@ def main():
         for name, test, helpers in [
             ("basic-action-timeline", "BasicActionTimelineTests", ["Core/BasicActionTimeline"]),
             ("weapon-structure", "WeaponStructureTests", ["Core/WeaponStructure"]),
-            ("equipment-attachment", "EquipmentAttachmentTests", ["Core/EquipmentAttachmentRecipe"]),
+            ("equipment-attachment", "EquipmentAttachmentTests", ["Core/EquipmentAttachmentRecipe", "Core/WeaponStructure"]),
             ("progression-goal-layout", "ProgressionGoalLayoutTests", ["UI/MobilePanelLayout", "UI/ProgressionGoalLayout"]),
             ("visual-motion-envelope", "VisualMotionEnvelopeTests", ["Core/VisualMotionEnvelope"]),
             ("environment-light-profile", "EnvironmentLightProfileTests", ["Core/EnvironmentLightProfile"]),
