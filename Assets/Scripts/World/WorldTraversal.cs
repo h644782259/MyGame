@@ -88,6 +88,63 @@ namespace Emberfall
             }
             return true;
         }
+        // The union of these three fans is the convex hull of origin and the face.
+        // Every ray to every point of the face (also under radial animation shrink)
+        // lies in that hull. Exact distances use the same .04 LOS clearance and the
+        // same registered solids; unlike a constant swept disk, no face-width radius
+        // is imposed at the real impact origin. Water is intentionally not a solid.
+        public static bool HasClearVisualTriangle(Vector3 origin,Vector3 a,Vector3 b,Vector3 c)
+        {
+            const double clearance=.04f;
+            double limit=arena-clearance;
+            if(!VisualInsideArena(origin,limit)||!VisualInsideArena(a,limit)||!VisualInsideArena(b,limit)||!VisualInsideArena(c,limit))return false;
+            foreach(Obstacle obstacle in obstacles)
+                if(!VisualFanClear(origin,a,b,obstacle,clearance)||!VisualFanClear(origin,b,c,obstacle,clearance)||!VisualFanClear(origin,c,a,obstacle,clearance))return false;
+            return true;
+        }
+        private static bool VisualInsideArena(Vector3 p,double limit)
+        {return Finite(p.x)&&Finite(p.z)&&(double)p.x*p.x+(double)p.z*p.z<=limit*limit;}
+        private static bool VisualFanClear(Vector3 a,Vector3 b,Vector3 c,Obstacle obstacle,double clearance)
+        {
+            Vector3 center=new Vector3(obstacle.Center.x,0,obstacle.Center.y);
+            if(obstacle.Radius>0)
+            {double radius=obstacle.Radius+clearance;return VisualPointTriangleDistance(center,a,b,c)>=radius*radius;}
+            // Distance to the actual rectangle, not its expanded AABB, preserves
+            // legal near-corner rays while respecting its round .04 clearance.
+            double x0=(double)obstacle.Center.x-obstacle.Half.x,x1=(double)obstacle.Center.x+obstacle.Half.x;
+            double z0=(double)obstacle.Center.y-obstacle.Half.y,z1=(double)obstacle.Center.y+obstacle.Half.y;
+            if(VisualInsideBox(a,x0,x1,z0,z1)||VisualInsideBox(b,x0,x1,z0,z1)||VisualInsideBox(c,x0,x1,z0,z1))return false;
+            Vector3 p=new Vector3((float)x0,0,(float)z0),q=new Vector3((float)x1,0,(float)z0),r=new Vector3((float)x1,0,(float)z1),t=new Vector3((float)x0,0,(float)z1);
+            double distance=System.Math.Min(System.Math.Min(VisualPointTriangleDistance(p,a,b,c),VisualPointTriangleDistance(q,a,b,c)),System.Math.Min(VisualPointTriangleDistance(r,a,b,c),VisualPointTriangleDistance(t,a,b,c)));
+            distance=System.Math.Min(distance,VisualEdgeBoxDistance(a,b,p,q,r,t));
+            distance=System.Math.Min(distance,VisualEdgeBoxDistance(b,c,p,q,r,t));
+            distance=System.Math.Min(distance,VisualEdgeBoxDistance(c,a,p,q,r,t));
+            return distance>clearance*clearance;
+        }
+        private static bool VisualInsideBox(Vector3 p,double x0,double x1,double z0,double z1)
+        {return p.x>=x0&&p.x<=x1&&p.z>=z0&&p.z<=z1;}
+        private static double VisualEdgeBoxDistance(Vector3 a,Vector3 b,Vector3 p,Vector3 q,Vector3 r,Vector3 t)
+        {return System.Math.Min(System.Math.Min(VisualSegmentsDistance(a,b,p,q),VisualSegmentsDistance(a,b,q,r)),System.Math.Min(VisualSegmentsDistance(a,b,r,t),VisualSegmentsDistance(a,b,t,p)));}
+        private static double VisualCross(Vector3 a,Vector3 b,Vector3 p)
+        {return ((double)b.x-a.x)*((double)p.z-a.z)-((double)b.z-a.z)*((double)p.x-a.x);}
+        private static double VisualPointSegmentDistance(Vector3 p,Vector3 a,Vector3 b)
+        {
+            double dx=(double)b.x-a.x,dz=(double)b.z-a.z,len=dx*dx+dz*dz;
+            double t=len==0?0:System.Math.Max(0,System.Math.Min(1,(((double)p.x-a.x)*dx+((double)p.z-a.z)*dz)/len));
+            double x=(double)p.x-a.x-t*dx,z=(double)p.z-a.z-t*dz;return x*x+z*z;
+        }
+        private static double VisualPointTriangleDistance(Vector3 p,Vector3 a,Vector3 b,Vector3 c)
+        {
+            double x=VisualCross(a,b,p),y=VisualCross(b,c,p),z=VisualCross(c,a,p);
+            if(VisualCross(a,b,c)!=0&&((x>=0&&y>=0&&z>=0)||(x<=0&&y<=0&&z<=0)))return 0;
+            return System.Math.Min(VisualPointSegmentDistance(p,a,b),System.Math.Min(VisualPointSegmentDistance(p,b,c),VisualPointSegmentDistance(p,c,a)));
+        }
+        private static double VisualSegmentsDistance(Vector3 a,Vector3 b,Vector3 c,Vector3 d)
+        {
+            double x=VisualCross(a,b,c),y=VisualCross(a,b,d),z=VisualCross(c,d,a),w=VisualCross(c,d,b);
+            if(((x>0&&y<0)||(x<0&&y>0))&&((z>0&&w<0)||(z<0&&w>0)))return 0;
+            return System.Math.Min(System.Math.Min(VisualPointSegmentDistance(a,c,d),VisualPointSegmentDistance(b,c,d)),System.Math.Min(VisualPointSegmentDistance(c,a,b),VisualPointSegmentDistance(d,a,b)));
+        }
         public static bool HasClearVisualFootprint(Vector3 origin, Vector3 point, float radius)
         { return ClearSegment(origin, point, Mathf.Max(.04f,radius), true); }
         public static bool HasLineOfSight(Vector3 from, Vector3 to) { return ClearSegment(from, to, .04f, true); }

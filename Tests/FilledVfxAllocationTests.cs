@@ -98,6 +98,7 @@ namespace Emberfall
         public static Vector3 BoundaryPoint(CombatSightKind kind,Vector3 from,Vector3 to){float t=to.x<=Wall?1:(Wall-from.x)/Mathf.Max(.000001f,to.x-from.x);var v=Vector3.Lerp(from,to,Mathf.Clamp01(t));v.y=0;return v;}
         public static bool Direct(Vector3 from,Vector3 to)=>Area(from,to);
         public static bool Area(Vector3 from,Vector3 to)=>from.x<=Wall&&to.x<=Wall;
+        public static bool VisualTriangle(Vector3 origin,Vector3 a,Vector3 b,Vector3 c){FootprintCalls++;return origin.x+.04f<=Wall&&a.x+.04f<=Wall&&b.x+.04f<=Wall&&c.x+.04f<=Wall;}
         public static bool VisualFootprint(Vector3 from,Vector3 to,float radius){FootprintCalls++;return from.x+radius<=Wall&&to.x+radius<=Wall;}
     }
 }

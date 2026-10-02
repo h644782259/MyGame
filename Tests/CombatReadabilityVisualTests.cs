@@ -39,20 +39,31 @@ public static class CombatReadabilityVisualTests
     {
         foreach(var obj in GameObject.All.ToArray())UnityEngine.Object.Destroy(obj);GameObject.All.Clear();
         Check(CombatVisualLease.Active==0,"destroy releases every global visual lease");
-        CombatSight.Wall=float.PositiveInfinity;EffectPreferences.ReducedEffects=reduced;Application.isMobilePlatform=true;
+        WorldTraversal.Reset(ZoneKind.Dungeon);EffectPreferences.ReducedEffects=reduced;Application.isMobilePlatform=true;
         var hero=new GameObject("hero").AddComponent<PlayerController>();GameSession.Instance=new GameSession{Player=hero,HasStarted=true};return hero;
     }
     static GameObject[] Effects()=>GameObject.All.Where(x=>x.activeInHierarchy&&!x.Destroyed&&x.GetComponent<FilledSkillVfx>()!=null).ToArray();
+ static double RequiredArea(GameObject part,bool horizontal)
+ {
+  var m=part.GetComponent<MeshFilter>().sharedMesh;double sum=0;
+  for(int i=0;i<m.triangles.Length;i+=3){Vector3 a=part.transform.TransformPoint(m.vertices[m.triangles[i]]),b=part.transform.TransformPoint(m.vertices[m.triangles[i+1]]),c=part.transform.TransformPoint(m.vertices[m.triangles[i+2]]);var u=b-a;var v=c-a;double x=(double)u.y*v.z-(double)u.z*v.y,y=(double)u.z*v.x-(double)u.x*v.z,z=(double)u.x*v.y-(double)u.y*v.x;sum+=horizontal?Math.Abs(y)*.5:Math.Sqrt(x*x+y*y+z*z)*.5;}return sum;
+ }
     public static string Run()
     {
         checks=0;
-        foreach(var kind in new[]{FilledVfxKind.Sword,FilledVfxKind.Lightning,FilledVfxKind.Arcane})
+        foreach(var kind in new[]{FilledVfxKind.Ice,FilledVfxKind.Fire,FilledVfxKind.Summon,FilledVfxKind.Sword,FilledVfxKind.Lightning,FilledVfxKind.Arcane})
         {
-            var hero=Reset();CombatSight.Wall=.05f;FilledSkillVfx.Impact(hero,Vector3.zero,4,kind,new Color(1,1,1));
+            var hero=Reset();WorldTraversal.AddBox(Vector3.zero,new Vector2(.2f,6));
+            Vector3 center=CombatSight.GroundPoint(new Vector3(-3,0,0),new Vector3(3,0,0));
+            Check(CombatSight.Direct(new Vector3(-3,0,0),center)&&CombatSight.Area(center,new Vector3(-2,0,0)),"near-wall input must have real cast and damage LOS");
+            FilledSkillVfx.Impact(hero,center,4,kind,new Color(1,1,1));
             var root=Effects()[0];var main=GameObject.All.First(o=>o.name.EndsWith("Primary "+kind)&&!o.Destroyed);
-            Check(root.transform.position.sqrMagnitude==0&&main.transform.localPosition.sqrMagnitude==0,"primary actual impact anchor must not relocate to clear ground");
+            Check((root.transform.position-center).sqrMagnitude==0&&main.transform.localPosition.sqrMagnitude==0,"primary actual impact anchor must not relocate to clear ground");
+            var required=GameObject.All.Where(o=>o.activeInHierarchy&&(o.name.Contains("Primary ")||o.name.Contains("Landing base")||o.name.Contains("Contact flash"))).ToArray();
+            Check(required.Length==3,"all three required shapes must exist before vertex traversal");
+            foreach(var part in required)Check(RequiredArea(part,!part.name.Contains("Primary "))>.001,"EMPTY_REQUIRED_SHAPE: actual primary/contact requires positive area");
             foreach(var mesh in GameObject.All.Where(o=>o.activeInHierarchy&&o.GetComponent<MeshFilter>()!=null))foreach(var vertex in mesh.GetComponent<MeshFilter>().sharedMesh.vertices)
-                Check(mesh.transform.TransformPoint(vertex).x<=.0502f,"production primary/contact/decorative vertices stay behind cover");
+                Check(CombatSight.Area(center,mesh.transform.TransformPoint(vertex)),"production primary/contact/decorative vertices stay behind cover");
         }
 
         for(int rank=1;rank<=3;rank++)
