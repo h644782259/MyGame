@@ -2321,7 +2321,7 @@ namespace Emberfall
                 profile.specialization = ElementalistSpecialization.None;
             profile.mechanicMaterials = Clamp(profile.mechanicMaterials, 0, 999999);
             profile.materialRewardedClears = Clamp(profile.materialRewardedClears, 0, profile.clearedRuns);
-            profile.pendingFirstClearReward = (profile.clearedRuns > 0 || profile.chapterPriorAdventureTier>0 || profile.highestAdventureTier>profile.chapterHighestAdventureTier) && !profile.firstClearRewardClaimed;
+            profile.pendingFirstClearReward = (profile.clearedRuns > 0 || profile.chapterCompletedMask!=0 || profile.chapterPriorAdventureTier>0 || profile.highestAdventureTier>profile.chapterHighestAdventureTier) && !profile.firstClearRewardClaimed;
             profile.pendingChestTier = TierRewardRules.ClampTier(profile.pendingChestTier);
             ChestReward receipt = profile.lastChestReward;
             if (receipt == null || string.IsNullOrWhiteSpace(receipt.id) || receipt.id.Length > 80 ||
