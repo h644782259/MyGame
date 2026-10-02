@@ -35,3 +35,11 @@ assert 'RoomCaptureContested=contested;' in t and 'RoomCaptureInside=Vector3.Dis
 assert "session.IsRoomSupplier(this)" in e and "6米内可见同伴减伤30%" in e
 
 print('PASS: room tactics pause, route, support, mobile objective and shared arrival wiring (source contracts only)')
+
+# Desktop and mobile must both describe the full boss-room completion condition.
+assert 'if(run.Room.Boss)return "击败首领与护卫";' in t
+assert 'session.SpecialAdventure?session.ModeObjectiveStatus' in read('Assets/Scripts/UI/GameUI.cs')
+assert 'return RoomObjectiveStatus;' in read('Assets/Scripts/Core/GameSession.Modes.cs')
+assert 'TacticalObjectiveStatus' in s
+assert '"击败首领与护卫"' in read('Assets/Scripts/UI/RoomObjectivePresentation.cs')
+print('PASS: desktop/mobile boss objective includes required guards (source contracts only)')
