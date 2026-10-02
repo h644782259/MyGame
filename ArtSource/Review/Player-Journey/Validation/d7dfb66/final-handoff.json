@@ -1,0 +1,74 @@
+{
+  "head": "d7dfb66bd1043503c3ae57fd0ef4eb221841546c",
+  "tree": "6ffce9a126fb6cd3d58ac91091a6e99bae37c04f",
+  "defaultJIT": true,
+  "fullSuite": {
+    "passed": true,
+    "passedCount": 198,
+    "totalCount": 198,
+    "startedUtc": "20261002T202417109329Z",
+    "completedUtc": "2026-10-02T20:40:51.449544+00:00",
+    "report": "/workspace/scratch/player-journey-validation/d7dfb66/final-report/report.json",
+    "reportSha256": "91243d9b10420dc2acc794dcda5dd9c69202cfc354cf8ab62976d5efcf604d60",
+    "log": "/workspace/scratch/player-journey-validation/d7dfb66/full.log",
+    "sourceChangedDuringRun": [],
+    "runtimeSourceCount": 256,
+    "allSourceManifestSha256": "acba32af290ea63cd8c5489eb22126e36e877b6dd50162a5d3a75075a0509ffd"
+  },
+  "platformAPI": {
+    "passed": true,
+    "report": "/workspace/scratch/player-journey-validation/d7dfb66/platform-api-report.json",
+    "runtimeParity": true,
+    "runtimeManifestSha256": "f2c717aa5858cc7df8d248a82e3a13627136982146fdf546adf85f50b1e5df52",
+    "platformHeadsAfterRun": [
+      {
+        "head": "d7dfb66bd1043503c3ae57fd0ef4eb221841546c",
+        "tree": "6ffce9a126fb6cd3d58ac91091a6e99bae37c04f",
+        "runtimeAndArtUnchanged": true,
+        "trackedStatus": ""
+      },
+      {
+        "head": "7b0a7f17fbd12bc2896d34c0c1f732ceaf0a1a32",
+        "tree": "062711da2e6c27ae2a0e7c95191af03f4a94d61a",
+        "runtimeAndArtUnchanged": true,
+        "trackedStatus": ""
+      },
+      {
+        "head": "6ec16d8602e59225ea12987da24c141bf0eb7812",
+        "tree": "893a6cf05269f9c835d56a21a323c589dd154e04",
+        "runtimeAndArtUnchanged": true,
+        "trackedStatus": ""
+      }
+    ]
+  },
+  "parityProtection": {
+    "report": "/workspace/scratch/player-journey-validation/d7dfb66/parity-protection.json",
+    "passed": true,
+    "runtimeAndMetaFiles": 516,
+    "artAndPilotAssetFiles": 69,
+    "artManifestSha256": "193242a32f155f1c8e3da53c89953737d33258a1e21275542de20a0335b5d3f4",
+    "platforms": [
+      {
+        "path": "/workspace/emberfall_ios_player_journey",
+        "head": "7b0a7f17fbd12bc2896d34c0c1f732ceaf0a1a32",
+        "roundBase": "20e5cdb91d05d1515f559acb21b0ec07bb40a8d1",
+        "protectedVsRoundBase": 24,
+        "protectedVsPriorOriginalLedger": 24,
+        "syncedPaths": 6
+      },
+      {
+        "path": "/workspace/emberfall_android_player_journey",
+        "head": "6ec16d8602e59225ea12987da24c141bf0eb7812",
+        "roundBase": "134e617944aee99f16aac29b30e984f97bc57c30",
+        "protectedVsRoundBase": 24,
+        "protectedVsPriorOriginalLedger": 24,
+        "syncedPaths": 6
+      }
+    ]
+  },
+  "limitations": [
+    "Registered198 checks only, not all repository test scripts.",
+    "Actual production services and temporary disk persistence with managed JSON/scene/animation boundaries; no real Unity JsonUtility or Unity Editor/import/render, full Player Update, device gameplay or platform package build."
+  ],
+  "candidateEdits": false
+}

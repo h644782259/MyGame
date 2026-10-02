@@ -6,7 +6,9 @@ Frozen candidates: Windows `d7dfb66bd1043503c3ae57fd0ef4eb221841546c`, iOS `7b0a
 
 ## Validation status
 
-The frozen 198-check aggregate is still running at this evidence checkpoint. The scoped author result below is complete; no terminal full-suite claim is made yet.
+The frozen registered aggregate passed **198/198** with default JIT, from 2026-10-02 20:24:17.109329 UTC to 20:40:51.449544 UTC. `sourceChangedDuringRun` is empty. Exact raw logs and the terminal report are under `Validation/d7dfb66/final-report`; report SHA-256 is `91243d9b10420dc2acc794dcda5dd9c69202cfc354cf8ab62976d5efcf604d60`. This covers the registered aggregate, not every standalone script in the repository.
+
+Actual Windows/iOS/Android API compilation passed for all 256 runtime sources using cached Unity 2021.3.33 references. Six changed paths, 516 runtime/meta files and 69 art files match across platforms. Each mobile platform preserves all 24 protected settings/font paths against both this round’s base and the original ledger. Final rehash found unchanged, clean candidate heads. This is API compilation, not a Unity 6 or platform build. `Validation/d7dfb66/final-handoff.json` records the exact commits, trees and manifest hashes.
 
 ## Scoped author run
 

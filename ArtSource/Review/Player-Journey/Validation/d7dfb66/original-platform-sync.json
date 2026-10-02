@@ -1,0 +1,16 @@
+{
+  "sourceHead": "d7dfb66bd1043503c3ae57fd0ef4eb221841546c",
+  "paths": {
+    "Docs/Integrated-Player-Journey.md": "186f458cbc9efb4ffd47fb425f3d2b06ef1a8733a837018511fcbab7992daae3",
+    "Tests/IntegratedBuildJourneyFixture.cs": "037ee261f8ba24db547ed6c92f9fa169c29619e0d8c7c432f3f14cf156cb2017",
+    "Tests/IntegratedJourneyFixture.cs": "054e12c5e857a2a85c50c3a47e1faa36d08814a42527536916680d71443fe747",
+    "Tests/IntegratedJourneyNegativeControls.py": "af5a3ec4b4ef688da323ab9aed187c3e76d6a96d850ec79ee9650ff4c8dcca16",
+    "Tests/IntegratedJourneyTests.py": "744dc1cf341961abd3c63098814357c21d656b319d3864bf3fc2eae9c0b3c9cb",
+    "Tools/cloud-validation.py": "ed29e810d7fc88243c531f8c6ef1fb56179ff5f28d5386cd86328eb507157446"
+  },
+  "targets": [
+    "/workspace/emberfall_ios_player_journey",
+    "/workspace/emberfall_android_player_journey"
+  ],
+  "scope": "six test/document/registration paths only; no runtime, asset or platform file copied"
+}
