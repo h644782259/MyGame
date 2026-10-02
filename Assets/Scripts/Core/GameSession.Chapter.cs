@@ -84,7 +84,7 @@ namespace Emberfall
             catch(System.Exception error){FailChapter("房间 "+(ChapterRoomIndex+1)+" 生成异常："+error.Message);return InDungeon;}
             finally {enteringChapter=false;changingZone=false;}
             if(receipt.Node==ChapterNode.ForestCourt&&receipt.Difficulty==ChapterDifficulty.Hard){forestLineupOwner=Progression.SaveFilePath;previousForestLineup=(seed&2)==0?0:1;}
-            if(SelectedChapterTactic>=0)RunChoices.ChooseChapterTactic(Progression.Profile,receipt.Node,MobileControls.Active,SelectedChapterTactic);
+            if(ChapterRun!=null&&!ChapterRun.Finished&&!ChapterRun.Failed&&SelectedChapterTactic>=0)RunChoices.ChooseChapterTactic(Progression.Profile,receipt.Node,MobileControls.Active,SelectedChapterTactic);
             UpdateTimeScale();Notify(ChapterDefinition.Get(receipt.Node).Story+" · "+ChapterObjectiveStatus);return true;
         }
         private void ResetChapterRun()
