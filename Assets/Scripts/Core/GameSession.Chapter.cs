@@ -89,19 +89,31 @@ namespace Emberfall
             for(int index=0;index<ChapterRun.EnemyCount;index++)
             {
                 bool boss=ChapterRun.Objective==RoomObjective.Boss&&index==0;
-                EnemyKind kind=boss?EnemyKind.Guardian:index==0?EnemyKind.Wisp:index%3==1?EnemyKind.Guardian:index%3==2?EnemyKind.Goblin:EnemyKind.Slime;
+                bool crossfire=ActiveChapterNode==ChapterNode.Redrock&&ActiveChapterDifficulty!=ChapterDifficulty.Normal;
+                EnemyKind kind=crossfire?(index<2?EnemyKind.Wisp:index<4?EnemyKind.Guardian:index==4?EnemyKind.Goblin:EnemyKind.Slime):
+                    boss?EnemyKind.Guardian:index==0?EnemyKind.Wisp:index%3==1?EnemyKind.Guardian:index%3==2?EnemyKind.Goblin:EnemyKind.Slime;
                 Vector3 point;float radius=boss?1.3f:kind==EnemyKind.Guardian?.65f:.5f;
-                if(Enemies.Count>=ChapterRun.EnemyCount||!ChapterRoomGeometry.TrySpawn(chapterPlan,index,occupied,radius,out point)||
+                if(Enemies.Count>=ChapterRun.EnemyCount||!TryChapterSpawn(index,crossfire,occupied,radius,out point)||
                     !WorldTraversal.CanReach(chapterPlan.Entrance,point,radius)||!ChapterRun.Register(ChapterRoomIndex,Player.CombatEpoch,index))
                 {FailChapter("章节敌人生成位置不可达，已安全结束挑战");return;}
                 occupied.Add(point);SpawnEnemy(kind,DungeonEntryLevel,point,boss);var enemy=Enemies[Enemies.Count-1];
                 chapterEnemies.Add(enemy,new ChapterEnemyReceipt{Run=ChapterRun,Room=ChapterRoomIndex,Epoch=Player.CombatEpoch,Index=index});
                 if(index==0&&!boss)chapterSupplier=enemy;
-                if(ActiveChapterNode==ChapterNode.Redrock&&ActiveChapterDifficulty!=ChapterDifficulty.Normal)
-                    enemy.ConfigureEscapePost(EscapeRoomFormation.Role(index),point);
+                if(crossfire)
+                    enemy.ConfigureEscapePost(index==0?EscapeRole.GateSupplier:index==1||index==5?EscapeRole.SideFlanker:index<4?EscapeRole.GateGuard:EscapeRole.Pursuer,point);
                 if(boss)LargeExpeditionBoss.ConfigureChapter(enemy,DungeonTier,ChapterSeed,ActiveChapterDifficulty);
             }
             ChapterHazards.Configure(this,ActiveChapterNode,ActiveChapterDifficulty,ChapterRoomIndex,ChapterSeed,chapterPlan);
+        }
+        private bool TryChapterSpawn(int index,bool crossfire,List<Vector3> occupied,float radius,out Vector3 point)
+        {
+            if(!crossfire)return ChapterRoomGeometry.TrySpawn(chapterPlan,index,occupied,radius,out point);
+            // The hunt target remains receipt index zero. Two existing casters occupy
+            // opposite branches; stone guardians hold the exit rather than chasing across both lanes.
+            if(index==2||index==3)
+                return ChapterRoomGeometry.TrySpawnAt(chapterPlan,new Vector3(index==2?-2:2,0,11),occupied,radius,out point);
+            int slot=index==0?(ChapterRoomIndex==0?0:2):index==1?1:index==4?4:5;
+            return ChapterRoomGeometry.TrySpawn(chapterPlan,slot,occupied,radius,out point);
         }
         private void TickChapterRun()
         {

@@ -11,10 +11,11 @@ def method(file,signature):
         elif text[end]=='}':depth-=1
         end+=1
     return text[start:end]
-core=['GameTypes','ProgressionService','ProgressionService.Chapter','ChapterProgression','ChapterCombatRun','RoomTactics','RoomTacticalRegion','CombatBalance','HubTravelRules','MasteryCoreRuntime','TierRewardRules','TierRewardBand','ProgressionGoalState','AdventureResultPolicy','GameSession.Chapter']
+core=['GameTypes','ProgressionService','ProgressionService.Chapter','ChapterProgression','ChapterCombatRun','RoomTactics','RoomTacticalRegion','CombatBalance','HubTravelRules','MasteryCoreRuntime','TierRewardRules','TierRewardBand','ProgressionGoalState','AdventureResultPolicy','GameSession.Chapter','EscapePostPolicy']
 with tempfile.TemporaryDirectory(prefix='chapter-host-production-') as temp:
     folder=Path(temp)
     for name in core:(folder/(name+'.cs')).write_text((root/'Assets/Scripts/Core'/(name+'.cs')).read_text())
+    (folder/'ChapterRoomGeometry.cs').write_text((root/'Assets/Scripts/World/ChapterRoomGeometry.cs').read_text())
     for name in ['ProgressionTests','ChapterHostFixture']:(folder/(name+'.cs')).write_text((root/'Tests'/(name+'.cs')).read_text())
     methods=[method('Assets/Scripts/Core/GameSession.cs',signature) for signature in ['private bool ChangeZone(bool dungeon)','public bool SaveBeforeLeaving()','private void SpawnEnemy(','public void OnEnemyKilled(']]
     methods.append(method('Assets/Scripts/Core/GameSession.Expedition.cs','private void ResetExpedition('))
@@ -32,7 +33,10 @@ with tempfile.TemporaryDirectory(prefix='chapter-host-production-') as temp:
     command=[dotnet,'run','--project',str(project),'--no-restore','--',str(folder/'saves')]
     subprocess.run(command,env=env,check=True)
     # Compile mutants independently: an unrelated compile error is never a passing negative control.
-    mutants=[('GameSession.Chapter.cs','if(!SaveBeforeLeaving())return false;','', 'entry save failure leaves old world and epoch intact'),
+    mutants=[('GameSession.Chapter.cs','index<2?EnemyKind.Wisp:index<4?EnemyKind.Guardian:index==4?EnemyKind.Goblin:EnemyKind.Slime',
+              'index==0?EnemyKind.Wisp:index%3==1?EnemyKind.Guardian:index%3==2?EnemyKind.Goblin:EnemyKind.Slime',
+              'crossfire roster uses two wisps and two guardians within six-enemy cap'),
+             ('GameSession.Chapter.cs','if(!SaveBeforeLeaving())return false;','', 'entry save failure leaves old world and epoch intact'),
              ('Lifecycle.cs','InDungeon && !ChapterActive && ModeRun==null','InDungeon && ModeRun==null','chapter clear never schedules legacy NextWave or skips capture'),
              ('EnemyStats.cs','Health = MaxHealth;','MaxHealth*=ChapterDefinition.HealthMultiplier(game.ActiveChapterDifficulty);Health = MaxHealth;','chapter difficulty multiplies already tier-scaled stats exactly once')]
     for name,before,after,expected in mutants:
@@ -44,4 +48,4 @@ with tempfile.TemporaryDirectory(prefix='chapter-host-production-') as temp:
         path.write_text(original)
         if result.returncode==0 or 'System.Exception: '+expected not in result.stdout+result.stderr:
             raise AssertionError('mutant failed to reach exact runtime oracle: '+name+'\n'+result.stdout+result.stderr)
-    print('PASS: 3 compiled chapter host mutations rejected by exact runtime assertions')
+    print('PASS: 4 compiled chapter host mutations rejected by exact runtime assertions')
