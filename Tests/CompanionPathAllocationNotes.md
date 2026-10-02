@@ -25,4 +25,4 @@ Run:
 python3 Tests/CompanionPathAllocationTests.py /path/to/dotnet
 ```
 
-No aggregate test runner was changed. Existing actual Forest detour/cache and all-room geometry regressions are also run for this change.
+The aggregate runner registers this as `companion-path-allocation`. Existing actual Forest detour/cache and all-room geometry regressions remain in place.
