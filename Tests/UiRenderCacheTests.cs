@@ -18,7 +18,9 @@ public static class UiRenderCacheTests
         state.SetYaw(380);Check(!state.ShouldRender(true,600),"equivalent yaw does not invalidate");
         state.SetYaw(float.NaN);Check(!state.ShouldRender(true,600),"invalid yaw is ignored");
         state.SetYaw(65);Check(state.ShouldRender(true,600)&&!state.NeedsModel,"yaw only rerenders current model");state.Rendered(600);
-        state.Invalidate();Check(!state.ShouldRender(true,600)&&state.ShouldRender(true,601)&&!state.NeedsModel,"texture loss/resume refreshes texture at next repaint without rebuilding unchanged model");state.Rendered(601);
+        state.Invalidate();Check(!state.ShouldRender(true,600)&&state.ShouldRender(true,601)&&!state.NeedsModel,"resume refreshes texture at next frame without rebuilding unchanged model");state.Rendered(601);
+        state.InvalidateTexture();Check(state.ShouldRender(true,601)&&!state.ShouldRender(false,601)&&!state.NeedsModel,"lost native pixels may repaint again in the same frame but never on layout");state.Rendered(601);
+        state.SetYaw(110);Check(!state.ShouldRender(true,601)&&state.ShouldRender(true,602),"ordinary yaw changes still coalesce after texture recovery");state.Rendered(602);
         int changeFrame=700;
         foreach(Action mutate in new Action[]{()=>weapon.level++,()=>weapon.rarity=Rarity.Legendary,()=>weapon.upgradeLevel++,()=>weapon.mechanicVariant++,()=>weapon.mechanic=EquipmentMechanic.CinderTrail,()=>weapon.id="new-weapon",()=>wings.rarity=Rarity.Legendary,()=>wings.slot=FashionSlot.Weapon,()=>wings.id="new-fashion"})
         {mutate();state.Observe(current());Check(state.NeedsModel&&state.ShouldRender(true,changeFrame),"in-place visual change rebuilds and redraws");state.ModelReady();state.Rendered(changeFrame++);}

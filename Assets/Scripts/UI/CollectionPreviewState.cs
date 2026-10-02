@@ -42,6 +42,8 @@ namespace Emberfall
             if(normalized==Yaw)return;Yaw=normalized;dirty=true;
         }
         public void Invalidate(){dirty=true;}
+        // The old frame reservation belongs to lost pixels, not the new native surface.
+        public void InvalidateTexture(){dirty=true;lastRenderedFrame=-1;}
         public bool ShouldRender(bool repaint,int frame){return repaint&&dirty&&frame!=lastRenderedFrame;}
         public void ModelReady(){NeedsModel=false;}
         public void Rendered(int frame){lastRenderedFrame=frame;dirty=false;}
