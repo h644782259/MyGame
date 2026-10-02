@@ -1,0 +1,75 @@
+{
+  "head": "d1e1606ccddec402862141346f6fefa364f77d87",
+  "tree": "2a3002b917f22aaaf8e7241909596d8b68371930",
+  "defaultJIT": true,
+  "fullSuite": {
+    "passed": true,
+    "passedCount": 196,
+    "totalCount": 196,
+    "startedUtc": "20261002T180542112091Z",
+    "completedUtc": "2026-10-02T18:24:22.481042+00:00",
+    "report": "/workspace/scratch/quality-validation/d1e1606/final-report/report.json",
+    "reportSha256": "1bfff79e6135c8d17543c7d906ada9bfc388a994d69accd0d2b3b06ab0473b39",
+    "log": "/workspace/scratch/quality-validation/d1e1606/full.log",
+    "sourceChangedDuringRun": [],
+    "runtimeSourceCount": 256,
+    "allSourceManifestSha256": "a210bcad6ea80163507450920bf74c2d28d898fe2e9251129c0a9d9cac1d9698"
+  },
+  "platformAPI": {
+    "passed": true,
+    "report": "/workspace/scratch/quality-validation/d1e1606/platform-api-report.json",
+    "runtimeParity": true,
+    "runtimeManifestSha256": "416163a5f3f13fecc45bb5153d7c1bf98f716fca7c93d62ad564c43cf35c06fd",
+    "platformHeadsAfterRun": [
+      {
+        "head": "d1e1606ccddec402862141346f6fefa364f77d87",
+        "tree": "2a3002b917f22aaaf8e7241909596d8b68371930",
+        "runtimeSourceUnchanged": true,
+        "trackedStatus": ""
+      },
+      {
+        "head": "61c5b2527e52f8316630edc8a2e4e5a56b72d1c5",
+        "tree": "54f37ec8b56bec8425b5a7a0afc658497f945ede",
+        "runtimeSourceUnchanged": true,
+        "trackedStatus": ""
+      },
+      {
+        "head": "d0a8b8ee790b8f3e8f6fc9d61711816c15cbbd4c",
+        "tree": "9f31e980ec745ea9b57e213f95c9ae6522fc9d00",
+        "runtimeSourceUnchanged": true,
+        "trackedStatus": ""
+      }
+    ]
+  },
+  "platformProtection": {
+    "sourceHead": "d1e1606ccddec402862141346f6fefa364f77d87",
+    "platforms": [
+      {
+        "path": "/workspace/emberfall_ios_quality_maintenance",
+        "head": "61c5b2527e52f8316630edc8a2e4e5a56b72d1c5",
+        "originalBaseline": "0f3c9d791b9e014f298771194f10eab02a75e797",
+        "protectedVerified": 24,
+        "syncedFilesVerified": 24,
+        "errors": []
+      },
+      {
+        "path": "/workspace/emberfall_android_quality_maintenance",
+        "head": "d0a8b8ee790b8f3e8f6fc9d61711816c15cbbd4c",
+        "originalBaseline": "e94f2914b435f7f0824f643f7401bfeb6863f8b7",
+        "protectedVerified": 24,
+        "syncedFilesVerified": 24,
+        "errors": []
+      }
+    ],
+    "passed": true
+  },
+  "coverageNotes": [
+    "First-room choice and Redrock replay are registered aggregate checks in this run, counted once.",
+    "Five historical source contracts now execute from registered production tests. Optional65 source entry checks were reported separately by parent and are not included in this aggregate count or independently rerun here.",
+    "This is not a claim that all repository Tests scripts pass."
+  ],
+  "limitations": [
+    "Standalone production logic, Unity API doubles, cached Unity2021 reference API compile. No Unity Editor, Unity6 import/render, real JsonUtility, device gameplay or platform package build."
+  ],
+  "candidateEdits": false
+}

@@ -1,0 +1,22 @@
+{
+  "sourceHead": "d1e1606ccddec402862141346f6fefa364f77d87",
+  "platforms": [
+    {
+      "path": "/workspace/emberfall_ios_quality_maintenance",
+      "head": "61c5b2527e52f8316630edc8a2e4e5a56b72d1c5",
+      "originalBaseline": "0f3c9d791b9e014f298771194f10eab02a75e797",
+      "protectedVerified": 24,
+      "syncedFilesVerified": 24,
+      "errors": []
+    },
+    {
+      "path": "/workspace/emberfall_android_quality_maintenance",
+      "head": "d0a8b8ee790b8f3e8f6fc9d61711816c15cbbd4c",
+      "originalBaseline": "e94f2914b435f7f0824f643f7401bfeb6863f8b7",
+      "protectedVerified": 24,
+      "syncedFilesVerified": 24,
+      "errors": []
+    }
+  ],
+  "passed": true
+}
