@@ -60,7 +60,7 @@ dotnet=next((x for x in sys.argv[1:] if not x.startswith('--')),'dotnet')
 legacy_only='--legacy' in sys.argv
 for legacy in ([True] if legacy_only else [False,True]):
  with tempfile.TemporaryDirectory(prefix='inventory-back-') as tmp:
-  source=shell.replace('CLOSE',close.replace(hook,'') if legacy else close)
+  source=shell.replace('CLOSE',close.replace(hook,'') if legacy else close).replace('Time.unscaledTime','UnityEngine.Time.unscaledTime')
   out=Path(tmp);p=cv.write_project(out/'project',[root/'Assets/Scripts/UI/GameUI.MobileInventoryNavigation.cs',root/'Assets/Scripts/UI/MobileCollectionLayout.cs',root/'Assets/Scripts/UI/MobilePanelLayout.cs'],program=source)
   config=out/'NuGet.Config';config.write_text('<configuration><packageSources><clear /></packageSources></configuration>');env=dict(os.environ,DOTNET_CLI_HOME=str(out/'cli'),DOTNET_NOLOGO='1')
   # A compilation error is never accepted as the expected old-behavior failure.
