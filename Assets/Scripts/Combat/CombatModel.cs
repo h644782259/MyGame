@@ -181,7 +181,7 @@ namespace Emberfall
             if (relicKey != equipmentRelicKey)
             {
                 equipmentRelicKey = relicKey;
-                if (equipmentRelic != null) Destroy(equipmentRelic.gameObject);
+                if (equipmentRelic != null) { equipmentRelic.gameObject.SetActive(false); Destroy(equipmentRelic.gameObject); }
                 equipmentRelic = null;
                 if (relic != null) BuildEquipmentRelic(new EquipmentAppearance(relic));
             }
@@ -275,11 +275,11 @@ namespace Emberfall
                 for (int side = -1; side <= 1; side += 2)
                 {
                     if (look.Tier >= 2)
-                        Part("Crystal prong", PrimitiveType.Cube, new Vector3(side * .24f, 1.22f, .03f),
+                        Part("Crystal prong", PrimitiveType.Cube, new Vector3(side * .24f, weaponStructure.StaffCore - .11f, .03f),
                             new Vector3(.09f, .44f + look.Tier * .07f, .1f), look.Metal, equipmentWeapon)
                             .localRotation = Quaternion.Euler(0, 0, -side * 24f);
                     if (look.Tier >= 4)
-                        GlowingPart("Floating shard", PrimitiveType.Sphere, new Vector3(side * .43f, 1.47f, .03f),
+                        GlowingPart("Floating shard", PrimitiveType.Sphere, new Vector3(side * .43f, weaponStructure.StaffCore + .14f, .03f),
                             Vector3.one * .14f, look.Glow, equipmentWeapon);
                 }
                 if (look.HasRunes)
@@ -323,7 +323,7 @@ namespace Emberfall
             if (look.HasAura)
                 for (int side = -1; side <= 1; side += 2)
                     GlowingPart("Weapon aura shard", PrimitiveType.Sphere,
-                        new Vector3(side * .32f, swordRig != null ? .76f : staffRig != null ? 1.48f : 0, .08f),
+                        new Vector3(side * .32f, swordRig != null ? .76f : staffRig != null ? weaponStructure.StaffCore + .15f : 0, .08f),
                         Vector3.one * (look.HasCrown ? .16f : .11f), look.Glow, equipmentWeapon);
         }
 
@@ -373,32 +373,15 @@ namespace Emberfall
         {
             equipmentRelic = GearRoot("Equipped Relic", spine);
             equipmentRelic.localPosition = Vector3.down * 1.12f;
-            float size = .17f + look.Tier * .045f;
-            Part("Relic mount", PrimitiveType.Cylinder, new Vector3(0, 1.65f, .35f),
-                new Vector3(size * 1.7f, .05f, size * 1.7f), look.Metal, equipmentRelic)
-                .localRotation = Quaternion.Euler(90, 0, 0);
-            GlowingPart("Relic gem", PrimitiveType.Sphere, new Vector3(0, 1.65f, .41f),
-                new Vector3(size, size * 1.18f, size * .7f), look.Glow, equipmentRelic);
-            for (int side = -1; side <= 1; side += 2)
+            foreach(var piece in EquipmentAttachmentRecipe.Relic(look.Tier,look.UpgradeRank))
             {
-                if (look.Tier >= 2)
-                    Part("Relic wing", PrimitiveType.Cube, new Vector3(side * (size + .075f), 1.65f, .38f),
-                        new Vector3(.13f + look.Tier * .025f, .075f, .09f), look.Accent, equipmentRelic)
-                        .localRotation = Quaternion.Euler(0, 0, side * 22f);
-                if (look.HasRunes)
-                    GlowingPart("Relic satellite", PrimitiveType.Sphere,
-                        new Vector3(side * (size + .22f), 1.69f, .4f),
-                        Vector3.one * (look.HasCrown ? .13f : .085f), look.Glow, equipmentRelic);
-            }
-            if (look.HasAura)
-                GlowingPart("Relic halo", PrimitiveType.Sphere, new Vector3(0, 1.97f, .36f),
-                    Vector3.one * (look.HasCrown ? .16f : .1f), look.Glow, equipmentRelic);
-            for (int i = 0; i < look.UpgradeRank; i++)
-            {
-                float angle = i * Mathf.PI * 2f / 10f;
-                GlowingPart("Relic forging mark", PrimitiveType.Sphere,
-                    new Vector3(Mathf.Cos(angle) * (size + .12f), 1.65f + Mathf.Sin(angle) * (size + .12f), .42f),
-                    Vector3.one * .055f, look.Glow, equipmentRelic);
+                Vector3 at=new Vector3(piece.X,piece.Y,piece.Z),scale=new Vector3(piece.Width,piece.Height,piece.Depth);
+                Color color=piece.Kind==RelicPartKind.Mount?look.Metal:piece.Kind==RelicPartKind.Wing?look.Accent:look.Glow;
+                bool luminous=piece.Kind==RelicPartKind.Gem||piece.Kind==RelicPartKind.Halo;
+                PrimitiveType shape=piece.Shape==AttachmentShape.Disc?PrimitiveType.Cylinder:piece.Shape==AttachmentShape.Box?PrimitiveType.Cube:PrimitiveType.Sphere;
+                Transform part=luminous?GlowingPart("Relic "+piece.Kind,shape,at,scale,color,equipmentRelic):
+                    Part("Relic "+piece.Kind,shape,at,scale,color,equipmentRelic,piece.Kind==RelicPartKind.Gem?VisualSurface.Crystal:VisualSurface.Metal);
+                part.localRotation=Quaternion.Euler(piece.Shape==AttachmentShape.Disc?90:0,0,piece.Roll);
             }
         }
 
