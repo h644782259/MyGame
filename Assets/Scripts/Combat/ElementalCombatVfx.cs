@@ -8,6 +8,8 @@ namespace Emberfall
 
         public static void Area(Transform parent, float radius, Element element)
         {
+            // The readable field owns its own lease; optional particles must not gate it.
+            ElementalFieldVisual.Spawn(parent, element, radius, false);
             ParticleSystem particles = Create(parent, element == Element.Fire ? "Rising Flames" :
                 element == Element.Poison ? "Poison Bubbles" : "Storm Sparks", element,
                 Mathf.Clamp(radius * radius * 1.8f, 8f, 45f), radius);
@@ -19,7 +21,6 @@ namespace Emberfall
             particles.transform.localPosition = Vector3.up * .16f;
             particles.gameObject.AddComponent<CoveredAreaParticles>();
             particles.Play();
-            ElementalFieldVisual.Spawn(parent, element, radius, false);
         }
 
         public static void OnEnemy(EnemyController enemy, Element element, float duration)
@@ -100,23 +101,28 @@ namespace Emberfall
         {
             if (element == ElementalCombatVfx.Element.Lightning) return;
             bool burning = element == ElementalCombatVfx.Element.Fire;
+            // Siblings under the enemy: retiring a decoration can never retire its main shape.
+            ElementalFieldVisual activeShape = burning ? fireShape : poisonShape;
+            if (activeShape == null)
+            {
+                activeShape = ElementalFieldVisual.Spawn(transform, element, .48f, true);
+                if (activeShape != null) activeShape.transform.localPosition = Vector3.up * height;
+                if (burning) fireShape = activeShape; else poisonShape = activeShape;
+            }
+            if (activeShape != null) activeShape.gameObject.SetActive(true);
+            if (burning) fireUntil = Mathf.Max(fireUntil, Time.time + duration);
+            else poisonUntil = Mathf.Max(poisonUntil, Time.time + duration);
             ParticleSystem particles = burning ? fire : poison;
             if (particles == null)
             {
                 particles = ElementalCombatVfx.Create(transform, burning ? "Burning Body" : "Poisoned Body",
                     element, burning ? 27f : 12f, .35f);
-                if(particles==null)return;
+                if (particles == null) return;
                 particles.transform.localPosition = Vector3.up * height;
-                ElementalFieldVisual shape = ElementalFieldVisual.Spawn(particles.transform, element, .48f, true);
-                if (burning) { fire = particles; fireShape = shape; }
-                else { poison = particles; poisonShape = shape; }
+                if (burning) fire = particles; else poison = particles;
             }
-            if (burning) fireUntil = Mathf.Max(fireUntil, Time.time + duration);
-            else poisonUntil = Mathf.Max(poisonUntil, Time.time + duration);
             particles.gameObject.SetActive(true);
             if (particles.gameObject.activeInHierarchy && !particles.isPlaying) particles.Play();
-            ElementalFieldVisual activeShape = burning ? fireShape : poisonShape;
-            if (activeShape != null) activeShape.gameObject.SetActive(true);
         }
 
         internal void ClearFire()

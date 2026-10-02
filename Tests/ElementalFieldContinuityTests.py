@@ -11,6 +11,8 @@ with tempfile.TemporaryDirectory(prefix='emberfall-field-continuity-') as direct
     temp=Path(directory)
     files=['Assets/Scripts/Combat/ElementalFieldVisual.cs','Assets/Scripts/Core/FilledVfxPlacement.cs',
         'Assets/Scripts/Combat/FilledSkillVfx.cs','Assets/Scripts/Core/FilledVfxRecipes.cs',
+        'Assets/Scripts/Combat/CombatVisualLease.cs','Assets/Scripts/Core/CombatVisualBudget.cs',
+        'Assets/Scripts/Combat/AnchoredImpactMesh.cs',
         'Assets/Scripts/Combat/CoveredAreaParticles.cs','Assets/Scripts/Combat/WeaponVisualLinks.cs',
         'Assets/Scripts/Core/WeaponStructure.cs','Tests/FilledVfxAllocationTests.cs',
         'Tests/WeaponVisualLinkTests.cs','Tests/ElementalFieldPlacementTests.cs','Tests/ElementalFieldContinuityTests.cs']
