@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Security.Cryptography;
 using UnityEditor;
 using UnityEditor.Build;
 using UnityEditor.Build.Reporting;
@@ -69,7 +70,7 @@ namespace Emberfall.Editor
             RequireFile(Path.Combine(module,"SDK","platforms","android-36","android.jar"));
             RequireFile(Path.Combine(module,"SDK","licenses","android-sdk-license"));
             string output=OutputPath();
-            if(File.Exists(output))throw new BuildFailedException("Refusing an existing APK path; use a fresh output so stale binaries cannot pass: "+output);
+            if(File.Exists(output)||File.Exists(output+".build.json"))throw new BuildFailedException("Refusing an existing APK path; use a fresh output so stale binaries cannot pass: "+output);
             Directory.CreateDirectory(Path.GetDirectoryName(output));
             Configure();
             BuildReport report=BuildPipeline.BuildPlayer(new BuildPlayerOptions{
@@ -79,6 +80,7 @@ namespace Emberfall.Editor
             if(report==null||report.summary.result!=BuildResult.Succeeded||!File.Exists(output)||new FileInfo(output).Length==0)
                 throw new BuildFailedException("Android APK build failed; inspect the Unity/Gradle log. No successful artifact claimed.");
             File.WriteAllText(output+".build.json",JsonUtility.ToJson(new Receipt{
+                schemaVersion=1,sha256=Digest(output),
                 unityVersion=Application.unityVersion,applicationId=ApplicationId,minApi=MinimumApi,targetApi=TargetApi,
                 apkPath=output,bytes=new FileInfo(output).Length,utc=DateTime.UtcNow.ToString("o"),
                 result="Unity BuildPipeline succeeded; APK audit/install/device test still required"
@@ -104,8 +106,20 @@ namespace Emberfall.Editor
             string root=Path.GetFullPath(Path.Combine(project,"Builds","Android"))+Path.DirectorySeparatorChar;
             if(!output.StartsWith(root,Application.platform==RuntimePlatform.WindowsEditor?StringComparison.OrdinalIgnoreCase:StringComparison.Ordinal)||Path.GetExtension(output).ToLowerInvariant()!=".apk")
                 throw new BuildFailedException("Output must be an .apk inside this project's Builds/Android directory.");
+            // GetFullPath only normalizes text; reject symlinks/junctions in existing output ancestors.
+            for(string cursor=output;cursor!=null&&!string.Equals(cursor,project,StringComparison.OrdinalIgnoreCase);cursor=Path.GetDirectoryName(cursor))
+            {
+                if((File.Exists(cursor)||Directory.Exists(cursor))&&(File.GetAttributes(cursor)&FileAttributes.ReparsePoint)!=0)
+                    throw new BuildFailedException("Linked Android output paths are not permitted.");
+            }
             return output;
         }
-        [Serializable]sealed class Receipt{public string unityVersion,applicationId,apkPath,utc,result;public int minApi,targetApi;public long bytes;}
+        static string Digest(string path)
+        {
+            using(var algorithm=SHA256.Create())
+            using(var stream=File.OpenRead(path))
+                return BitConverter.ToString(algorithm.ComputeHash(stream)).Replace("-",string.Empty).ToLowerInvariant();
+        }
+        [Serializable]sealed class Receipt{public string unityVersion,applicationId,apkPath,utc,result,sha256;public int schemaVersion,minApi,targetApi;public long bytes;}
     }
 }

@@ -30,15 +30,18 @@ Use the bundled External Tools selections. The Editor entrypoint refuses custom 
 
 ## Commands
 
-From the repository root, with Python 3 and the exact installed Unity executable:
+From the repository root, with Python 3.9+ and the exact installed Unity executable:
 
 ```bash
 python3 Tests/AndroidPlatformTests.py
+python3 Tests/AndroidBuildAuditTests.py
 python3 Tools/Android/preflight.py --unity /path/to/Editor/Unity --report Tests/TestResults/Android/preflight.json
 python3 Tools/Android/build_debug.py --unity /path/to/Editor/Unity
 ```
 
-`UNITY_EDITOR` may replace `--unity`. Preflight exit 2 means blocked; exit 0 means tools present but still unverified. The build wrapper only launches Unity after preflight passes. It creates a unique `Builds/Android/<UTC>-<nonce>/` directory, stores the Unity log and preflight, invokes `Emberfall.Editor.AndroidDevelopmentBuild.BuildDebugApk`, and requires a real nonempty APK plus build receipt. It then checks actual APK package/min/target/debuggable flags using bundled aapt2, ABI/IL2CPP contents, and signature using apksigner verification. Audit exit 0 is **not device acceptance**. Any declared permission causes exit 2 and an explicit review requirement; even normal development-tool permissions are not silently accepted.
+`UNITY_EDITOR` may replace `--unity`. Preflight exit 2 means blocked; exit 0 means tools present but still unverified. The build wrapper only launches Unity after preflight passes. It creates a unique `Builds/Android/<UTC>-<nonce>/` directory, stores the Unity log and preflight, invokes `Emberfall.Editor.AndroidDevelopmentBuild.BuildDebugApk`, and requires a nonempty APK plus a schema-1 build receipt matching the exact Editor version, package, API levels, output path, byte size and SHA-256. Empty/malformed/stale receipts fail before artifact audit. Hash matching checks consistency; it does not independently prove that a binary was produced by Unity. It then checks actual APK package/min/target/debuggable flags using bundled aapt2, ABI/IL2CPP contents, and signature using apksigner verification. Audit exit 0 is **not device acceptance**. Any declared permission causes exit 2 and an explicit review requirement; even normal development-tool permissions are not silently accepted. Every launched build ends with `build-status.json` on handled process/receipt/audit failures or audit completion, recording the stage and exception class or exit code without environment values or signing paths. Process interruption or filesystem failure can prevent this final file; the Unity log remains the primary build diagnostic.
+
+Output descendants under the canonical project root must remain inside `Builds/Android`, with no symlink/junction parent. The Editor entrypoint independently rejects existing reparse-point output ancestors and refuses an existing APK or receipt. The project root may itself resolve through a legitimate workspace link; unrelated system ancestors are not rejected. These checks prevent accidental redirection, not concurrent malicious filesystem races. No cache is deleted or reused as proof of build success; each run has a fresh output directory.
 
 The same Editor entrypoint is exposed at `Emberfall > Android`. Switch to Android first. Prefer the Python wrapper because it performs the complete host dependency checks and post-build audit. No command installs an APK on a device automatically.
 
@@ -50,7 +53,7 @@ An existing SDK licence record is only a presence check, not legal acceptance. V
 
 ## Current evidence and remaining acceptance
 
-The actual host has Linux x86_64 and system OpenJDK 21.0.12.1; **Java 21 is not the required bundled JDK 17**. Unity, Android Build Support, SDK/NDK, adb and Gradle are missing in preflight. No signing material is required or inspected by that preflight. No Editor compile, shader build, IL2CPP link, APK, merged-manifest audit, install, device footage or performance result is claimed. Six Python policy/parser/negative-path/static-branch tests pass; synthetic ZIP fixtures are parser tests only.
+The actual host has Linux x86_64 and system OpenJDK 21.0.12.1; **Java 21 is not the required bundled JDK 17**. Unity, Android Build Support, SDK/NDK, adb and Gradle are missing in preflight. No signing material is required or inspected by that preflight. No Editor compile, shader build, IL2CPP link, APK, merged-manifest audit, install, device footage or performance result is claimed. Six Python policy/parser/negative-path/static-branch tests and nine receipt/output/failure-report tests pass; synthetic APK/ZIP bytes and mocked process results are tests only, never build evidence.
 
 The earlier official Linux Editor URL `https://download.unity3d.com/download_unity/45d8eee7de74/LinuxEditorInstaller/Unity-6000.6.3f1.tar.xz` was rejected by the environment's proxy (CONNECT HTTP 403, curl exit 56). We did not bypass it or retry downloads. Evidence remains in `/workspace/shared/unity-environment/download-head.log`. This is a download blocker, not the old environment's AF_UNIX issue; local socket probes in this machine previously succeeded.
 
