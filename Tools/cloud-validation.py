@@ -297,6 +297,8 @@ def main():
         failed = failed or not passed
         passed = run_check("fading-combat-effect-lifecycle", [[sys.executable, str(ROOT / "Tests/FadingCombatEffectLifecycleTests.py")]], dict(env, DOTNET=dotnet), output, report)
         failed = failed or not passed
+        passed = run_check("production-touch-lifecycle", [[sys.executable, str(ROOT / "Tests/ProductionTouchLifecycleTests.py"), dotnet]], env, output, report)
+        failed = failed or not passed
         if args.compile or args.download_references or args.compile_android:
             try:
                 refs = unity_references(args.download_references)
