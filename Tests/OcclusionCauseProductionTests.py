@@ -8,7 +8,7 @@ def method(signature):
  while depth:
   depth+=(s[end]=='{')-(s[end]=='}');end+=1
  return s[start:end]
-body=method('public static void Advance(Vector3 camera,Vector3 torso')+method('private static bool Protects(')
+body=method('public static void Advance(Vector3 camera,Vector3 torso')+method('private static bool Protects(')+method('private bool HierarchyProtects(')
 prefix='''using System;using System.Collections.Generic;using Emberfall;
 struct Vector3 {public float x,y,z;public Vector3(float a,float b,float c){x=a;y=b;z=c;}}
 struct Bounds {public Vector3 min,max;public void Expand(float f){min=new Vector3(min.x-f/2,min.y-f/2,min.z-f/2);max=new Vector3(max.x+f/2,max.y+f/2,max.z+f/2);}}
@@ -16,7 +16,7 @@ class Renderer {public bool enabled=true;public Bounds bounds;}
 class BuildingOcclusionGroup {public void SetOccluded(bool b){}}
 class CameraOcclusionSurface {
 static List<CameraOcclusionSurface> surfaces=new List<CameraOcclusionSurface>();static HashSet<BuildingOcclusionGroup> hitGroups=new HashSet<BuildingOcclusionGroup>(),admittedGroups=new HashSet<BuildingOcclusionGroup>();static int fadedCount=32;
-Renderer visual;object fade=null;BuildingOcclusionGroup group=null;bool requested,heroRequested,targetRequested;bool CanFade=>true;void SetFade(bool b,float d){}
+Renderer visual;Renderer[] hierarchy=null;Dictionary<object,object> hierarchyFades=new Dictionary<object,object>();int RequiredFadeSlots=>fade==null?1:0;object fade=null;BuildingOcclusionGroup group=null;bool requested,heroRequested,targetRequested;bool CanFade=>true;void SetFade(bool b,float d){}
 public static int LastOccluders,LastHeroOccluders,LastTargetOccluders;
 '''
 test='''public static void Main(){var surface=new CameraOcclusionSurface{visual=new Renderer{bounds=new Bounds{min=new Vector3(4,-1,4),max=new Vector3(6,1,6)}}};surfaces.Add(surface);
