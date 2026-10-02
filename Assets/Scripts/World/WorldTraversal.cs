@@ -8,6 +8,9 @@ namespace Emberfall
     {
         public sealed class ObstacleHandle { internal ObstacleHandle(){} }
         private struct Obstacle { public Vector2 Center, Half; public float Radius; public ObstacleHandle Handle; }
+        // Immutable-in-use search order; private and never returned or written after initialization.
+        private static readonly int[] NeighborX = { -1, 0, 1, -1, 1, -1, 0, 1 };
+        private static readonly int[] NeighborY = { -1, -1, -1, 0, 0, 1, 1, 1 };
         private static readonly List<Obstacle> obstacles = new List<Obstacle>();
         private static readonly Dictionary<int, bool[]> grids = new Dictionary<int, bool[]>();
         private static Vector3[] river;
@@ -293,7 +296,6 @@ namespace Emberfall
             float[] cost = new float[grid.Length]; int[] parent = new int[grid.Length]; bool[] closed = new bool[grid.Length];
             for (int i = 0; i < cost.Length; i++) { cost[i] = float.MaxValue; parent[i] = -1; }
             var queue = new Heap(); cost[start] = 0; queue.Add(start, 0);
-            int[] dx = { -1, 0, 1, -1, 1, -1, 0, 1 }, dy = { -1, -1, -1, 0, 0, 1, 1, 1 };
             while (queue.Count > 0)
             {
                 int node = queue.Pop(); if (closed[node]) continue; closed[node] = true;
@@ -305,11 +307,11 @@ namespace Emberfall
                 int x = node % Side, y = node / Side;
                 for (int i = 0; i < 8; i++)
                 {
-                    int nx = x + dx[i], ny = y + dy[i];
+                    int nx = x + NeighborX[i], ny = y + NeighborY[i];
                     if (nx < 0 || ny < 0 || nx >= Side || ny >= Side) continue;
                     int candidate = ny * Side + nx;
                     if (!grid[candidate] || closed[candidate]) continue;
-                    bool diagonal = dx[i] != 0 && dy[i] != 0;
+                    bool diagonal = NeighborX[i] != 0 && NeighborY[i] != 0;
                     if (diagonal && (!grid[y * Side + nx] || !grid[ny * Side + x])) continue;
                     if (!ClearSegment(Point(node), Point(candidate), radius, false)) continue;
                     float nextCost = cost[node] + (diagonal ? 1.414214f : 1f);

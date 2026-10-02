@@ -349,6 +349,12 @@ def main():
             failed = failed or not passed
         passed = run_check("room-free-seal-host", [[sys.executable,str(ROOT/"Tests/RoomFreeSealHostTests.py"),dotnet]], dict(env,DOTNET=dotnet), output, report)
         failed = failed or not passed
+        for name, script in [("companion-path-allocation", "CompanionPathAllocationTests.py"),
+                             ("combat-review-impact-production", "CombatReviewImpactProductionTests.py"),
+                             ("room-first-choice-production", "RoomFirstChoiceProductionTests.py"),
+                             ("redrock-replay-geometry", "RedrockReplayGeometryTests.py")]:
+            passed = run_check(name, [[sys.executable,str(ROOT/"Tests"/script),dotnet]], dict(env,DOTNET=dotnet), output, report)
+            failed = failed or not passed
         passed = run_check("room-seal-hud-production", [[sys.executable,str(ROOT/"Tests/RoomSealHudProductionTests.py"),dotnet]], dict(env,DOTNET=dotnet), output, report)
         failed = failed or not passed
         passed = run_check("authored-scenery-production", [[sys.executable,str(ROOT/"Tests/AuthoredSceneryProductionTests.py"),dotnet]], dict(env,DOTNET=dotnet), output, report)
