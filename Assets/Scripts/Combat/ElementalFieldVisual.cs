@@ -95,6 +95,8 @@ namespace Emberfall
             float extent=element==ElementalCombatVfx.Element.Poison?.14f:element==ElementalCombatVfx.Element.Fire?.44f:.45f;
             for(int i=0;i<placements.Length;i++)
             {
+                // Retain a still-valid envelope when unrelated cover changes or opens.
+                if(placed[i]&&ClearPlacement(placements[i].x,placements[i].z,extent*placementScales[i]))continue;
                 float angle=i*2.39996f,distance=radius*(.28f+(i%4)*.19f),x,z,fit;
                 placed[i]=FilledVfxPlacement.TryPlace(Mathf.Cos(angle)*distance,Mathf.Sin(angle)*distance,radius,extent,clearPlacement,out x,out z,out fit);
                 placements[i]=new Vector3(x,0,z);placementScales[i]=fit;

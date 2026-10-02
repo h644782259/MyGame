@@ -78,6 +78,25 @@ public static class CollectionRenderLifecycleTests
             Time.frameCount++;Draw(preview);preview.Dispose();
             Check(Live<Material>()==0&&Live<Texture2D>()==0&&Live<RenderTexture>()==0&&Live<Light>()==1,"repeated reopen/close never retains native stand-ins");
         }
+        // Fail both the first and second contact material allocation, including consecutive retries.
+        // The second failure occurs after the first material/quad are already owned by the stage.
+        for(int materialIndex=0;materialIndex<2;materialIndex++)
+        {
+            for(int attempt=0;attempt<3;attempt++)
+            {
+                Time.frameCount++;Material.FailAfterSuccessfulCreates=materialIndex;bool stageFailed=false;
+                try{Draw(preview);}catch(InvalidOperationException error){stageFailed=ReferenceEquals(error,Material.AllocationFailure);}
+                Check(stageFailed,"stage creation preserves the original allocation exception");
+                Check(Live<Material>()==0&&Live<Texture2D>()==0&&Live<RenderTexture>()==0&&Live<Light>()==1,
+                    "failed stage creation releases partial lights, materials and contact texture immediately");
+            }
+            Time.frameCount++;var afterStageFailure=Draw(preview);
+            Check(afterStageFailure!=null&&afterStageFailure.Populated,
+                "next repaint rebuilds and renders after consecutive stage allocation failures");
+            preview.Dispose();preview.Dispose();
+            Check(Live<Material>()==0&&Live<Texture2D>()==0&&Live<RenderTexture>()==0&&Live<Light>()==1,
+                "recovered stage has normal idempotent disposal ownership");
+        }
         UnityEngine.Object.Destroy(world.gameObject);Time.unscaledDeltaTime=0;SystemInfo.SupportedSamples=4;
         return "PASS: "+checks+" production preview lifecycle checks (managed resource fixture, not Unity rendering)";
     }
@@ -143,7 +162,9 @@ namespace UnityEngine
         public void SetPixels(Color[] c){}public void Apply(bool m,bool unreadable){}
     }
     public class Shader:Object{public static Shader Find(string name){return new Shader();}}
-    public class Material:Object{public Color color;public Texture mainTexture;public Material(Shader s){}}
+    public class Material:Object{public Color color;public Texture mainTexture;public static int FailAfterSuccessfulCreates=-1;
+        public static readonly InvalidOperationException AllocationFailure=new InvalidOperationException("simulated material allocation failure");
+        public Material(Shader s){if(FailAfterSuccessfulCreates==0){FailAfterSuccessfulCreates=-1;Destroyed=true;throw AllocationFailure;}if(FailAfterSuccessfulCreates>0)FailAfterSuccessfulCreates--;}}
     public struct RenderTextureDescriptor
     {public int width,height,msaaSamples;public RenderTextureDescriptor(int w,int h,RenderTextureFormat f,int d){width=w;height=h;msaaSamples=1;}}
     public static class SystemInfo{public static int SupportedSamples=4;public static int GetRenderTextureSupportedMSAASampleCount(RenderTextureDescriptor d)=>Math.Min(d.msaaSamples,SupportedSamples);}

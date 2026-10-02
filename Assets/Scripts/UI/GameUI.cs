@@ -1771,6 +1771,7 @@ namespace Emberfall
 
         private void ClosePanel()
         {
+            if(CloseMobileInventoryDetail())return;
             if(CloseMobileSkillDetail())return;
             if(CloseProgressionGoalSurface())return;
             if(CloseBuildPlanSurface())return;
