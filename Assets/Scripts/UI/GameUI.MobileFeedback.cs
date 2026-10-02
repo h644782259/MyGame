@@ -27,6 +27,9 @@ namespace Emberfall
                 Fill(caption,new Color(.035f,.06f,.12f,.65f));
                 Text(caption,state,TouchFont(12),state=="缺能"?new Color(.5f,.72f,1):gold,true,false,TextAnchor.MiddleCenter);
             }
+            var opportunity=session.Player==null?default(CombatOpportunityState):session.Player.SkillOpportunity(skill);
+            if(state.Length==0&&opportunity.Actionable)
+            {Fill(caption,new Color(.055f,.16f,.12f,.95f));Text(caption,opportunity.Caption,TouchFont(10),jade,true,false,TextAnchor.MiddleCenter);}
             string rejected=session.ControlFailure("skill"+skill);
             if(!string.IsNullOrEmpty(rejected))
             {Fill(caption,new Color(.08f,.025f,.015f,.92f));Text(caption,rejected,TouchFont(11),gold,true,false,TextAnchor.MiddleCenter);}

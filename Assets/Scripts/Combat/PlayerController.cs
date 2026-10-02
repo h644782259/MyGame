@@ -675,7 +675,7 @@ namespace Emberfall
             if (CombatReviewEvents.Enabled && !lastMeleeDamagedEnemy) CombatReviewEvents.Emit(basic ? "basicmiss" : "spellmiss",CombatReviewObjectId.Get(this),skill:skillIndex,detail:"melee_release_no_enemy_damage;props_not_counted");
             if (hit && basic) OnBasicAttackHitTarget(firstHitPosition, firstHit, true);
             return hit;
-        
+
             }
             finally {CombatImpactBatch.End();}
         }
@@ -859,7 +859,7 @@ namespace Emberfall
                 enemy.TakeDamage(amount, Vector3.zero, 0, final?.3f:0, critical:direct.IsCritical);
                 if(burnSettlement!=null&&burnSettlement.Apply())RecordBurnCash(castId,impactEpoch,enemy.transform.position);
             }
-        
+
             }
             finally {CombatImpactBatch.End();}
         }
@@ -969,7 +969,7 @@ namespace Emberfall
                 Vector3 delta = CombatFx.Flat(enemy.transform.position - at);
                 if (delta.magnitude <= radius + (enemy.IsBoss ? .85f : .4f) + enemy.HitFootprintBonus && CombatSight.Area(at,enemy.transform.position)) { var impact=volley==null?damage:volley.Apply(enemy,damage,true);if(impact.Amount<=0)continue;RegisterSkillHit(castId);ApplySpellDodgeBoon(enemy);enemy.TakeDamage(impact.Amount,delta.normalized,knockback,stun,critical:impact.IsCritical); }
             }
-        
+
             }
             finally {CombatImpactBatch.End();}
         }
@@ -1101,17 +1101,8 @@ namespace Emberfall
         public bool CanShatterNow(int skill=1)
         {
             if(HeroClass!=HeroClass.Arcanist||Specialization==ElementalistSpecialization.Burn||skill!=1||!SkillTargetingReady(skill))return false;
-            Vector3 point=aimPoint;EnemyController selected;
-            if(targeting!=null&&targeting.IsTargeting)
-            {if(targeting.TargetedSkillIndex!=skill)return false;point=targeting.TargetPoint;}
-            else if(MobileControls.Active)ResolveMobileSkillAim(skill,out selected,out point);
-            float range=GameBalance.SkillRangeMultiplier(session.Progression.Profile.skillRanks[skill]);
-            Vector3 center=ResolveSkillGroundTarget(point,range);float radius=3f*range;
-            foreach(var enemy in session.Enemies)
-                if(ValidAimTarget(enemy)&&enemy.StatusEffects!=null&&enemy.StatusEffects.HasFrostMark&&
-                    CombatFx.Flat(enemy.transform.position-center).magnitude<=radius+(enemy.IsBoss?.85f:.4f)+enemy.HitFootprintBonus&&
-                    CombatSight.Area(center,enemy.transform.position))return true;
-            return false;
+            if(!MobilePinnedActionAllowed(skill,false))return false;
+            return ElementalOpportunityRemaining(skill,CombatOpportunityKind.Shatter)>0;
         }
 
         internal bool CanBeginSkillTargeting(int skill)

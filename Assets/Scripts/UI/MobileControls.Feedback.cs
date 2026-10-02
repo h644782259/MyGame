@@ -31,6 +31,7 @@ namespace Emberfall
             if(dodgeState.Length>0)LabelControl(Dodge,hero.DodgeCooldown>.01f?hero.DodgeCooldown.ToString("0.0"):dodgeState,true);
             string failure=session.ControlFailure("potion");if(!string.IsNullOrEmpty(failure))LabelControl(Potion,failure,true);
             else if(potionState=="满血")LabelControl(Potion,potionState,true);
+            var opportunity=hero.BasicOpportunity();if(opportunity.Actionable)LabelControl(Attack,opportunity.Caption,true);
             failure=session.ControlFailure("attack");if(!string.IsNullOrEmpty(failure))LabelControl(Attack,failure,true);
             var pinned=hero.MobilePinnedTarget;
             if(pinned!=null&&Camera.main!=null)
