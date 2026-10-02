@@ -25,6 +25,8 @@ namespace Emberfall
         private Vector3 sideEventPosition = new Vector3(12,0,-3);
         private string lastDamageSource = "未记录";
         private float lastDamageAmount, lastInterruptAt = -10;
+        private float runDamageTaken,runHealingReceived;
+        public void RecordActualHealing(float amount){if(InDungeon&&HasStarted&&!IsDead&&amount>0&&!float.IsNaN(amount)&&!float.IsInfinity(amount))runHealingReceived+=amount;}
         private bool objectiveHealedThisWave, sideEventStarted;
         private GameObject sideCrystal;
 
@@ -47,6 +49,7 @@ namespace Emberfall
             ClearDungeonSettlement();
             if(!enteringChapter)ResetChapterRun();
             RunChoices.Reset(); reinforcementQueue.Clear(); nextReinforcementAt=0; DungeonSelectionOpen = false; AbandonSideEvent();
+            runDamageTaken=runHealingReceived=0;
             combatActions.Clear(); lastDamageSource = "未记录"; lastDamageAmount = 0; lastInterruptAt = -10; recapGoldLost = 0;
             if (dungeon)
             {
@@ -107,7 +110,8 @@ namespace Emberfall
         }
         public void RecordIncomingDamage(string source, float amount)
         {
-            if (amount <= 0) return;
+            if (amount <= 0||float.IsNaN(amount)||float.IsInfinity(amount)) return;
+            if(InDungeon)runDamageTaken+=amount;
             lastDamageSource = source; lastDamageAmount = amount;
             // Death may be signalled inside TakeDamage before this telemetry callback.
             if (IsDead) LastRunSummary = BuildRunSummary(false);
@@ -142,6 +146,10 @@ namespace Emberfall
         private float nextSideRewardRetry;
         private bool sideEventOfferShown;
         private object SideEventContext {get{return RoomChainRun==null?(object)Player:RoomChainRun.Room;}}
+        public bool IsSideEventEnemy(EnemyController enemy)
+        {return enemy!=null&&!enemy.IsDead&&enemy.gameObject.activeInHierarchy&&sideEventRun!=null&&sideEventRun.Contains(enemy,SideEventContext,Player,Player==null?-1:Player.CombatEpoch,HasStarted&&InDungeon&&!IsDead&&!CombatEnded);}
+        public int SideEventEnemiesRemaining
+        {get{int count=0;foreach(var enemy in sideEventEnemies)if(IsSideEventEnemy(enemy))count++;return count;}}
         public bool SideEventRewardPending {get{return pendingSideRewards.Count>0;}}
         private void AbandonSideEvent()
         {
@@ -216,6 +224,7 @@ namespace Emberfall
                 sideEventEnemies.Clear();sideEventRun.Abandon();sideEventRun=null;
                 Notify("晶核唤醒失败，可稍后重试："+error.Message);return false;
             }
+            foreach(var enemy in sideEventEnemies)SideEventEnemyMarker.Attach(enemy,this);
             sideEventStarted = true;
             if (sideCrystal != null) { Destroy(sideCrystal); sideCrystal = null; }
             Notify("晶核支线2敌 · 全灭得1材料+补给 · 北门已开可放弃"); return true;

@@ -4,6 +4,15 @@ using System.Collections.ObjectModel;
 
 namespace Emberfall
 {
+    public sealed class RunFailureEvidence
+    {
+        public readonly float DamageTaken,HealingReceived;
+        public readonly int Room;
+        public readonly string Objective;
+        public RunFailureEvidence(float damage,float healing,int room,string objective)
+        {DamageTaken=Finite(damage);HealingReceived=Finite(healing);Room=Math.Max(0,room);Objective=objective??"";}
+        private static float Finite(float value){return float.IsNaN(value)||float.IsInfinity(value)?0:Math.Max(0,value);}
+    }
     public sealed class RunRecapSnapshot
     {
         public readonly bool Won, InDungeon, Challenge, PendingChest, FirstClearChoice;
@@ -11,14 +20,16 @@ namespace Emberfall
         public readonly string LastDamageSource, ModeName, FailureReason;
         public readonly int RewardGold, RewardExperience, RewardMaterials;
         public readonly float LastDamageAmount;
+        public readonly RunFailureEvidence Evidence;
         public readonly ReadOnlyCollection<KeyValuePair<string,int>> Actions;
         public readonly ReadOnlyCollection<string> Mechanics, Blessings;
         public RunRecapSnapshot(bool won, bool dungeon, bool challenge, int tier, int wave, int totalWaves, int seed,
             int materials, int exchangeCost, string damageSource, float damageAmount,
             IEnumerable<KeyValuePair<string,int>> actions, IEnumerable<string> mechanics, IEnumerable<string> blessings,
             bool pendingChest, bool firstClearChoice, int goldLost = 0, string modeName = null, string failureReason = null,
-            int rewardGold = 0, int rewardExperience = 0, int rewardMaterials = 0)
+            int rewardGold = 0, int rewardExperience = 0, int rewardMaterials = 0,RunFailureEvidence evidence=null)
         {
+            Evidence=evidence;
             Won=won; InDungeon=dungeon; Challenge=challenge; Tier=Math.Max(1,tier);
             TotalWaves=Math.Max(1,totalWaves); Wave=Math.Max(0,Math.Min(TotalWaves,wave)); Seed=seed;
             Materials=Math.Max(0,materials); ExchangeCost=Math.Max(1,exchangeCost); GoldLost=Math.Max(0,goldLost);
@@ -39,7 +50,7 @@ namespace Emberfall
         public readonly KeyValuePair<string,int>[] Metrics, Rewards;
         public readonly string[] ExtraActions, Mechanics, Blessings;
         public readonly string Tip, FailureLabel;
-        public bool HasFailureBanner { get { return FailureLabel.Length>0&&Snapshot.FailureReason!="PlayerDefeated"; } }
+        public bool HasFailureBanner { get { return FailureLabel.Length>0&&Snapshot.FailureReason!="PlayerDefeated"&&Snapshot.FailureReason!="Death"; } }
         public bool HasDamage { get { return !Snapshot.Won && !HasFailureBanner && Snapshot.LastDamageAmount>0 && !string.IsNullOrWhiteSpace(Snapshot.LastDamageSource) && Snapshot.LastDamageSource!="未记录"; } }
         public bool HasProgress { get { return Snapshot.Materials>0 || Snapshot.PendingChest || Snapshot.FirstClearChoice || Snapshot.GoldLost>0 || Rewards.Length>0; } }
         public float ExchangeProgress { get { return Math.Min(1f,Snapshot.Materials/(float)Snapshot.ExchangeCost); } }
@@ -47,6 +58,7 @@ namespace Emberfall
         {
             Snapshot=snapshot??throw new ArgumentNullException(nameof(snapshot));
             FailureLabel=snapshot.Won?"":FailureText(snapshot.FailureReason);
+            if(FailureLabel.Length>0&&snapshot.Evidence!=null&&snapshot.Evidence.Room>0)FailureLabel+=" · 第 "+snapshot.Evidence.Room+" 房/阶段";
             var rewards=new List<KeyValuePair<string,int>>();
             if(snapshot.RewardGold>0)rewards.Add(new KeyValuePair<string,int>("金币",snapshot.RewardGold));
             if(snapshot.RewardExperience>0)rewards.Add(new KeyValuePair<string,int>("经验",snapshot.RewardExperience));
@@ -79,9 +91,13 @@ namespace Emberfall
         }
         private static string ChooseTip(RunRecapSnapshot snapshot)
         {
-            if(snapshot.FailureReason=="TimeExpired")return snapshot.ModeName.Contains("守望")?"留在中心占领圈，先清理圈边敌人":"减少阶段间空档，优先清理远程敌人";
+            if(snapshot.FailureReason=="GenerationOrPathFailure")return "本次路线或生成异常；返回营地重新进入，不必更换配装";
+            if((snapshot.FailureReason=="Timeout"||snapshot.FailureReason=="TimeExpired")&&snapshot.Evidence!=null&&snapshot.Evidence.Objective.Length>0)return "时限结束时："+snapshot.Evidence.Objective+"；优先推进该目标";
+            if(snapshot.FailureReason=="TimeExpired"||snapshot.FailureReason=="Timeout")return snapshot.ModeName.Contains("守望")?"留在中心占领圈，先清理圈边敌人":"减少阶段间空档，优先清理远程敌人";
             if(snapshot.FailureReason=="SpawnBlocked")return "回营重新进入，生成新的来袭位置";
             if(snapshot.FailureReason=="Abandoned")return "";
+            if(snapshot.Evidence!=null&&snapshot.Evidence.DamageTaken>0&&snapshot.Evidence.HealingReceived<=0&&snapshot.LastDamageAmount>0)
+                return "本局实际受伤 "+snapshot.Evidence.DamageTaken.ToString("0")+"，未记录有效治疗；受伤后留意治疗机会";
             int dodge=0;
             foreach(var action in snapshot.Actions)if(action.Key=="完美闪避")dodge=action.Value;
             if(snapshot.LastDamageSource.Contains("弹幕")||snapshot.LastDamageSource.Contains("魔灵"))return "遇到远程攻击，横向闪避离开弹道";
@@ -92,8 +108,8 @@ namespace Emberfall
         {
             switch(reason)
             {
-                case "TimeExpired":return "时限已到";case "SpawnBlocked":return "来袭位置受阻";
-                case "PlayerDefeated":return "角色倒下";case "Abandoned":return "已结束挑战";
+                case "Timeout":case "TimeExpired":return "时限已到";case "GenerationOrPathFailure":return "路线或生成异常";case "SpawnBlocked":return "来袭位置受阻";
+                case "Death":case "PlayerDefeated":return "角色倒下";case "Abandoned":return "已结束挑战";
                 case "":case "None":return "";default:return reason;
             }
         }
