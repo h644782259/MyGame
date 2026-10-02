@@ -29,7 +29,7 @@ namespace Emberfall
                 var run=RoomChainRun;
                 if(run.DoorUnlocked)return "北门已开 · 可撤离或留下获取击杀收益";
                 if(run.Room.Interlude)return "选择星泉祝福";
-                if(run.Room.Boss)return "击败王座守卫";
+                if(run.Room.Boss)return "击败首领与护卫";
                 if(run.Room.Objective==RoomObjective.Hunt)return "击败金环供能魔灵 · 切断附近敌人护援";
                 return (run.Room.Objective==RoomObjective.Purify?"净化 "+run.Seals+"/2 · ":"突围 · ")+"站入光环 "+run.Progress.ToString("0.0")+"/"+(run.Room.Objective==RoomObjective.Purify?"3":"4")+"秒 · 敌人靠近暂停";
             }
