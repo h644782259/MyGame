@@ -144,6 +144,7 @@ namespace Emberfall
         private PlayerController owner;
         private PlayerController playerGeneration;
         private SummonedCompanion companionSource;
+        private bool empoweredCompanionShot;
         private Vector3 direction;
         private float speed, radius, age, lifetime, explosionRadius;
         private CombatDamage damage, explosionDamage;
@@ -178,6 +179,7 @@ namespace Emberfall
             projectile.pierce = piercing;
             projectile.basicAttack = basic;
             projectile.homingTarget = tracking; projectile.companionSource = companionSource;
+            projectile.empoweredCompanionShot=companionSource!=null&&companionSource.EmpoweredAttackActive;
             projectile.arrowShape = arrow;
             projectile.explosionDamage = blastDamage;
             projectile.explosionRadius = blastRadius;
@@ -382,7 +384,7 @@ namespace Emberfall
                         enemy.StatusEffects.Mark(4f, impactMarkStrength);
                     if(impact.Amount>0){if(!basicAttack&&companionSource==null)owner.RegisterSkillHit(castId);enemy.TakeDamage(owner.ResolveSkillImpact(enemy, skillIndex, castId, impact.Amount, impact.IsCritical, impact.CriticalMultiplier), direction, .18f, critical:impact.IsCritical);}
                     if (CombatReviewEvents.Enabled) CombatReviewEvents.Emit("projectilehit",CombatReviewObjectId.Get(owner),CombatReviewObjectId.Get(enemy),Mathf.Max(0,healthBefore-enemy.Health),skillIndex,CombatReviewObjectId.Get(this).ToString());
-                    if (companionSource != null) companionSource.OnConfirmedHit(enemy);
+                    if (companionSource != null) {companionSource.OnConfirmedHit(enemy);companionSource.RecordEmpoweredHit(enemy,Mathf.Max(0,healthBefore-enemy.Health),empoweredCompanionShot);}
                     CombatFx.Ring(hitPosition, .7f, color, .2f);
                     if (basicAttack && !energyAwarded)
                     {
