@@ -7,6 +7,8 @@ with tempfile.TemporaryDirectory(prefix='class-tier-') as directory:
  p=Path(directory)
  for folder,names in [('Core',['WeaponStructure','EquipmentAppearance','EquipmentAttachmentRecipe','CostumeRecipes','CostumeLayers']),('Combat',['CombatModel.Costumes','CombatModel.CostumeLayers','CombatModel.WeaponRig','CostumeMeshLibrary','ProceduralVisuals','VisualMeshRecipes'])]:
   for n in names:(p/(n+'.cs')).write_text((root/'Assets/Scripts'/folder/(n+'.cs')).read_text())
+ # Same explicit disabled optional-visual boundary as the shared builder suite.
+ (p/'OptionalPilotBoundary.cs').write_text((root/'Tests/EquipmentCompositionPilotBoundary.cs').read_text())
  (p/'Model.cs').write_text(body);(p/'Types.cs').write_text(data)
  (p/'Fixture.cs').write_text((root/'Tests/EquipmentCompositionProductionTests.Fixture.cs').read_text());(p/'Tests.cs').write_text((root/'Tests/WeaponFashionStructureProductionTests.cs').read_text())
  project=p/'Test.csproj';project.write_text('<Project Sdk="Microsoft.NET.Sdk"><PropertyGroup><TargetFramework>net8.0</TargetFramework><OutputType>Exe</OutputType><StartupObject>WeaponFashionStructureProductionTests</StartupObject><NoWarn>0649;0169</NoWarn></PropertyGroup></Project>');(p/'NuGet.Config').write_text('<configuration><packageSources><clear /></packageSources></configuration>')
