@@ -1,0 +1,93 @@
+{
+  "sourceBlend": "/workspace/emberfall_quality_integration/ArtSource/BlenderPilot/Emberfall-Pilot-Vanguard.blend",
+  "sourceBlendSha256": "40cd32d40e0f715c953fba556623e2c62e409724721f5b954a84ab98818d7c6b",
+  "motionSha256": "b3db3cb00649dedbe45eff3628a7fe7d98e80ed9b2ed347f581708cab78c7761",
+  "fps": 24,
+  "duration": 6,
+  "resolution": [
+    800,
+    600
+  ],
+  "cameraOffset": [
+    0,
+    15.200000729688314,
+    17.80000042214634
+  ],
+  "targetOffset": [
+    0,
+    0,
+    0.7
+  ],
+  "orthoScale": null,
+  "verticalFov": 48,
+  "defaultDistance": 19,
+  "distanceScale": 1.2041595,
+  "pitch": 48.36646,
+  "lensMm": 35.936588287353516,
+  "externalOwnerVelocityBlender": [
+    0,
+    -6,
+    0
+  ],
+  "rootMotion": false,
+  "material": "matched gray .42,.44,.47 / roughness .68 / metal0 / specular0",
+  "lighting": "three direct suns 2.5/.75/1.6, zero angular size, max bounces0",
+  "cyclesSamples": 64,
+  "cpuThreads": 1,
+  "OIDN": false,
+  "contacts": [
+    1,
+    1.4666667,
+    1.9333334,
+    2.4,
+    2.8666668,
+    3.3333335,
+    3.8000002,
+    4.266667,
+    4.7333336
+  ],
+  "rig": {
+    "Root": null,
+    "Pelvis": "Root",
+    "Spine": "Pelvis",
+    "Head": "Spine",
+    "Mantle": "Spine",
+    "UpperArm.L": "Spine",
+    "Forearm.L": "UpperArm.L",
+    "Hand.L": "Forearm.L",
+    "UpperArm.R": "Spine",
+    "Forearm.R": "UpperArm.R",
+    "Hand.R": "Forearm.R",
+    "Thigh.L": "Pelvis",
+    "Shin.L": "Thigh.L",
+    "Foot.L": "Shin.L",
+    "Tabard.L": "Pelvis",
+    "Thigh.R": "Pelvis",
+    "Shin.R": "Thigh.R",
+    "Foot.R": "Shin.R",
+    "Tabard.R": "Pelvis"
+  },
+  "clips": {
+    "Pilot_Basic": [
+      0.0,
+      25.0
+    ],
+    "Pilot_Hit": [
+      0.0,
+      20.0
+    ],
+    "Pilot_Idle": [
+      0.0,
+      100.0
+    ],
+    "Pilot_Move": [
+      0.0,
+      40.0
+    ],
+    "Pilot_Skill": [
+      0.0,
+      50.0
+    ]
+  },
+  "boundary": "Native Blender authored Move; managed production procedural pose/geometry during moving basic. Unity native sampler/shader/VFX/physics not represented. Contact input scenario reproduces timing; no enemies/damage claims."
+}

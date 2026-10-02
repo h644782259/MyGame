@@ -1,0 +1,31 @@
+{
+  "motion.json": {
+    "byteExact": true,
+    "original": "b3db3cb00649dedbe45eff3628a7fe7d98e80ed9b2ed347f581708cab78c7761",
+    "reproduced": "b3db3cb00649dedbe45eff3628a7fe7d98e80ed9b2ed347f581708cab78c7761"
+  },
+  "candidate-samples.json": {
+    "byteExact": true,
+    "original": "4f2c774f4bc8ce99179e61d4bbb9c00813ad63b2c6fef4ac9ef8acf63d18d3bd",
+    "reproduced": "4f2c774f4bc8ce99179e61d4bbb9c00813ad63b2c6fef4ac9ef8acf63d18d3bd"
+  },
+  "candidate-stop-samples.json": {
+    "byteExact": true,
+    "original": "e516635352e55c1a6d7d8e99ba218807e86837c4350b14af2e6f3e6bff3be4f8",
+    "reproduced": "e516635352e55c1a6d7d8e99ba218807e86837c4350b14af2e6f3e6bff3be4f8"
+  },
+  "combat-frames/0024.png": {
+    "pixelsExact": true,
+    "pixelSha256": "aef63485930e8b5994c5e790af4dd83f587f346242f98d2aec6d24e7fea84763",
+    "originalFileSha256": "04a47c64c65849eef7cfa5a617082824e613a856de710ba32e680deaa3e94d1f",
+    "reproducedFileSha256": "b9b91093730cfaec17ddb4ef3b33f631ca592b2db5767f0ceb9472af1c6d880b",
+    "note": "PNG file hashes differ because Blender embeds Date/RenderTime metadata; all RGB pixels match exactly"
+  },
+  "candidate-combat-frames/0024.png": {
+    "pixelsExact": true,
+    "pixelSha256": "c0ff60a983e5c23c48ee090e49dfec2dbe8df48da76e65668527f308c0335634",
+    "originalFileSha256": "e8f1d6685549b824ccfbb5620b4a44959efd19cac5f81df84d235e36c8b23436",
+    "reproducedFileSha256": "5d9b9192beda01cd045f8b7187b247849bd0f5c134ba0c12d6ab67729019c1ca",
+    "note": "PNG file hashes differ because Blender embeds Date/RenderTime metadata; all RGB pixels match exactly"
+  }
+}

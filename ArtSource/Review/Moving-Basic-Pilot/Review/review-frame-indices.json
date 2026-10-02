@@ -1,0 +1,130 @@
+[
+  {
+    "index": 23,
+    "time": 0.9583334,
+    "phase": 2.5136368,
+    "speed": 0.9999909,
+    "progress": 1,
+    "pilot": true
+  },
+  {
+    "index": 24,
+    "time": 1,
+    "phase": 3.1636374,
+    "speed": 0.9999945,
+    "progress": 0.52,
+    "pilot": false
+  },
+  {
+    "index": 25,
+    "time": 1.0416667,
+    "phase": 3.813638,
+    "speed": 0.99999666,
+    "progress": 0.56347823,
+    "pilot": false
+  },
+  {
+    "index": 28,
+    "time": 1.1666667,
+    "phase": 5.7636395,
+    "speed": 0.9999992,
+    "progress": 0.6939129,
+    "pilot": false
+  },
+  {
+    "index": 29,
+    "time": 1.2083334,
+    "phase": 0.13045444,
+    "speed": 0.9999995,
+    "progress": 0.7373911,
+    "pilot": false
+  },
+  {
+    "index": 30,
+    "time": 1.2500001,
+    "phase": 0.78045446,
+    "speed": 0.9999997,
+    "progress": 0.7808693,
+    "pilot": false
+  },
+  {
+    "index": 31,
+    "time": 1.2916667,
+    "phase": 1.4304545,
+    "speed": 0.9999997,
+    "progress": 0.82434756,
+    "pilot": false
+  },
+  {
+    "index": 32,
+    "time": 1.3333334,
+    "phase": 2.0804546,
+    "speed": 0.9999997,
+    "progress": 0.86782575,
+    "pilot": false
+  },
+  {
+    "index": 33,
+    "time": 1.3750001,
+    "phase": 2.7304552,
+    "speed": 0.9999997,
+    "progress": 0.911304,
+    "pilot": false
+  },
+  {
+    "index": 34,
+    "time": 1.4166667,
+    "phase": 3.3804557,
+    "speed": 0.9999997,
+    "progress": 0.9547822,
+    "pilot": false
+  },
+  {
+    "index": 35,
+    "time": 1.4583334,
+    "phase": 4.030456,
+    "speed": 0.9999997,
+    "progress": 0.99826044,
+    "pilot": false
+  },
+  {
+    "index": 36,
+    "time": 1.5000001,
+    "phase": 4.6804566,
+    "speed": 0.9999997,
+    "progress": 0.55478257,
+    "pilot": false
+  },
+  {
+    "index": 123,
+    "time": 5.1250005,
+    "phase": 4.68182,
+    "speed": 0.9999997,
+    "progress": 0.92869526,
+    "pilot": false
+  },
+  {
+    "index": 124,
+    "time": 5.166667,
+    "phase": 5.3318205,
+    "speed": 0.9999997,
+    "progress": 0.9721735,
+    "pilot": false
+  },
+  {
+    "index": 125,
+    "time": 5.2083335,
+    "phase": 5.981821,
+    "speed": 0.9999997,
+    "progress": 1,
+    "pilot": true
+  },
+  {
+    "index": 126,
+    "time": 5.2500005,
+    "phase": 0.34863594,
+    "speed": 0.9999997,
+    "progress": 1,
+    "pilot": true
+  }
+]

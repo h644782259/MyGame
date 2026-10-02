@@ -1,0 +1,13 @@
+Traceback (most recent call last):
+  File "/workspace/scratch/vanguard-moving-basic-baseline/validate_layered_fbx.py", line 27, in <module>
+    assert meshError<.0001,meshError
+           ^^^^^^^^^^^^^^^
+AssertionError: 0.0006716488860547543
+
+Error: script failed, file: '/workspace/scratch/vanguard-moving-basic-baseline/validate_layered_fbx.py', exiting.
+Extensions: writing cache failed ([Errno 30] Read-only file system: '/home/agent/.config/blender/4.3/extensions').
+FBX version: 7400
+Blender 4.3.2
+Read blend: "/workspace/emberfall_quality_integration/ArtSource/BlenderPilot/Emberfall-Pilot-Vanguard.blend"
+
+Blender quit

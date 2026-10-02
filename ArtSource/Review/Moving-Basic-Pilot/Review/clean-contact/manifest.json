@@ -1,0 +1,11 @@
+{
+  "nativeFrame24Only": true,
+  "sameCameraAsMovies": true,
+  "samples": 64,
+  "noMovieFramesOverwritten": true,
+  "nativeSha256": {
+    "combat-frames/0024.png": "bdf5a5b4d58529a7bc6d677a25504afdc633cffe34be8f19190bef50d4969d16",
+    "candidate-combat-frames/0024.png": "ae92a13d89129d71a694e1844bd218f7553a71afafcd90e2a6a354cbd4c8c6aa"
+  },
+  "comparisonSha256": "31abb3ec7fdba8be6eea4e46c105bf9d0f55491cdd936c7b744f1fc749377424"
+}

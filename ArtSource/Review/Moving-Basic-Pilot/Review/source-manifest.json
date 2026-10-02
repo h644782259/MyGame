@@ -1,0 +1,36 @@
+{
+  "sourceCommit": "d1e1606ccddec402862141346f6fefa364f77d87",
+  "mergedEquivalent": "6afcb19b3c293f521279c3290d25920ad750f116",
+  "tree": "2a3002b917f22aaaf8e7241909596d8b68371930",
+  "sourceHashes": {
+    "ArtSource/BlenderPilot/Emberfall-Pilot-Vanguard.blend": "40cd32d40e0f715c953fba556623e2c62e409724721f5b954a84ab98818d7c6b",
+    "ArtSource/BlenderPilot/build_vanguard.py": "9d338f97da60120a28dde11c4789b6576872b406aab6efcf8a897135cd233461",
+    "Assets/Scripts/Combat/CombatModel.cs": "c5fff14cbbda8c69f8b4abc9910ad69fe166d28c5eccb591a8a357b02715430a",
+    "Assets/Scripts/Combat/CombatModel.BlenderPilot.cs": "3a0a4aceafb3a5a48e9bb0a9a287ca36b1d0c9eb44c27bae9e5d439f05fd3595",
+    "Assets/Scripts/Combat/CombatModel.Motion.cs": "ed170cdc6d8093a8df1852f43111c3353368ca6b16f8fca78f0bd2bc0a940f1d",
+    "Assets/Scripts/Combat/CombatModel.Recovery.cs": "ae9d6680dcc32c0e2e59e889d3a73b490839a83124096eb65071498ecf50bf59",
+    "Assets/Scripts/Combat/CombatModel.WeaponRig.cs": "3cb99dbe8fc29d55731edc282bf0a6cc60f305195c144665d07bfc59c5e4360b",
+    "Assets/Scripts/Combat/CombatModel.Costumes.cs": "93bd48d36699fa95edb1090dd76341d0db6fb3b0c2fd9c62216b6fffe8edc659",
+    "Assets/Scripts/Combat/CombatModel.CostumeLayers.cs": "fc358cc44dfcdaea463196354eec1e6c3070023c62c4b69e69cf9e986b0f2f72",
+    "Assets/Scripts/Combat/TailoredCloth.cs": "d1d05c67305862cf70dd1b5fa3b1a27335d25e949cc7cea89654f3e28af2ced3",
+    "Assets/Scripts/Core/LocomotionPoseState.cs": "cf16e3dfe355eeb5b3078a66e58280bc7ec2265962dd8278e5edff68223718f1",
+    "Assets/Scripts/Core/BasicActionTimeline.cs": "2adc3cb4905edcdd446af20160019045fc6a7c2d97f7be18d9ba31c000e6369c",
+    "Assets/Scripts/Core/SkillDamageBudgets.cs": "294f358ae35868369f8f43a49996b7a83050b78122f7851121d68418892410ec",
+    "Assets/Scripts/Core/BlenderPilotPosePolicy.cs": "99b729a3287b4d15a34fa7118ee6cf4fc4f535629dd1e3d0e057129c3c4b267c",
+    "Assets/Scripts/Core/ProgressionService.cs": "53c60651fb932b72b6bba107f94dd1e5ac6439cfe844c7eb0e1b3fc7b3dadc77",
+    "Assets/Scripts/Combat/PlayerController.cs": "f979e9b22a1a7e44241b8bd31e208c387fb03854fe1d9dabd6aed74a580ad71f",
+    "Assets/Scripts/Core/GameSession.cs": "b63f5db45e45cff6b1a09b2e7230c6f1dd78f2dcae42b774c6854583ac85849b",
+    "Tools/ArtSourceEvidence/export_silhouettes.py": "f0372f8b134464f453642383a7795cf5ff386bbe4911c7ada90f427d27396e97",
+    "Tests/EquipmentCompositionProductionTests.py": "9be2ab2a15ed7379c310cecdb070feeb597a7caf2b492e85aeef1bc50ea57182",
+    "Tests/EquipmentCompositionProductionTests.Fixture.cs": "891560572e74622272fc43b447144cb76ce8efb4be79b66ec7851ac745359522"
+  },
+  "motionSha256": "b3db3cb00649dedbe45eff3628a7fe7d98e80ed9b2ed347f581708cab78c7761",
+  "starterEquipment": {
+    "weapon": "初行长剑",
+    "armor": "初行战衣",
+    "relic": "初行护符",
+    "all": "Common level1 upgrade0 mechanicNone variantfalse"
+  },
+  "proceduralPartsPerFrame": 55,
+  "rejectedEvidence": "no-equipment-rejected is NOT the accepted baseline"
+}

@@ -1,0 +1,134 @@
+[
+  {
+    "file": "layered-peak30-source.png",
+    "reimportedFBX": false,
+    "case": "layered-peak30",
+    "input": {
+      "index": 30,
+      "time": 1.2500001,
+      "phase": 0.78045446,
+      "speed": 0.9999997,
+      "progress": 0.7808693,
+      "basic": true,
+      "idle": 0.62500006,
+      "move": 0.12421318,
+      "speedWeight": 0.9999997,
+      "upperWeight": 0.95802534,
+      "scenario": "continuous-forward"
+    },
+    "layered": true,
+    "camera": "same close camera at5,-8,4.2,target0,0,1.1,ortho4.7; external owner recentered to zero for diagnostic only",
+    "sha256": "573aa2e043812d973058208632a2af408a8cca1a71f6d59fd7609ebedff24bb6",
+    "meaning": "source/FBX authored pose diagnostic; old Basic control is NOT runtime procedural fallback baseline"
+  },
+  {
+    "file": "layered-peak30-fbx.png",
+    "reimportedFBX": true,
+    "case": "layered-peak30",
+    "input": {
+      "index": 30,
+      "time": 1.2500001,
+      "phase": 0.78045446,
+      "speed": 0.9999997,
+      "progress": 0.7808693,
+      "basic": true,
+      "idle": 0.62500006,
+      "move": 0.12421318,
+      "speedWeight": 0.9999997,
+      "upperWeight": 0.95802534,
+      "scenario": "continuous-forward"
+    },
+    "layered": true,
+    "camera": "same close camera at5,-8,4.2,target0,0,1.1,ortho4.7; external owner recentered to zero for diagnostic only",
+    "sha256": "212b8617e466bcf847c518ddbbc2b4153780d00a2be9802a93cf8aa4dd812705",
+    "meaning": "source/FBX authored pose diagnostic; old Basic control is NOT runtime procedural fallback baseline"
+  },
+  {
+    "file": "unlayered-basic-control57-source.png",
+    "reimportedFBX": false,
+    "case": "unlayered-basic-control57",
+    "input": {
+      "index": 57,
+      "time": 2.3750002,
+      "phase": 5.764094,
+      "speed": 0.9999997,
+      "progress": 0.9808692,
+      "basic": true,
+      "idle": 0.18750012,
+      "move": 0.917384,
+      "speedWeight": 0.9999997,
+      "upperWeight": 0.01667124,
+      "scenario": "continuous-forward"
+    },
+    "layered": false,
+    "camera": "same close camera at5,-8,4.2,target0,0,1.1,ortho4.7; external owner recentered to zero for diagnostic only",
+    "sha256": "9c42cdcd2f98e5199a029497ba8721797ad92c95aec4b885d38c546acf92a812",
+    "meaning": "source/FBX authored pose diagnostic; old Basic control is NOT runtime procedural fallback baseline"
+  },
+  {
+    "file": "unlayered-basic-control57-fbx.png",
+    "reimportedFBX": true,
+    "case": "unlayered-basic-control57",
+    "input": {
+      "index": 57,
+      "time": 2.3750002,
+      "phase": 5.764094,
+      "speed": 0.9999997,
+      "progress": 0.9808692,
+      "basic": true,
+      "idle": 0.18750012,
+      "move": 0.917384,
+      "speedWeight": 0.9999997,
+      "upperWeight": 0.01667124,
+      "scenario": "continuous-forward"
+    },
+    "layered": false,
+    "camera": "same close camera at5,-8,4.2,target0,0,1.1,ortho4.7; external owner recentered to zero for diagnostic only",
+    "sha256": "e41454b873657ecede51875106e3b4f1bb4f005286b3589d6c367d1415c4f9b9",
+    "meaning": "source/FBX authored pose diagnostic; old Basic control is NOT runtime procedural fallback baseline"
+  },
+  {
+    "file": "incremental-stop49-source.png",
+    "reimportedFBX": false,
+    "case": "incremental-stop49",
+    "input": {
+      "index": 49,
+      "time": 2.0416667,
+      "phase": 2.9904554,
+      "speed": 0.0004097352,
+      "progress": 0.6330434,
+      "basic": true,
+      "idle": 0.020833373,
+      "move": 0.47594574,
+      "speedWeight": 0.0004097352,
+      "upperWeight": 1,
+      "scenario": "stop1.4-restart2.4"
+    },
+    "layered": true,
+    "camera": "same close camera at5,-8,4.2,target0,0,1.1,ortho4.7; external owner recentered to zero for diagnostic only",
+    "sha256": "0a29adaacf687293aca5a7499444977167077155a0e84ef1a9bfc752a8b89ee8",
+    "meaning": "source/FBX authored pose diagnostic; old Basic control is NOT runtime procedural fallback baseline"
+  },
+  {
+    "file": "incremental-stop49-fbx.png",
+    "reimportedFBX": true,
+    "case": "incremental-stop49",
+    "input": {
+      "index": 49,
+      "time": 2.0416667,
+      "phase": 2.9904554,
+      "speed": 0.0004097352,
+      "progress": 0.6330434,
+      "basic": true,
+      "idle": 0.020833373,
+      "move": 0.47594574,
+      "speedWeight": 0.0004097352,
+      "upperWeight": 1,
+      "scenario": "stop1.4-restart2.4"
+    },
+    "layered": true,
+    "camera": "same close camera at5,-8,4.2,target0,0,1.1,ortho4.7; external owner recentered to zero for diagnostic only",
+    "sha256": "d949842a572e538c3c0a61292aef1ecf3752ae17ae2cfd056c8f7f0b6c4cda7d",
+    "meaning": "source/FBX authored pose diagnostic; old Basic control is NOT runtime procedural fallback baseline"
+  }
+]

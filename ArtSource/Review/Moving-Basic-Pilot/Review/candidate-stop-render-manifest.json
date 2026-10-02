@@ -1,0 +1,96 @@
+{
+  "sourceBlend": "/workspace/emberfall_quality_integration/ArtSource/BlenderPilot/Emberfall-Pilot-Vanguard.blend",
+  "sourceBlendSha256": "40cd32d40e0f715c953fba556623e2c62e409724721f5b954a84ab98818d7c6b",
+  "motionSha256": "b3db3cb00649dedbe45eff3628a7fe7d98e80ed9b2ed347f581708cab78c7761",
+  "fps": 24,
+  "duration": 6,
+  "resolution": [
+    480,
+    360
+  ],
+  "cameraOffset": [
+    5,
+    -8,
+    4.2
+  ],
+  "targetOffset": [
+    0,
+    0,
+    1.1
+  ],
+  "orthoScale": 4.7,
+  "verticalFov": null,
+  "defaultDistance": null,
+  "distanceScale": null,
+  "pitch": null,
+  "lensMm": null,
+  "externalOwnerVelocityBlender": "(0,-6,0) until1.4s; zero1.4-2.4s; then(0,-6,0)",
+  "rootMotion": false,
+  "material": "matched gray .42,.44,.47 / roughness .68 / metal0 / specular0",
+  "lighting": "three direct suns 2.5/.75/1.6, zero angular size, max bounces0",
+  "cyclesSamples": 8,
+  "cpuThreads": 1,
+  "OIDN": false,
+  "contacts": [
+    1,
+    1.4666667,
+    1.9333334,
+    2.4,
+    2.8666668,
+    3.3333335,
+    3.8000002,
+    4.266667,
+    4.7333336
+  ],
+  "rig": {
+    "Root": null,
+    "Pelvis": "Root",
+    "Spine": "Pelvis",
+    "Head": "Spine",
+    "Mantle": "Spine",
+    "UpperArm.L": "Spine",
+    "Forearm.L": "UpperArm.L",
+    "Hand.L": "Forearm.L",
+    "UpperArm.R": "Spine",
+    "Forearm.R": "UpperArm.R",
+    "Hand.R": "Forearm.R",
+    "Thigh.L": "Pelvis",
+    "Shin.L": "Thigh.L",
+    "Foot.L": "Shin.L",
+    "Tabard.L": "Pelvis",
+    "Thigh.R": "Pelvis",
+    "Shin.R": "Thigh.R",
+    "Foot.R": "Shin.R",
+    "Tabard.R": "Pelvis"
+  },
+  "clips": {
+    "Pilot_Basic": [
+      0.0,
+      25.0
+    ],
+    "Pilot_Hit": [
+      0.0,
+      20.0
+    ],
+    "Pilot_Idle": [
+      0.0,
+      100.0
+    ],
+    "Pilot_Move": [
+      0.0,
+      40.0
+    ],
+    "Pilot_Skill": [
+      0.0,
+      50.0
+    ]
+  },
+  "runtimeCommit": "49a356eb2df9951fc07f9758f3eea4055b0b9c30",
+  "policySha256": "11b472379d1fe2f25758629af4def79fb7f0ff7b01ec5f5561ecb69484b07d8d",
+  "policySamplesSha256": "e516635352e55c1a6d7d8e99ba218807e86837c4350b14af2e6f3e6bff3be4f8",
+  "boundary": "Unchanged native Blender clips composed with actual production policy outputs and corresponding localTRS Lerp/Slerp. Not Unity/nativeFBX runtime playback. Same no-enemies/no-VFX scope as baseline.",
+  "stopRestartSeconds": [
+    1.4,
+    2.4
+  ]
+}

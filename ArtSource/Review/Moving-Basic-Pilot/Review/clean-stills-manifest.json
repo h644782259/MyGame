@@ -1,0 +1,36 @@
+{
+  "validatedUtc": "2026-10-02T18:46:31.429129+00:00",
+  "motionSha256": "b3db3cb00649dedbe45eff3628a7fe7d98e80ed9b2ed347f581708cab78c7761",
+  "scriptSha256": "ef7cac523be43d42984a81a8a9bba50532320d46b6147c7c5e5c0cdcefd220ce",
+  "cleanAfterExplicitPidTermination": true,
+  "files": {
+    "frames/0012.png": {
+      "sha256": "abf5cc12b269303f113874642c0671e30749792840383f18f888b27fdb81767d",
+      "size": [
+        480,
+        360
+      ]
+    },
+    "frames/0024.png": {
+      "sha256": "28824e6118dd13af19cf1ece1f489da77e5309732e4fbcc5a65449f07ecef8d0",
+      "size": [
+        480,
+        360
+      ]
+    },
+    "combat-frames/0012.png": {
+      "sha256": "bcad36349b15e37efcb2f4e7dbd4f88be7db617122b27b31b7d21d053d94cfcd",
+      "size": [
+        800,
+        600
+      ]
+    },
+    "combat-frames/0024.png": {
+      "sha256": "04a47c64c65849eef7cfa5a617082824e613a856de710ba32e680deaa3e94d1f",
+      "size": [
+        800,
+        600
+      ]
+    }
+  }
+}

@@ -1,0 +1,535 @@
+{
+  "sceneFPS": 50,
+  "fpsBase": 1.0,
+  "blendHash": "40cd32d40e0f715c953fba556623e2c62e409724721f5b954a84ab98818d7c6b",
+  "bones": {
+    "Root": null,
+    "Pelvis": "Root",
+    "Spine": "Pelvis",
+    "Head": "Spine",
+    "Mantle": "Spine",
+    "UpperArm.L": "Spine",
+    "Forearm.L": "UpperArm.L",
+    "Hand.L": "Forearm.L",
+    "UpperArm.R": "Spine",
+    "Forearm.R": "UpperArm.R",
+    "Hand.R": "Forearm.R",
+    "Thigh.L": "Pelvis",
+    "Shin.L": "Thigh.L",
+    "Foot.L": "Shin.L",
+    "Tabard.L": "Pelvis",
+    "Thigh.R": "Pelvis",
+    "Shin.R": "Thigh.R",
+    "Foot.R": "Shin.R",
+    "Tabard.R": "Pelvis"
+  },
+  "anchors": {
+    "Anchor_BladeRoot": {
+      "parent": "Vanguard_Rig",
+      "parentType": "BONE",
+      "parentBone": "Hand.R"
+    },
+    "Anchor_Emission": {
+      "parent": "Vanguard_Rig",
+      "parentType": "BONE",
+      "parentBone": "Hand.R"
+    },
+    "Anchor_Grip": {
+      "parent": "Vanguard_Rig",
+      "parentType": "BONE",
+      "parentBone": "Hand.R"
+    },
+    "Anchor_Guard": {
+      "parent": "Vanguard_Rig",
+      "parentType": "BONE",
+      "parentBone": "Hand.R"
+    },
+    "Anchor_Pommel": {
+      "parent": "Vanguard_Rig",
+      "parentType": "BONE",
+      "parentBone": "Hand.R"
+    },
+    "Anchor_Tip": {
+      "parent": "Vanguard_Rig",
+      "parentType": "BONE",
+      "parentBone": "Hand.R"
+    },
+    "Vanguard_Sword": {
+      "parent": "Vanguard_Rig",
+      "parentType": "OBJECT",
+      "parentBone": ""
+    }
+  },
+  "actions": {
+    "Pilot_Basic": {
+      "range": [
+        0.0,
+        25.0
+      ],
+      "allChannels": 171,
+      "animatedChannels": {
+        "pose.bones[\"Spine\"].rotation_euler[1]": {
+          "min": -0.11423972994089127,
+          "max": 0.13962633907794952,
+          "keys": 15
+        },
+        "pose.bones[\"Spine\"].rotation_euler[2]": {
+          "min": -0.40142571926116943,
+          "max": 0.32843923568725586,
+          "keys": 15
+        },
+        "pose.bones[\"Mantle\"].rotation_euler[0]": {
+          "min": 0.0,
+          "max": 0.20943951606750488,
+          "keys": 15
+        },
+        "pose.bones[\"UpperArm.L\"].rotation_euler[2]": {
+          "min": -0.2617993950843811,
+          "max": 0.214199498295784,
+          "keys": 15
+        },
+        "pose.bones[\"UpperArm.R\"].rotation_euler[0]": {
+          "min": -0.9599310755729675,
+          "max": 0.7853981852531433,
+          "keys": 15
+        },
+        "pose.bones[\"UpperArm.R\"].rotation_euler[1]": {
+          "min": -0.24275943636894226,
+          "max": 0.296705961227417,
+          "keys": 15
+        },
+        "pose.bones[\"UpperArm.R\"].rotation_euler[2]": {
+          "min": -0.6425985097885132,
+          "max": 0.7853981852531433,
+          "keys": 15
+        },
+        "pose.bones[\"Forearm.R\"].rotation_euler[0]": {
+          "min": -0.48869219422340393,
+          "max": 0.3998390734195709,
+          "keys": 15
+        },
+        "pose.bones[\"Forearm.R\"].rotation_euler[2]": {
+          "min": -0.28559932112693787,
+          "max": 0.3490658402442932,
+          "keys": 15
+        },
+        "pose.bones[\"Hand.R\"].rotation_euler[0]": {
+          "min": -0.11423972994089127,
+          "max": 0.13962633907794952,
+          "keys": 15
+        },
+        "pose.bones[\"Hand.R\"].rotation_euler[2]": {
+          "min": -0.3490658402442932,
+          "max": 0.28559932112693787,
+          "keys": 15
+        }
+      },
+      "rootChannels": {
+        "pose.bones[\"Root\"].rotation_euler[0]": {
+          "min": 0.0,
+          "max": 0.0,
+          "keys": 15
+        },
+        "pose.bones[\"Root\"].rotation_euler[1]": {
+          "min": 0.0,
+          "max": 0.0,
+          "keys": 15
+        },
+        "pose.bones[\"Root\"].rotation_euler[2]": {
+          "min": 0.0,
+          "max": 0.0,
+          "keys": 15
+        },
+        "pose.bones[\"Root\"].location[0]": {
+          "min": 0.0,
+          "max": 0.0,
+          "keys": 15
+        },
+        "pose.bones[\"Root\"].location[1]": {
+          "min": 0.0,
+          "max": 0.0,
+          "keys": 15
+        },
+        "pose.bones[\"Root\"].location[2]": {
+          "min": 0.0,
+          "max": 0.0,
+          "keys": 15
+        },
+        "pose.bones[\"Root\"].scale[0]": {
+          "min": 1.0,
+          "max": 1.0,
+          "keys": 15
+        },
+        "pose.bones[\"Root\"].scale[1]": {
+          "min": 1.0,
+          "max": 1.0,
+          "keys": 15
+        },
+        "pose.bones[\"Root\"].scale[2]": {
+          "min": 1.0,
+          "max": 1.0,
+          "keys": 15
+        }
+      }
+    },
+    "Pilot_Hit": {
+      "range": [
+        0.0,
+        20.0
+      ],
+      "allChannels": 171,
+      "animatedChannels": {
+        "pose.bones[\"Spine\"].rotation_euler[0]": {
+          "min": -0.278864324092865,
+          "max": -0.0,
+          "keys": 11
+        },
+        "pose.bones[\"Spine\"].rotation_euler[2]": {
+          "min": 0.0,
+          "max": 0.07967552542686462,
+          "keys": 11
+        },
+        "pose.bones[\"Head\"].rotation_euler[0]": {
+          "min": 0.0,
+          "max": 0.14939160645008087,
+          "keys": 11
+        },
+        "pose.bones[\"UpperArm.L\"].rotation_euler[0]": {
+          "min": -0.19918881356716156,
+          "max": -0.0,
+          "keys": 11
+        },
+        "pose.bones[\"UpperArm.R\"].rotation_euler[0]": {
+          "min": -0.19918881356716156,
+          "max": -0.0,
+          "keys": 11
+        }
+      },
+      "rootChannels": {
+        "pose.bones[\"Root\"].rotation_euler[0]": {
+          "min": 0.0,
+          "max": 0.0,
+          "keys": 11
+        },
+        "pose.bones[\"Root\"].rotation_euler[1]": {
+          "min": 0.0,
+          "max": 0.0,
+          "keys": 11
+        },
+        "pose.bones[\"Root\"].rotation_euler[2]": {
+          "min": 0.0,
+          "max": 0.0,
+          "keys": 11
+        },
+        "pose.bones[\"Root\"].location[0]": {
+          "min": 0.0,
+          "max": 0.0,
+          "keys": 11
+        },
+        "pose.bones[\"Root\"].location[1]": {
+          "min": 0.0,
+          "max": 0.0,
+          "keys": 11
+        },
+        "pose.bones[\"Root\"].location[2]": {
+          "min": 0.0,
+          "max": 0.0,
+          "keys": 11
+        },
+        "pose.bones[\"Root\"].scale[0]": {
+          "min": 1.0,
+          "max": 1.0,
+          "keys": 11
+        },
+        "pose.bones[\"Root\"].scale[1]": {
+          "min": 1.0,
+          "max": 1.0,
+          "keys": 11
+        },
+        "pose.bones[\"Root\"].scale[2]": {
+          "min": 1.0,
+          "max": 1.0,
+          "keys": 11
+        }
+      }
+    },
+    "Pilot_Idle": {
+      "range": [
+        0.0,
+        100.0
+      ],
+      "allChannels": 171,
+      "animatedChannels": {
+        "pose.bones[\"Spine\"].rotation_euler[0]": {
+          "min": -0.015676967799663544,
+          "max": 0.015676967799663544,
+          "keys": 51
+        },
+        "pose.bones[\"Mantle\"].rotation_euler[0]": {
+          "min": 0.012262077070772648,
+          "max": 0.05755109339952469,
+          "keys": 51
+        }
+      },
+      "rootChannels": {
+        "pose.bones[\"Root\"].rotation_euler[0]": {
+          "min": 0.0,
+          "max": 0.0,
+          "keys": 51
+        },
+        "pose.bones[\"Root\"].rotation_euler[1]": {
+          "min": 0.0,
+          "max": 0.0,
+          "keys": 51
+        },
+        "pose.bones[\"Root\"].rotation_euler[2]": {
+          "min": 0.0,
+          "max": 0.0,
+          "keys": 51
+        },
+        "pose.bones[\"Root\"].location[0]": {
+          "min": 0.0,
+          "max": 0.0,
+          "keys": 51
+        },
+        "pose.bones[\"Root\"].location[1]": {
+          "min": 0.0,
+          "max": 0.0,
+          "keys": 51
+        },
+        "pose.bones[\"Root\"].location[2]": {
+          "min": 0.0,
+          "max": 0.0,
+          "keys": 51
+        },
+        "pose.bones[\"Root\"].scale[0]": {
+          "min": 1.0,
+          "max": 1.0,
+          "keys": 51
+        },
+        "pose.bones[\"Root\"].scale[1]": {
+          "min": 1.0,
+          "max": 1.0,
+          "keys": 51
+        },
+        "pose.bones[\"Root\"].scale[2]": {
+          "min": 1.0,
+          "max": 1.0,
+          "keys": 51
+        }
+      }
+    },
+    "Pilot_Move": {
+      "range": [
+        0.0,
+        40.0
+      ],
+      "allChannels": 171,
+      "animatedChannels": {
+        "pose.bones[\"Spine\"].rotation_euler[2]": {
+          "min": -0.03490658476948738,
+          "max": 0.03490658476948738,
+          "keys": 21
+        },
+        "pose.bones[\"Mantle\"].rotation_euler[0]": {
+          "min": 0.20943951606750488,
+          "max": 0.296705961227417,
+          "keys": 21
+        },
+        "pose.bones[\"UpperArm.L\"].rotation_euler[0]": {
+          "min": -0.22689279913902283,
+          "max": 0.22689279913902283,
+          "keys": 21
+        },
+        "pose.bones[\"UpperArm.R\"].rotation_euler[0]": {
+          "min": -0.22689279913902283,
+          "max": 0.22689279913902283,
+          "keys": 21
+        },
+        "pose.bones[\"Thigh.L\"].rotation_euler[0]": {
+          "min": -0.3839724361896515,
+          "max": 0.3839724361896515,
+          "keys": 21
+        },
+        "pose.bones[\"Shin.L\"].rotation_euler[0]": {
+          "min": 0.0,
+          "max": 0.5235987901687622,
+          "keys": 21
+        },
+        "pose.bones[\"Foot.L\"].rotation_euler[0]": {
+          "min": -0.20943951606750488,
+          "max": -0.0,
+          "keys": 21
+        },
+        "pose.bones[\"Tabard.L\"].rotation_euler[0]": {
+          "min": -0.1745329201221466,
+          "max": 0.1745329201221466,
+          "keys": 21
+        },
+        "pose.bones[\"Thigh.R\"].rotation_euler[0]": {
+          "min": -0.3839724361896515,
+          "max": 0.3839724361896515,
+          "keys": 21
+        },
+        "pose.bones[\"Shin.R\"].rotation_euler[0]": {
+          "min": 0.0,
+          "max": 0.5235987901687622,
+          "keys": 21
+        },
+        "pose.bones[\"Foot.R\"].rotation_euler[0]": {
+          "min": -0.20943951606750488,
+          "max": 0.0,
+          "keys": 21
+        },
+        "pose.bones[\"Tabard.R\"].rotation_euler[0]": {
+          "min": -0.1745329201221466,
+          "max": 0.1745329201221466,
+          "keys": 21
+        }
+      },
+      "rootChannels": {
+        "pose.bones[\"Root\"].rotation_euler[0]": {
+          "min": 0.0,
+          "max": 0.0,
+          "keys": 21
+        },
+        "pose.bones[\"Root\"].rotation_euler[1]": {
+          "min": 0.0,
+          "max": 0.0,
+          "keys": 21
+        },
+        "pose.bones[\"Root\"].rotation_euler[2]": {
+          "min": 0.0,
+          "max": 0.0,
+          "keys": 21
+        },
+        "pose.bones[\"Root\"].location[0]": {
+          "min": 0.0,
+          "max": 0.0,
+          "keys": 21
+        },
+        "pose.bones[\"Root\"].location[1]": {
+          "min": 0.0,
+          "max": 0.0,
+          "keys": 21
+        },
+        "pose.bones[\"Root\"].location[2]": {
+          "min": 0.0,
+          "max": 0.0,
+          "keys": 21
+        },
+        "pose.bones[\"Root\"].scale[0]": {
+          "min": 1.0,
+          "max": 1.0,
+          "keys": 21
+        },
+        "pose.bones[\"Root\"].scale[1]": {
+          "min": 1.0,
+          "max": 1.0,
+          "keys": 21
+        },
+        "pose.bones[\"Root\"].scale[2]": {
+          "min": 1.0,
+          "max": 1.0,
+          "keys": 21
+        }
+      }
+    },
+    "Pilot_Skill": {
+      "range": [
+        0.0,
+        50.0
+      ],
+      "allChannels": 171,
+      "animatedChannels": {
+        "pose.bones[\"Spine\"].rotation_euler[0]": {
+          "min": -0.20902623236179352,
+          "max": -0.0,
+          "keys": 26
+        },
+        "pose.bones[\"Spine\"].rotation_euler[2]": {
+          "min": -0.4877278804779053,
+          "max": -0.0,
+          "keys": 26
+        },
+        "pose.bones[\"Mantle\"].rotation_euler[0]": {
+          "min": 0.0,
+          "max": 0.4354712963104248,
+          "keys": 26
+        },
+        "pose.bones[\"UpperArm.L\"].rotation_euler[0]": {
+          "min": -0.5225655436515808,
+          "max": -0.0,
+          "keys": 26
+        },
+        "pose.bones[\"UpperArm.L\"].rotation_euler[2]": {
+          "min": -0.5225655436515808,
+          "max": -0.0,
+          "keys": 26
+        },
+        "pose.bones[\"UpperArm.R\"].rotation_euler[0]": {
+          "min": -1.7418851852416992,
+          "max": -0.0,
+          "keys": 26
+        },
+        "pose.bones[\"UpperArm.R\"].rotation_euler[2]": {
+          "min": 0.0,
+          "max": 0.3832147419452667,
+          "keys": 26
+        },
+        "pose.bones[\"Forearm.R\"].rotation_euler[0]": {
+          "min": -0.6096598505973816,
+          "max": -0.0,
+          "keys": 26
+        }
+      },
+      "rootChannels": {
+        "pose.bones[\"Root\"].rotation_euler[0]": {
+          "min": 0.0,
+          "max": 0.0,
+          "keys": 26
+        },
+        "pose.bones[\"Root\"].rotation_euler[1]": {
+          "min": 0.0,
+          "max": 0.0,
+          "keys": 26
+        },
+        "pose.bones[\"Root\"].rotation_euler[2]": {
+          "min": 0.0,
+          "max": 0.0,
+          "keys": 26
+        },
+        "pose.bones[\"Root\"].location[0]": {
+          "min": 0.0,
+          "max": 0.0,
+          "keys": 26
+        },
+        "pose.bones[\"Root\"].location[1]": {
+          "min": 0.0,
+          "max": 0.0,
+          "keys": 26
+        },
+        "pose.bones[\"Root\"].location[2]": {
+          "min": 0.0,
+          "max": 0.0,
+          "keys": 26
+        },
+        "pose.bones[\"Root\"].scale[0]": {
+          "min": 1.0,
+          "max": 1.0,
+          "keys": 26
+        },
+        "pose.bones[\"Root\"].scale[1]": {
+          "min": 1.0,
+          "max": 1.0,
+          "keys": 26
+        },
+        "pose.bones[\"Root\"].scale[2]": {
+          "min": 1.0,
+          "max": 1.0,
+          "keys": 26
+        }
+      }
+    }
+  }
+}

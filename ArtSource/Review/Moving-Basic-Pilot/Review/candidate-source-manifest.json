@@ -1,0 +1,19 @@
+{
+  "runtimeCommit": "49a356eb2df9951fc07f9758f3eea4055b0b9c30",
+  "runtimePolicySha256": "11b472379d1fe2f25758629af4def79fb7f0ff7b01ec5f5561ecb69484b07d8d",
+  "runtimeVisualSha256": "78b18dc881b5315151153d3a5c98df14bf0757319d69338a3f2945383050794c",
+  "runtimeAdapterSha256": "c46936fe93b45a8b43e9a2649f02b9219711163210c011c333072a510408aa4c",
+  "samplesSha256": "4f2c774f4bc8ce99179e61d4bbb9c00813ad63b2c6fef4ac9ef8acf63d18d3bd",
+  "stopSamplesSha256": "e516635352e55c1a6d7d8e99ba218807e86837c4350b14af2e6f3e6bff3be4f8",
+  "idleLengthDerivation": {
+    "authoredFrameRange": [
+      0,
+      100
+    ],
+    "authoredFPS": 50,
+    "seconds": 2
+  },
+  "sourceMotionSha256": "b3db3cb00649dedbe45eff3628a7fe7d98e80ed9b2ed347f581708cab78c7761",
+  "boneMath": "Position/scale linear interpolation and quaternion Slerp in each bone local TRS; preserve sampled base Root",
+  "rootMotion": false
+}
