@@ -11,10 +11,11 @@ def method(file,signature):
         elif text[end]=='}':depth-=1
         end+=1
     return text[start:end]
-core=['GameTypes','ProgressionService','ProgressionService.Chapter','ProgressionService.Reforge','ReforgeQuote','ChapterProgression','ChapterResultSnapshot','ChapterCombatRun','RoomTactics','RoomChainState','ExpeditionModeState','RoomTacticalRegion','CombatBalance','HubTravelRules','MasteryCoreRuntime','TierRewardRules','TierRewardBand','ProgressionGoalState','AdventureResultPolicy','GameSession.Chapter','EscapePostPolicy']
+core=['GameTypes','ProgressionService','ProgressionService.Chapter','ProgressionService.Reforge','ReforgeQuote','ChapterProgression','ChapterResultSnapshot','ChapterCombatRun','RoomTactics','RoomChainState','ExpeditionModeState','RoomTacticalRegion','CombatBalance','HubTravelRules','MasteryCoreRuntime','TierRewardRules','TierRewardBand','ProgressionGoalState','AdventureResultPolicy','GameSession.Chapter','GameSession.ChapterSeals','EscapePostPolicy']
 with tempfile.TemporaryDirectory(prefix='chapter-host-production-') as temp:
     folder=Path(temp)
     for name in core:(folder/(name+'.cs')).write_text((root/'Assets/Scripts/Core'/(name+'.cs')).read_text())
+    (folder/'ChapterSealPresentation.cs').write_text((root/'Assets/Scripts/UI/ChapterSealPresentation.cs').read_text())
     (folder/'ChapterEntryPresentation.cs').write_text((root/'Assets/Scripts/UI/ChapterEntryPresentation.cs').read_text())
     (folder/'ChapterRoomGeometry.cs').write_text((root/'Assets/Scripts/World/ChapterRoomGeometry.cs').read_text())
     for name in ['ProgressionTests','ChapterHostFixture']:(folder/(name+'.cs')).write_text((root/'Tests'/(name+'.cs')).read_text())

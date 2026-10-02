@@ -49,6 +49,21 @@ namespace Emberfall
   public static string VerifyChapterResult(string folder)
   {
    int n=0;Action<bool,string> check=(ok,why)=>{n++;if(!ok)throw new Exception(why);};
+   foreach(int first in new[]{0,1})
+   {
+    var hud=new GameSession{Progression=new ProgressionService(Path.Combine(folder,"seal-hud-"+first))};check(hud.Progression.CreateNewSlot(HeroClass.Vanguard)&&hud.ConfirmChapterEnter(),"seal HUD real host entry");
+    foreach(var enemy in hud.Enemies)enemy.transform.position=new Vector3(99,0,99);
+    hud.Player.transform.position=hud.chapterPlan.Objectives[first];for(int i=0;i<6;i++)hud.Tick();
+    check(hud.ChapterSealView(first).Occupied&&!hud.ChapterSealView(1-first).Occupied&&hud.ChapterSealView(first).Seconds==1.5f,"HUD occupancy follows actual player on either ring");
+    hud.Player.transform.position=hud.chapterPlan.Objectives[1-first];for(int i=0;i<6;i++)hud.Tick();
+    hud.Enemies[0].transform.position=hud.chapterPlan.Objectives[1-first];hud.Tick();
+    check(hud.ChapterSealView(1-first).Contested&&!hud.ChapterSealView(first).Contested&&hud.ChapterSealView(1-first).Seconds==1.5f,"HUD contest uses actual enemy region and pauses only occupied contested ring");
+    hud.Enemies[0].transform.position=new Vector3(99,0,99);
+    hud.Player.transform.position=hud.chapterPlan.Objectives[first];for(int i=0;i<6;i++)hud.Tick();
+    check(hud.ChapterSealView(first).Complete&&hud.ChapterSealView(1-first).Seconds==1.5f,"HUD return preserves other half while chosen seal completes");
+    hud.Player.transform.position=hud.chapterPlan.Objectives[1-first];for(int i=0;i<6;i++)hud.Tick();
+    check(hud.ChapterSealView(0).Complete&&hud.ChapterSealView(1).Complete&&hud.ChapterRun.DoorUnlocked,"HUD both orders complete real host rings");
+   }
    Func<string,GameSession> create=name=>{var game=new GameSession{Progression=new ProgressionService(Path.Combine(folder,name))};check(game.Progression.CreateNewSlot(HeroClass.Vanguard),"result fixture real save");game.FixtureUnlock();game.SelectedChapterNode=ChapterNode.StarPlatform;check(game.ConfirmChapterEnter(),"result fixture direct boss entry");return game;};
    var s=create("boss-first");Time.frameCount=10;LargeBossShutdownVisual.Owner=s;LargeBossShutdownVisual.Active=true;
    int xp=s.Progression.Profile.xp,gold=s.Progression.Profile.gold;var fake=new EnemyController();s.Enemies.Add(fake);s.OnEnemyKilled(fake);check(s.Progression.Profile.xp==xp&&s.Progression.Profile.gold==gold&&s.Enemies.Contains(fake),"unregistered chapter enemy cannot award or advance even when listed");s.Enemies.Remove(fake);

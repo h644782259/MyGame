@@ -729,9 +729,12 @@ namespace Emberfall
                 : "收集装备，进入传送门 · T";
             if(session.ChapterActive){objectiveText=ChapterDefinition.Get(session.ActiveChapterNode).Name;objectiveProgress=session.ChapterObjectiveStatus;}
             string growthTitle,growthDetail;if(!session.ChapterActive&&TryGrowthHudHint(out growthTitle,out growthDetail)){objectiveText=growthTitle;objectiveProgress=growthDetail;}
+            if(session.ChapterSealView(0)!=null&&session.ChapterRun.DoorUnlocked)objectiveText="双印完成 · 前往出口";
             float bodyHeight=Mathf.Max(24,Style(15,true,true).CalcHeight(new GUIContent(objectiveText),255));
             string progressText=PlatformText(objectiveProgress);
             float progressHeight=Mathf.Max(18,Style(12,false,true).CalcHeight(new GUIContent(progressText),255));
+            bool showSeals=session.ChapterSealView(0)!=null;
+            if(showSeals)progressHeight=44;
             bool showCharge=session.InDungeon&&session.ChallengeRun;
             string chargeText="治疗充能  "+session.HealingCharges+" / 3";
             float chargeHeight=showCharge?Mathf.Max(23,Style(17,true,true).CalcHeight(new GUIContent(chargeText),255)):0;
@@ -740,7 +743,8 @@ namespace Emberfall
             Fill(new Rect(objective.x,objective.y,3,objective.height),jade);
             Text(new Rect(objective.x+13,objective.y+measured.HeadingY,255,17),"当前目标",11,jade,true);
             Text(new Rect(objective.x+13,objective.y+measured.BodyY,255,bodyHeight),objectiveText,15,pale,true,true);
-            Text(new Rect(objective.x+13,objective.y+measured.ProgressY,255,progressHeight),progressText,12,muted,false,true);
+            if(showSeals)DrawChapterSeals(new Rect(objective.x+13,objective.y+measured.ProgressY,255,44),1);
+            else Text(new Rect(objective.x+13,objective.y+measured.ProgressY,255,progressHeight),progressText,12,muted,false,true);
             if(showCharge)Text(new Rect(objective.x+13,objective.y+measured.ChargeY,255,chargeHeight),chargeText,17,gold,true,true);
             if (objective.Contains(Mouse) && GUI.enabled)
                 tooltip = PlatformText(session.Objective + (session.InDungeon ? "\n通关后按 T 返回营地。远离敌人后可按 H 提前撤离。" : "\n靠近紫色传送门按 T 进入副本。远离敌人后可按 H 回营。"));

@@ -54,3 +54,14 @@ with tempfile.TemporaryDirectory(prefix='mobile-pin-production-') as t:
  print('PASS: compiled live-team-at-release mutation fails actual contract emitter identity assertion')
  print('PASS: two compiled shared-readiness pin guards fail exact blocked/range committed-charge assertions')
  print('PASS: three compiled old gesture/automatic-selection/action-fallback mutations fail exact production assertions')
+
+# UI wiring is source evidence, separate from executed combat semantics above.
+feedback=(r/'Assets/Scripts/UI/MobileControls.Feedback.cs').read_text()
+head=feedback[feedback.index('var pinned='):feedback.index('private static Rect VisualRect')]
+assert 'MobilePinnedActionReason' not in head and 'pinned.DisplayName' in head
+assert 'LabelControl(Attack,basicReason,true)' in feedback
+feedback=(r/'Assets/Scripts/UI/GameUI.MobileFeedback.cs').read_text()
+assert 'state.Length==0&&session.Player!=null?session.Player.MobilePinnedActionReason(skill)' in feedback
+assert 'Text(caption,targetReason' in feedback and 'Text(caption,state' in feedback
+assert '点敌人固定目标；点战场空白取消' in (r/'Assets/Scripts/UI/GameUI.Mobile.cs').read_text()
+print('PASS: source wiring for identity-only pin, per-action target/resource reasons and touch help (not rendered UI)')

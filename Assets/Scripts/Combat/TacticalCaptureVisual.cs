@@ -3,7 +3,7 @@ namespace Emberfall
 {
     public sealed class TacticalCaptureVisual:MonoBehaviour
     {
-        private GameSession session;private LineRenderer[] segments;private LineRenderer contestedFlag,direction;private Material material;private int epoch,sealIndex=-1;
+        private GameSession session;private LineRenderer[] segments;private LineRenderer contestedFlag,direction,identity;private Material material;private int epoch,sealIndex=-1;
         public static void Attach(GameObject objective,GameSession session){Create(objective,session,-1);}
         public static void AttachChapter(GameObject objective,GameSession session,int index){Create(objective,session,index);}
         private static void Create(GameObject objective,GameSession session,int index)
@@ -20,6 +20,15 @@ namespace Emberfall
             Vector3[] flag={new Vector3(-.28f,.12f,-2.85f),new Vector3(0,.12f,-3.15f),new Vector3(.28f,.12f,-2.85f),new Vector3(0,.12f,-3.15f)};
             for(int i=0;i<4;i++)visual.contestedFlag.SetPosition(i,flag[i]);
             visual.direction=visual.Line("Capture next direction",3,.09f);
+            if(index>=0)
+            {
+                // Ground-plane letters remain attached to the indexed physical ring.
+                Vector3[] glyph=index==0?new[]{new Vector3(-.3f,.13f,-.35f),new Vector3(0,.13f,.4f),new Vector3(.3f,.13f,-.35f),new Vector3(.17f,.13f,-.02f),new Vector3(-.17f,.13f,-.02f)}:
+                    new[]{new Vector3(-.25f,.13f,-.35f),new Vector3(-.25f,.13f,.4f),new Vector3(.14f,.13f,.4f),new Vector3(.3f,.13f,.22f),new Vector3(.14f,.13f,.04f),new Vector3(-.25f,.13f,.04f),new Vector3(.14f,.13f,.04f),new Vector3(.3f,.13f,-.16f),new Vector3(.14f,.13f,-.35f),new Vector3(-.25f,.13f,-.35f)};
+                visual.identity=visual.Line(index==0?"Seal A":"Seal B",glyph.Length,.07f);
+                for(int i=0;i<glyph.Length;i++)visual.identity.SetPosition(i,glyph[i]);
+                visual.identity.startColor=visual.identity.endColor=new Color(.8f,.9f,.85f);
+            }
             visual.Refresh();
         }
         private LineRenderer Line(string name,int points,float width)
@@ -31,6 +40,7 @@ namespace Emberfall
             bool valid=session!=null&&session.Player!=null&&session.Player.CombatEpoch==epoch;
             bool active=valid&&(sealIndex>=0?session.TryGetChapterSeal(sealIndex,out fraction,out contested,out complete):session.TryGetTacticalCapture(out fraction,out contested));
             if(!active){Hide();return;}
+            if(identity!=null)identity.enabled=true;
             for(int i=0;i<segments.Length;i++)
             {
                 segments[i].enabled=true;
@@ -49,7 +59,7 @@ namespace Emberfall
                 direction.startColor=direction.endColor=new Color(.35f,.7f,.75f);
             }
         }
-        private void Hide(){if(segments!=null)foreach(var line in segments)if(line!=null)line.enabled=false;if(contestedFlag!=null)contestedFlag.enabled=false;if(direction!=null)direction.enabled=false;}
+        private void Hide(){if(identity!=null)identity.enabled=false;if(segments!=null)foreach(var line in segments)if(line!=null)line.enabled=false;if(contestedFlag!=null)contestedFlag.enabled=false;if(direction!=null)direction.enabled=false;}
         private void OnDisable(){Hide();}
         private void OnDestroy(){if(material!=null)Destroy(material);}
     }
