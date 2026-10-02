@@ -43,7 +43,7 @@ public static class ProgressionGoalIdentityTests
         before=State(p);Directory.CreateDirectory(p.SaveFilePath+".tmp");Check(!p.ExecuteProgressionGoal(ascend.ActionIdentity,true)&&State(p)==before,"failed ascension is atomic");Directory.Delete(p.SaveFilePath+".tmp");
         Check(p.ExecuteProgressionGoal(ascend.ActionIdentity,true)&&p.SelectedProgressionGoal(true).Done,"ascend targeted identity");before=State(p);
         Check(!p.ExecuteProgressionGoal(ascend.ActionIdentity,true)&&State(p)==before,"duplicate ascension token pays nothing");
-        p.Profile.level=12;Check(p.SelectProgressionGoal(ProgressionGoalKind.Reforge,epic.id),"track reforge to captured level");
+        p.Profile.level=12;p.Profile.gold=99999;Check(p.SelectProgressionGoal(ProgressionGoalKind.Reforge,epic.id),"track reforge to captured level");
         var reforge=p.SelectedProgressionGoal(true);p.Profile.level=15;
         Check(p.Profile.progressionGoalLevel==12&&p.ExecuteProgressionGoal(reforge.ActionIdentity,true)&&p.SelectedProgressionGoal(true).Done,"reforge uses current character power without moving selected target");
         string persistedIdentity=p.SelectedProgressionGoal(true).Identity;

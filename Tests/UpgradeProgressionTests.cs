@@ -251,8 +251,8 @@ public static class UpgradeProgressionTests
         var service = Fresh();
         Check(!service.LearnMastery(MasteryType.Offense), "low-level mastery unavailable");
         service.Profile.level = 50; service.Save();
-        for (int i=0;i<10;i++) Check(service.LearnMastery(MasteryType.Offense), "mastery opens in midgame before every skill is learned");
-        Check(!service.LearnMastery(MasteryType.Offense), "level50 segment cap is10");
+        for (int i=0;i<15;i++) Check(service.LearnMastery(MasteryType.Offense), "mastery opens in midgame before every skill is learned");
+        Check(!service.LearnMastery(MasteryType.Offense), "level50 segment cap is15");
         Check(service.ResetMastery(true), "midgame refund available");
         service.Profile.level = 100;
         for (int skill = 0; skill < GameBalance.SkillCount; skill++) service.Profile.skillRanks[skill] = 3;

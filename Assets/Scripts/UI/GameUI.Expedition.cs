@@ -98,14 +98,16 @@ namespace Emberfall
                     ItemData equipped=p.Equipped(BuildCatalog.MechanicSlot(mechanic));
                     if(equipped!=null&&equipped.mechanic==mechanic)
                     {
-                        if(Button(new Rect(c.x+660,c.y+55,99,36),"重铸 · 6",jade,string.IsNullOrEmpty(p.ReforgeLockReason(equipped.id,session.IsInCamp)),"保持装备身份、机制与部位强化，更新至角色等级"))Feedback(p.ReforgeMechanic(equipped.id,session.IsInCamp),"核心装备已成长");
+                        var quote=p.QuoteReforge(equipped.id);
+                        string reforgeReason=p.ReforgeLockReason(quote,session.IsInCamp);
+                        if(Button(new Rect(c.x+660,c.y+55,99,36),quote==null?"重铸暂不可用":"重铸 "+quote.GoldCost+"金",jade,string.IsNullOrEmpty(reforgeReason),!string.IsNullOrEmpty(reforgeReason)?reforgeReason:"保留身份、机制与部位强化；固定成长至 "+quote.TargetLevel+"级"))Feedback(p.ReforgeMechanic(quote,session.IsInCamp),"核心装备已成长");
                         if(p.Profile.heroClass==HeroClass.Arcanist&&Button(new Rect(c.x+766,c.y+55,99,36),equipped.mechanicVariantUnlocked?(equipped.mechanicVariant==0?"变体 A":"变体 B"):"变体 · 4",jade,string.IsNullOrEmpty(p.VariantLockReason(equipped.id,session.IsInCamp)),"首次解锁4碎片，之后免费切换互斥效果"))Feedback(p.ToggleMechanicVariant(equipped.id,session.IsInCamp),"装备变体已切换");
                         string ascension = p.AscensionLockReason(equipped.id,session.IsInCamp);
                         if(Button(new Rect(c.x+660,c.y+101,205,36),equipped.rarity==Rarity.Legendary?"已是传说品质":"传说升华 · 24碎片",gold,string.IsNullOrEmpty(ascension),string.IsNullOrEmpty(ascension)?"保留物品编号、等级、机制变体和部位强化；基础属性按25/18提升，无随机重抽。":ascension))Feedback(p.AscendMechanic(equipped.id,session.IsInCamp),"机制装备已升华为传说；身份、变体与部位强化保留");
                     }
                     if(c.Contains(Mouse)&&Mouse.x<c.x+648)tooltip=BuildCatalog.MechanicSource(mechanic);
                 }
-                Text(new Rect(w.x+32,w.y+566,884,30),"穿戴已知机制装备：6碎片重铸 · 元素变体首次4碎片 · 通关第5阶后24碎片史诗升华传说",14,jade);
+                Text(new Rect(w.x+32,w.y+566,884,30),"穿戴已知机制装备：金币按成长等级报价重铸 · 元素变体首次4碎片 · 通关第5阶后24碎片史诗升华传说",14,jade);
             }
             else if(campTab==2)
             {

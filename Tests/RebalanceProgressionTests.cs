@@ -21,9 +21,9 @@ public static class RebalanceProgressionTests
     }
     private static void SegmentAndMigration()
     {
-        foreach(int level in new[]{49,50,64,65,79,80,94,95,100})
+        foreach(int level in new[]{30,34,35,40,49,50,64,65,79,80,94,95,100})
         {
-            var p=Fresh(); p.Profile.level=level; p.Save(); int expected=level<50?0:level<65?10:level<80?20:level<95?30:35;
+            var p=Fresh(); p.Profile.level=level; p.Save(); int expected=level<30?0:level<35?5:level<50?10:level<65?15:level<80?20:level<95?30:35;
             Check(ProgressionService.MasteryCap(level)==expected,"segmented unlock boundary");
             for(int i=0;i<expected;i++)Check(p.LearnMastery(MasteryType.Technique),"segment accepts lawful points");
             Check(!p.LearnMastery(MasteryType.Technique),"segment limit enforced");
@@ -34,12 +34,12 @@ public static class RebalanceProgressionTests
         JsonNode save=JsonNode.Parse(File.ReadAllText(old.SaveFilePath));save["profile"]["masteryRanks"]=new JsonArray(23,23,23);
         save["profile"].AsObject().Remove("masteryRevision"); save["profile"]["masteryCore"]=0;
         File.WriteAllText(old.SaveFilePath,save.ToJsonString());old=Reload(old);
-        Check(old.Profile.skillPoints==69&&Array.TrueForAll(old.Profile.masteryRanks,x=>x==0)&&old.Profile.masteryCore==-1,"old three-full-track save refunds once");
-        Check(old.LearnMastery(MasteryType.Guard)&&Reload(old).Profile.masteryRanks[2]==1,"new investment not repeatedly refunded");
+        Check(old.Profile.skillPoints==0&&old.Profile.masteryRanks[0]==23&&old.Profile.masteryRanks[1]==23&&old.Profile.masteryRanks[2]==23&&old.Profile.masteryRanks[3]==0&&old.Profile.masteryCore==0,"old three-track legal investments and core preserved");
+        Check(!old.LearnMastery(MasteryType.Guard)&&Reload(old).Profile.masteryRanks[2]==23,"full budget is not minted or erased on reload");
     }
     private static void RecipesAndAtomicCosts()
     {
-        var p=Fresh();p.Profile.level=20;p.Profile.mechanicMaterials=100;p.Save();
+        var p=Fresh();p.Profile.level=20;p.Profile.mechanicMaterials=100;p.Profile.gold=9999;p.Save();
         ItemData core=p.CreateMechanicItem(EquipmentMechanic.FrostEcho);Check(p.CollectLoot(core)&&p.Equip(core.id),"acquire recipe and equip");
         p.Profile.slotUpgradeRanks[2]=5;p.Profile.level=50;p.Save();
         string id=core.id;int mats=p.Profile.mechanicMaterials;
@@ -51,10 +51,10 @@ public static class RebalanceProgressionTests
         Directory.Delete(p.SaveFilePath+".tmp");
         Check(p.ReforgeMechanic(id,true),"reforge succeeds"); core=p.Equipped(ItemSlot.Relic);
         Check(core.id==id&&core.level==50&&core.upgradeLevel==5&&core.mechanic==EquipmentMechanic.FrostEcho&&core.locked,"reforge preserves identity slot rank mechanic and lock");
-        Check(p.Profile.mechanicMaterials==mats-6&&p.HasDiscoveredMechanic(EquipmentMechanic.FrostEcho),"reforge spends6 not repeat12");
-        Check(!p.ReforgeMechanic(id,true)&&p.Profile.mechanicMaterials==mats-6,"samelevel cannot spend materials");
-        Check(p.ToggleMechanicVariant(id,true)&&p.Profile.mechanicMaterials==mats-10,"unlock alternate costs4 once");
-        Check(p.ToggleMechanicVariant(id,true)&&p.Profile.mechanicMaterials==mats-10&&p.Equipped(ItemSlot.Relic).mechanicVariant==0,"free subsequent variant toggle");
+        Check(p.Profile.mechanicMaterials==mats&&p.HasDiscoveredMechanic(EquipmentMechanic.FrostEcho),"reforge leaves fragments intact");
+        Check(!p.ReforgeMechanic(id,true)&&p.Profile.mechanicMaterials==mats,"samelevel cannot spend materials");
+        Check(p.ToggleMechanicVariant(id,true)&&p.Profile.mechanicMaterials==mats-4,"unlock alternate costs4 once");
+        Check(p.ToggleMechanicVariant(id,true)&&p.Profile.mechanicMaterials==mats-4&&p.Equipped(ItemSlot.Relic).mechanicVariant==0,"free subsequent variant toggle");
         p=Reload(p);Check(p.Equipped(ItemSlot.Relic).mechanicVariantUnlocked&&p.Equipped(ItemSlot.Relic).level==50,"recipe upgrade/variant survive load");
         Check(p.PreviewEquippedItem(p.Equipped(ItemSlot.Relic)).mechanicVariantUnlocked,"preview keeps variant contract");
     }

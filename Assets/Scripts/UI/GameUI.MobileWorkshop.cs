@@ -103,7 +103,7 @@ namespace Emberfall
             if(p.Profile.heroClass==HeroClass.Arcanist)
                 MobileWorkshopAction(ref y,width,"恢复均衡专精",jade,session.IsInCamp&&p.Profile.specialization!=ElementalistSpecialization.None,draw,
                     ()=>MobileWorkshopResult(p.SetSpecialization(ElementalistSpecialization.None,session.IsInCamp),"已恢复均衡专精"));
-            MobileWorkshopParagraph(ref y, width, "精通与技能共用点数；50级起开放。每个方向10点启用初阶核心，20点自动增强；只能启用一个核心。", jade, draw);
+            MobileWorkshopParagraph(ref y, width, "精通与技能共用点数；30级起开放。每个方向10点启用初阶核心，20点自动增强；只能启用一个核心。", jade, draw);
             for (int i = 0; i < 4; i++)
             {
                 var mastery = (MasteryType)i;
@@ -146,9 +146,12 @@ namespace Emberfall
                 string id = item.id;
                 MobileWorkshopParagraph(ref y, width, "当前穿戴：" + ItemTitle(item) + " · " + GameBalance.RarityName(item.rarity) + " · Lv." + item.level + "\n编号：" + id, jade, draw);
                 MobileWorkshopParagraph(ref y, width, "重铸保留装备身份、机制和部位强化，成长到角色当前等级。", muted, draw);
-                MobileWorkshopAction(ref y, width, "重铸当前装备 · 6碎片", jade,
-                    string.IsNullOrEmpty(p.ReforgeLockReason(id,session.IsInCamp)), draw,
-                    () => MobileWorkshopResult(p.ReforgeMechanic(id, session.IsInCamp), "机制装备已成长"));
+                var quote=p.QuoteReforge(id);
+                string reforgeReason=p.ReforgeLockReason(quote,session.IsInCamp);
+                if(!string.IsNullOrEmpty(reforgeReason))MobileWorkshopParagraph(ref y,width,reforgeReason,muted,draw);
+                MobileWorkshopAction(ref y, width, quote==null?"重铸暂不可用":"重铸至 "+quote.TargetLevel+"级 · "+quote.GoldCost+"金币", jade,
+                    string.IsNullOrEmpty(reforgeReason), draw,
+                    () => MobileWorkshopResult(p.ReforgeMechanic(quote, session.IsInCamp), "机制装备已成长"));
                 if (mechanic == EquipmentMechanic.FrostEcho || mechanic == EquipmentMechanic.CinderTrail)
                 {
                     MobileWorkshopParagraph(ref y, width, "当前变体 " + (item.mechanicVariant == 0 ? "A" : "B") + "；首次解锁4碎片，此后免费切换互斥效果。", muted, draw);

@@ -15,6 +15,8 @@ try {
         (Join-Path $projectDirectory 'Assets/Scripts/Core/ProgressionGoalState.cs'),
         (Join-Path $projectDirectory 'Assets/Scripts/Core/ChapterProgression.cs'),
         (Join-Path $projectDirectory 'Assets/Scripts/Core/ProgressionService.Chapter.cs'),
+        (Join-Path $projectDirectory 'Assets/Scripts/Core/ProgressionService.Reforge.cs'),
+        (Join-Path $projectDirectory 'Assets/Scripts/Core/ReforgeQuote.cs'),
         (Join-Path $projectDirectory 'Assets/Scripts/Core/RoomTactics.cs'),
         (Join-Path $PSScriptRoot 'ProgressionTests.cs')
     )
