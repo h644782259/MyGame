@@ -7,7 +7,7 @@ def member(signature):
  s=(root/'Assets/Scripts/Combat/SummonedCompanion.cs').read_text();start=s.index(signature);end=s.index('{',start)+1;depth=1
  while depth:depth+=(s[end]=='{')-(s[end]=='}');end+=1
  return s[start:end]
-methods='\n'.join(member(x) for x in ['private sealed class BondState','private static BondState State(', 'public static SummonedCompanion[] Snapshot(', 'public static bool SetFreeFocus(', 'public static bool FreeRecall(', 'public static EnemyController ExplicitFocus(', 'public static SummonedCompanion CastContract(', 'private bool ValidTarget(', 'private void Command(', 'private EnemyController AcquireTarget()', 'private void AdvanceCommand(', 'public void OnConfirmedHit(', 'public bool EmpoweredAttackActive', 'public void RecordEmpoweredHit(', 'public static bool EmpoweredHitFeedback(', 'private float AttackPreparation('])
+methods='\n'.join(member(x) for x in ['private sealed class BondState','private static BondState State(', 'public static SummonedCompanion[] Snapshot(', 'public static bool SetFreeFocus(', 'public static bool FreeRecall(', 'public static EnemyController ExplicitFocus(', 'public static SummonedCompanion CastContract(', 'private bool ValidTarget(', 'private void Command(', 'private EnemyController AcquireTarget()', 'private void AdvanceCommand(', 'private bool LegalPackTarget(', 'private EnemyController AcquirePackTarget()', 'public static bool IsFreeRecalled(', 'public static bool FreeAttack(', 'public void OnConfirmedHit(', 'public bool EmpoweredAttackActive', 'public void RecordEmpoweredHit(', 'public static bool EmpoweredHitFeedback(', 'private float AttackPreparation('])
 if '--legacy-clear' in sys.argv:methods=methods.replace('BondState state = State(owner);','BondState state = State(owner); state.Directive.Clear();')
 shell=r'''
 using System;using System.Collections.Generic;using UnityEngine;
@@ -20,20 +20,20 @@ namespace UnityEngine {
  public static class Mathf {public static float Clamp01(float v)=>Math.Max(0,Math.Min(1,v));public static float Lerp(float a,float b,float t)=>a+(b-a)*t;public static float Max(float a,float b)=>Math.Max(a,b);public static float Min(float a,float b)=>Math.Min(a,b);}
 }
 namespace Emberfall {
- public enum HeroClass{Summoner}public enum EquipmentMechanic{TwinSummonResonance}
+ public enum SummonerRoute{Bonded,Pack} public enum HeroClass{Summoner}public enum EquipmentMechanic{TwinSummonResonance}
  public static class GameBalance {public static float SkillRangeMultiplier(int rank)=>1;public static Color ClassColor(HeroClass h)=>new Color();}
  public class PlayerController {public GameObject gameObject=new GameObject();public float RunAttackMultiplier=1;public bool IsDead,Twin;public HeroClass HeroClass;public int CombatEpoch;public EnemyController FocusTarget;public object Targeting;public Vector3 AimPoint;public EnemyController AimTarget;public bool Ready=true;public Func<int,Vector3,bool> ConfirmCast;public Func<int,bool> ExecuteCast;public T GetComponent<T>() where T:class=>Targeting as T;public bool CanBeginSkillTargeting(int skill)=>Ready;public bool ConfirmTargetedSkill(int skill,Vector3 point)=>ConfirmCast(skill,point);public bool ExecuteChargedSkill(int skill)=>ExecuteCast(skill);public void CancelCombatPose(){}public Transform transform=new Transform();public bool HasMechanic(EquipmentMechanic m)=>Twin;}
  public class EnemyController {public float Health=100;public bool IsDead,IsAggro=true;public GameObject gameObject=new GameObject();public Transform transform=new Transform();public int DamageCalls;public void TakeDamage(float d,Vector3 v,float a=0,float b=0,bool impact=true){DamageCalls++;Health-=d;}}
- public class GameSession {public static GameSession Instance;public class ProfileStub{public int[] skillRanks={1,1,1,1,1,1,1,1,1,1};}public class ProgressionStub{public ProfileStub Profile=new ProfileStub();}public ProgressionStub Progression=new ProgressionStub();public float ArenaRadius=30;public PlayerController Player;public bool HasStarted=true,InputBlocked,CombatEnded,InDungeon=true;public List<EnemyController> Enemies=new List<EnemyController>();public int Procs;public void RecordCombatAction(string s){if(s=="双契共鸣")Procs++;}public void RecordClassTutorial(HeroClass h){}public void SpawnMechanismText(Vector3 p,string s,Color c){}}
+ public class GameSession {public static GameSession Instance;public class ProfileStub{public SummonerRoute summonerRoute;public int[] skillRanks={1,1,1,1,1,1,1,1,1,1};}public class ProgressionStub{public ProfileStub Profile=new ProfileStub();}public ProgressionStub Progression=new ProgressionStub();public float ArenaRadius=30;public PlayerController Player;public bool HasStarted=true,InputBlocked,CombatEnded,InDungeon=true;public List<EnemyController> Enemies=new List<EnemyController>();public int Procs;public void RecordCombatAction(string s){if(s=="双契共鸣")Procs++;}public void RecordClassTutorial(HeroClass h){}public void SpawnMechanismText(Vector3 p,string s,Color c){}}
  public static class CombatFx {public static Vector3 Flat(Vector3 v)=>new Vector3(v.x,0,v.z);}
  public static class CombatSight {public static Vector3 GroundPoint(Vector3 a,Vector3 b)=>b;}
- public static class WorldTraversal {public static Vector3 NearestWalkable(Vector3 v,float n)=>v;public static Vector3 Move(Vector3 a,Vector3 b,float n)=>a+b;}
+ public static class WorldTraversal {public static EnemyController Blocked;public static bool HasGroundPath(Vector3 a,Vector3 b,float n)=>Blocked==null||Blocked.transform.position.x!=b.x;public static Vector3 NearestWalkable(Vector3 v,float n)=>v;public static Vector3 Move(Vector3 a,Vector3 b,float n)=>a+b;}
  public static class AdvancedSkillVfx {public static void Beam(PlayerController p,Vector3 a,Vector3 b,Color c,float t,float w){}}
  public sealed class SummonedCompanion {
   public enum Kind{Wolf,Spirit,Treant}
   private static List<SummonedCompanion> active=new List<SummonedCompanion>();private static Dictionary<PlayerController,BondState> bonds=new Dictionary<PlayerController,BondState>();private static List<PlayerController> staleOwners=new List<PlayerController>();
   public PlayerController Owner;public Kind Form;public bool IsStarter,IsPermanent=true,IsAlive=true;public float RemainingLifetime=100;
-  private GameSession session;private Transform transform=new Transform();private int rank=1;private float cooldown=2,attackPose,recallTime,commandTime,commandMultiplier=1,damage=10;private bool commandEmpowered,hasCommandPoint,commandHadTarget,recallVisualPending;private EnemyController commandedTarget,target;private Vector3 commandedPoint;
+  private GameSession session;private Transform transform=new Transform();private int rank=1;private float packTargetHoldUntil;private float cooldown=2,attackPose,recallTime,commandTime,commandMultiplier=1,damage=10;private bool commandEmpowered,hasCommandPoint,commandHadTarget,recallVisualPending;private EnemyController commandedTarget,target;private Vector3 commandedPoint;
   private float NavigationRadius=>.3f;private float AttackMultiplier=>commandMultiplier;
   private bool pathClear;private bool CanReachTarget(Vector3 p)=>pathClear;
   private void RefreshContractPower(int r){rank=r;}
@@ -84,6 +84,25 @@ namespace Emberfall {
    for(int i=0;i<1000;i++)FreeRecall(owner);
    check(spirit.cooldown==cd&&spirit.RemainingLifetime==remaining&&spirit.commandTime==commandRemaining&&damageCalls==a.DamageCalls+b.DamageCalls+c.DamageCalls,"1000 free recalls do not deal damage or reset cooldown/lifetime/command timer");
    SetFreeFocus(owner,a);check(spirit.AcquireTarget()==a&&!spirit.recallVisualPending,"new explicit focus exits recall");
+   FreeRecall(owner);float resumeCommand=spirit.commandTime,resumeMultiplier=spirit.commandMultiplier,resumeRecovery=spirit.cooldown,resumeLife=spirit.RemainingLifetime,resumeOpportunity=State(owner).Commands.Remaining(Time.time);
+   for(int i=0;i<1000;i++)check(FreeAttack(owner),"free attack accepted");
+   check(!IsFreeRecalled(owner)&&spirit.commandTime==resumeCommand&&spirit.commandMultiplier==resumeMultiplier&&spirit.cooldown==resumeRecovery&&spirit.RemainingLifetime==resumeLife&&State(owner).Commands.Remaining(Time.time)==resumeOpportunity,"free attack never refreshes timers buffs recovery lifetime or opportunity");
+   owner.FocusTarget=null;State(owner).Directive.Clear();wolf.commandTime=spirit.commandTime=0;wolf.target=a;c.transform.position=new Vector3(9,0,0);
+   game.Progression.Profile.summonerRoute=SummonerRoute.Pack;
+   var extra=Summon(owner,game,Kind.Wolf,1,Vector3.zero,10,false);extra.IsStarter=false;
+   var extra2=Summon(owner,game,Kind.Wolf,1,Vector3.zero,10,false);extra2.IsStarter=false;
+   extra.target=extra.AcquireTarget();extra2.target=extra2.AcquireTarget();
+   check(extra.target==b&&extra2.target==c,"reinforcements split including permanent base wolf occupancy");
+   extra2.target=null;b.transform.position=new Vector3(8,0,0);c.transform.position=new Vector3(4,0,0);Time.time+=.5f;
+   check(extra.AcquireTarget()==b,"legal target held for one second despite nearer choice");
+   b.IsDead=true;extra.target=extra.AcquireTarget();check(extra.target!=b,"death bypasses hold");b.IsDead=false;
+   extra.target=b;extra.packTargetHoldUntil=Time.time+1;WorldTraversal.Blocked=b;check(extra.AcquireTarget()!=b,"unreachable bypasses hold");WorldTraversal.Blocked=null;
+   b.transform.position=new Vector3(15,0,0);check(extra.AcquireTarget()!=b,"owner range bypasses hold");b.transform.position=new Vector3(7,0,0);
+   game.InDungeon=false;b.IsAggro=false;c.IsAggro=false;extra.target=null;check(extra.AcquireTarget()==a,"wilderness never initiates unengaged enemies");game.InDungeon=true;b.IsAggro=c.IsAggro=true;
+   SetFreeFocus(owner,c);check(extra.AcquireTarget()==c&&extra2.AcquireTarget()==c,"explicit focus takes precedence over splitting");
+   extra.commandedTarget=b;extra.commandTime=2;extra.commandHadTarget=true;SetFreeFocus(owner,a);check(extra.AcquireTarget()==b,"paid override wins latest team order");extra.AdvanceCommand(3);check(extra.AcquireTarget()==a,"expired override restores latest team intent");
+   State(owner).Directive.Clear();b.IsDead=c.IsDead=true;extra.target=null;extra2.target=null;check(extra.AcquireTarget()==a&&extra2.AcquireTarget()==a,"single boss converges despite occupancy");b.IsDead=c.IsDead=false;
+   game.Progression.Profile.summonerRoute=SummonerRoute.Bonded;extra.target=null;check(extra.AcquireTarget()==wolf.AcquireTarget(),"other routes keep existing nearest behavior");
    wolf.target=a;wolf.pathClear=true;wolf.recallTime=0;wolf.attackPose=0;a.transform.position=new Vector3(.5f,0,0);wolf.cooldown=.11f;
    float originalCooldown=wolf.cooldown;int originalDamage=a.DamageCalls;
    check(wolf.AttackPreparation(1.4f)>.4f&&wolf.cooldown==originalCooldown&&a.DamageCalls==originalDamage,"preparation is a read-only final cooldown slice");
@@ -115,6 +134,9 @@ if __name__ == '__main__':
   dotnet=sys.argv[1] if len(sys.argv)>1 else 'dotnet';subprocess.run([dotnet,'build',str(p),'--configfile',str(config),'-v:q'],env=env,check=True);subprocess.run([dotnet,str(p.parent/'bin/Debug/net8.0/Validation.dll')],env=env,check=True)
 
   for old,new,expected in [
+   ('EnemyController chosen = unclaimed ?? fallback;', 'EnemyController chosen = fallback;', 'reinforcements split including permanent base wolf occupancy'),
+   ('Time.time < packTargetHoldUntil && LegalPackTarget(target)', 'false && LegalPackTarget(target)', 'legal target held for one second despite nearer choice'),
+   ('State(owner).Directive.Clear();\n            foreach (var pet in Snapshot(owner)) { pet.target = null; pet.recallVisualPending = false; }', 'State(owner).Directive.Clear();\n            foreach (var pet in Snapshot(owner)) { pet.cooldown = 0; pet.target = null; pet.recallVisualPending = false; }', 'free attack never refreshes timers buffs recovery lifetime or opportunity'),
    ('||!CanReachTarget(target.transform.position))return 0;',')return 0;','blocked attack cannot advertise preparation'),
    ('||actualHealthLoss<=0','', 'blocked damage and unempowered damage cannot emit')]:
    assert old in shell

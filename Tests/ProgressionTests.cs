@@ -263,11 +263,11 @@ public static class ProgressionTests
         int changedEvents = 0;
         service.LeveledUp += level => levelEvents++;
         service.Changed += () => changedEvents++;
-        Check(!service.LearnSkill(0), "starting skill locked at level 1");
+        Check(service.Profile.skillRanks[0] == 1 && !service.LearnSkill(0), "starting skill rank one available; rank two locked");
         service.GrantExperience(60);
-        Check(service.Profile.level == 2 && service.Profile.xp == 0 && service.Profile.skillPoints == 1, "level 2 grants one point");
+        Check(service.Profile.level == 2 && service.Profile.xp == 0 && service.Profile.skillPoints == 0, "level 2 adds no extra point");
         Check(levelEvents == 1 && changedEvents == 1, "progression events fire");
-        Check(service.LearnSkill(0) && service.Profile.skillRanks[0] == 1 && service.Profile.skillPoints == 0, "learning spends exactly one point");
+        Check(!service.LearnSkill(0) && service.Profile.skillRanks[0] == 1 && service.Profile.skillPoints == 0, "starting rank retains exactly one spent point");
         Check(!service.LearnSkill(0) && !service.LearnSkill(1), "cannot overspend points or bypass level lock");
         service.GrantExperience(90 + 120 + 150 + 180);
         Check(service.Profile.level == 6 && levelEvents == 5 && service.Profile.skillPoints == 4, "multi-level gain and points");
@@ -381,9 +381,9 @@ public static class ProgressionTests
             string saved = File.ReadAllText(service.SaveFilePath);
             int changes = 0;
             service.Changed += () => changes++;
-            Check(!service.MoveHotbarSkill(0, 1) && !service.MoveHotbarSkill(-1, 1) && !service.MoveHotbarSkill(0, 10) && changes == 0 && File.ReadAllText(service.SaveFilePath) == saved, hero + " rejects unlearned or invalid drag without saving");
+            Check(!service.MoveHotbarSkill(1, 2) && !service.MoveHotbarSkill(-1, 1) && !service.MoveHotbarSkill(0, 10) && changes == 0 && File.ReadAllText(service.SaveFilePath) == saved, hero + " rejects unlearned or invalid drag without saving");
             ReachLevel(service, 4);
-            Check(service.LearnSkill(0), hero + " drag fixture learns actual root skill");
+            Check(service.Profile.skillRanks[0]==1, hero + " drag fixture starts with actual root skill");
             int[] allPages = (int[])service.Profile.equippedSkills.Clone();
             changes = 0;
             Check(service.MoveHotbarSkill(0, 1) && service.Profile.equippedSkills[0] == -1 && service.Profile.equippedSkills[1] == 0 && changes == 1, hero + " dragging onto unlearned preset treats target as empty");
@@ -417,8 +417,8 @@ public static class ProgressionTests
             service.Changed += () => changes++;
             int originalPotions = service.Profile.potions;
             Check(service.AssignConsumable(8) && service.Profile.equippedSkills[8] == GameBalance.HotbarPotion && changes == 1,
-                hero + " level-one character can assign a potion before learning any skills");
-            Check(service.Profile.potions == originalPotions && service.Profile.skillPoints == 0 && Array.TrueForAll(service.Profile.skillRanks, rank => rank == 0),
+                hero + " level-one character can assign a potion with its starting skill");
+            Check(service.Profile.potions == originalPotions && service.Profile.skillPoints == 0 && service.Profile.skillRanks[0] == 1 && SpentPoints(service) == 1,
                 hero + " assigning a potion does not consume inventory or spend progression");
             string saved = File.ReadAllText(service.SaveFilePath);
             DateTime written = File.GetLastWriteTimeUtc(service.SaveFilePath);
@@ -426,12 +426,12 @@ public static class ProgressionTests
                 hero + " invalid consumable slots, same-slot assignment and skill API sentinel misuse reject");
             Check(changes == 1 && File.ReadAllText(service.SaveFilePath) == saved && File.GetLastWriteTimeUtc(service.SaveFilePath) == written,
                 hero + " rejected consumable changes do not notify or write");
-            Check(service.MoveHotbarSkill(8, 0) && service.Profile.equippedSkills[0] == GameBalance.HotbarPotion && service.Profile.equippedSkills[8] == -1,
-                hero + " potion drag replaces an unlearned placeholder and clears source");
+            Check(service.MoveHotbarSkill(8, 0) && service.Profile.equippedSkills[0] == GameBalance.HotbarPotion && service.Profile.equippedSkills[8] == 0,
+                hero + " potion drag swaps the starting skill into the source slot");
             Check(service.AssignConsumable(9) && service.Profile.equippedSkills[9] == GameBalance.HotbarPotion && service.Profile.equippedSkills[0] == -1,
                 hero + " repeated potion assignment relocates instead of duplicating");
             ReachLevel(service, 2);
-            Check(service.LearnSkill(0) && service.AssignSkill(0, 0), hero + " learns an active skill for mixed hotbar swaps");
+            Check(service.Profile.skillRanks[0] == 1 && service.AssignSkill(0, 0), hero + " assigns the starting skill for mixed hotbar swaps");
             changes = 0;
             Check(service.MoveHotbarSkill(9, 0) && service.Profile.equippedSkills[0] == GameBalance.HotbarPotion && service.Profile.equippedSkills[9] == 0 && changes == 1,
                 hero + " potion and learned skill drag swap atomically");
@@ -697,9 +697,9 @@ public static class ProgressionTests
     {
         var service = Fresh(HeroClass.Arcanist);
         service.GrantExperience(int.MaxValue);
-        Check(service.Profile.level == 100 && service.Profile.xp == 0 && service.Profile.skillPoints == 99, "large XP input safely reaches level cap");
+        Check(service.Profile.level == 100 && service.Profile.xp == 0 && service.Profile.skillPoints == 98, "large XP input safely reaches level cap");
         service.GrantExperience(int.MaxValue);
-        Check(service.Profile.level == 100 && service.Profile.skillPoints == 99, "level cap cannot mint extra points");
+        Check(service.Profile.level == 100 && service.Profile.skillPoints == 98, "level cap cannot mint extra points");
         service.AddGold(int.MaxValue);
         Check(service.Profile.gold == 999999999, "gold overflow is clamped");
         service.AddGold(int.MinValue);
@@ -716,7 +716,7 @@ public static class ProgressionTests
 
     private static void EveryClassSkillUnlocksAtItsGate()
     {
-        int[] expectedLevels = { 2, 4, 6, 4, 10, 6, 13, 20, 13, 30 };
+        int[] expectedLevels = { 1, 4, 6, 4, 10, 6, 13, 20, 13, 30 };
         Check(GameBalance.SkillCount == 10, "eight active and two passive skills per class");
         Check(GameBalance.ClassNames.Length == Enum.GetValues(typeof(HeroClass)).Length, "every playable class has balance metadata");
         for (int hero = 0; hero < Enum.GetValues(typeof(HeroClass)).Length; hero++)
@@ -730,6 +730,7 @@ public static class ProgressionTests
                 Check(GameBalance.SkillRequiredLevels[skill] == required, "expected skill unlock milestone");
                 string name = GameBalance.SkillName((HeroClass)hero, skill);
                 Check(!string.IsNullOrWhiteSpace(name) && names.Add(name) && !string.IsNullOrWhiteSpace(GameBalance.SkillDescription((HeroClass)hero, skill)), "every class skill has a distinct name and description");
+                if (skill != 0) {
                 ReachLevel(service, required - 1);
                 LearnPrerequisites(service, skill);
                 int points = service.Profile.skillPoints;
@@ -738,6 +739,7 @@ public static class ProgressionTests
                 ReachLevel(service, required);
                 points = service.Profile.skillPoints;
                 Check(service.LearnSkill(skill) && service.Profile.skillRanks[skill] == 1 && service.Profile.skillPoints == points - 1, "skill unlocks and spends one point exactly at requirement");
+                } else Check(service.Profile.skillRanks[0]==1&&service.Profile.skillPoints==0,"first active starts learned");
                 if (GameBalance.IsPassive(skill))
                     Check(GameBalance.SkillCooldown((HeroClass)hero, skill) == 0 && GameBalance.SkillEnergyCost((HeroClass)hero, skill) == 0, "passive skills have no active cooldown or energy cost");
                 else
@@ -766,7 +768,8 @@ public static class ProgressionTests
                 int prerequisiteRanks = 0;
                 for (int rank = 1; rank <= 3; rank++)
                 {
-                    int required = GameBalance.SkillRequiredLevels[skill] + (rank == 1 ? 0 : rank == 2 ? 8 : 18);
+                    int required = rank == 1 ? GameBalance.SkillRequiredLevels[skill] : Math.Max(2,GameBalance.SkillRequiredLevels[skill]) + (rank == 2 ? 8 : 18);
+                    if (skill == 0 && rank == 1) { Check(service.Profile.skillRanks[0]==1,"first active already learned");service.AssignSkill(assignedSlot,skill);continue; }
                     Check(GameBalance.SkillRankRequiredLevel(skill, rank) == required, "rank gate uses original skill milestone plus evolution offset");
                     ReachLevel(service, required - 1);
                     if (rank == 1)
@@ -805,6 +808,7 @@ public static class ProgressionTests
         {
             var locked = Fresh((HeroClass)hero);
             ReachLevel(locked, 100);
+            locked.Profile.skillRanks[0]=0;locked.Save(); // Explicit legacy unlearned-root fixture.
             int changes = 0;
             locked.Changed += () => changes++;
             for (int skill = 1; skill < 10; skill++)
@@ -943,7 +947,7 @@ public static class ProgressionTests
     {
         var service = Fresh(HeroClass.Ranger);
         CheckDefaultLoadout(service.Profile, "new character has eight default active mappings and two empty pages");
-        Check(!service.AssignSkill(0, 0), "cannot assign an unlearned default skill");
+        Check(!service.AssignSkill(1, 1), "cannot assign an unlearned default skill");
         ReachLevel(service, 2);
         service.LearnSkill(0);
         Check(service.AssignSkill(1, 0), "learned skill can move onto a locked default slot");
@@ -1014,7 +1018,7 @@ public static class ProgressionTests
         service.GrantExperience(int.MaxValue);
         for (int skill = 0; skill < 10; skill++)
         {
-            for (int rank = 1; rank <= 3; rank++)
+            for (int rank = service.Profile.skillRanks[skill]+1; rank <= 3; rank++)
                 Check(service.LearnSkill(skill) && service.Profile.skillRanks[skill] == rank, "all ten skills support three learned ranks");
             Check(!service.LearnSkill(skill) && service.Profile.skillRanks[skill] == 3, "every skill rejects a fourth rank");
         }
@@ -1099,7 +1103,7 @@ public static class ProgressionTests
         source.GrantExperience(23);
         source.AddGold(987);
         for (int skill = 0; skill < 10; skill++)
-            for (int rank = 0; rank < 3; rank++) Check(source.LearnSkill(skill), "portable source learns each skill rank");
+            for (int rank = source.Profile.skillRanks[skill]; rank < 3; rank++) Check(source.LearnSkill(skill), "portable source learns each skill rank");
         ItemData equipment = source.CreateLoot(1, true);
         Check(source.Equip(equipment.id) && source.Upgrade(equipment.id), "portable source receives and upgrades equipped loot");
         source.CreateLoot(40, true);

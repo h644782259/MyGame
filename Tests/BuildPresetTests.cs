@@ -194,7 +194,7 @@ public static class BuildPresetTests
         Check(p.LoadSlot(p.CurrentSlotId) && p.Profile.buildPresets.Length == 2 && !p.HasBuildPreset(0) && File.ReadAllText(p.SaveFilePath) == bytes,
             "legacy missing presets migrate empty without a load-time write");
         Check(p.SaveBuildPreset(0, true), "rank1 character can capture default locked placeholders without unlocking them");
-        Check(p.Profile.skillRanks.All(r => r == 0) && p.ApplyBuildPreset(0, true) && p.Profile.skillRanks.All(r => r == 0) && p.Profile.skillPoints == 0,
+        Check(p.Profile.skillRanks[0] == 1 && p.Profile.skillRanks.Skip(1).All(r => r == 0) && p.ApplyBuildPreset(0, true) && p.Profile.skillRanks[0] == 1 && p.Profile.skillRanks.Skip(1).All(r => r == 0) && p.Profile.skillPoints == 0,
             "default shortcut placeholders cannot grant skills or points");
         var other = Fresh(root, HeroClass.Ranger);
         Check(other.Profile.buildPresets.Length == 2 && !other.HasBuildPreset(0), "separate character never inherits another character's builds");
