@@ -29,14 +29,14 @@ public static class RunCombatRulesTests
         assertions=0;
         var empty=new RunChoices();
         Check(Near(empty.AttackMultiplier,1)&&Near(empty.CritChance(.9f),.9f)&&Near(empty.CooldownMultiplier,1),"no run choice changes baseline stats");
-        var keen=Select(RunBlessing.KeenSight);Check(Near(keen.CritChance(.1f),.2f)&&Near(keen.CritChance(.75f),.8f)&&Near(keen.CritChance(.9f),.9f),"crit adds ten points, caps added bonus and never nerfs higher baseline");
-        Check(Near(keen.CritChance(float.NaN),.1f)&&keen.CritChance(float.PositiveInfinity)<=1,"invalid crit input remains finite and bounded");
+        var keen=Select(RunBlessing.KeenSight);Check(Near(keen.CritChance(.1f),.3f)&&Near(keen.CritChance(.75f),.8f)&&Near(keen.CritChance(.9f),.9f),"crit adds twenty points, caps added bonus and never nerfs higher baseline");
+        Check(Near(keen.CritChance(float.NaN),.2f)&&keen.CritChance(float.PositiveInfinity)<=1,"invalid crit input remains finite and bounded");
         var deadly=Select(RunBlessing.DeadlyEdge);
         CombatDamage hit=CombatDamage.Roll(100,1,0,deadly.CriticalMultiplier);
-        Check(hit.IsCritical&&Near(hit.Amount,195)&&Near(hit.WithoutCritical().Amount,100),"critical-damage bonus travels with hit and strips correctly for DoT");
+        Check(hit.IsCritical&&Near(hit.Amount,215)&&Near(hit.WithoutCritical().Amount,100),"critical-damage bonus travels with hit and strips correctly for DoT");
         Check(Near((hit*2).WithoutCritical().Amount,200),"scaled critical hit preserves its actual multiplier");
         Check(Near(CombatDamage.Roll(100,1,0,999).Amount,225)&&Near(CombatDamage.Roll(100,1,0,float.NaN).Amount,165),"critical multiplier cannot runaway or propagate NaN");
-        var attack=Select(RunBlessing.BattleFervor);Check(Near(attack.AttackMultiplier,1.15f),"attack blessing is exactly fifteen percent");
+        var attack=Select(RunBlessing.BattleFervor);Check(Near(attack.AttackMultiplier,1.10f),"attack blessing is exactly ten percent");
         var fast=Select(RunBlessing.SwiftHands);Check(Near(fast.AttackSpeedMultiplier,1.18f),"attack-speed blessing is exactly eighteen percent");
         var energy=Select(RunBlessing.FlowingEssence);Check(Near(energy.ExtraEnergyPerSecond,2),"energy blessing adds two per second");
         var survival=Select(RunBlessing.IronSkin,RunBlessing.LastStand);
