@@ -18,7 +18,7 @@ namespace Emberfall
             return true;
         }
         // Alternating swing direction is shared by pose and its visual ribbon.
-        public int WeaponSwingSide { get { return swingCount % 2 == 0 ? 1 : -1; } }
+        public int WeaponSwingSide { get { return pilotVisible ? -1 : swingCount % 2 == 0 ? 1 : -1; } }
         private Vector3 WeaponAnchorLocal(WeaponVisualAnchor anchor)
         {
             switch (anchor)

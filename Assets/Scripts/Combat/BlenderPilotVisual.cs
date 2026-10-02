@@ -68,6 +68,7 @@ namespace Emberfall
             view.Ready = view.idle != null && view.move != null && view.basic != null && view.hit != null && view.skill != null;
             foreach (Transform socket in view.sockets) view.Ready &= socket != null;
             if (!view.Ready) { root.SetActive(false); Destroy(root); return null; }
+            root.SetActive(false); // first visible frame must already have a sampled pose
             return view;
         }
         public void Sample(float time, float phase, float speed, bool acting, bool isBasic, float actionProgress, float hurtAge)

@@ -1,0 +1,29 @@
+#!/usr/bin/env python3
+"""Actual pilot adapters, actual PlayAction/CommitActionPose and pre-procedural AnimateHero branch.
+Set EMBERFALL_PILOT_SOURCE to the integration worktree; Unity object/import/sampling boundaries are doubles.
+"""
+import os,sys,tempfile,subprocess
+from pathlib import Path
+r=Path(__file__).resolve().parents[1];source=Path(os.environ.get('EMBERFALL_PILOT_SOURCE',str(r)));dotnet=sys.argv[1] if len(sys.argv)>1 else os.environ.get('DOTNET','dotnet')
+def member(s,k):
+ a=s.index(k);b=s.index('{',a)+1;n=1
+ while n:n+=(s[b]=='{')-(s[b]=='}');b+=1
+ return s[a:b]
+model=(source/'Assets/Scripts/Combat/CombatModel.cs').read_text()
+animate=member(model,'private void AnimateHero(');animate=animate[:animate.index('            float stride =')]+ '}';assert 'if (SampleBlenderPilot(acting,t,hurt)) return;' in animate
+methods='\n'.join(member(model,k) for k in ['public void PlayAction(', 'private void CommitActionPose(', 'private void OnDestroy('])+animate
+with tempfile.TemporaryDirectory(prefix='blender-adapter-') as tmp:
+ p=Path(tmp)
+ for f in ['Combat/BlenderPilotVisual','Combat/CombatModel.BlenderPilot','Combat/CombatModel.WeaponRig','Core/BlenderPilotPosePolicy','Core/BasicActionTimeline','Core/SkillDamageBudgets','Core/CombatBalance','Core/WeaponStructure']:(p/(Path(f).name+'.cs')).write_text((source/('Assets/Scripts/'+f+'.cs')).read_text())
+ (p/'Methods.cs').write_text('using UnityEngine;namespace Emberfall{'+''.join(member((source/'Assets/Scripts/Core/GameTypes.cs').read_text(),signature) for signature in ['public enum EnemyKind','public enum ItemSlot','public enum Rarity','public enum EquipmentMechanic','public class ItemData'])+'public sealed partial class CombatModel{'+methods+'}}');(p/'Fixture.cs').write_text((r/'Tests/BlenderPilotAdapterProductionFixture.cs').read_text())
+ (p/'NuGet.Config').write_text('<configuration><packageSources><clear /></packageSources></configuration>');proj=p/'Test.csproj';proj.write_text('<Project Sdk="Microsoft.NET.Sdk"><PropertyGroup><TargetFramework>net8.0</TargetFramework><OutputType>Exe</OutputType></PropertyGroup></Project>')
+ for mutation in ['current','automatic-driver','hidden-anchor','contact-zero','restore-all-visible','stale-opt-in','preview-wall-clock','pilot-alternates','early-visible']:
+  names={'early-visible':'BlenderPilotVisual.cs','automatic-driver':'BlenderPilotVisual.cs','hidden-anchor':'CombatModel.WeaponRig.cs','contact-zero':'Methods.cs','restore-all-visible':'CombatModel.BlenderPilot.cs','stale-opt-in':'BlenderPilotVisual.cs','preview-wall-clock':'CombatModel.BlenderPilot.cs','pilot-alternates':'CombatModel.WeaponRig.cs'}
+  edits={'early-visible':('root.SetActive(false); // first visible frame must already have a sampled pose','// regression: visible before sampling','imported root stays hidden until first sample'),'pilot-alternates':('pilotVisible ? -1 :','false ? -1 :','authored external sword keeps fixed sampled swing side'),'stale-opt-in':('private static void ResetForPlayerStartup() { Enabled=false; }','private static void ResetForPlayerStartup() {}','subsystem startup resets stale opt-in'),'preview-wall-clock':('isolatedPreview?1:Time.time-pilotHurtStarted','Time.time-pilotHurtStarted','isolated preview does not sample wall-clock hit reaction'),'automatic-driver':('animator.enabled = false','animator.enabled = true','manual sampler disables all automatic drivers'), 'hidden-anchor':('if(pilotVisible && blenderPilot != null','if(false && blenderPilot != null','ribbon anchor reads the sampled external tip'),'contact-zero':('BasicActionTimeline.Contact(heroClass == HeroClass.Ranger)','0f','actual PlayAction commit samples contact .52'),'restore-all-visible':('pilotHiddenRenderers[i].enabled=pilotRendererStates[i]','pilotHiddenRenderers[i].enabled=true','fallback restores each original renderer')}
+  old=None
+  if mutation!='current':
+   f=p/names[mutation];old=f.read_text();a,b,expected=edits[mutation];assert a in old;f.write_text(old.replace(a,b))
+  q=subprocess.run([dotnet,'build',str(proj),'--configfile',str(p/'NuGet.Config'),'-v:q'],capture_output=True,text=True);assert q.returncode==0,q.stdout+q.stderr
+  q=subprocess.run([dotnet,str(p/'bin/Debug/net8.0/Test.dll')],capture_output=True,text=True)
+  if old is not None:f.write_text(old);assert q.returncode and expected in q.stderr,q.stdout+q.stderr;print('PASS: compiled '+mutation+' control fails exact adapter assertion')
+  else:print(q.stdout,end='');assert q.returncode==0,q.stderr

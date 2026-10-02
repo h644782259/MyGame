@@ -154,7 +154,7 @@ namespace Emberfall
             return obj.transform;
         }
 
-        public void TakeDamage(float amount, Vector3 direction, float knockback = 0f, float stun = 0f, bool impact = true, bool critical = false)
+        public void TakeDamage(float amount, Vector3 direction, float knockback = 0f, float stun = 0f, bool impact = true, bool critical = false, System.Action<float> actualHealthLoss = null)
         {
             if (session == null || !AdventureResultPolicy.AcceptsDamage(session.HasStarted,session.CombatEnded) || IsDead || amount <= 0 || float.IsNaN(amount) || float.IsInfinity(amount)) return;
             amount *= session.RoomSupportMultiplier(this)*session.ChapterSupportMultiplier(this);
@@ -164,6 +164,7 @@ namespace Emberfall
             amount*=armorMultiplier;
             float previousHealth = Health;
             Health = Mathf.Max(0,Health-amount);
+            if(actualHealthLoss!=null&&Health<previousHealth)actualHealthLoss(previousHealth-Health);
             if(guardArmorVisual!=null&&Health<previousHealth)guardArmorVisual.RecordImpact(armorMultiplier<1,preparing);
             if (CombatReviewEvents.Enabled) CombatReviewEvents.Emit("damage","0",CombatReviewObjectId.Get(this),previousHealth-Health,detail:"enemy_health_loss");
             aggro = true;
@@ -210,6 +211,7 @@ namespace Emberfall
             return granted;
         }
 
+        internal bool IsLargeBossCounterWindow {get{return largeBoss!=null&&largeBoss.State.Interruptible;}}
         internal bool TrySkillInterrupt(PlayerController source, int skill, int castId)
         {
             if (source == null || source.IsDead || session == null || source != session.Player || !session.HasStarted ||
@@ -698,6 +700,12 @@ namespace Emberfall
         {mobileSupplier=supplier;mobileFirst=first;mobileSecond=second;}
         private bool RegroupMobileSupport(float dt,float speed)
         {
+            if(mobileSupplier!=null&&!mobileSupplier.IsDead&&mobileSupplier.isActiveAndEnabled&&(aggro||mobileSupplier.IsAggro))
+            {aggro=true;mobileSupplier.Provoke();}
+            bool firstAlive=mobileFirst!=null&&!mobileFirst.IsDead&&mobileFirst.isActiveAndEnabled;
+            bool secondAlive=mobileSecond!=null&&!mobileSecond.IsDead&&mobileSecond.isActiveAndEnabled;
+            if((firstAlive||secondAlive)&&(aggro||firstAlive&&mobileFirst.IsAggro||secondAlive&&mobileSecond.IsAggro))
+            {aggro=true;if(firstAlive)mobileFirst.Provoke();if(secondAlive)mobileSecond.Provoke();}
             if(preparing||chargeTime>0)return false;
             EnemyController partner=mobileFirst!=null&&!mobileFirst.IsDead&&mobileFirst.isActiveAndEnabled?mobileFirst:
                 mobileSecond!=null&&!mobileSecond.IsDead&&mobileSecond.isActiveAndEnabled?mobileSecond:null;

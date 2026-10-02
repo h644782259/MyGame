@@ -9,6 +9,7 @@ namespace Emberfall
     {
         private bool pilotHasGear, pilotHasFashion, pilotVisible;
         private BlenderPilotVisual blenderPilot;
+        private static bool PilotStarterCompatible(ItemData item,ItemSlot slot) { return false; }
         private void ConfigureBlenderPilot() { blenderPilot=null;pilotVisible=false; }
         private void SetBlenderPilotVisible(bool visible)
         {

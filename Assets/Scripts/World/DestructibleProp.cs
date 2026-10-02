@@ -15,6 +15,9 @@ namespace Emberfall
         private bool blocksPath,initialized;
         private float radius,hitAt=-10;
         private WorldTraversal.ObstacleHandle obstacle;
+        private PlayerController breakOwner;
+        private int breakEpoch;
+        internal bool WasBrokenBy(PlayerController owner,int epoch){return Broken&&owner!=null&&breakOwner==owner&&breakEpoch==epoch;}
         public bool Broken {get{return rules==null||rules.Broken;}}
         public float Radius {get{return radius;}}
         public static int ActiveCount
@@ -61,6 +64,7 @@ namespace Emberfall
             hitAt=Time.time;
             HitFeedback.Spawn(transform.position+Vector3.up*.6f,transform.position-owner.transform.position,result.Broke?1f:.6f,damage.IsCritical,priority:CombatVisualPriority.RealContact);
             if(!result.Broke)return;
+            breakOwner=owner;breakEpoch=owner.CombatEpoch;
             ReleaseObstacle();visual.gameObject.SetActive(false);
             DestructibleDebrisBurst.Spawn(transform,debrisMaterial,EffectPreferences.ReducedEffects?2:4);
             GameAudio.Play(SoundCue.Hit);

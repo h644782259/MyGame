@@ -4,6 +4,15 @@ namespace Emberfall
     public sealed partial class CombatModel
     {
         private BlenderPilotVisual blenderPilot;
+        // This authored outfit represents only the exact unupgraded new-character kit.
+        // Upgraded, dropped, mechanic-bearing or cosmetic gear keeps its real visuals.
+        private static bool PilotStarterCompatible(ItemData item, ItemSlot slot)
+        {
+            if(item==null)return true;
+            string name=slot==ItemSlot.Weapon?"初行长剑":slot==ItemSlot.Armor?"初行战衣":"初行护符";
+            return item.slot==slot && item.name==name && item.level==1 && item.rarity==Rarity.Common &&
+                item.upgradeLevel==0 && item.mechanic==EquipmentMechanic.None && !item.mechanicVariantUnlocked;
+        }
         private bool pilotHasGear, pilotHasFashion, pilotAirborne, pilotCharging;
         private bool pilotVisible, pilotWasHurt;
         private float pilotHurtStarted=-10;
