@@ -44,7 +44,15 @@ public static class RoomObjectivePresentationTests
             if(complete.Room.Interlude)complete.ChooseInterlude();
             else
             {
-                for(int i=0;i<complete.Room.EnemyCount;i++)complete.Defeat(complete.Room,i);
+                for(int i=0;i<complete.Room.EnemyCount;i++)
+                {
+                    Check(complete.Defeat(complete.Room,i),"registered enemy defeat accepted");
+                    if(complete.Room.Boss && i<complete.Room.EnemyCount-1)
+                    {
+                        Check(!complete.Finished,"boss killed first cannot finish while registered guards remain");
+                        Check(View(complete).ProgressText.Contains("护卫"),"remaining guards stay explicit after boss and first guard die");
+                    }
+                }
                 for(int i=0;i<24;i++)complete.Advance(.25f,true,true,false);
             }
             View(complete);if(!complete.Finished)complete.Next(true,false);
