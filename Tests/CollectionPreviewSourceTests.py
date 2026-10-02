@@ -25,5 +25,7 @@ assert 'CollectionPreviewFraming.Size(' in p and 'renderer.gameObject.activeInHi
 assert 'finally' in p and 'RenderSettings.ambientMode=ambientMode' in p and 'sceneLights[i].cullingMask=sceneMasks[i]' in p
 assert 'shadowMaterial!=null' in p and 'ringMaterial!=null' in p and 'shadowTexture!=null' in p
 assert 'camera.targetTexture=null' in p and 'sceneLights=null' in p
-assert p.count('model.Animate(')==1 and 'motion.Advance(Time.unscaledDeltaTime,Time.frameCount)' in p
-print('PASS: composition, bounded surface, static mannequin, lighting restoration and owned-resource cleanup source contracts')
+assert 'model.ConfigurePreview()' in p and 'model.SamplePreview(motion.Time,motion.Action,motion.Progress)' in p and 'motion.Advance(Time.unscaledDeltaTime,Time.frameCount)' in p
+assert 'if(framingDirty){FrameModel();framingDirty=false;}' in p and 'model.PlayAction(' not in p
+assert 'collectionModel.Play((CollectionPreviewAction)i)' in ui
+print('PASS: composition, bounded surface, isolated local-clock mannequin, lighting restoration and owned-resource cleanup source contracts')

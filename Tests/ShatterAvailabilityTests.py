@@ -14,9 +14,9 @@ target=(root/'Assets/Scripts/Combat/SkillTargetingController.cs').read_text()
 preview='public int skill=-1; public bool IsTargeting=>skill>=0; public UnityEngine.Vector3 TargetPoint;'+extract(target,'public int TargetedSkillIndex')+'public enum Shape { Self, Ground, Cone, Lane, Retreat }'+extract(target,'public struct Preview')+extract(target,'public static Preview Describe(')
 with tempfile.TemporaryDirectory(prefix='shatter-availability-') as temporary:
  path=Path(temporary)
- for relative in ['Assets/Scripts/Core/GameTypes.cs','Assets/Scripts/Core/CombatBalance.cs','Assets/Scripts/Combat/MobileSkillPolicy.cs','Tests/ShatterAvailabilityTests.cs','Assets/Scripts/UI/CombatOpportunityPresentation.cs']:(path/Path(relative).name).write_text((root/relative).read_text())
+ for relative in ['Assets/Scripts/Core/GameTypes.cs','Assets/Scripts/Core/CombatBalance.cs','Assets/Scripts/Combat/MobileSkillPolicy.cs','Tests/ShatterAvailabilityTests.cs','Assets/Scripts/UI/CombatOpportunityPresentation.cs','Assets/Scripts/Core/CombatOpportunityState.cs','Assets/Scripts/Combat/PlayerController.Opportunities.cs']:(path/Path(relative).name).write_text((root/relative).read_text())
  uiSource=(root/'Assets/Scripts/UI/GameUI.CombatOpportunities.cs').read_text();ui=path/'UI.cs';ui.write_text('namespace Emberfall{public partial class GameUI{'+extract(uiSource,'private string CurrentCombatOpportunity(')+'}}')
- host=path/'Player.cs';host.write_text('using UnityEngine;namespace Emberfall{public partial class PlayerController{'+methods+'}public class SkillTargetingController{'+preview+'}}')
+ host=path/'Player.cs';host.write_text('using UnityEngine;namespace Emberfall{public sealed partial class PlayerController{'+methods+'}public class SkillTargetingController{'+preview+'}}')
  (path/'Program.cs').write_text('System.Console.WriteLine(ShatterAvailabilityTests.Run());')
  project=path/'Test.csproj';project.write_text('<Project Sdk="Microsoft.NET.Sdk"><PropertyGroup><TargetFramework>net8.0</TargetFramework><OutputType>Exe</OutputType></PropertyGroup></Project>');config=path/'NuGet.Config';config.write_text('<configuration><packageSources><clear /></packageSources></configuration>')
  subprocess.run([dotnet,'restore',str(project),'--configfile',str(config)],check=True)
@@ -27,9 +27,20 @@ with tempfile.TemporaryDirectory(prefix='shatter-availability-') as temporary:
  assert result.returncode and 'real release footprint distinguishes 8/10/13m' in result.stdout+result.stderr,result.stdout+result.stderr
  host.write_text(original)
  uiOriginal=ui.read_text();assert 'burnRoute?ready:hero.CanShatterNow(1)' in uiOriginal
- ui.write_text(uiOriginal.replace('burnRoute?ready:hero.CanShatterNow(1)','ready'))
+ ui.write_text(uiOriginal.replace('burnRoute?ready:hero.CanShatterNow(1)','ready').replace('                ready=ready&&hero.SkillOpportunity(1).Actionable;',''))
  result=subprocess.run(command,capture_output=True,text=True)
  assert result.returncode and 'actual HUD must not call out unreachable marked target as available' in result.stdout+result.stderr,result.stdout+result.stderr
+ ui.write_text(uiOriginal)
+ opportunity=path/'PlayerController.Opportunities.cs';good=opportunity.read_text()
+ for before,after,oracle in [
+  ('status.FrostRemaining','(status.HasFrostMark?4f:0)','typed frost expiry is not a synthetic timer'),
+  ('||!SkillTargetingReady(skill)','', 'typed no-energy skill remains unavailable despite frost')]:
+  assert before in good;opportunity.write_text(good.replace(before,after))
+  subprocess.run([dotnet,'build',str(project),'--no-restore','-v:q'],check=True,stdout=subprocess.DEVNULL)
+  failed=subprocess.run([dotnet,str(path/'bin/Debug/net8.0/Test.dll')],capture_output=True,text=True)
+  assert failed.returncode and 'System.Exception: '+oracle in failed.stdout+failed.stderr,failed.stdout+failed.stderr
+  opportunity.write_text(good)
+ print('PASS: compiled fabricated-expiry and readiness-bypass controls fail exact typed opportunity assertions')
  print('PASS: old HUD cooldown-only connection fails actual HUD replay')
  print('PASS: old frost-presence-plus-ready shortcut fails actual production query geometry test')
 assert 'ResolveSkillGroundTarget(' in extract(source,'private void CastSkillCore(')

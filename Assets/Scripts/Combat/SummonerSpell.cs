@@ -24,7 +24,7 @@ namespace Emberfall
                 Vector3 position = skill == 9 || preserveTargetPoint ? CombatSight.GroundPoint(player.transform.position,target) : player.transform.position + player.transform.forward * 2 + player.transform.right * (skill == 2 ? -1 : 1);
                 SummonedCompanion partner = SummonedCompanion.CastContract(player, game, form, rank, position, damage,
                     game.Progression.Profile.summonerRoute == SummonerRoute.Pack, preserveTargetPoint ? commandTarget : commandTarget != null ? commandTarget : player.AimTarget, preserveTargetPoint);
-                if (partner != null) FilledSkillVfx.Impact(player,partner.transform.position,1.8f,FilledVfxKind.Summon,color);
+                if (partner != null) FilledSkillVfx.Impact(player,partner.transform.position,1.8f,FilledVfxKind.Summon,color,CombatVisualPriority.ActionBody);
             }
             else if (skill == 0)
             {
@@ -105,7 +105,7 @@ namespace Emberfall
                 if (pendingFinisher)
                 {
                     DestructibleProp.StrikeArea(owner,transform.position,Radius,finisherDamage,castId);
-                    FilledSkillVfx.Impact(owner,transform.position,Radius,FilledVfxKind.Summon,GameBalance.ClassColor(HeroClass.Summoner));
+                    FilledSkillVfx.Impact(owner,transform.position,Radius,FilledVfxKind.Summon,GameBalance.ClassColor(HeroClass.Summoner),CombatVisualPriority.SustainedBackground);
                     CombatFx.Ring(transform.position,Radius,GameBalance.ClassColor(HeroClass.Summoner),.5f,.22f);
                     Retire();return;
                 }

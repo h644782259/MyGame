@@ -145,13 +145,8 @@ namespace Emberfall
                 { MobileWorkshopParagraph(ref y, width, "穿戴这件机制装备后，可在此重铸、切换元素变体或升华。", muted, draw); continue; }
                 string id = item.id;
                 MobileWorkshopParagraph(ref y, width, "当前穿戴：" + ItemTitle(item) + " · " + GameBalance.RarityName(item.rarity) + " · Lv." + item.level + "\n编号：" + id, jade, draw);
-                MobileWorkshopParagraph(ref y, width, "重铸保留装备身份、机制和部位强化，成长到角色当前等级。", muted, draw);
-                var quote=p.QuoteReforge(id);
-                string reforgeReason=p.ReforgeLockReason(quote,session.IsInCamp);
-                if(!string.IsNullOrEmpty(reforgeReason))MobileWorkshopParagraph(ref y,width,reforgeReason,muted,draw);
-                MobileWorkshopAction(ref y, width, quote==null?"重铸暂不可用":"重铸至 "+quote.TargetLevel+"级 · "+quote.GoldCost+"金币", jade,
-                    string.IsNullOrEmpty(reforgeReason), draw,
-                    () => MobileWorkshopResult(p.ReforgeMechanic(quote, session.IsInCamp), "机制装备已成长"));
+                MobileWorkshopParagraph(ref y, width, "重铸保留装备身份、机制和部位强化；可以分段成长。", muted, draw);
+                MobileWorkshopAction(ref y,width,"选择重铸档位",jade,session.IsInCamp&&p.QuoteReforge(id)!=null,draw,()=>OpenReforgeSurface(id));
                 if (mechanic == EquipmentMechanic.FrostEcho || mechanic == EquipmentMechanic.CinderTrail)
                 {
                     MobileWorkshopParagraph(ref y, width, "当前变体 " + (item.mechanicVariant == 0 ? "A" : "B") + "；首次解锁4碎片，此后免费切换互斥效果。", muted, draw);

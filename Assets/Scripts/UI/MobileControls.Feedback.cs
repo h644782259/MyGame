@@ -31,6 +31,20 @@ namespace Emberfall
             if(dodgeState.Length>0)LabelControl(Dodge,hero.DodgeCooldown>.01f?hero.DodgeCooldown.ToString("0.0"):dodgeState,true);
             string failure=session.ControlFailure("potion");if(!string.IsNullOrEmpty(failure))LabelControl(Potion,failure,true);
             else if(potionState=="满血")LabelControl(Potion,potionState,true);
+            var opportunity=hero.BasicOpportunity();if(opportunity.Actionable)LabelControl(Attack,opportunity.Caption,true);
+            failure=session.ControlFailure("attack");if(!string.IsNullOrEmpty(failure))LabelControl(Attack,failure,true);
+            var pinned=hero.MobilePinnedTarget;
+            if(pinned!=null&&Camera.main!=null)
+            {
+                Vector3 screen=Camera.main.WorldToScreenPoint(pinned.transform.position+Vector3.up*2.6f);
+                if(screen.z>Camera.main.nearClipPlane)
+                {
+                    Vector2 p=ToUI(new Vector2(screen.x,screen.y));string state=hero.MobilePinnedActionReason(-1);
+                    var pending=hero.GetComponent<SkillChargeController>();
+                    string title=state.Length>0?state:pending!=null&&pending.IsCharging?"下次 · 固定目标":"固定目标";
+                    GUI.Label(new Rect(Mathf.Clamp(p.x-60,0,Layout.Width-120),Mathf.Clamp(p.y-20,80,Layout.Height-120),120,20),title,controlLabel);
+                }
+            }
             failure=session.ControlFailure("dodge");if(!string.IsNullOrEmpty(failure))LabelControl(Dodge,failure,true);
         }
         private static Rect VisualRect(Rect hit)

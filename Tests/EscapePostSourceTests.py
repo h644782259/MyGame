@@ -8,7 +8,10 @@ assert 'if(escape)enemy.ConfigureEscapePost(EscapeRoomFormation.Role(index),poin
 assert 'index==1||index==3?EnemyKind.Guardian:index==2||index==4?EnemyKind.Goblin:EnemyKind.Slime' in room
 assert 'ReturnToEscapePost(dt,effectiveSpeed,combatTargetPosition)' in enemy
 assert enemy.index('ReturnToEscapePost(dt,effectiveSpeed,combatTargetPosition)')<enemy.index('else if (aggro)')
-body=enemy[enemy.index('private bool ReturnToEscapePost'):enemy.index('private GameObject roomContestMarker')]
+start=enemy.index('private bool ReturnToEscapePost');end=enemy.index('{',start)+1;depth=1
+while depth:
+    depth+=(enemy[end]=='{')-(enemy[end]=='}');end+=1
+body=enemy[start:end]
 assert 'escapePost==null' in body and 'route.Direction(transform.position,escapePostPosition,NavigationRadius)' in body
 assert 'CancelAttack();companionTarget=null;' in body
 assert 'ConfigureEscapePost' not in (root/'Assets/Scripts/Core/GameSession.Modes.cs').read_text()

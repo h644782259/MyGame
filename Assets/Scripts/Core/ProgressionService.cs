@@ -1481,13 +1481,14 @@ namespace Emberfall
             candidate.progressionGoalMinimumRarity=minimumRarity;candidate.progressionGoalItemId=null;candidate.progressionGoalLevel=0;candidate.progressionGoalTier=1;
             return CommitCandidate(candidate);
         }
-        public bool SelectProgressionGoal(ProgressionGoalKind goal,string itemId=null,int tier=0)
+        public bool SelectProgressionGoal(ProgressionGoalKind goal,string itemId=null,int tier=0,int targetLevel=0)
         {
             if(!Enum.IsDefined(typeof(ProgressionGoalKind),goal))return Fail("无效目标。");
             bool itemGoal=goal==ProgressionGoalKind.Variant||goal==ProgressionGoalKind.Ascension||goal==ProgressionGoalKind.Reforge;
             if(itemGoal){string reason=MechanicGoalEligibility(itemId,goal);if(reason.Length>0)return Fail(reason);}
             if(goal==ProgressionGoalKind.Tier&&(tier<1||tier>100))return Fail("目标阶数无效。");
-            int level=goal==ProgressionGoalKind.Reforge?Profile.level:0;
+            int level=goal==ProgressionGoalKind.Reforge?(targetLevel==0?Profile.level:targetLevel):0;
+            if(goal==ProgressionGoalKind.Reforge&&QuoteReforge(itemId,level)==null)return Fail("重铸目标等级无效。");
             if(Profile.progressionGoal==goal&&(goal!=ProgressionGoalKind.Core||Profile.progressionGoalMechanic==EquipmentMechanic.None)&&Profile.progressionGoalItemId==(itemGoal?itemId:null)&&
                 (goal!=ProgressionGoalKind.Tier||Profile.progressionGoalTier==tier)&&Profile.progressionGoalLevel==level)
             {LastError=string.Empty;return true;}
@@ -2321,7 +2322,7 @@ namespace Emberfall
                 profile.specialization = ElementalistSpecialization.None;
             profile.mechanicMaterials = Clamp(profile.mechanicMaterials, 0, 999999);
             profile.materialRewardedClears = Clamp(profile.materialRewardedClears, 0, profile.clearedRuns);
-            profile.pendingFirstClearReward = (profile.clearedRuns > 0 || profile.chapterPriorAdventureTier>0 || profile.highestAdventureTier>profile.chapterHighestAdventureTier) && !profile.firstClearRewardClaimed;
+            profile.pendingFirstClearReward = (profile.clearedRuns > 0 || profile.chapterCompletedMask!=0 || profile.chapterPriorAdventureTier>0 || profile.highestAdventureTier>profile.chapterHighestAdventureTier) && !profile.firstClearRewardClaimed;
             profile.pendingChestTier = TierRewardRules.ClampTier(profile.pendingChestTier);
             ChestReward receipt = profile.lastChestReward;
             if (receipt == null || string.IsNullOrWhiteSpace(receipt.id) || receipt.id.Length > 80 ||

@@ -33,7 +33,9 @@ assert 'RoomContestantCount,InputBlocked,RoomSupport)' in t
 for value in ['objective.Title','objective.ProgressText','objective.Hint','objective.Fraction','objective.SupportHint']:assert value in modes
 assert 'RoomCaptureContested {get{return RoomContestantCount>0;}}' in t and 'RoomTacticalRegion.ContainsPlayer(' in t
 assert 'RoomTacticalRegion.Contests(' in t and 'enemy.NavigationRadius' in t
-assert 'session.IsRoomContesting(this)' in e and 'MakeRoomContestMarker(transform,NavigationRadius)' in e
+live=(root/'Assets/Scripts/Combat/TacticalEnemyVisual.cs').read_text()
+assert 'feet.enabled=session.IsRoomContesting(enemy)||session.IsChapterContesting(enemy)' in live
+assert 'MakeRoomContestMarker(transform,NavigationRadius)' not in e
 assert 'RoomTacticalRegion.ReceivesSupport(' in t and 'RoomSupportMultiplier(target)<1' in t
 
 assert "session.IsRoomSupplier(this)" in e and "6米内可见同伴减伤30%" in e

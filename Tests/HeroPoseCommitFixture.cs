@@ -11,7 +11,7 @@ namespace UnityEngine
  {internal System.Numerics.Quaternion value;public static Quaternion identity=>new Quaternion{value=System.Numerics.Quaternion.Identity};public static Quaternion Euler(float x,float y,float z)=>new Quaternion{value=System.Numerics.Quaternion.CreateFromYawPitchRoll(y*Mathf.PI/180,x*Mathf.PI/180,z*Mathf.PI/180)};public static Quaternion Euler(Vector3 v)=>Euler(v.x,v.y,v.z);public static Quaternion Slerp(Quaternion a,Quaternion b,float t)=>new Quaternion{value=System.Numerics.Quaternion.Slerp(a.value,b.value,t)};public static Quaternion operator*(Quaternion a,Quaternion b)=>new Quaternion{value=a.value*b.value};public static Vector3 operator*(Quaternion q,Vector3 p){var v=System.Numerics.Vector3.Transform(new System.Numerics.Vector3(p.x,p.y,p.z),q.value);return new Vector3(v.X,v.Y,v.Z);}public static float Difference(Quaternion a,Quaternion b)=>1-Math.Abs(System.Numerics.Quaternion.Dot(a.value,b.value));}
  public enum Space {Self}
  public class Transform
- {public readonly GameObject gameObject=new GameObject();public Transform parent;public Vector3 localPosition,localScale,eulerAngles;public Quaternion localRotation=Quaternion.identity;public Quaternion rotation{get=>localRotation;set=>localRotation=value;}public Vector3 TransformPoint(Vector3 p)=>localPosition+localRotation*p;public Vector3 InverseTransformPoint(Vector3 p)=>p-localPosition;public void Rotate(float x,float y,float z,Space s){localRotation*=Quaternion.Euler(x,y,z);}}
+ {public Transform Find(string name){return null;}public readonly GameObject gameObject=new GameObject();public Transform parent;public Vector3 localPosition,localScale,eulerAngles;public Quaternion localRotation=Quaternion.identity;public Quaternion rotation{get=>localRotation;set=>localRotation=value;}public Vector3 TransformPoint(Vector3 p)=>localPosition+localRotation*p;public Vector3 InverseTransformPoint(Vector3 p)=>p-localPosition;public void Rotate(float x,float y,float z,Space s){localRotation*=Quaternion.Euler(x,y,z);}}
  public class LineRenderer {public void SetPosition(int i,Vector3 p){}}
  public static class Time {public static float deltaTime=.016f,time;public static int frameCount;}
  public static class Mathf
@@ -20,12 +20,13 @@ namespace UnityEngine
 namespace Emberfall
 {
  public class PoseLocomotion {public float Speed,Phase,Side,Forward;}
- public class ClothStub {public void SetMotion(float a,float b){}}
+ public class ClothStub {public void SetMotion(float a,float b){}public void SamplePreview(float time,float action){}}
  public enum WeaponVisualAnchor {BowGrip,BowNock}
  public sealed partial class CombatModel
  {
-  private bool isHero=true,actionBasic;private HeroClass heroClass;private int actionSkill,swingCount,actionStartedFrame,weaponActionId,lastRibbonAction;private float actionAge,actionDuration,gaitPhase,smoothedSpeed,phase;
+  private bool isHero=true,actionBasic,isolatedPreview;private float previewTime;private HeroClass heroClass;private int actionSkill,swingCount,actionStartedFrame,weaponActionId,lastRibbonAction;private float actionAge,actionDuration,gaitPhase,smoothedSpeed,phase;
   private readonly Transform spine=new Transform(),headRig=new Transform(),leftArm=new Transform(),rightArm=new Transform(),leftElbow=new Transform(),rightElbow=new Transform(),swordRig=new Transform(),staffRig=new Transform(),bowRig=new Transform(),cloak=new Transform(),pelvis=new Transform(),leftLeg=new Transform(),rightLeg=new Transform(),leftKnee=new Transform(),rightKnee=new Transform(),castingOrb=new Transform(),arrowRig=new Transform(),decoration=new Transform();
+  private Transform fashionWings;
   private readonly Transform transform=new Transform();private readonly LineRenderer bowstring=new LineRenderer();private readonly PoseLocomotion locomotion=new PoseLocomotion();private ClothStub tailoredCloth;
   private int WeaponSwingSide=>swingCount%2==0?1:-1;private Vector3 WeaponAnchorLocal(WeaponVisualAnchor a)=>Vector3.zero;
   private void ApplyHeroLocomotion(){}private void AimArm(Transform a,Transform b,Vector3 p,Vector3 q){}

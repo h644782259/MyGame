@@ -26,7 +26,7 @@ namespace Emberfall
         private Transform fashionWings, fashionWeapon;
         private string fashionWingsId, fashionWeaponId;
         private Transform equipmentWeapon, equipmentArmor, equipmentRelic;
-        private Transform equipmentLeftShoulder, equipmentRightShoulder;
+        private Transform equipmentLeftShoulder, equipmentRightShoulder, equipmentHead;
         private string equipmentWeaponKey, equipmentArmorKey, equipmentRelicKey;
         private LineRenderer bowstring;
         private HeroClass heroClass;
@@ -43,6 +43,8 @@ namespace Emberfall
         private Transform wolfJaw;
         private Vector3 companionBodyScale;
         private float phase;
+        private bool isolatedPreview;
+        private float previewTime;
         private float recoilStarted = -10f, recoilStrength;
         private Vector3 recoilDirection;
         private EnemyController enemyOwner;
@@ -173,6 +175,8 @@ namespace Emberfall
                 if (equipmentArmor != null) { equipmentArmor.gameObject.SetActive(false); Destroy(equipmentArmor.gameObject); }
                 if (equipmentLeftShoulder != null) { equipmentLeftShoulder.gameObject.SetActive(false); Destroy(equipmentLeftShoulder.gameObject); }
                 if (equipmentRightShoulder != null) { equipmentRightShoulder.gameObject.SetActive(false); Destroy(equipmentRightShoulder.gameObject); }
+                if(equipmentHead!=null){equipmentHead.gameObject.SetActive(false);Destroy(equipmentHead.gameObject);}
+                equipmentHead=null;
                 equipmentArmor = null;
                 equipmentLeftShoulder = equipmentRightShoulder = null;
                 SetBaseCostumeVisible(armor == null);
@@ -410,7 +414,7 @@ namespace Emberfall
                 model.floating = true;
                 model.body = model.Part("Star spirit", PrimitiveType.Sphere, new Vector3(0,1.2f,0), new Vector3(.54f,.7f,.54f), new Color(.4f,1f,.84f));
                 model.companionBodyScale = model.body.localScale;
-                model.decoration = model.Part("Star crown", PrimitiveType.Cube, new Vector3(0,1.75f,0), Vector3.one*.25f, new Color(1f,.87f,.47f));
+                model.decoration = model.Part("Star crown", PrimitiveType.Cube, new Vector3(0,1.75f,0), Vector3.one*.25f, new Color(1f,.87f,.47f),model.CompanionRigidParent());
                 for(int i=-1;i<=1;i+=2) model.Part("Spirit wing",PrimitiveType.Capsule,new Vector3(i*.42f,1.35f,0),new Vector3(.18f,.5f,.15f),new Color(.67f,1f,.88f)).localRotation=Quaternion.Euler(0,0,i*45);
             }
             else if (form == SummonedCompanion.Kind.Treant)
@@ -419,7 +423,7 @@ namespace Emberfall
                 model.Humanoid(new Color(.35f,.26f,.15f), new Color(.28f,.32f,.14f), new Color(.4f,.69f,.32f), 1.6f);
                 model.transform.localScale = Vector3.one * 1.3f;
                 for (int i = -1; i <= 1; i++)
-                    model.Part("Leaf crown", PrimitiveType.Sphere, new Vector3(i * .35f, 2.23f, -.08f), new Vector3(.75f,.65f,.65f), new Color(.35f,.69f,.37f), surface: VisualSurface.Foliage);
+                    model.Part("Leaf crown", PrimitiveType.Sphere, new Vector3(i * .35f, 2.23f, -.08f), new Vector3(.75f,.65f,.65f), new Color(.35f,.69f,.37f), model.CompanionRigidParent(), surface: VisualSurface.Foliage);
             }
             else
             {
@@ -893,7 +897,7 @@ namespace Emberfall
             bool acting = t < 1f;
             float stride = Mathf.Sin(gaitPhase) * speed;
             float lift = Mathf.Abs(Mathf.Sin(gaitPhase));
-            float breathing = Mathf.Sin(Time.time * 2f + phase);
+            float breathing = Mathf.Sin((isolatedPreview?previewTime:Time.time) * 2f + phase);
             float landing = Mathf.Pow(lift, 2f);
             transform.localPosition = Vector3.up * (landing * .032f * speed);
             pelvis.localPosition = new Vector3(stride * .024f, .83f, 0);
@@ -972,8 +976,10 @@ namespace Emberfall
             if (decoration != null) decoration.Rotate(0, dt * (acting ? 145f : 42f), 0, Space.Self);
         }
 
-        public void AnimateCharge(float progress)
+        public void AnimateCharge(float progress) { AnimateCharge(progress,actionSkill); }
+        public void AnimateCharge(float progress,int skill)
         {
+            if(float.IsNaN(progress)||float.IsInfinity(progress))return;
             if (!isHero || spine == null) return;
             float ready = .3f + .7f * Mathf.SmoothStep(0, 1, Mathf.Clamp01(progress));
             spine.localRotation = Quaternion.Euler(-7f * ready, -12f * ready, 0);
@@ -988,11 +994,11 @@ namespace Emberfall
             }
             else if (heroClass == HeroClass.Arcanist || heroClass == HeroClass.Summoner)
             {
-                rightArm.localRotation = Quaternion.Euler(-105f * ready, -12, 25);
-                rightElbow.localRotation = Quaternion.Euler(-32f * ready, 0, 0);
-                staffRig.localRotation = Quaternion.Euler(Mathf.Lerp(12, 80, ready), 0, -15);
-                leftArm.localRotation = Quaternion.Euler(-66f * ready, 8, -28);
-                leftElbow.localRotation = Quaternion.Euler(-72f * ready, 0, 0);
+                // Charge samples the same family curve up to the exact committed release
+                // coordinate; the caller supplies the real skill before actionSkill changes.
+                spine.localRotation=Quaternion.identity;
+                float poseTime=SkillDamageBudgets.SkillPoseStart(heroClass,skill,true)*Mathf.SmoothStep(0,1,Mathf.Clamp01(progress));
+                ApplyCasterSkillPose(poseTime,skill);
                 if (castingOrb != null) castingOrb.localScale = Vector3.one * Mathf.Lerp(.23f, .49f, ready);
             }
             else
@@ -1208,6 +1214,7 @@ namespace Emberfall
             }
             if(decoration!=null) decoration.Rotate(0,dt*65f,0,Space.Self);
             ApplyRecoil();
+            ApplyCompanionPose();
             if (enemyOwner != null && enemyOwner.StatusEffects != null)
                 transform.localPosition += Vector3.up * enemyOwner.StatusEffects.AirborneHeight;
         }

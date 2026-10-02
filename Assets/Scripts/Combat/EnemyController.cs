@@ -180,7 +180,7 @@ namespace Emberfall
                     flinchUntil = Time.time + (IsBoss ? .018f : Mathf.Lerp(.035f, .065f, strength / 2f));
                     nextFlinchAllowed = Time.time + (IsBoss ? .8f : Tier == ThreatTier.Elite ? .35f : .22f);
                 }
-                HitFeedback.Spawn(transform.position + Vector3.up * (IsBoss ? 2f : Kind == EnemyKind.Slime ? .65f : 1.25f), push, strength, critical);
+                HitFeedback.Spawn(transform.position + Vector3.up * (IsBoss ? 2f : Kind == EnemyKind.Slime ? .65f : 1.25f), push, strength, critical, priority:CombatVisualPriority.RealContact);
                 GameAudio.Play(critical ? SoundCue.CriticalHit : SoundCue.Hit);
             }
             float impulse = chargeTime > 0 || largeBoss != null && largeBoss.State.OwnsAttacks ? 0 : controlPolicy.ApplyKnockback(knockback);
@@ -710,12 +710,8 @@ namespace Emberfall
             }
             AnimateModel(towards.magnitude>.18f?1:0,0,hurtTime>0);ClampPosition();return true;
         }
-        private GameObject roomContestMarker;
         private void LateUpdate()
         {
-            bool contesting=session!=null&&session.IsRoomContesting(this);
-            if(contesting&&roomContestMarker==null)roomContestMarker=WorldBuilder.MakeRoomContestMarker(transform,NavigationRadius);
-            if(roomContestMarker!=null)roomContestMarker.SetActive(contesting);
             if(healthRoot==null) return;
             healthRoot.gameObject.SetActive(!IsDead && (aggro || Health<MaxHealth || IsBoss));
             Camera camera=Camera.main;
@@ -726,7 +722,7 @@ namespace Emberfall
             healthFill.localPosition=new Vector3((fraction-1)*width*.5f,0,-.012f);
         }
 
-        private void OnDisable() { CancelAttack(); if (roomContestMarker != null) roomContestMarker.SetActive(false); if (largeBoss != null) largeBoss.StopEncounter(); }
+        private void OnDisable() { CancelAttack(); if (largeBoss != null) largeBoss.StopEncounter(); }
 
         private void OnDestroy()
         {

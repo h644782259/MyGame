@@ -51,7 +51,7 @@ namespace Emberfall
         }
         // Host must first succeed through the existing per-cast EnemyControlPolicy.
         public bool InterruptWindup()
-        { if (!Interruptible) return false; Expose(); return true; }
+        { if (!Interruptible) return false; if (chapterFollowup) { followupPending=false; Phase=LargeBossPhase.Recovery; Remaining=2f; DamagePulse=false; LiveAnchorMask=0; } else Expose(); return true; }
         private void Expose()
         { followupPending = false; Phase = LargeBossPhase.Exposed; Remaining = ExposureSeconds; DamagePulse = false; LiveAnchorMask = 0; }
         public void Advance(float delta, bool combatActive, bool bossAlive)
@@ -72,11 +72,11 @@ namespace Emberfall
             }
             if (Remaining > .0001f) return;
             if (Phase == LargeBossPhase.Windup)
-            { Phase = LargeBossPhase.Beam; Remaining = BeamSeconds; BeamAngle = 0; nextPulse = BeamTickSeconds; }
+            { Phase = LargeBossPhase.Beam; Remaining = chapterFollowup && IsFollowup ? 4f : BeamSeconds; BeamAngle = 0; nextPulse = BeamTickSeconds; }
             else if (Phase == LargeBossPhase.Beam)
             { Phase = LargeBossPhase.Recovery; Remaining = 2f; LiveAnchorMask = 0; DamagePulse = false; }
             else if (Phase == LargeBossPhase.Recovery && followupPending)
-            { followupPending = false; IsFollowup = true; Phase = LargeBossPhase.Windup; Remaining = WindupSeconds; BeamAngle = 0; LiveAnchorMask = 0; anchorsCommitted = false; }
+            { followupPending = false; IsFollowup = true; Phase = LargeBossPhase.Windup; Remaining = WindupSeconds; BeamAngle = 0; LiveAnchorMask = 0; anchorsCommitted = true; }
             else { Phase = LargeBossPhase.Combat; Remaining = 0; phaseCooldown = 4f; }
         }
         public void Dispose()

@@ -2,7 +2,7 @@
 using System;using System.Collections.Generic;using System.Reflection;using Emberfall;using UnityEngine;
 namespace UnityEngine
 {
-    public class Object {public static void Destroy(Object value){if(value is GameObject go)go.SetActive(false);}}
+    public class Object {public bool Destroyed;public static void Destroy(Object value){if(value==null)return;value.Destroyed=true;if(value is GameObject go)go.SetActive(false);}}
     public class MonoBehaviour:Object
     {public GameObject gameObject=new GameObject();public Transform transform=>gameObject.transform;public bool enabled=true;public T GetComponent<T>() where T:class=>gameObject.GetComponent<T>();}
     public class GameObject:Object
@@ -13,11 +13,13 @@ namespace UnityEngine
         public T AddComponent<T>() where T:new(){var value=new T();if(value is MonoBehaviour mb)mb.gameObject=this;components[typeof(T)]=value;return value;}
         public T GetComponent<T>() where T:class {return components.TryGetValue(typeof(T),out var value)?value as T:null;}
     }
-    public class Transform {public Vector3 position,localPosition;public Quaternion localRotation;public GameObject gameObject;public Transform(){ }public void SetParent(Transform parent,bool world){} }
+    public class Transform {public Vector3 position,localPosition,localScale;public Quaternion localRotation;public GameObject gameObject;public Transform(){ }public void SetParent(Transform parent,bool world){} }
     public struct Color{public float r,g,b,a;public Color(float r,float g,float b,float a=1){this.r=r;this.g=g;this.b=b;this.a=a;}}
     public enum PrimitiveType{Cylinder,Cube,Capsule}
-    public class Shader:Object{}
-    public class Material:Object{public int renderQueue;public Material(){}public Material(Shader shader){}}
+    public class Shader:Object{public static Shader Find(string n)=>new Shader();}
+    public class Mesh:Object{public string name;public Vector3[] vertices;public int[] triangles;public void RecalculateNormals(){}public void RecalculateBounds(){}}
+    public class MeshFilter:MonoBehaviour{public Mesh sharedMesh;}public class MeshRenderer:MonoBehaviour{public Material sharedMaterial;}
+    public class Material:Object{public Color color;public int renderQueue;public Material(){}public Material(Shader shader){}}
     public static class Resources{public static T Load<T>(string path) where T:class{return null;}}
     public class LineRenderer:MonoBehaviour{public Material sharedMaterial;public bool useWorldSpace,loop;public int positionCount,numCapVertices,sortingOrder;public float widthMultiplier;public Color startColor,endColor;public Rendering.ShadowCastingMode shadowCastingMode;public readonly Dictionary<int,Vector3> points=new Dictionary<int,Vector3>();public void SetPosition(int i,Vector3 p){points[i]=p;}public void SetPositions(Vector3[] values){for(int i=0;i<values.Length;i++)points[i]=values[i];}}
     public struct Quaternion{float yaw;public static Quaternion Euler(float x,float y,float z){return new Quaternion{yaw=y*Mathf.Deg2Rad};}public static Vector3 operator *(Quaternion q,Vector3 v){return new Vector3(v.x*Mathf.Cos(q.yaw)+v.z*Mathf.Sin(q.yaw),v.y,-v.x*Mathf.Sin(q.yaw)+v.z*Mathf.Cos(q.yaw));}}
@@ -71,12 +73,21 @@ public static class ChapterCombatProductionTests
             else
             {
                 Check(enemy.BeginCalls==2&&boss.State.IsFollowup&&boss.State.Phase==LargeBossPhase.Windup,"hard component must create exactly one full warned followup");
-                Check(boss.State.Remaining==2.2f&&boss.State.LiveAnchorMask!=0&&!boss.State.DamagePulse,"followup commits fresh anchors without immediate damage");
+                Check(boss.State.Remaining==2.2f&&boss.State.LiveAnchorMask==0&&!boss.State.DamagePulse,"followup never creates new anchors or immediate damage");
                 Steps(boss,40);Check(boss.State.Phase==LargeBossPhase.Windup,"followup retains readable 2.2 second warning");
-                for(int i=0;i<3;i++)boss.State.DestroyAnchor(boss.State.PhaseNumber,i);
-                Check(boss.State.Phase==LargeBossPhase.Exposed,"followup anchors still counter the attack");
+                float locked=boss.BeamWorldAngle;Check(Math.Abs(locked+48f)<.01f,"followup warning begins bearing minus 48 degrees");game.Player.transform.position=new Vector3(5,0,0);
+                Steps(boss,4);Check(boss.State.Phase==LargeBossPhase.Beam&&Math.Abs(boss.BeamWorldAngle-locked)<.01f,"followup releases at its locked warning bearing");
+                Steps(boss,79);Check(boss.State.Phase==LargeBossPhase.Beam&&Math.Abs(boss.BeamWorldAngle-(locked+94.8f))<.02f,"followup sweeps bounded 96 degrees over four seconds");
                 Steps(boss,230);Check(enemy.BeginCalls==2&&!boss.State.OwnsAttacks,"followup never chains indefinitely");
             }
+        }
+        game=Game();enemy=new EnemyController();var clock=LargeExpeditionBoss.ConfigureChapter(enemy,1,0,ChapterDifficulty.Hard);int ticks=0;
+        do{clock.Tick(.05f);ticks++;}while(clock.State.OwnsAttacks&&ticks<1000);
+        Check(Math.Abs(ticks*.05f-26.4f)<.06f,"uncountered chapter threshold retains 26.4 seconds complete clock");
+        foreach(var difficulty in new[]{ChapterDifficulty.Hard,ChapterDifficulty.Heroic}) {
+            game=Game();enemy=new EnemyController();var interrupted=LargeExpeditionBoss.ConfigureChapter(enemy,1,0,difficulty);
+            do{interrupted.Tick(.05f);}while(!interrupted.State.IsFollowup);
+            interrupted.InterruptWindup();Check(interrupted.State.Phase==LargeBossPhase.Recovery&&interrupted.State.Remaining==2f&&interrupted.State.IncomingMultiplier==1,"followup interrupt is recovery not exposure");
         }
         game=Game();game.Player.transform.position=new Vector3(0,0,5);enemy=new EnemyController();var complete=LargeExpeditionBoss.ConfigureChapter(enemy,1,0,ChapterDifficulty.Hard);Steps(complete,900);
         Check(enemy.BeginCalls==2&&complete.State.Phase==LargeBossPhase.Combat,"unbroken hard sequence ends after one followup");
@@ -89,8 +100,22 @@ public static class ChapterCombatProductionTests
         Check(Vector3.Dot(arrows[3].points[1]-arrowHead,Vector3.Cross(Vector3.up,direction))<0,"heroic warning arrow matches actual reverse beam sign");
         Steps(reverse,50);
         Check(reverse.BeamWorldAngle<initial&&game.Logs.Exists(s=>s.Contains("逆时针")),"heroic actual beam follows the announced reverse direction");
-        game=Game();game.Player.transform.position=new Vector3(0,0,5);enemy=new EnemyController();var hard=LargeExpeditionBoss.ConfigureChapter(enemy,1,0,ChapterDifficulty.Hard);hard.Tick(.05f);hard.InterruptWindup();Steps(hard,600);
-        Check(enemy.BeginCalls==1&&hard.State.Phase==LargeBossPhase.Combat,"interrupt cancels pending followup and rewards exposure");
+        game=Game();game.Player.transform.position=new Vector3(0,0,5);enemy=new EnemyController();var hard=LargeExpeditionBoss.ConfigureChapter(enemy,1,0,ChapterDifficulty.Hard);hard.Tick(.05f);hard.InterruptWindup();Check(hard.State.Phase==LargeBossPhase.Recovery&&hard.State.Remaining==2f&&hard.State.IncomingMultiplier==1,"chapter interrupt gives two seconds recovery without vulnerability");Steps(hard,600);
+        Check(enemy.BeginCalls==1&&hard.State.Phase==LargeBossPhase.Combat,"interrupt cancels pending followup without new attacks");
+        foreach(bool bossFirst in new[]{true,false})
+        {
+            game=Game();enemy=new EnemyController();var atomic=LargeExpeditionBoss.ConfigureChapter(enemy,1,0,ChapterDifficulty.Hard);atomic.Tick(.05f);
+            var actualAnchors=(DestructibleProp[])Field<DestructibleProp[]>(atomic,"anchors").Clone();
+            actualAnchors[0].Broken=true;actualAnchors[1].Broken=true;atomic.Tick(.05f);
+            Check(atomic.State.LiveAnchorMask==4,"two prior broken anchors leave exactly the last anchor");
+            CombatImpactBatch.Begin();try {
+                if(bossFirst)atomic.InterruptWindup();
+                for(int i=0;i<3;i++)actualAnchors[i].Broken=true;
+                if(!bossFirst)atomic.InterruptWindup();
+            } finally { CombatImpactBatch.End(); }
+            Check(atomic.State.Phase==LargeBossPhase.Exposed&&atomic.State.Remaining==6f&&atomic.State.IncomingMultiplier==1.35f,"same attack last anchor break wins over interrupt in both target orders");
+            Steps(atomic,700);Check(enemy.BeginCalls==1,"anchor counter cancels the threshold followup");
+        }
         game=Game();enemy=new EnemyController();DestructibleProp.AllowPlacement=false;hard=LargeExpeditionBoss.ConfigureChapter(enemy,1,0,ChapterDifficulty.Hard);hard.Tick(.05f);
         Check(hard.State.Phase==LargeBossPhase.Exposed,"no safe anchors degrades to exposure");
         game.InputBlocked=true;game.Player.CombatEpoch++;hard.Tick(.05f);
@@ -104,17 +129,35 @@ public static class ChapterCombatProductionTests
             Check(ChapterHazards.Configure(game,node,ChapterDifficulty.Hard,0,0,plan)==null,"non heroic rooms have no new floor hazard");
             var hazard=ChapterHazards.Configure(game,node,ChapterDifficulty.Heroic,0,0,plan);Check(hazard!=null,"heroic room gets one optional hazard");
             var center=Field<Vector3>(hazard,"center");game.Player.transform.position=center;
+            var bodies=Field<Transform[]>(hazard,"bodies");int retained=0;
+            foreach(var body in bodies)if(body!=null)
+            {
+                retained++;Check(body.localScale.y==.025f,"heroic body starts dormant rather than faking active damage");
+                foreach(var vertex in Field<Mesh>(hazard,"bodyMesh").vertices)
+                {
+                    var point=body.position+new Vector3(vertex.x*.24f,0,vertex.z*.24f);
+                    bool inside=node==ChapterNode.ForestCourt?ArenaPulseRules.Contains(CombatFx.Flat(point-center).sqrMagnitude,CombatSight.Area(center,point)):CombatFx.SegmentDistance(point,Field<Vector3>(hazard,"start"),Field<Vector3>(hazard,"end"))<=ChapterHazardGeometry.HeatHalfWidth&&CombatSight.Area(body.position,point);
+                    Check(inside,"heroic body footprint stays inside actual clipped hazard region");
+                }
+            }
+            Check(retained>0&&retained<=(node==ChapterNode.ForestCourt?8:6),"heroic physical feedback is nonempty and bounded");
+
             game.InputBlocked=true;for(int i=0;i<200;i++)Update(hazard);
             Check(Field<float>(hazard,"age")==0&&game.Player.DamageCalls==0,"blocked chapter hazard must preserve clock and health");
             game.InputBlocked=false;for(int i=0;i<120;i++)Update(hazard);
             Check(game.Player.DamageCalls==0&&Field<LineRenderer>(hazard,"boundary").enabled,"visible warning precedes hazard damage");
+            Check(bodies[0].localScale.y>.025f&&bodies[0].localScale.y<1.05f,"physical hazard grows during warning before active damage");
             for(int i=0;i<8;i++)Update(hazard);
             Check(game.Player.DamageCalls==1&&game.Player.Health==93.5f,"single active window damages at most once");
-            if(node==ChapterNode.Redrock)Check(Field<Vector3>(hazard,"end").x<-2,"actual rock clips single heat line and damage endpoint");
+            Check(bodies[0].localScale.y==1.05f,"physical thorn or heat body reaches active height on actual damage window");
+            if(node==ChapterNode.Redrock)Check(Vector3.Distance(Field<Vector3>(hazard,"end"),ChapterHazardGeometry.ClipLine(plan.HazardStart,plan.HazardEnd))<.0001f&&Vector3.Distance(plan.HazardStart,Field<Vector3>(hazard,"end"))<Vector3.Distance(plan.HazardStart,plan.HazardEnd),"actual rock clips single heat line and damage endpoint");
             game.Player.transform.position=new Vector3(12,0,12);for(int i=0;i<140;i++)Update(hazard);
             Check(game.Player.DamageCalls==1,"outside hazard remains safe on later cycle");
+            Check(bodies[0].localScale.y<.15f,"physical hazard retracts through cooldown without new damage");
             game.InputBlocked=true;game.ChapterFinished=true;Time.deltaTime=0;Update(hazard);
             Check(!hazard.gameObject.activeInHierarchy&&Field<bool>(hazard,"retired"),"finished chapter retires hazard at zero delta while blocked");Time.deltaTime=.05f;
+            hazard.GetType().GetMethod("OnDestroy",BindingFlags.NonPublic|BindingFlags.Instance).Invoke(hazard,null);
+            Check(Field<Mesh>(hazard,"bodyMesh").Destroyed&&Field<Material>(hazard,"bodyMaterial").Destroyed,"hazard retirement releases owned static body mesh and material");
         }
         foreach(var node in new[]{ChapterNode.ForestCourt,ChapterNode.Redrock})foreach(float offset in new[]{-.001f,0,.001f})
         {

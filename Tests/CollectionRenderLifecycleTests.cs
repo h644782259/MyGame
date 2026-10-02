@@ -72,6 +72,17 @@ public static class CollectionRenderLifecycleTests
         Check(observedIsolation,"external light/fog isolated only during render");
         Check(threw&&world.cullingMask==-1&&RenderSettings.fog&&RenderSettings.ambientMode==UnityEngine.Rendering.AmbientMode.Skybox&&RenderSettings.ambientLight.r==originalAmbient.r,"render failure restores masks and world ambient/fog in finally");
         Camera.ThrowOnRender=false;Camera.DuringRender=null;Draw(preview);Check(animated.Populated,"failed render remains retryable");
+        int samples=CombatModel.Samples;int builds=CombatModel.Builds;int surfaces=RenderTexture.Instances;
+        preview.Play(CollectionPreviewAction.Cast);float framing=0;Time.unscaledDeltaTime=.05f;
+        for(int frame=1000;frame<1030;frame++)
+        {
+            Time.frameCount=frame;Draw(preview);var lens=UnityEngine.Object.FindObjectsOfType<Camera>()[0];if(frame==1000)framing=lens.orthographicSize;
+            Check(lens.orthographicSize==framing,"camera envelope remains stable throughout one-shot cast");
+            int calls=CombatModel.Samples;Draw(preview);Check(CombatModel.Samples==calls,"duplicate GUI repaint cannot resample presentation time");
+        }
+        Check(preview.PreviewAction==CollectionPreviewAction.Idle,"short preview action returns to idle without gameplay dispatch");
+        Check(CombatModel.Samples-samples<=31&&CombatModel.Builds==builds&&RenderTexture.Instances==surfaces,"local pose motion reuses model texture and cached framing");
+        preview.Play(CollectionPreviewAction.Attack);Time.frameCount++;Draw(preview);Check(CombatModel.LastAction==CollectionPreviewAction.Attack&&CombatModel.LastTime>0,"actual preview host samples selected action on its local clock");
         preview.Dispose();Check(Live<Material>()==0&&Live<Texture2D>()==0&&Live<RenderTexture>()==0&&Live<Light>()==1,"dispose after animation/resize/render exception returns all owned resource counts to zero");
         for(int i=0;i<20;i++)
         {
@@ -112,6 +123,9 @@ namespace Emberfall
         public static CombatModel Hero(Transform parent,HeroClass hero){Builds++;var go=new GameObject();go.transform.SetParent(parent,false);go.AddComponent<Renderer>();return go.AddComponent<CombatModel>();}
         public void ApplyEquipment(ItemData weapon,ItemData armor,ItemData relic){}
         public void ApplyFashion(FashionData wings,FashionData weapon){}
+        bool configured;public static int Samples;public static float LastTime,LastProgress,PoseExtent;public static CollectionPreviewAction LastAction;
+        public void ConfigurePreview(){configured=true;}
+        public void SamplePreview(float time,CollectionPreviewAction action,float progress){if(!configured)throw new Exception("preview must configure isolation before sampling");Samples++;LastTime=time;LastAction=action;LastProgress=progress;PoseExtent=action==CollectionPreviewAction.Idle?.01f*(float)Math.Sin(time):.5f*(float)Math.Sin(progress*Math.PI);}
         public void Animate(float a,float b,bool c){}
     }
 }
@@ -185,7 +199,7 @@ namespace UnityEngine
     }
     public class Light:Component{public LightType type;public float intensity;public Color color;public int cullingMask;public LightShadows shadows;}
     public class Collider:Component{public bool enabled;}
-    public class Renderer:Component{public bool enabled=true,receiveShadows;public Material sharedMaterial;public Rendering.ShadowCastingMode shadowCastingMode;public Bounds bounds=>new Bounds(transform.position+Vector3.up,Vector3.one);}
+    public class Renderer:Component{public bool enabled=true,receiveShadows;public Material sharedMaterial;public Rendering.ShadowCastingMode shadowCastingMode;public Bounds bounds=>new Bounds(transform.position+Vector3.up,Vector3.one*(1+CombatModel.PoseExtent));}
     public class LineRenderer:Renderer{public bool useWorldSpace;public int positionCount;public float startWidth,endWidth;public void SetPosition(int i,Vector3 v){}}
     public static class RenderSettings{public static Rendering.AmbientMode ambientMode;public static Color ambientLight;public static bool fog;}
     public enum HideFlags{HideAndDontSave}public enum CameraClearFlags{SolidColor}public enum LightType{Directional}public enum LightShadows{None}

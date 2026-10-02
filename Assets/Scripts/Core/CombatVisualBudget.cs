@@ -2,7 +2,9 @@ using System;
 using System.Collections.Generic;
 namespace Emberfall
 {
-    public enum CombatVisualPriority { Decoration, Sustained, Primary, Contact, Finale }
+    public enum CombatVisualPriority { Decoration=0, SustainedBackground=1, ActionBody=2, RealContact=3, Finale=4,
+        // Compatibility names for existing integrations; production emitters use explicit roles.
+        Sustained=SustainedBackground, Primary=ActionBody, Contact=RealContact }
     // One shared bounded pool. New important feedback can retire the oldest lower-priority lease.
     public sealed class CombatVisualBudget
     {
@@ -16,6 +18,8 @@ namespace Emberfall
             {
                 Ticket victim=null;
                 foreach(var ticket in tickets)if(ticket.Priority<priority&&(victim==null||ticket.Priority<victim.Priority))victim=ticket;
+                // A new finale must remain visible even when the pool contains only older finales.
+                if(victim==null&&priority==CombatVisualPriority.Finale)foreach(var ticket in tickets)if(ticket.Priority==priority){victim=ticket;break;}
                 if(victim==null)return null;
                 Release(victim);victim.Retire?.Invoke();
             }

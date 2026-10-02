@@ -44,6 +44,7 @@ namespace Emberfall
             if(hero==null||hero.IsDead||session.InputBlocked||!session.HasStarted)return "";
             if(opportunityOwner!=hero||opportunityEpoch!=hero.CombatEpoch)
             {opportunityOwner=hero;opportunityEpoch=hero.CombatEpoch;return "";}
+            var result=hero.LatestCombatResult();if(result.Kind!=CombatOpportunityKind.None)return result.Caption;
             if(hero.HeroClass==HeroClass.Vanguard)return CombatOpportunityPresentation.Vanguard(hero.CounterOpportunityRemaining);
             if(hero.HeroClass==HeroClass.Summoner)
             {
@@ -58,6 +59,7 @@ namespace Emberfall
                 bool castBlocked=hero.IsJumping||charge!=null&&(charge.IsCharging||charge.ConsumedThisFrame);
                 bool ready=CombatOpportunityPresentation.MeteorReady(session.Progression.Profile.skillRanks[1]>0,
                     hero.SkillCooldownRemaining(1),hero.Energy,GameBalance.SkillEnergyCost(hero.HeroClass,1),castBlocked);
+                ready=ready&&hero.SkillOpportunity(1).Actionable;
                 bool burnRoute=hero.Specialization==ElementalistSpecialization.Burn;
                 return CombatOpportunityPresentation.Arcanist(status!=null&&status.HasFrostMark,status!=null&&status.IsBurning,
                     burnRoute,burnRoute?ready:hero.CanShatterNow(1));
