@@ -253,6 +253,11 @@ def main():
             'using System; internal static class Program { static void Main() { Console.WriteLine(HoldPointStateTests.Run()); } }'))
         checks.append(("room-blessing-routes",[ROOT/"Assets/Scripts/Core/GameTypes.cs",ROOT/"Assets/Scripts/Core/RunChoices.cs",ROOT/"Assets/Scripts/Core/CampRouteCards.cs",ROOT/"Assets/Scripts/Core/SkillRuntime.cs",ROOT/"Tests/SkillRuntimeTests.cs",ROOT/"Tests/RoomBlessingRouteTests.cs"],
             'using System; internal static class Program { static void Main() { Console.WriteLine(RoomBlessingRouteTests.Run()); } }'))
+        for variant in ("desktop", "android", "ios"):
+            checks.append(("game-font-"+variant,[ROOT/"Assets/Scripts/UI/GameFont.cs",ROOT/"Tests/GameFontTests.cs"],
+                'using System; internal static class Program { static void Main() { Console.WriteLine(GameFontTests.Run()); } }'))
+        checks.append(("android-lifecycle",[ROOT/"Assets/Scripts/UI/TouchViewportState.cs",ROOT/"Assets/Scripts/UI/TouchReleaseLatch.cs",ROOT/"Assets/Scripts/Core/AudioLifecycleGate.cs",ROOT/"Assets/Scripts/Core/ApplicationPauseState.cs",ROOT/"Assets/Scripts/Core/SaveLifecycleGate.cs",ROOT/"Tests/AndroidLifecycleTests.cs"],
+            'using System; internal static class Program { static void Main() { Console.WriteLine(AndroidLifecycleTests.Run()); } }'))
         checks.append(("combat-review-object-id-modern-contract",[ROOT/"Assets/Scripts/Core/CombatReviewObjectId.cs",ROOT/"Tests/CombatReviewObjectIdTests.cs"],
             'using System; internal static class Program { static void Main() { Console.WriteLine(CombatReviewObjectIdTests.Run()); } }'))
         checks.append(("combat-review-object-id-legacy",[ROOT/"Assets/Scripts/Core/CombatReviewObjectId.cs",ROOT/"Tests/CombatReviewObjectIdTests.cs"],
@@ -275,7 +280,7 @@ def main():
                 for helper in ["HubTravelRules","MasteryCoreRuntime","TierRewardRules","TierRewardBand"]:sources.append(ROOT/("Assets/Scripts/Core/"+helper+".cs"))
             if ROOT/"Tests/CombatBalanceTests.cs" in sources:sources.append(ROOT/"Assets/Scripts/Core/SkillDamageBudgets.cs")
         for name, sources, program in checks:
-            project = write_project(workspace / name, sources, program, defines="UNITY_6000_6_OR_NEWER" if name == "combat-review-object-id-modern-contract" else "")
+            project = write_project(workspace / name, sources, program, defines={"combat-review-object-id-modern-contract":"UNITY_6000_6_OR_NEWER", "game-font-android":"UNITY_ANDROID", "game-font-ios":"UNITY_IOS"}.get(name, ""))
             commands = [[dotnet, "restore", str(project), "--configfile", str(config), "--verbosity", "quiet"],
                         [dotnet, "run", "--project", str(project), "--no-restore", "--configuration", "Release", "--", str(workspace / "saves")]]
             passed = run_check(name, commands, env, output, report)
