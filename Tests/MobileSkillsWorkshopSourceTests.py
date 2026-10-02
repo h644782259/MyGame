@@ -45,7 +45,7 @@ check('SetSummonerRoute((SummonerRoute)index,true)' in route and 'if(!session.Is
 for call in ['MasteryLockReason(mastery)', 'LearnMastery(mastery)', 'SelectMasteryCore(mastery, session.IsInCamp)', 'RefundSkillRanks(session.IsInCamp)', 'ResetMastery(session.IsInCamp)']:
     check(call in camp, 'camp preserves ' + call)
 check('MasteryCoreRules.InitialInvestment' in camp and 'MasteryCoreRules.EnhancedInvestment' in camp and 'MasteryCoreTier(mastery)' in camp, 'core actions use shared initial and enhanced thresholds')
-for call in ['ClaimFirstClearReward(mechanic)', 'ExchangeMechanic(mechanic)', 'ReforgeMechanic(id, session.IsInCamp)', 'ToggleMechanicVariant(id, session.IsInCamp)', 'AscensionLockReason(id, session.IsInCamp)', 'AscendMechanic(id, session.IsInCamp)']:
+for call in ['ClaimFirstClearReward(mechanic)', 'ExchangeMechanic(mechanic)', 'ReforgeMechanic(quote, session.IsInCamp)', 'ToggleMechanicVariant(id, session.IsInCamp)', 'AscensionLockReason(id, session.IsInCamp)', 'AscendMechanic(id, session.IsInCamp)']:
     check(call in camp, 'mechanism panel preserves ' + call)
 check('string id = item.id;' in camp and '编号：' in camp, 'equipment actions and labels use stable item identity')
 check('ClaimRecoveryLoot(id)' in camp and 'ClaimPendingLoot(id)' in camp and 'InventoryCapacity' in camp, 'both mailboxes preserve stable-ID claims and capacity checks')

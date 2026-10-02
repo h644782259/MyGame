@@ -51,7 +51,6 @@ namespace Emberfall
         public const int MaximumMasteryRank = 35;
         public const int BuildPresetCount = 2;
         public const int FashionChoiceCost = 30;
-        public const int ReforgeCost = 6;
         public const int AscensionCost = 24;
         public const int AscensionMilestone = 5;
         public const int VariantCost = 4;
@@ -1538,11 +1537,12 @@ namespace Emberfall
                     if(item==null){goal.Step="原目标装备不在背包；同名装备不会替代它";break;}
                     goal.Done=Profile.progressionGoal==ProgressionGoalKind.Variant?item.mechanicVariantUnlocked:Profile.progressionGoal==ProgressionGoalKind.Ascension?item.rarity==Rarity.Legendary:item.level>=Profile.progressionGoalLevel;
                     if(goal.Done){goal.Step="保留当前目标，可自行选择下一目标";break;}
-                    goal.MaterialCost=Profile.progressionGoal==ProgressionGoalKind.Variant?VariantCost:Profile.progressionGoal==ProgressionGoalKind.Ascension?AscensionCost:ReforgeCost;
+                    goal.MaterialCost=Profile.progressionGoal==ProgressionGoalKind.Variant?VariantCost:Profile.progressionGoal==ProgressionGoalKind.Ascension?AscensionCost:0;
                     goal.Action=Profile.progressionGoal==ProgressionGoalKind.Variant?ProgressionGoalAction.UnlockVariant:Profile.progressionGoal==ProgressionGoalKind.Ascension?ProgressionGoalAction.Ascend:ProgressionGoalAction.Reforge;
-                    string reason=Profile.progressionGoal==ProgressionGoalKind.Variant?VariantLockReason(item.id,inCamp):Profile.progressionGoal==ProgressionGoalKind.Ascension?AscensionLockReason(item.id,inCamp):ReforgeLockReason(item.id,inCamp);
+                    if(Profile.progressionGoal==ProgressionGoalKind.Reforge){goal.ReforgeQuote=QuoteReforge(item.id,Profile.progressionGoalLevel);goal.GoldCost=goal.ReforgeQuote==null?0:goal.ReforgeQuote.GoldCost;}
+                    string reason=Profile.progressionGoal==ProgressionGoalKind.Variant?VariantLockReason(item.id,inCamp):Profile.progressionGoal==ProgressionGoalKind.Ascension?AscensionLockReason(item.id,inCamp):ReforgeLockReason(goal.ReforgeQuote,inCamp);
                     goal.CanAct=reason.Length==0;goal.Step=goal.CanAct?"营地可执行这件装备的操作":reason;
-                    if(Profile.progressionGoal==ProgressionGoalKind.Ascension)goal.Step+=" · 冒险5阶 "+Math.Min(5,HighestAdventureTier)+"/5";
+                    if(Profile.progressionGoal==ProgressionGoalKind.Ascension)goal.RequiredAdventureTier=AscensionMilestone;
                     break;
                 case ProgressionGoalKind.SecondPreset:
                     goal.Title="保存第二套配装";goal.Done=HasBuildPreset(0)&&HasBuildPreset(1);goal.Step=goal.Done?"两份方案已保存":"在营地保存方案 A 与 B";goal.Action=ProgressionGoalAction.OpenPresets;goal.CanAct=inCamp;break;
@@ -1551,6 +1551,8 @@ namespace Emberfall
                 case ProgressionGoalKind.ClassTutorial:
                     goal.Identity+="/"+(int)Profile.heroClass;goal.Title="职业练习";goal.Step=ClassTutorialText;goal.Done=Profile.classTutorialCompleted;break;
             }
+            goal.Requirements=goal.ResourceRequirements(Profile,HighestAdventureTier);
+            if(!goal.Done&&goal.Action!=ProgressionGoalAction.None){goal.Requirements+=(goal.Requirements.Length>0?" · ":"")+(inCamp?"营地已到达":"需返回营地");goal.Step+=(goal.Requirements.Length>0?" · "+goal.Requirements:"");}
             return goal;
         }
         public bool ExecuteProgressionGoal(string expectedActionIdentity,bool inCamp)
@@ -1568,14 +1570,14 @@ namespace Emberfall
                 case ProgressionGoalAction.Equip:return Equip(goal.ItemId);
                 case ProgressionGoalAction.UnlockVariant:return UnlockMechanicVariant(goal.ItemId,inCamp);
                 case ProgressionGoalAction.Ascend:return AscendMechanic(goal.ItemId,inCamp);
-                case ProgressionGoalAction.Reforge:return ReforgeMechanic(goal.ItemId,inCamp);
+                case ProgressionGoalAction.Reforge:return ReforgeMechanic(goal.ReforgeQuote,inCamp);
                 default:return Fail("请打开对应营地入口继续。");
             }
         }
         public string ProgressionGoalStatus(int runMaterials=0)
         {
             ProgressionGoalState goal=SelectedProgressionGoal(true);
-            return goal.Title+(goal.Done?" ✓ 已完成":"")+" · 碎片 "+Profile.mechanicMaterials+(goal.MaterialCost>0?"/"+goal.MaterialCost:"")+" · "+goal.Step+
+            return goal.Title+(goal.Done?" ✓ 已完成":"")+" · "+goal.Step+
                 (runMaterials>0?" · 本局 +"+runMaterials+"碎片":"");
         }
 
@@ -2235,9 +2237,9 @@ namespace Emberfall
                 if (data == null || data.format != SaveFormat || data.version != 1 || data.profile == null || data.profile.version != 1)
                 { error = "unsupported format"; return false; }
                 bool balanceChanged = HasLegacyEnhancement(data.profile.inventory) || HasLegacyEnhancement(data.profile.pendingLoot) || HasLegacyEnhancement(data.profile.recoveryLoot);
-                bool masteryRefund = data.profile.masteryRevision < 1 && data.profile.masteryRanks != null && Array.Exists(data.profile.masteryRanks, rank => rank > 0);
+                bool masteryMigrated = data.profile.masteryRevision < 1 && data.profile.masteryRanks != null && Array.Exists(data.profile.masteryRanks, rank => rank > 0);
                 int refundedRanks = ValidateProfile(data.profile);
-                if (balanceChanged || masteryRefund) error = "战斗平衡已更新：部位强化等级与装备基础保留，强化属性按新曲线重算；旧精通投入已返还，可在营地重新选择。";
+                if (balanceChanged || masteryMigrated) error = "成长规则已更新：部位强化等级与装备基础保留，强化属性按新曲线重算；合法精通投入保留，超出等级或点数预算的部分退回可用点数。";
                 if (refundedRanks > 0) error = "部分技能阶级尚未达到新的解锁等级，已调整并返还技能点；角色与装备进度均已保留。";
                 profile = data.profile;
                 return true;
