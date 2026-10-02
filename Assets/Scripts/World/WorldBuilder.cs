@@ -510,6 +510,7 @@ namespace Emberfall
             go.GetComponent<MeshRenderer>().sharedMaterial=font.material;
             text.text=value;
             go.transform.rotation=Quaternion.Euler(floor?90:18,0,0);
+            if(!floor)go.AddComponent<WorldLabelPresentation>().Initialize(text);
         }
 
         public static GameObject MakeLootBeacon(Vector3 position,Color color)

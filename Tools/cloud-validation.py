@@ -230,6 +230,8 @@ def main():
             'using System; internal static class Program { static void Main() { Console.WriteLine(AdventureEntryPresentationTests.Run()); } }'))
         checks.append(("mobile-room-objective",[ROOT/"Assets/Scripts/Core/RoomTacticalRegion.cs",ROOT/"Assets/Scripts/Core/RoomChainState.cs",ROOT/"Assets/Scripts/UI/RoomObjectivePresentation.cs",ROOT/"Assets/Scripts/UI/MobileControlLayout.cs",ROOT/"Tests/RoomObjectivePresentationTests.cs"],
             'using System; internal static class Program { static void Main() { Console.WriteLine(RoomObjectivePresentationTests.Run()); } }'))
+        checks.append(("environment-readability",[ROOT/("Assets/Scripts/"+f+".cs") for f in ["Core/ArenaPulseRules","Core/WorldLabelReadability","Core/CameraVisibilityRules","Core/CombatSightRules","Combat/CombatSight","World/WorldTraversal"]]+[ROOT/"Tests/DestructibleTraversalTests.cs",ROOT/"Tests/EnvironmentReadabilityTests.cs"],
+            'using System; internal static class Program { static void Main() { Console.WriteLine(EnvironmentReadabilityTests.Run()); } }'))
         checks.append(("escape-room-formation",[ROOT/("Assets/Scripts/"+f+".cs") for f in ["Core/EscapePostPolicy","Core/RoomTacticalRegion","Core/RoomChainState","World/WorldTraversal","World/TacticalRoomGeometry","World/EscapeRoomFormation"]]+[ROOT/"Tests/DestructibleTraversalTests.cs",ROOT/"Tests/EscapeRoomFormationTests.cs"],
             'using System; internal static class Program { static void Main() { Console.WriteLine(EscapeRoomFormationTests.Run()); } }'))
         checks.append(("tactical-room-region",[ROOT/("Assets/Scripts/"+f+".cs") for f in ["Core/RoomTacticalRegion","Core/RoomChainState","Core/ExpeditionModeState","Core/TierRewardBand","UI/RoomObjectivePresentation","World/WorldTraversal"]]+[ROOT/"Tests/DestructibleTraversalTests.cs",ROOT/"Tests/RoomTacticalRegionTests.cs"],
@@ -242,6 +244,7 @@ def main():
             ("visual-motion-envelope", "VisualMotionEnvelopeTests", ["Core/VisualMotionEnvelope"]),
             ("environment-light-profile", "EnvironmentLightProfileTests", ["Core/EnvironmentLightProfile"]),
             ("water-presentation", "WaterPresentationTests", ["Core/WaterPresentation"]),
+            ("collection-preview-composition", "CollectionPreviewCompositionTests", ["UI/CollectionPreviewComposition"]),
             ("costume-layers", "CostumeLayersTests", ["Core/CostumeLayers"]),
             ("panel-readability", "PanelReadabilityLayoutTests", ["UI/AdventureSelectionLayout", "UI/MobilePanelLayout"]),
             ("decoration-budget", "DecorationBudgetTests", ["Core/DecorationBudget"]),
@@ -271,7 +274,7 @@ def main():
             'using System; internal static class Program { static void Main() { Console.WriteLine(RoomBlessingRouteTests.Run()); } }'))
         checks.append(("mobile-pause-navigation",[ROOT/"Assets/Scripts/UI/GameUI.PauseNavigation.cs",ROOT/"Tests/MobilePauseNavigationTests.cs"],
             'using System; internal static class Program { static void Main() { Console.WriteLine(MobilePauseNavigationTests.Run()); } }'))
-        checks.append(("collection-render-lifecycle",[ROOT/"Assets/Scripts/UI/CollectionModelPreview.cs",ROOT/"Assets/Scripts/UI/CollectionPreviewState.cs",ROOT/"Tests/CollectionRenderLifecycleTests.cs"],
+        checks.append(("collection-render-lifecycle",[ROOT/"Assets/Scripts/UI/CollectionModelPreview.cs",ROOT/"Assets/Scripts/UI/CollectionPreviewState.cs",ROOT/"Assets/Scripts/UI/CollectionPreviewComposition.cs",ROOT/"Tests/CollectionRenderLifecycleTests.cs"],
             'using System; internal static class Program { static void Main() { Console.WriteLine(CollectionRenderLifecycleTests.Run()); } }'))
         checks.append(("ui-render-cache",[ROOT/"Assets/Scripts/Core/GameTypes.cs",ROOT/"Assets/Scripts/Core/ProgressionService.cs",ROOT/"Tests/ProgressionTests.cs",ROOT/"Assets/Scripts/UI/CollectionPreviewState.cs",ROOT/"Assets/Scripts/Combat/CombatTextMetrics.cs",ROOT/"Assets/Scripts/Combat/CombatTextLayout.cs",ROOT/"Tests/UiRenderCacheTests.cs"],
             'using System; internal static class Program { static void Main() { Console.WriteLine(UiRenderCacheTests.Run()); } }'))
@@ -319,7 +322,7 @@ def main():
         failed = failed or not passed
         passed = run_check("chest-pause-back-production", [[sys.executable, str(ROOT / "Tests/ChestPauseBackProductionTests.py"), dotnet]], env, output, report)
         failed = failed or not passed
-        for name, script in [("companion-intent-production","CompanionIntentProductionTests.py"),("contract-snapshot-production","ContractSnapshotProductionTests.py"),("filled-vfx-allocation","FilledVfxAllocationTests.py"),("side-event-production","SideEventProductionTests.py"),("skill-readability-production","SkillReadabilityProductionTests.py")]:
+        for name, script in [("companion-intent-production","CompanionIntentProductionTests.py"),("contract-snapshot-production","ContractSnapshotProductionTests.py"),("filled-vfx-allocation","FilledVfxAllocationTests.py"),("side-event-production","SideEventProductionTests.py"),("skill-readability-production","SkillReadabilityProductionTests.py"),("milestone-goal-surface","MilestoneGoalSurfaceTests.py")]:
             passed = run_check(name, [[sys.executable,str(ROOT/"Tests"/script),dotnet]], dict(env,DOTNET=dotnet), output, report)
             failed = failed or not passed
         if args.compile or args.download_references or args.compile_android:
