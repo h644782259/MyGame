@@ -33,6 +33,7 @@ public static class FilledVfxRecipeTests
     {
         checks=0;
         foreach(int detail in new[]{-1,12,36,64,1000})Inspect(FilledVfxRecipes.Crescent(detail),true);
+        Inspect(FilledVfxRecipes.Sword(),true);Inspect(FilledVfxRecipes.Lightning(),true);Inspect(FilledVfxRecipes.Arcane(),true);Inspect(FilledVfxRecipes.Rupture(),true);Inspect(FilledVfxRecipes.ArcaneShard(),true);
         Inspect(FilledVfxRecipes.Crystal(),false); // Hard normals intentionally duplicate each face's corners.
         Inspect(FilledVfxRecipes.Flame(),true);Inspect(FilledVfxRecipes.Flame(-4,999),true);
         foreach(FilledVfxKind kind in Enum.GetValues(typeof(FilledVfxKind)))

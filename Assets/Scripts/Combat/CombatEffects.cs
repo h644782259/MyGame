@@ -499,10 +499,8 @@ namespace Emberfall
                         if (fireVisual) FilledSkillVfx.Impact(owner, transform.position, radius, FilledVfxKind.Fire, new Color(1f,.43f,.12f));
                         else if (visualRecipe == SkillVisualRecipe.Ice)
                             FilledSkillVfx.Impact(owner, transform.position, radius, FilledVfxKind.Ice, new Color(.2f,.75f,1f));
-                        else if (visualRecipe == SkillVisualRecipe.Spirit || visualRecipe == SkillVisualRecipe.Arcane)
-                            FilledSkillVfx.Impact(owner, transform.position, radius, FilledVfxKind.Summon, color);
-                        else if (visualRecipe == SkillVisualRecipe.Steel)
-                            FilledSkillVfx.Crescent(owner, transform.position, owner.transform.forward, radius, color);
+                        else if (visualRecipe == SkillVisualRecipe.Spirit || visualRecipe == SkillVisualRecipe.Arcane || visualRecipe == SkillVisualRecipe.Lightning || visualRecipe == SkillVisualRecipe.Steel)
+                            FilledSkillVfx.Impact(owner, transform.position, radius, SkillVisualRecipes.Filled(visualRecipe), color);
                     }
                     if (tick == 0)
                     { DestructibleProp.StrikeArea(owner,transform.position,radius,damage,castId); CombatFx.Ring(transform.position,radius,color,.42f,.15f); }
