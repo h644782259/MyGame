@@ -274,6 +274,8 @@ def main():
             'using System; internal static class Program { static void Main() { Console.WriteLine(CombatReviewEventsTests.Run()); } }'))
         checks.append(("combat-review-rules",[ROOT/"Assets/Scripts/Core/GameTypes.cs",ROOT/"Assets/Scripts/Core/SkillRuntime.cs",ROOT/"Assets/Scripts/Core/SkillDamageBudgets.cs",ROOT/"Assets/Scripts/Core/AudioVoicePolicy.cs",ROOT/"Assets/Scripts/Core/LockedImpactMarkPolicy.cs",ROOT/"Assets/Scripts/Core/BasicActionTimeline.cs",ROOT/"Assets/Scripts/Combat/BossAttackPolicy.cs",ROOT/"Tests/SkillRuntimeTests.cs",ROOT/"Tests/CombatReviewRulesTests.cs"],
             'using System; internal static class Program { static void Main() { Console.WriteLine(CombatReviewRulesTests.Run()); } }'))
+        checks.append(("hotbar-reset",[ROOT/"Assets/Scripts/Core/GameTypes.cs",ROOT/"Assets/Scripts/Core/ProgressionService.cs",ROOT/"Tests/ProgressionTests.cs",ROOT/"Tests/HotbarResetTests.cs"],
+            'using System; internal static class Program { static void Main(string[] args) { Console.WriteLine(HotbarResetTests.Run(args[0])); } }'))
         for _, sources, _ in checks:
             if ROOT / "Assets/Scripts/Core/RoomChainState.cs" in sources:
                 sources.append(ROOT / "Assets/Scripts/Core/RoomTactics.cs")
