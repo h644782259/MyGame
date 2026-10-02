@@ -91,11 +91,12 @@ namespace Emberfall {
    ui.session.AllowConfirm=true;check(ui.ConfirmSelectedChapter()&&ui.panel==Panel.None&&!ui.session.Blocked,"successful actual core Begin closes entry once");
    // Real filesystem rejection and actual core Complete, reached through production result retry method.
    ui.session.ChapterFinished=true;ui.session.ChapterRewardPending=true;ui.session.ActiveChapterNode=ChapterNode.Redrock;
+   ui.chapterScroll=new Vector2(0,99);ui.DrawChapterResult();check(ui.observedResultScroll.y==0,"new result starts at top independently from entry");ui.chapterResultScroll=new Vector2(0,47);
    Directory.CreateDirectory(p.SaveFilePath+".tmp");check(!ui.RetryChapterSettlement()&&ui.session.ChapterRewardPending,"save failure preserves pending receipt");
-   ui.texts.Clear();ui.buttons.Clear();ui.DrawChapterResult();check(ui.buttons.Exists(b=>b.text=="重试保存结算"&&b.enabled&&!b.scroll),"save failure keeps reachable fixed retry action");
+   ui.texts.Clear();ui.buttons.Clear();ui.DrawChapterResult();check(ui.observedResultScroll.y==47,"pending failed-save retry preserves result reading position");check(ui.buttons.Exists(b=>b.text=="重试保存结算"&&b.enabled&&!b.scroll),"save failure keeps reachable fixed retry action");
    check(ui.texts.Exists(t=>t.Contains("结算待保存"))&&ui.texts.Exists(t=>t.Contains(p.LastError)),"result visibly distinguishes unsaved progress and actual error");
    int capturedMaterials=ui.session.Receipt.Materials;Directory.Delete(p.SaveFilePath+".tmp");check(ui.RetryChapterSettlement()&&!ui.session.ChapterRewardPending,"same receipt retries through actual UI method and real save");
-   ui.texts.Clear();ui.DrawChapterResult();check(ui.texts.Exists(t=>t.Contains("奖励已保存 · +"+capturedMaterials+" 碎片")),"result displays original receipt amount including captured first-clear bonus");
+   ui.texts.Clear();ui.DrawChapterResult();check(ui.observedResultScroll.y==47,"successful real settlement retry preserves result reading position");check(ui.texts.Exists(t=>t.Contains("奖励已保存 · +"+capturedMaterials+" 碎片")),"result displays original receipt amount including captured first-clear bonus");
    check(!p.Profile.pendingFirstClearReward&&!ui.session.ChapterResult.FirstCoreAvailable,"actual Redrock UI settlement cannot unlock shared first core");
    check(capturedMaterials==ChapterProgression.MaterialReward(ui.session.Receipt.Node,ui.session.Receipt.Tier)+1,"first-clear receipt retains bonus after completion mask changed");
    int after=events;check(!ui.RetryChapterSettlement()&&events==after,"completed UI retry cannot grant again");
@@ -180,3 +181,11 @@ with tempfile.TemporaryDirectory(prefix='chapter-entry-') as folder:
  result=subprocess.run([dotnet,str(project.parent/'bin/Debug/net8.0/Validation.dll'),str(out/'shared-scroll-saves')],env=env,capture_output=True,text=True)
  assert result.returncode and 'new result starts at top independently from entry' in result.stdout+result.stderr,result.stdout+result.stderr
  print('PASS: compiled shared entry/result scroll fails exact new-run scroll oracle')
+
+ # Reset-on-retry must fail while the real receipt is still pending and filesystem writes fail.
+ mutated=out/'ResetRetryScroll.cs';mutated.write_text(current.replace('bool saved=session.TrySettleChapterReward();','chapterResultScroll=Vector2.zero;bool saved=session.TrySettleChapterReward();'))
+ project=cv.write_project(out/'reset-retry-scroll',[mutated if f==chapter else f for f in files],program=shell.replace('CLOSE',close))
+ subprocess.run([dotnet,'build',str(project),'--configfile',str(config),'-v:q'],env=env,check=True,stdout=subprocess.DEVNULL)
+ result=subprocess.run([dotnet,str(project.parent/'bin/Debug/net8.0/Validation.dll'),str(out/'retry-scroll-saves')],env=env,capture_output=True,text=True)
+ assert result.returncode and 'pending failed-save retry preserves result reading position' in result.stdout+result.stderr,result.stdout+result.stderr
+ print('PASS: compiled retry-reset control fails actual pending write-failure reading-position assertion')

@@ -155,8 +155,10 @@ namespace Emberfall
         public void ApplyEquipment(ItemData weapon, ItemData armor, ItemData relic)
         {
             if (!isHero || spine == null) return;
+            bool resumePilot=pilotVisible;
+            SetBlenderPilotVisible(false); // Restore owned renderer states before equipment builders edit them.
             pilotHasGear = !PilotStarterCompatible(weapon,ItemSlot.Weapon) || !PilotStarterCompatible(armor,ItemSlot.Armor) || !PilotStarterCompatible(relic,ItemSlot.Relic);
-            if(pilotHasGear)SetBlenderPilotVisible(false);
+
             string weaponKey = EquipmentKey(weapon);
             string armorKey = EquipmentKey(armor);
             string relicKey = EquipmentKey(relic);
@@ -195,6 +197,7 @@ namespace Emberfall
                 equipmentRelic = null;
                 if (relic != null) BuildEquipmentRelic(new EquipmentAppearance(relic));
             }
+            if(resumePilot&&!pilotHasGear)SetBlenderPilotVisible(true); // Capture the rebuilt procedural state, then hide it.
         }
 
         private static string EquipmentKey(ItemData item)

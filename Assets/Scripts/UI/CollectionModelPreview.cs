@@ -83,8 +83,10 @@ namespace Emberfall
             if(composition==CollectionPreviewComposition.Full)return true;
             for(var t=part;t!=null&&t!=avatar.transform;t=t.parent)
             {
-                if(composition==CollectionPreviewComposition.Back&&t.name=="Fashion Wings")return true;
-                if(composition==CollectionPreviewComposition.Weapon&&(t.name=="Sword Wrist"||t.name=="Staff Wrist"||t.name=="Bow"||t.name=="Equipped Weapon"||t.name=="Fashion Weapon"))return true;
+                // Explicit authored FBX part groups; their renderer.bounds below remain
+                // authoritative, including animated skinned-mesh bounds.
+                if(composition==CollectionPreviewComposition.Back&&(t.name=="Fashion Wings"||t.name=="Vanguard_Back"))return true;
+                if(composition==CollectionPreviewComposition.Weapon&&(t.name=="Sword Wrist"||t.name=="Staff Wrist"||t.name=="Bow"||t.name=="Equipped Weapon"||t.name=="Fashion Weapon"||t.name=="Vanguard_Sword"))return true;
             }
             return false;
         }

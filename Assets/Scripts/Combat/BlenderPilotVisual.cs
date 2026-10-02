@@ -9,11 +9,24 @@ namespace Emberfall
         public static bool Enabled;
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetForPlayerStartup() { Enabled=false; }
-        internal static void ApplyMaterial(GameObject root)
+        internal static bool ApplyMaterial(GameObject root)
         {
             Material material=Resources.Load<Material>("BlenderPilot/Pilot_Atlas_Standard");
-            if(material==null)return;
-            foreach(Renderer renderer in root.GetComponentsInChildren<Renderer>(true))renderer.sharedMaterial=material;
+            if(material==null||material.shader==null||!material.shader.isSupported||material.shader.name!="Standard"||
+                !material.HasProperty("_MainTex")||!material.HasProperty("_MetallicGlossMap")||!material.IsKeywordEnabled("_METALLICGLOSSMAP"))return false;
+            var albedo=material.GetTexture("_MainTex") as Texture2D;
+            var metal=material.GetTexture("_MetallicGlossMap") as Texture2D;
+            if(albedo==null||metal==null||albedo.width<2||albedo.height<2||metal.width<2||metal.height<2)return false;
+            Renderer[] renderers=root.GetComponentsInChildren<Renderer>(true);bool hasGeometry=false;
+            foreach(Renderer renderer in renderers)
+            {
+                var skinned=renderer as SkinnedMeshRenderer;var filter=renderer.GetComponent<MeshFilter>();
+                if(renderer.enabled&&renderer.gameObject.activeInHierarchy&&
+                    ((skinned!=null&&skinned.sharedMesh!=null)||(filter!=null&&filter.sharedMesh!=null)))hasGeometry=true;
+            }
+            if(!hasGeometry)return false;
+            foreach(Renderer renderer in renderers)renderer.sharedMaterial=material;
+            return true;
         }
         public static GameObject CreateProp(string name, Transform parent, Vector3 position)
         {
@@ -24,7 +37,7 @@ namespace Emberfall
             instance.transform.localPosition = position;
             instance.transform.localRotation = Quaternion.identity;
             instance.transform.localScale = Vector3.one;
-            ApplyMaterial(instance);
+            if(!ApplyMaterial(instance)){instance.SetActive(false);UnityEngine.Object.Destroy(instance);return null;}
             return instance;
         }
     }
@@ -51,7 +64,7 @@ namespace Emberfall
             { animator.applyRootMotion = false; animator.enabled = false; }
             foreach (Animation animation in root.GetComponentsInChildren<Animation>(true))
             { animation.playAutomatically = false; animation.enabled = false; }
-            BlenderPilotArt.ApplyMaterial(root);
+            if(!BlenderPilotArt.ApplyMaterial(root)){root.SetActive(false);Destroy(root);return null;}
             var view = root.AddComponent<BlenderPilotVisual>();
             foreach (AnimationClip clip in Resources.LoadAll<AnimationClip>("BlenderPilot/Vanguard"))
             {
@@ -65,11 +78,40 @@ namespace Emberfall
             string[] names = { "Anchor_Pommel", "Anchor_Grip", "Anchor_Guard", "Anchor_BladeRoot", "Anchor_Tip" };
             foreach (Transform child in root.GetComponentsInChildren<Transform>(true))
                 for (int i = 0; i < names.Length; i++) if (child.name == names[i]) view.sockets[i] = child;
-            view.Ready = view.idle != null && view.move != null && view.basic != null && view.hit != null && view.skill != null;
+            view.Ready = ValidClip(view.idle) && ValidClip(view.move) && ValidClip(view.basic) && ValidClip(view.hit) && ValidClip(view.skill);
+            if(view.Ready)view.Ready=BindingsMove(root,new[]{view.idle,view.move,view.basic,view.hit,view.skill});
             foreach (Transform socket in view.sockets) view.Ready &= socket != null;
             if (!view.Ready) { root.SetActive(false); Destroy(root); return null; }
             root.SetActive(false); // first visible frame must already have a sampled pose
             return view;
+        }
+        private static bool ValidClip(AnimationClip clip)
+        {return clip!=null&&!clip.empty&&clip.length>0&&!float.IsInfinity(clip.length)&&!float.IsNaN(clip.length);}
+        private static bool BindingsMove(GameObject root,AnimationClip[] clips)
+        {
+            // Runtime smoke check for curves targeting this imported hierarchy. Exact
+            // Unity import/deformation acceptance remains an Editor/device check.
+            Transform[] parts=root.GetComponentsInChildren<Transform>(true);
+            var positions=new Vector3[parts.Length];var rotations=new Quaternion[parts.Length];var scales=new Vector3[parts.Length];
+            for(int i=0;i<parts.Length;i++){positions[i]=parts[i].localPosition;rotations[i]=parts[i].localRotation;scales[i]=parts[i].localScale;}
+            bool valid=true;
+            try
+            {
+                foreach(AnimationClip clip in clips)
+                {
+                    bool changed=false;
+                    for(int sample=0;sample<4;sample++)
+                    {
+                        for(int i=0;i<parts.Length;i++){parts[i].localPosition=positions[i];parts[i].localRotation=rotations[i];parts[i].localScale=scales[i];}
+                        clip.SampleAnimation(root,clip.length*sample*.25f);
+                        for(int i=0;i<parts.Length;i++)if(parts[i].localPosition!=positions[i]||parts[i].localRotation!=rotations[i]||parts[i].localScale!=scales[i])changed=true;
+                    }
+                    valid &= changed;
+                }
+            }
+            catch(Exception){valid=false;}
+            finally {for(int i=0;i<parts.Length;i++){parts[i].localPosition=positions[i];parts[i].localRotation=rotations[i];parts[i].localScale=scales[i];}}
+            return valid;
         }
         public void Sample(float time, float phase, float speed, bool acting, bool isBasic, float actionProgress, float hurtAge)
         {

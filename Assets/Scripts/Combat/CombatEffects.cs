@@ -593,7 +593,7 @@ namespace Emberfall
             if (!finished && finalDamage.Amount>0 && age>=delay+duration && ticksDrained)
             {
                 finished=true;
-                if(visualRecipe==SkillVisualRecipe.ArrowRain)FilledSkillVfx.ArrowRain(owner,transform.position,radius*1.1f,color,true,CombatVisualPriority.Finale);
+                if(visualRecipe==SkillVisualRecipe.ArrowRain)FilledSkillVfx.ArrowRain(owner,transform.position,radius*1.1f,color,true,CombatVisualPriority.Finale,castId);
                 else AdvancedSkillVfx.Rune(owner,transform.position,radius*1.1f,color,.65f,3);
                 owner.HitArea(transform.position,radius*1.1f,finalDamage,.7f,.65f,castId);
             }
