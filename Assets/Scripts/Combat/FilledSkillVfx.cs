@@ -30,6 +30,13 @@ namespace Emberfall
         {if(game==null)return;foreach(var fx in finales.ToArray())if(fx!=null&&fx.owner==game.Player)fx.Retire();}
         internal static void ConfirmFinale(PlayerController hero,int castId)
         {foreach(var fx in finales)if(fx!=null&&fx.owner==hero&&fx.epoch==hero.CombatEpoch&&fx.finaleCast==castId)fx.confirmedFinale=true;}
+        private void RegisterFinale(int castId)
+        {
+            // Registration starts at the actual final beat, never at charge/early arrows.
+            if(castId==0)return;
+            finaleCast=castId;confirmedFinale=false;terminalAge=0;
+            if(!finales.Contains(this))finales.Add(this);
+        }
         private CombatVisualLease lease;
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetAssets()
@@ -70,9 +77,10 @@ namespace Emberfall
             var fx=root.AddComponent<FilledSkillVfx>();fx.lease=ticket;fx.owner=hero;fx.epoch=hero.CombatEpoch;fx.kind=type;fx.size=Mathf.Clamp(radius,.15f,8);
             fx.tint=color;fx.life=Mathf.Clamp(duration,.12f,12);fx.Register();return fx;
         }
-        public static void Crescent(PlayerController hero,Vector3 at,Vector3 forward,float radius,Color color,int swingSide=1,CombatVisualPriority priority=CombatVisualPriority.Decoration)
+        public static void Crescent(PlayerController hero,Vector3 at,Vector3 forward,float radius,Color color,int swingSide=1,CombatVisualPriority priority=CombatVisualPriority.Decoration,int castId=0)
         {
             var fx=Create(hero,at+Vector3.up*.82f,forward,FilledVfxKind.Crescent,radius,color,.34f,priority:priority);if(fx==null)return;
+            if(priority==CombatVisualPriority.Finale)fx.RegisterFinale(castId);
             fx.Add(crescent,Vector3.zero,new Vector3(fx.size,fx.size*.7f,fx.size),Quaternion.Euler(-12,0,0),0,0,swingSide);
             fx.Add(crescent,new Vector3(0,.08f,-.1f),Vector3.one*fx.size*.88f,Quaternion.Euler(8,-16*swingSide,0),.02f,0,swingSide);
             for(int i=0;i<4;i++)fx.Add(crystal,new Vector3((i-1.5f)*.25f,.1f,.8f)*fx.size,new Vector3(.09f,.4f,.12f)*fx.size,Quaternion.Euler(85,i*33,0),.02f+i*.018f,4,i);
@@ -81,7 +89,7 @@ namespace Emberfall
         {
             if(type!=FilledVfxKind.Ice&&type!=FilledVfxKind.Fire&&type!=FilledVfxKind.Summon&&type!=FilledVfxKind.Sword&&type!=FilledVfxKind.Lightning&&type!=FilledVfxKind.Arcane)return;
             var fx=Create(hero,at,Vector3.forward,type,radius,color,type==FilledVfxKind.Fire?.8f:1.05f,priority:priority);if(fx==null)return;
-            if(priority==CombatVisualPriority.Finale&&castId!=0){fx.finaleCast=castId;finales.Add(fx);}
+            if(priority==CombatVisualPriority.Finale)fx.RegisterFinale(castId);
             float unit=Mathf.Min(1.6f,fx.size*.55f);
             // Allocate landing base, identity silhouette and contact flash BEFORE repeated ornaments.
             // Add's actual budget is still the last authority: mobile 10, reduced 7.
@@ -108,19 +116,19 @@ namespace Emberfall
                     fx.Add(type==FilledVfxKind.Sword?rupture:type==FilledVfxKind.Arcane?arcaneShard:main,radial*r+Vector3.up*.16f,Vector3.one*unit*.35f,Quaternion.Euler(0,i*51,0),(type==FilledVfxKind.Arcane?.34f:.08f)+i*.018f,type==FilledVfxKind.Sword?5:type==FilledVfxKind.Arcane?3:motion,angle,unit*.6f+(type==FilledVfxKind.Arcane?fx.size*.3f:0));
             }
         }
-        internal static FilledSkillVfx BeginArrowBatch(PlayerController hero,Vector3 at,float radius,Color color,bool final=false,CombatVisualPriority priority=CombatVisualPriority.ActionBody)
+        internal static FilledSkillVfx BeginArrowBatch(PlayerController hero,Vector3 at,float radius,Color color,bool final=false,CombatVisualPriority priority=CombatVisualPriority.ActionBody,int castId=0)
         {
             var fx=Create(hero,at,Vector3.forward,FilledVfxKind.ArrowRain,radius,color,12,priority:final?CombatVisualPriority.Finale:priority);
-            if(fx!=null){fx.kind=FilledVfxKind.Charge;fx.Add(crescent,Vector3.up*.18f,new Vector3(radius*.3f,.2f,radius*.3f),Quaternion.identity,0,6,0,radius*.4f,"Arrow charge envelope",true);}
+            if(fx!=null){fx.finaleCast=castId;fx.kind=FilledVfxKind.Charge;fx.Add(crescent,Vector3.up*.18f,new Vector3(radius*.3f,.2f,radius*.3f),Quaternion.identity,0,6,0,radius*.4f,"Arrow charge envelope",true);}
             return fx;
         }
-        internal static void ArrowRain(PlayerController hero,Vector3 at,float radius,Color color,bool final=false,CombatVisualPriority priority=CombatVisualPriority.ActionBody)
-        {var fx=BeginArrowBatch(hero,at,radius,color,final,priority);if(fx!=null)fx.ArrowBeat(at,radius,final);}
+        internal static void ArrowRain(PlayerController hero,Vector3 at,float radius,Color color,bool final=false,CombatVisualPriority priority=CombatVisualPriority.ActionBody,int castId=0)
+        {var fx=BeginArrowBatch(hero,at,radius,color,final,priority,castId);if(fx!=null)fx.ArrowBeat(at,radius,final);}
         internal void ArrowBeat(Vector3 at,float radius,bool final)
         {
             if(!gameObject.activeInHierarchy||owner==null||owner.IsDead||owner.CombatEpoch!=epoch)return;
             ClearPieces();kind=FilledVfxKind.ArrowRain;transform.position=at;age=0;life=final?1.05f:.65f;size=Mathf.Clamp(radius,.15f,8);
-            if(final&&lease!=null)lease.Promote(CombatVisualPriority.Finale);
+            if(final){RegisterFinale(finaleCast);if(lease!=null)lease.Promote(CombatVisualPriority.Finale);}
             Add(rupture,Vector3.up*.08f,Vector3.one*(final?size*.65f:.3f),Quaternion.identity,0,5,0,final?size:.4f,"Arrow landing contact",true);
             Add(arrow,Vector3.zero,new Vector3(final?1.7f:.8f,final?3.2f:1.1f,final?1.7f:.8f),Quaternion.identity,0,11,0,.3f,"Primary falling arrow",true);
             Add(rupture,Vector3.up*.1f,Vector3.one*.22f,Quaternion.identity,0,4,0,final?3.5f:2.3f,"Arrow impact fragments");

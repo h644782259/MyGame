@@ -971,7 +971,15 @@ namespace Emberfall
                 EnemyController enemy = session.Enemies[i];
                 if (enemy == null || enemy.IsDead) continue;
                 Vector3 delta = CombatFx.Flat(enemy.transform.position - at);
-                if (delta.magnitude <= radius + (enemy.IsBoss ? .85f : .4f) + enemy.HitFootprintBonus && CombatSight.Area(at,enemy.transform.position)) { var impact=volley==null?damage:volley.Apply(enemy,damage,true);if(impact.Amount<=0)continue;RegisterSkillHit(castId);ApplySpellDodgeBoon(enemy);enemy.TakeDamage(impact.Amount,delta.normalized,knockback,stun,critical:impact.IsCritical); }
+                if (delta.magnitude <= radius + (enemy.IsBoss ? .85f : .4f) + enemy.HitFootprintBonus && CombatSight.Area(at,enemy.transform.position))
+                {
+                    var impact=volley==null?damage:volley.Apply(enemy,damage,true);if(impact.Amount<=0)continue;
+                    RegisterSkillHit(castId);ApplySpellDodgeBoon(enemy);
+                    float healthBeforeFinale=enemy.Health;
+                    enemy.TakeDamage(impact.Amount,delta.normalized,knockback,stun,critical:impact.IsCritical);
+                    // Confirm after the real mutation even if its death callback just finished the mode.
+                    if(enemy.Health<healthBeforeFinale)FilledSkillVfx.ConfirmFinale(this,castId);
+                }
             }
 
             }
