@@ -12,11 +12,11 @@ namespace Emberfall
         {
             return kind == HubNpcKind.Merchant ? "商人 · 药剂 / 出售" :
                 kind == HubNpcKind.Blacksmith ? "铁匠 · 部位强化" :
-                kind == HubNpcKind.Exchange ? "兑换员 · 机制装备" : "营地工坊";
+                kind == HubNpcKind.Exchange ? "观星员 · 星路 / 兑换" : "营地工坊";
         }
 
         private static string HubNpcMobileLabel(HubNpcKind kind)
-        { return kind == HubNpcKind.Merchant ? "商人交易" : kind == HubNpcKind.Blacksmith ? "铁匠强化" : "装备兑换"; }
+        { return kind == HubNpcKind.Merchant ? "商人交易" : kind == HubNpcKind.Blacksmith ? "铁匠强化" : "星路 / 兑换"; }
 
         private void OpenNearbyHubNpc()
         {
@@ -25,7 +25,7 @@ namespace Emberfall
             if (kind == HubNpcKind.None) return;
             CancelHotbarPointer();
             inventoryHubNpc = kind;
-            if (kind == HubNpcKind.Exchange) { campTab = 1; panel = Panel.Camp; }
+            if (kind == HubNpcKind.Exchange) { OpenChapterSelection();return; }
             else
             {
                 panel = Panel.Inventory;

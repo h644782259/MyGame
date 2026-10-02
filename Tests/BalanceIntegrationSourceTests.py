@@ -27,9 +27,13 @@ check('!session.CombatEnded' in p and 'session.CombatEnded' in fx,'terminal ordi
 check('QueueDungeonCompletion();' in s and 'TrySettleDungeonReward();' in s and 'Progression.Profile.clearedRuns++' not in s,'ordinary clear uses one pending atomic settlement')
 zone=s[s.index('private bool ChangeZone('):s.index('private void SpawnWildernessEnemy(')]
 check(s.count('if(DungeonRewardPending&&!TrySettleDungeonReward())return false;')==1 and
-      'if (!loadingSaveSnapshot && !SaveBeforeLeaving()) return false;' in zone and
+      'if (!loadingSaveSnapshot && !enteringChapter && !SaveBeforeLeaving()) return false;' in zone and
       zone.index('SaveBeforeLeaving()')<zone.index('Enemies.Clear();'),
       'save/leave settles pending clear; scene preflights the same checked path before teardown')
+chapter=read('Core/GameSession.Chapter.cs')
+entry=chapter[chapter.index('public bool ConfirmChapterEnter()'):chapter.index('private void ResetChapterRun()')]
+check(entry.index('if(!SaveBeforeLeaving())return false;')<entry.index('Progression.TryBeginChapterNode(')<entry.index('enteringChapter=true;') and
+      'finally {enteringChapter=false;' in entry,'chapter bypass follows successful preflight and cannot leak outside scoped entry')
 check('ClearDungeonSettlement();' in read('Core/GameSession.Expedition.cs') and 'pendingDungeonRewardId=null;' in d,'explicit discard/new run clears old pending receipt')
 check('TryCompleteDungeonRun(pendingDungeonRewardId' in d and 'TotalEarnedExperience(Progression.Profile)-xp' in d,'ordinary recap uses committed actual deltas')
 for file in ['Core/GameSession.cs','Core/GameSession.Expedition.cs','Core/GameSession.Modes.cs','Core/GameSession.RoomChain.cs']:

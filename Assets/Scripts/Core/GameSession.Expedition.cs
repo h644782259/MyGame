@@ -16,7 +16,7 @@ namespace Emberfall
         public int DungeonEntryLevel { get; private set; } = 2;
         public string LastRunSummary { get; private set; } = "";
         public bool IsInCamp { get { return HasStarted && !InDungeon && !IsDead && Player != null && (Vector3.Distance(Player.transform.position, new Vector3(0,0,-10)) < 7f || NearbyHubNpc!=HubNpcKind.None); } }
-        public bool SideEventAvailable { get { return InDungeon && ModeRun==null && (RoomChainRun==null || RoomChainRun.Room.Index==RoomTactics.EventRoom(runSeed)&&!RoomChainRun.Finished) && !DungeonCleared && sideCrystal!=null && !sideEventStarted && Player != null && Vector3.Distance(Player.transform.position, sideEventPosition) < 3.5f; } }
+        public bool SideEventAvailable { get { return InDungeon && !ChapterActive && ModeRun==null && (RoomChainRun==null || RoomChainRun.Room.Index==RoomTactics.EventRoom(runSeed)&&!RoomChainRun.Finished) && !DungeonCleared && sideCrystal!=null && !sideEventStarted && Player != null && Vector3.Distance(Player.transform.position, sideEventPosition) < 3.5f; } }
         private int runSeed, wavePopulation;
         private readonly Queue<EncounterSpawn> reinforcementQueue=new Queue<EncounterSpawn>();
         private float nextReinforcementAt;
@@ -45,6 +45,7 @@ namespace Emberfall
         private void ResetExpedition(bool dungeon)
         {
             ClearDungeonSettlement();
+            if(!enteringChapter)ResetChapterRun();
             RunChoices.Reset(); reinforcementQueue.Clear(); nextReinforcementAt=0; DungeonSelectionOpen = false; AbandonSideEvent();
             combatActions.Clear(); lastDamageSource = "未记录"; lastDamageAmount = 0; lastInterruptAt = -10; recapGoldLost = 0;
             if (dungeon)
@@ -75,6 +76,7 @@ namespace Emberfall
 
         public bool ConfirmBlessing(int index)
         {
+            if(ChapterActive)return false;
             if(RoomChainRun!=null)return ConfirmRoomInterlude(index);
             if(ModeRun!=null)return ConfirmArenaBlessing(index);
             if (!InDungeon || IsDead || DungeonCleared || Enemies.Count > 0 || reinforcementQueue.Count>0 || !RunChoices.Choose(index)) return false;

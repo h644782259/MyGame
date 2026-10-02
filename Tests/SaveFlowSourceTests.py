@@ -22,7 +22,11 @@ expedition=read('Assets/Scripts/Core/GameSession.Expedition.cs')
 modes=read('Assets/Scripts/Core/GameSession.Modes.cs')
 rooms=read('Assets/Scripts/Core/GameSession.RoomChain.cs')
 check('ResetArenaMode(dungeon);' in expedition and 'ModeRun.Dispose();ModeRun=null' in modes and 'ResetRoomChain(dungeon);' in modes and 'RoomChainRun.Dispose();RoomChainRun=null' in rooms,'reset chain discards BOTH unclaimed arena and room-chain rewards')
-check('if(!loadingSaveSnapshot&&!SaveBeforeLeaving())returnfalse;' in ''.join(session.split()),'camp construction for a staged load skips the checked transition preflight')
+check('if(!loadingSaveSnapshot&&!enteringChapter&&!SaveBeforeLeaving())returnfalse;' in ''.join(session.split()),'camp construction for a staged load skips the checked transition preflight')
+chapter=read('Assets/Scripts/Core/GameSession.Chapter.cs')
+entry=chapter[chapter.index('public bool ConfirmChapterEnter()'):chapter.index('private void ResetChapterRun()')]
+check(entry.index('if(!SaveBeforeLeaving())return false;')<entry.index('enteringChapter=true;') and 'finally {enteringChapter=false;' in entry,
+      'chapter bypass has a successful save preflight and cannot leak into staged loads or later transitions')
 ui=read('Assets/Scripts/UI/GameUI.cs');mobile=read('Assets/Scripts/UI/GameUI.Mobile.cs')
 pause=ui[ui.index('private void DrawPause()'):ui.index('private void OpenControls()')]
 mpause=mobile[mobile.index('private void DrawMobilePause()'):]

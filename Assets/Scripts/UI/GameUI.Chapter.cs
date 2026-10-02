@@ -1,0 +1,131 @@
+using UnityEngine;
+namespace Emberfall
+{
+    public sealed partial class GameUI
+    {
+        private Vector2 chapterScroll;
+        private GameProfile chapterSelectionOwner;
+        private string chapterEntryError;
+        private bool ChapterSelectionIsCurrent()
+        {return panel==Panel.Chapter&&session.OpenChapterSelectionAllowed&&ReferenceEquals(chapterSelectionOwner,session.Progression.Profile);}
+        private bool OpenChapterSelection()
+        {
+            if(UITransitionBlocked||!session.OpenChapterSelectionAllowed)return false;
+            chapterSelectionOwner=session.Progression.Profile;chapterEntryError=null;chapterScroll=Vector2.zero;
+            if(!ChapterProgression.IsUnlocked(chapterSelectionOwner,session.SelectedChapterNode))session.SelectedChapterNode=ChapterNode.ForestCourt;
+            if(!ChapterProgression.CanEnter(chapterSelectionOwner,session.SelectedChapterNode,session.SelectedChapterDifficulty))session.SelectedChapterDifficulty=ChapterDifficulty.Normal;
+            session.SelectedChapterTier=Mathf.Clamp(session.SelectedChapterTier,1,session.Progression.HighestUnlockedAdventureTier);
+            CancelHotbarPointer();CancelMobileScroll();panel=Panel.Chapter;session.SetUIBlocking(true);BlockUITransition();return true;
+        }
+        private bool SelectChapterNode(ChapterNode node)
+        {
+            if(!ChapterSelectionIsCurrent()||!ChapterProgression.IsUnlocked(chapterSelectionOwner,node))return false;
+            session.SelectedChapterNode=node;session.SelectedChapterDifficulty=ChapterDifficulty.Normal;
+            chapterScroll=Vector2.zero;chapterEntryError=null;CancelMobileScroll();BlockUITransition();return true;
+        }
+        private bool SelectChapterDifficulty(ChapterDifficulty difficulty)
+        {
+            if(!ChapterSelectionIsCurrent()||!ChapterProgression.CanEnter(chapterSelectionOwner,session.SelectedChapterNode,difficulty))return false;
+            session.SelectedChapterDifficulty=difficulty;chapterEntryError=null;BlockUITransition();return true;
+        }
+        private void ChangeChapterTier(int delta)
+        {
+            if(!ChapterSelectionIsCurrent())return;
+            session.SelectedChapterTier=Mathf.Clamp(session.SelectedChapterTier+(delta<0?-1:delta>0?1:0),1,session.Progression.HighestUnlockedAdventureTier);
+            BlockUITransition();
+        }
+        private void SetChapterLimitedHealing(bool limited)
+        {if(!ChapterSelectionIsCurrent())return;session.SelectedChapterLimitedHealing=limited;BlockUITransition();}
+        private bool ConfirmSelectedChapter()
+        {
+            if(!ChapterSelectionIsCurrent()||!ChapterProgression.CanEnter(chapterSelectionOwner,session.SelectedChapterNode,session.SelectedChapterDifficulty))return false;
+            if(!session.ConfirmChapterEnter())
+            {chapterEntryError=string.IsNullOrEmpty(session.Progression.LastError)?"暂时无法进入，请确认营地状态后重试。":session.Progression.LastError;BlockUITransition();return false;}
+            panel=Panel.None;chapterSelectionOwner=null;chapterEntryError=null;CancelMobileScroll();session.SetUIBlocking(false);BlockUITransition();return true;
+        }
+        private bool CloseChapterSelection()
+        {
+            if(panel!=Panel.Chapter)return false;
+            panel=Panel.None;chapterSelectionOwner=null;chapterEntryError=null;CancelMobileScroll();session.SetUIBlocking(false);BlockUITransition();return true;
+        }
+        private void OpenChapterExchange()
+        {
+            if(!ChapterSelectionIsCurrent())return;
+            chapterSelectionOwner=null;chapterEntryError=null;campTab=1;panel=Panel.Camp;CancelMobileScroll();BlockUITransition();
+        }
+        private bool RetryChapterSettlement()
+        {if(!session.ChapterFinished||!session.ChapterRewardPending)return false;bool saved=session.TrySettleChapterReward();BlockUITransition();return saved;}
+        private void ReturnFromChapter()
+        {if(!session.ChapterFinished)return;session.ReturnToCamp();BlockUITransition();}
+        private void DrawChapterSelection()
+        {
+            if(!ChapterSelectionIsCurrent()){CloseChapterSelection();return;}
+            bool mobile=MobileControls.Active;float u=mobile?TouchRatio:1;
+            var layout=ChapterPanelGeometry();
+            DrawChapterFrame(layout,u,"星路纪事","三段线索 · 可跳读，已解锁节点可独立重玩");
+            Rect body=ChapterRect(layout.Body,u);float contentWidth=layout.Body.Width-18;
+            float textWidth=(contentWidth-16)*u;
+            var profile=session.Progression.Profile;var node=session.SelectedChapterNode;var difficulty=session.SelectedChapterDifficulty;
+            string story=ChapterEntryPresentation.Story(node);
+            string preview=ChapterEntryPresentation.Preview(profile,node,difficulty,session.SelectedChapterTier,session.SelectedChapterLimitedHealing);
+            float storyH=Style(Mathf.RoundToInt(14*u),false,true).CalcHeight(new GUIContent(story),textWidth)/u+12;
+            float previewH=Style(Mathf.RoundToInt(13*u),false,true).CalcHeight(new GUIContent(preview),textWidth)/u+12;
+            float errorH=string.IsNullOrEmpty(chapterEntryError)?0:Style(Mathf.RoundToInt(13*u),false,true).CalcHeight(new GUIContent(chapterEntryError),textWidth)/u+12;
+            float total=48+12+errorH+storyH+48+12+48+12+previewH;
+            chapterScroll=BeginTouchScroll("chapter-entry",body,chapterScroll,new Rect(0,0,contentWidth*u,Mathf.Max(layout.Body.Height,total)*u));
+            float y=0,w=(contentWidth-16)/3;
+            for(int i=0;i<3;i++)
+            {
+                var choice=(ChapterNode)i;bool unlocked=ChapterProgression.IsUnlocked(profile,choice);
+                string label=ChapterDefinition.Get(choice).Name+(choice==node?" ✓":unlocked?"":" · 未解锁");
+                if(Button(new Rect(i*(w+8)*u,y,w*u,48*u),label,choice==node?gold:jade,unlocked))
+                {SelectChapterNode(choice);EndTouchScroll();return;}
+            }
+            y+=60;
+            if(errorH>0){Text(new Rect(8*u,y*u,textWidth,(errorH-12)*u),chapterEntryError,Mathf.RoundToInt(13*u),gold,false,true);y+=errorH;}
+            Text(new Rect(8*u,y*u,textWidth,(storyH-12)*u),story,Mathf.RoundToInt(14*u),pale,false,true);y+=storyH;
+            for(int i=0;i<3;i++)
+            {
+                var choice=(ChapterDifficulty)i;bool allowed=ChapterProgression.CanEnter(profile,node,choice);
+                string label=ChapterEntryPresentation.DifficultyName(choice)+(choice==difficulty?" ✓":allowed?"":" · 未解锁");
+                if(Button(new Rect(i*(w+8)*u,y*u,w*u,48*u),label,choice==difficulty?gold:jade,allowed))
+                {SelectChapterDifficulty(choice);EndTouchScroll();return;}
+            }
+            y+=60;
+            Text(new Rect(8*u,y*u,104*u,48*u),"阶数 "+session.SelectedChapterTier,Mathf.RoundToInt(16*u),pale,true,false,TextAnchor.MiddleLeft);
+            if(Button(new Rect(112*u,y*u,48*u,48*u),"−",jade,session.SelectedChapterTier>1)){ChangeChapterTier(-1);EndTouchScroll();return;}
+            if(Button(new Rect(168*u,y*u,48*u,48*u),"+",jade,session.SelectedChapterTier<session.Progression.HighestUnlockedAdventureTier)){ChangeChapterTier(1);EndTouchScroll();return;}
+            if(Button(new Rect(228*u,y*u,(contentWidth-228)*u,48*u),session.SelectedChapterLimitedHealing?"限疗 ✓":"普通治疗",jade))
+            {SetChapterLimitedHealing(!session.SelectedChapterLimitedHealing);EndTouchScroll();return;}
+            y+=60;Text(new Rect(8*u,y*u,textWidth,previewH*u),preview,Mathf.RoundToInt(13*u),muted,false,true);EndTouchScroll();
+            if(Button(ChapterRect(layout.FooterButton(0,3),u),"返回营地",jade)){CloseChapterSelection();return;}
+            if(Button(ChapterRect(layout.FooterButton(1,3),u),"机制兑换",jade)){OpenChapterExchange();return;}
+            if(Button(ChapterRect(layout.FooterButton(2,3),u),"进入 "+ChapterDefinition.Get(node).Name,gold,ChapterProgression.CanEnter(profile,node,difficulty)))
+            {ConfirmSelectedChapter();return;}
+        }
+        private MobilePanelLayout ChapterPanelGeometry()
+        {return MobileControls.Active?MobilePanelGeometry():new MobilePanelLayout(Mathf.Min(960,width),Mathf.Min(660,height));}
+        private Rect ChapterRect(MobilePanelLayout.Area area,float u)
+        {return new Rect(area.X*u,area.Y*u,area.Width*u,area.Height*u);}
+        private void DrawChapterFrame(MobilePanelLayout layout,float u,string title,string subtitle)
+        {
+            Fill(new Rect(0,0,width,height),new Color(.018f,.031f,.048f,.99f));
+            Text(new Rect(16*u,10*u,(layout.Width-32)*u,28*u),title,Mathf.RoundToInt(22*u),pale,true);
+            Text(new Rect(16*u,40*u,(layout.Width-32)*u,18*u),subtitle,Mathf.RoundToInt(12*u),muted);
+        }
+        private void DrawChapterResult()
+        {
+            float u=MobileControls.Active?TouchRatio:1;var layout=ChapterPanelGeometry();
+            bool failed=session.ChapterRun==null||session.ChapterRun.Failed,pending=session.ChapterRewardPending;
+            DrawChapterFrame(layout,u,failed?"本次星路止步":pending?"结算待保存":"星路线索已记录",ChapterDefinition.Get(session.ActiveChapterNode).Name);
+            string copy=ChapterEntryPresentation.Result(session.ActiveChapterNode,failed,pending);
+            if(!failed&&!pending)copy="奖励已保存 · +"+session.ChapterRewardMaterials+" 碎片\n\n"+copy;
+            if(!string.IsNullOrEmpty(session.Progression.LastError))copy=session.Progression.LastError+"\n\n"+copy;
+            float h=Style(Mathf.RoundToInt(16*u),false,true).CalcHeight(new GUIContent(copy),(layout.Body.Width-26)*u)+16*u;
+            chapterScroll=BeginTouchScroll("chapter-result",ChapterRect(layout.Body,u),chapterScroll,new Rect(0,0,(layout.Body.Width-16)*u,Mathf.Max(layout.Body.Height*u,h)));
+            Text(new Rect(8*u,8*u,(layout.Body.Width-26)*u,h),copy,Mathf.RoundToInt(16*u),pale,false,true);EndTouchScroll();
+            if(pending&&Button(ChapterRect(layout.FooterButton(0,2),u),"重试保存结算",gold)){RetryChapterSettlement();return;}
+            if(Button(ChapterRect(layout.FooterButton(pending?1:0,pending?2:1),u),"返回营地",jade)){ReturnFromChapter();return;}
+        }
+    }
+}

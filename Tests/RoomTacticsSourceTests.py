@@ -21,7 +21,7 @@ assert 'TacticalRoomGeometry.Register(layout)' in w and 'TacticalRoomGeometry.Wa
 assert 'MakeRoomObjective(first)' in t and 'RoomTacticalRegion.CaptureRadius,.09f' in w
 assert 'TickRoomTactics();' in read('Assets/Scripts/Core/GameSession.cs')
 
-assert "Player.Teleport(dungeon&&RoomChainRun!=null?TacticalRoomGeometry.Entrance:" in read("Assets/Scripts/Core/GameSession.cs")
+assert "Player.Teleport(ChapterActive?chapterPlan.Entrance:dungeon&&RoomChainRun!=null?TacticalRoomGeometry.Entrance:" in read("Assets/Scripts/Core/GameSession.cs")
 assert "Player.Teleport(TacticalRoomGeometry.Entrance)" in s
 assert "Vector3 entrance=Entrance;" in read("Assets/Scripts/World/TacticalRoomGeometry.cs")
 assert "var entrance=TacticalRoomGeometry.Entrance;" in read("Tests/TacticalRoomGeometryTests.cs")

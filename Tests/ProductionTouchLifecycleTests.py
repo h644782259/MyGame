@@ -49,8 +49,9 @@ namespace Emberfall {
  public class PlayerStub {public T GetComponent<T>() where T:class=>null;}
  public sealed class GameSession {
   public GameUI ui;public bool BackgroundPaused;public PlayerStub Player;
-  public bool InputBlocked,DungeonSelectionOpen,IsNearDungeonEntrance;public bool NearRoomExit=true,SideEventAvailable,IsInCamp,InDungeon;public HubNpcKind NearbyHubNpc;
+  public bool InputBlocked,DungeonSelectionOpen,IsNearDungeonEntrance;public bool NearChapterExit;public bool NearRoomExit=true,SideEventAvailable,IsInCamp,InDungeon;public HubNpcKind NearbyHubNpc;
   public void EnterNextRoom(){SuspendInputs();}
+  public bool EnterNextChapterRoom(){SuspendInputs();return true;}
   public void StartSideEvent(){}public void ReturnToCamp(){}public void EnterDungeon(){}public void SetUIBlocking(bool b){}
   public void SuspendForTest(){SuspendInputs();}
   SESSION_METHOD
