@@ -29,6 +29,8 @@ namespace Emberfall
         private bool executingChargedSkill;
         private readonly Dictionary<EnemyController,Renderer[]> aimGeometry = new Dictionary<EnemyController,Renderer[]>();
         private readonly List<EnemyController> staleAimGeometry = new List<EnemyController>();
+        private GameUI inputUI;
+        internal bool GameplayCancelAllowed { get { return session != null && !session.InputBlocked && (inputUI == null || inputUI.GameplayBackAllowed); } }
         private SkillRuntime skillRuntime;
         private RunChoices ActiveRunBonuses { get { return session != null && session.InDungeon ? session.RunChoices : null; } }
         private float CombatAttack { get { return stats.Damage * (ActiveRunBonuses == null ? 1f : ActiveRunBonuses.AttackMultiplier); } }
@@ -84,6 +86,7 @@ namespace Emberfall
             else if (skillRuntime.HeroClass != heroClass)
                 throw new System.InvalidOperationException("A player controller cannot change class during an adventure.");
             session = game;
+            inputUI = game == null ? null : game.GetComponent<GameUI>();
             HeroClass = heroClass;
             gameObject.name = "Hero - " + GameBalance.ClassName(heroClass);
             if (model != null) Destroy(model.gameObject);
@@ -272,7 +275,8 @@ namespace Emberfall
         private void Update()
         {
             if (session == null || model == null) return;
-            if (charge != null && charge.IsCharging && (Input.GetKeyDown(KeyCode.Escape) || AdventureCamera.CancelSkillRequested)) charge.Cancel();
+            // Paused dialogs/panels own Back; their frozen charge is not gameplay input.
+            if (GameplayCancelAllowed && charge != null && charge.IsCharging && (Input.GetKeyDown(KeyCode.Escape) || AdventureCamera.CancelSkillRequested)) charge.Cancel();
             if (session.InputBlocked)
             {
                 blinkBufferTime = 0;
