@@ -944,7 +944,7 @@ namespace Emberfall
         }
 
         public static int MasteryCap(int level)
-        { return level < 50 ? 0 : level < 65 ? 10 : level < 80 ? 20 : level < 95 ? 30 : MaximumMasteryRank; }
+        { return level < 30 ? 0 : level < 35 ? 5 : level < 50 ? 10 : level < 65 ? 15 : level < 80 ? 20 : level < 95 ? 30 : MaximumMasteryRank; }
 
         public int MasteryCoreTier(MasteryType mastery)
         {
@@ -970,8 +970,8 @@ namespace Emberfall
         {
             if (!Enum.IsDefined(typeof(MasteryType), mastery)) return "无效的精通。";
             int cap = MasteryCap(Profile.level);
-            if (cap == 0) return "50级开放精通；与技能共用点数，营地免费重置。";
-            if (Profile.masteryRanks[(int)mastery] >= cap) return "已达当前等级精通上限 " + cap + "；65/80/95级继续开放。";
+            if (cap == 0) return "30级开放精通；与技能共用点数，营地免费重置。";
+            if (Profile.masteryRanks[(int)mastery] >= cap) return "已达当前等级精通上限 " + cap + "；35/50/65/80/95级继续开放。";
             if (Profile.skillPoints < 1) return "需要1点技能点；可在营地重置精通。";
             return string.Empty;
         }
@@ -1274,14 +1274,7 @@ namespace Emberfall
         }
 
         public bool ReforgeMechanic(string id, bool inCamp)
-        {
-            string reason=ReforgeLockReason(id,inCamp);if(reason.Length>0)return Fail(reason);
-            GameProfile candidate = Snapshot(); candidate.mechanicMaterials -= ReforgeCost;
-            ItemData item = candidate.inventory.Find(x => x.id == id); item.level = candidate.level;
-            item.upgradeLevel = 0; item.upgradeBaseInitialized = false; SetRolledStats(item); EnsureUpgradeBasis(item);
-            if (IsEquipped(candidate, id)) ApplyUpgradeRank(item, candidate.slotUpgradeRanks[(int)item.slot]);
-            return CommitCandidate(candidate);
-        }
+        { return ReforgeMechanic(QuoteReforge(id),inCamp); }
 
         public string AscensionLockReason(string id, bool inCamp)
         {
@@ -1466,11 +1459,7 @@ namespace Emberfall
             return string.Empty;
         }
         public string ReforgeLockReason(string id,bool inCamp)
-        {
-            if(!inCamp)return "只能在营地重铸机制装备。";
-            string reason=MechanicGoalEligibility(id,ProgressionGoalKind.Reforge);if(reason.Length>0)return reason;
-            return Profile.mechanicMaterials<ReforgeCost?"重铸需要6枚星烬碎片。":string.Empty;
-        }
+        { return ReforgeLockReason(QuoteReforge(id),inCamp); }
         public string VariantLockReason(string id,bool inCamp)
         {
             if(!inCamp)return "只能在营地切换元素机制变体。";
@@ -2363,9 +2352,9 @@ namespace Emberfall
             }
             profile.skillRanks = ranks;
             int[] mastery = new int[4];
-            // Old three-track maximum-level allocations are refunded once: the new
-            // four-track capacity and exclusive core require a deliberate choice.
-            if (profile.masteryRevision >= 1 && profile.level >= 50)
+            // Preserve legal legacy investments, including old three-track saves.
+            // Only invalid ranks, level caps and the shared lifetime budget constrain migration.
+            if (profile.level >= 30)
                 for (int track = 0; track < mastery.Length; track++)
                 {
                     int oldRank = profile.masteryRanks != null && track < profile.masteryRanks.Length ? profile.masteryRanks[track] : 0;
@@ -2373,7 +2362,7 @@ namespace Emberfall
                     remaining -= mastery[track];
                 }
             profile.masteryRanks = mastery;
-            if (profile.masteryRevision < 1 || profile.masteryCore < 0 || profile.masteryCore >= mastery.Length || mastery[profile.masteryCore] < MasteryCoreRules.InitialInvestment)
+            if (profile.masteryCore < 0 || profile.masteryCore >= mastery.Length || mastery[profile.masteryCore] < MasteryCoreRules.InitialInvestment)
                 profile.masteryCore = -1;
             profile.masteryRevision = 1;
             profile.fashionThreads = Clamp(profile.fashionThreads, 0, 999999);
