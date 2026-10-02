@@ -26,7 +26,7 @@ namespace Emberfall {
   public ProgressionService Progression;public bool Paused,BackgroundPaused,IsDead,HasStarted=true,Blocked,AllowConfirm=true,ChapterFinished,ChapterRewardPending;
   public bool OpenChapterSelectionAllowed=>HasStarted&&!Paused&&!BackgroundPaused&&!IsDead&&!ChapterFinished;
   public ChapterNode SelectedChapterNode,ActiveChapterNode;public ChapterDifficulty SelectedChapterDifficulty;public int SelectedChapterTier=1;public bool SelectedChapterLimitedHealing;
-  public RunStub ChapterRun=new RunStub();public ChapterRunReceipt Receipt;public int ConfirmCalls,ReturnCalls;
+  public RunStub ChapterRun=new RunStub();public ChapterRunReceipt Receipt;public int ChapterRewardMaterials=>Receipt==null?0:Receipt.Materials;public int ConfirmCalls,ReturnCalls;
   public bool ConfirmChapterEnter(){ConfirmCalls++;return AllowConfirm&&Progression.TryBeginChapterNode(SelectedChapterNode,SelectedChapterDifficulty,SelectedChapterTier,out Receipt);}
   public bool TrySettleChapterReward(){bool ok=Progression.TryCompleteChapterNode(Receipt);if(ok)ChapterRewardPending=false;return ok;}
   public void ReturnToCamp(){ReturnCalls++;}public void SetUIBlocking(bool b){Blocked=b;}public void SetPaused(bool b){Paused=b;}
@@ -81,7 +81,9 @@ namespace Emberfall {
    Directory.CreateDirectory(p.SaveFilePath+".tmp");check(!ui.RetryChapterSettlement()&&ui.session.ChapterRewardPending,"save failure preserves pending receipt");
    ui.texts.Clear();ui.buttons.Clear();ui.DrawChapterResult();check(ui.buttons.Exists(b=>b.text=="重试保存结算"&&b.enabled&&!b.scroll),"save failure keeps reachable fixed retry action");
    check(ui.texts.Exists(t=>t.Contains("结算待保存"))&&ui.texts.Exists(t=>t.Contains(p.LastError)),"result visibly distinguishes unsaved progress and actual error");
-   Directory.Delete(p.SaveFilePath+".tmp");check(ui.RetryChapterSettlement()&&!ui.session.ChapterRewardPending,"same receipt retries through actual UI method and real save");
+   int capturedMaterials=ui.session.Receipt.Materials;Directory.Delete(p.SaveFilePath+".tmp");check(ui.RetryChapterSettlement()&&!ui.session.ChapterRewardPending,"same receipt retries through actual UI method and real save");
+   ui.texts.Clear();ui.DrawChapterResult();check(ui.texts.Exists(t=>t.Contains("奖励已保存 · +"+capturedMaterials+" 碎片")),"result displays original receipt amount including captured first-clear bonus");
+   check(capturedMaterials==ChapterProgression.MaterialReward(ui.session.Receipt.Node,ui.session.Receipt.Tier)+1,"first-clear receipt retains bonus after completion mask changed");
    int after=events;check(!ui.RetryChapterSettlement()&&events==after,"completed UI retry cannot grant again");
    ui.ReturnFromChapter();check(ui.session.ReturnCalls==1,"result return delegates to host guarded leave path");
    ui.session.ChapterFinished=false;check(ui.OpenChapterSelection(),"open new selection after completed run");
