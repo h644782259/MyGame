@@ -47,7 +47,7 @@
 <text x="340.00" y="402.00" style="fill:#e8edf2" class="small">B</text>
 <text x="50" y="622">A → B: 21.48 m returned route · LOS blocked</text>
 <text x="50" y="646">Existing ranged branches (0 ↔ 1): LOS blocked</text>
-<text x="590" y="99" font-weight="bold">Split wall · seed 603979780</text>
+<text x="590" y="99" font-weight="bold">Split wall · seed 605028352</text>
 <path d="M625,599 L625,131" stroke="#293645"/>
 <path d="M586,560 L1054,560" stroke="#293645"/>
 <path d="M690,599 L690,131" stroke="#293645"/>
@@ -82,8 +82,8 @@
 <text x="854.00" y="214.00" style="fill:#e8edf2" class="small">3</text>
 <circle cx="950" cy="274" r="6.5" fill="#dd757b"/>
 <text x="958.00" y="266.00" style="fill:#e8edf2" class="small">4</text>
-<circle cx="877.6815434" cy="415.8388374" r="6.5" fill="#dd757b"/>
-<text x="885.68" y="407.84" style="fill:#e8edf2" class="small">5</text>
+<circle cx="877.6183699" cy="416.35217620000003" r="6.5" fill="#dd757b"/>
+<text x="885.62" y="408.35" style="fill:#e8edf2" class="small">5</text>
 <path d="M768,378 L872,378" stroke="#ffd76b" stroke-width="2" stroke-dasharray="5 5"/>
 <polyline points="768.00,378.00 872.00,378.00" fill="none" stroke="#71e4fa" stroke-width="3"/>
 <circle cx="768" cy="378" r="8.450000000000001" fill="none" stroke="#71e4fa" stroke-width="2"/>

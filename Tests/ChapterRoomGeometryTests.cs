@@ -18,7 +18,7 @@ public static class ChapterRoomGeometryTests
         for(int raw=0;raw<64;raw++)
         {
             int split=ChapterRoomGeometry.RedrockReplaySeed(raw,true),solid=ChapterRoomGeometry.RedrockReplaySeed(raw,false);
-            Check((split&3)==(raw&3)&&(solid&3)==(raw&3),"route bit independent of mirror and Forest formation");
+            Check((split&255)==(raw&255)&&(solid&255)==(raw&255),"route flag preserves entire spawn jitter byte including mirror and Forest formation");
             Check(ChapterRoomGeometry.RedrockReplaySeed(split,true)==split,"encoded seed idempotent replay");
             foreach(ChapterNode node in Enum.GetValues(typeof(ChapterNode)))for(int room=0;room<2;room++)
             {

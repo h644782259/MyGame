@@ -41,11 +41,13 @@ namespace Emberfall
     {
         public const int MaximumEnemies=6;
         // Versioned replay marker: old generated seeds (0..999999) stay legacy.
-        // Bit 0 is mirror, bit 1 is Forest formation, bit 2 is this route choice.
+        // Bit 20 is outside old generated seeds and the low-byte spawn jitter.
+        // Mirror bit 0 and Forest formation bit 1 remain independent.
+        private const int RedrockRouteBit=1<<20;
         public static int RedrockReplaySeed(int seed,bool split)
-        {return (((seed&0x00ffffff)|0x24000000)&~4)|(split?4:0);}
+        {return (((seed&0x00ffffff)|0x24000000)&~RedrockRouteBit)|(split?RedrockRouteBit:0);}
         public static bool RedrockSplitRoute(int seed)
-        {return (seed&0x7f000000)==0x24000000&&(seed&4)!=0;}
+        {return (seed&0x7f000000)==0x24000000&&(seed&RedrockRouteBit)!=0;}
 
         public static ChapterStarMapPiece[] StarMapPieces(int mask)
         {
