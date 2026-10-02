@@ -105,7 +105,8 @@ public static class ProgressionGrowthTests
             bool variantUnlocked=item.mechanicVariantUnlocked,locked=item.locked;int level=item.level;
             string before=State(p),disk=File.ReadAllText(p.SaveFilePath),backup=File.ReadAllText(p.SaveFilePath+".bak");int events=0;p.Changed+=()=>events++;
             Check(!p.AscendMechanic(id,false)&&State(p)==before,"ascension requires camp");
-            p.Profile.bestFloor=4;Check(!p.AscendMechanic(id,true),"fifth-tier milestone enforced");p.Profile.bestFloor=5;
+            p.Profile.bestFloor=4;p.Profile.highestAdventureTier=4;Check(!p.AscendMechanic(id,true),"shared fifth-tier milestone enforced");
+            p.Profile.highestAdventureTier=5;Check(string.IsNullOrEmpty(p.AscensionLockReason(id,true)),"alternate-mode shared fifth tier opens ascension without ordinary fifth tier");p.Profile.bestFloor=5;
             p.Profile.mechanicMaterials=23;Check(!p.AscendMechanic(id,true),"ascension cost checked before mutation");p.Profile.mechanicMaterials=24;
             Directory.CreateDirectory(p.SaveFilePath+".tmp");
             Check(!p.AscendMechanic(id,true)&&State(p)==before&&events==0,"failed ascension retains complete profile and no event");

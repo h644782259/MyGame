@@ -39,7 +39,9 @@ namespace Emberfall
             for(int i=0;i<MobileSkillPolicy.ButtonCount;i++)if(hotbarSlots[i].Contains(point)&&MobileSkillPolicy.SkillAtButton(i)==mobileTap.Skill)inside=true;
             int skill;
             if(mobileTap.Release(finger,inside,false,out skill))
-            {var targeting=session.Player.GetComponent<SkillTargetingController>();if(targeting!=null)targeting.Begin(skill);}
+            {var targeting=session.Player.GetComponent<SkillTargetingController>();
+                if(targeting!=null&&!targeting.Begin(skill))
+                {if(string.IsNullOrEmpty(session.ControlFailure("skill"+skill)))session.ReportControlFailure("skill"+skill,"暂不可用");}}
         }
         private bool CanMobileInteract {get{return session!=null&&!session.InputBlocked&&!session.DungeonSelectionOpen&&(session.NearRoomExit||session.SideEventAvailable||session.NearbyHubNpc!=HubNpcKind.None||session.IsInCamp||session.InDungeon||session.IsNearDungeonEntrance);}}
         public void ActivateMobileInteraction(int triggeringFinger=TouchReleaseLatch.AnyPointer)
@@ -61,15 +63,16 @@ namespace Emberfall
             var l=MobileControls.Layout;GameProfile p=session.Progression.Profile;
             Color accent=GameBalance.ClassColor(p.heroClass);
             Rect status=TouchRect(12,12,175,58);blockedRects.Add(status);Box(status,accent,false);
-            Text(TouchRect(22,17,155,18),GameBalance.ClassName(p.heroClass)+"  "+p.level,TouchFont(13),pale,true);
+            Text(TouchRect(22,17,68,18),GameBalance.ClassName(p.heroClass)+" "+p.level,TouchFont(12),pale,true);
             float hp=session.Player==null?0:session.Player.Health,max=session.Player==null?1:session.Player.MaxHealth;
+            Text(TouchRect(90,17,87,18),Mathf.CeilToInt(hp)+"/"+Mathf.CeilToInt(max),TouchFont(11),pale,true,false,TextAnchor.MiddleRight);
             Bar(TouchRect(22,39,155,8),hp/Mathf.Max(1,max),jade);
             Bar(TouchRect(22,52,155,5),session.Player==null?0:session.Player.Energy/Mathf.Max(1,session.Player.MaxEnergy),new Color(.35f,.63f,1));
             if(MobileIcon(l.Inventory,"inventory",jade))TogglePanel(Panel.Inventory);
             if(MobileIcon(l.SkillsMenu,"skills",p.skillPoints>0?gold:jade))TogglePanel(Panel.Skills);
             if(MobileIcon(l.Menu,"pause",muted))session.SetPaused(true);
             Rect map=TouchRect(l.Width*.5f-44,12,88,60);
-            if(session.SpecialAdventure)DrawMobileModeStatus(session.RoomChainRun!=null?TouchRect(l.AdventureStatus):TouchRect(l.Width*.5f-86,12,172,58));
+            if(session.SpecialAdventure)DrawMobileModeStatus(session.RoomChainRun!=null||session.ModeRun!=null&&session.ModeRun.Mode==ExpeditionModeKind.HoldPoint?TouchRect(l.AdventureStatus):TouchRect(l.Width*.5f-86,12,172,58));
             else
             {
                 blockedRects.Add(map);Box(map,jade,false);DrawMinimapTerrain(map);
@@ -86,6 +89,8 @@ namespace Emberfall
             if(session.InDungeon&&!session.SpecialAdventure)
             {blockedRects.Add(TouchRect(l.EncounterText));Text(TouchRect(l.EncounterText),session.DungeonCleared?"遗迹肃清":"第 "+session.DungeonWave+" / "+session.TotalWaves+" 波",TouchFont(12),pale,true,false,TextAnchor.MiddleCenter);}
             DrawMobileHotbar();
+            DrawCompanionCommands();
+            Text(TouchRect(22,58,155,11),CurrentCombatOpportunity(),TouchFont(10),gold,true);
             string interaction=session.NearRoomExit?"进入下一间":session.SideEventAvailable?"晶核挑战":session.NearbyHubNpc!=HubNpcKind.None?HubNpcMobileLabel(session.NearbyHubNpc):session.IsInCamp?"营地工坊":session.InDungeon?"返回营地":session.IsNearDungeonEntrance?"进入副本":"靠近入口";
             Rect interact=TouchRect(l.Interact);blockedRects.Add(interact);
             // One pointer owner handles real touches and simulated/attached mice.
@@ -102,18 +107,21 @@ namespace Emberfall
         }
         private void DrawMobileHotbar()
         {
+            float priorOpacity=controlOpacity;controlOpacity=EffectPreferences.TouchOpacity;
             var l=MobileControls.Layout;GameProfile p=session.Progression.Profile;
             for(int i=0;i<MobileSkillPolicy.ButtonCount;i++)
             {
-                Rect r=hotbarSlots[i];blockedRects.Add(r);int skill=MobileSkillPolicy.SkillAtButton(i);bool learned=p.skillRanks[skill]>0;bool passive=GameBalance.IsPassive(skill);
+                Rect hit=hotbarSlots[i];blockedRects.Add(hit);Rect r=MobileVisualRect(hit);int skill=MobileSkillPolicy.SkillAtButton(i);bool learned=p.skillRanks[skill]>0;bool passive=GameBalance.IsPassive(skill);
                 Fill(r,new Color(.035f,.075f,.105f,.92f));Border(r,!learned?muted*.25f:GameBalance.ClassColor(p.heroClass));
                 float inset=7*TouchRatio;DrawIcon(new Rect(r.x+inset,r.y+inset,r.width-inset*2,r.height-inset*2),UIIconAtlas.Skill(p.heroClass,skill),learned?passive?new Color(.7f,.66f,.86f,.75f):Color.white:new Color(.3f,.36f,.4f,.45f));
                 if(passive||!learned)Text(new Rect(r.x,r.yMax-15*TouchRatio,r.width,15*TouchRatio),passive?"被动":"Lv."+GameBalance.SkillRequiredLevels[skill],TouchFont(9),passive?new Color(.8f,.7f,1):muted,true,false,TextAnchor.MiddleCenter);
                 float cooldown=skill<0||session.Player==null?0:session.Player.SkillCooldownRemaining(skill);
                 if(cooldown>.01f)
                 {Fill(r,new Color(.01f,.02f,.04f,.7f));Text(r,cooldown.ToString(cooldown>=10?"0":"0.0"),TouchFont(17),pale,true,false,TextAnchor.MiddleCenter);}
+                DrawMobileSkillAvailability(r,skill);
                 if(mobileTap.Skill==skill&&mobileTap.Active)Border(r,gold,2*TouchRatio);
             }
+            controlOpacity=priorOpacity;
         }
         private string mobileNoticeDetail;
         private Vector2 mobileNoticeScroll;
@@ -204,8 +212,9 @@ namespace Emberfall
             float x = (layout.Width - 520) * .5f, y = (layout.Height - 306) * .5f;
             Fill(new Rect(0, 0, width, height), new Color(.012f, .025f, .04f, .94f));
             Text(TouchRect(x + 12, y + 3, 342, 31), "冒险暂停", TouchFont(23), pale, true);
-            if (Button(TouchRect(x + 374, y, 134, 44), mobilePausePage == 0 ? "更多设置 ›" : "‹ 返回", jade))
-            { mobilePausePage = 1 - mobilePausePage; BlockUITransition(); }
+            if (Button(TouchRect(x + 374, y, 134, 44), mobilePausePage == 0 ? "更多设置 ›" : mobilePausePage==1?"触控布局 ›":"‹ 返回", jade))
+            { mobilePausePage = (mobilePausePage+1)%3; BlockUITransition(); }
+            if(mobilePausePage==2){DrawMobileControlPreferences(x,y);return;}
             if (mobilePausePage == 1)
             {
                 string[] extra = { "存档位置", "声音：" + (GameAudio.Muted ? "关" : "开"), "飘字：" + (EffectPreferences.CombatTextScale > 1.5f ? "大" : "标准"),

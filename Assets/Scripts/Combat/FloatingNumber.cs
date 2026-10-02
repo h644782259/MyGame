@@ -1,163 +1,189 @@
 using UnityEngine;
-
+using System.Collections.Generic;
 namespace Emberfall
 {
-    /// <summary>Bounded, screen-legible combat text with a dark four-corner outline.</summary>
+    /// <summary>Measured screen-space text with separate bounded mechanism admission.</summary>
     public sealed class FloatingNumber : MonoBehaviour
     {
         public static int ActiveCount { get; private set; }
+        public static int MechanismCount { get; private set; }
         private static Font sharedFont;
-        private static readonly System.Collections.Generic.List<FloatingNumber> visible=new System.Collections.Generic.List<FloatingNumber>();
+        private static readonly List<FloatingNumber> visible=new List<FloatingNumber>(40);
+        private static int reflowFrame=-1;
         private Vector3 originAtSpawn;
         private int lane;
-        private float Duration {get{return critical?1.12f:.88f;}}
         private TextMesh textMesh;
         private MeshRenderer textRenderer;
-        private readonly TextMesh[] outline = new TextMesh[4];
+        private readonly TextMesh[] outline=new TextMesh[4];
         private float life;
         private Color color;
-        private bool critical, counted;
+        private bool critical,mechanism,counted;
+        private string display;
+        private CombatTextLayout.Box bounds;
+        private float Duration {get{return mechanism?1.25f:critical?1.12f:.88f;}}
+        private static float Density {get{return MobileControls.Active?MobileControls.Layout.Scale:Mathf.Clamp(Screen.dpi>=120?Screen.dpi/163f:Screen.height/1080f,1,3);}}
 
-
-        // Read-only admission is shared by session callers and initialization.
-        // Reject crowded text before allocating a GameObject, without retiring a
-        // potential critical replacement unless the new text can take its place.
-        public static bool CanSpawn(Vector3 origin, bool isCritical = false)
+        public static bool CanSpawn(Vector3 origin,bool isCritical=false)
         {
-            FloatingNumber replacement; int selectedLane; Camera camera;
-            return TrySelectAdmission(origin, isCritical, out replacement, out selectedLane, out camera);
+            FloatingNumber replacement;int selectedLane;Camera camera;CombatTextLayout.Box box;
+            return TrySelectAdmission(origin,"1",isCritical,false,out replacement,out selectedLane,out camera,out box);
         }
-
-        public static FloatingNumber Spawn(Vector3 origin, string value, Color tint, bool isCritical = false,
-            string objectName = "Combat Text")
+        public static FloatingNumber Spawn(Vector3 origin,string value,Color tint,bool isCritical=false,string objectName="Combat Text",bool isMechanism=false)
         {
-            FloatingNumber replacement; int selectedLane; Camera camera;
-            if(!TrySelectAdmission(origin,isCritical,out replacement,out selectedLane,out camera))return null;
-            // Consume the local admission immediately. No second camera/lane scan,
-            // callbacks or saved plan can separate selection from registration.
+            string shown=Display(value,isCritical);
+            FloatingNumber replacement;int selectedLane;Camera camera;CombatTextLayout.Box box;
+            if(!TrySelectAdmission(origin,shown,isCritical,isMechanism,out replacement,out selectedLane,out camera,out box))return null;
             GameObject root=new GameObject(objectName);root.transform.position=origin;
             FloatingNumber number=root.AddComponent<FloatingNumber>();
-            number.InitializeAdmitted(value,tint,isCritical,replacement,selectedLane,camera);
+            number.InitializeAdmitted(shown,tint,isCritical,isMechanism,replacement,selectedLane,camera,box);
             return number;
         }
-
-        private static bool TrySelectAdmission(Vector3 origin, bool isCritical, out FloatingNumber replacement,
-            out int selectedLane, out Camera camera)
+        private static string Display(string value,bool critical)
         {
-            replacement = null; selectedLane = 0; camera = null;
+            string shown=value??"";
+            // Combat captions are short; detailed explanations stay in the HUD/log.
+            if(shown.Length>24)shown=shown.Substring(0,23)+"…";
+            return critical&&!shown.EndsWith("!",System.StringComparison.Ordinal)?shown+"!":shown;
+        }
+        private static void FontReady(string value)
+        {
+            if(sharedFont==null)sharedFont=Font.CreateDynamicFontFromOSFont(new[]{"Microsoft YaHei","微软雅黑","PingFang SC","PingFangSC-Regular","Heiti SC","SimHei","Arial"},64);
+            if(sharedFont!=null)sharedFont.RequestCharactersInTexture(value,64,FontStyle.Bold);
+        }
+        private static Vector2 Measure(string value,bool critical)
+        {
+            FontReady(value);float advance=0,min=0,max=0,bottom=float.MaxValue,top=float.MinValue;
+            foreach(char c in value)
+            {
+                CharacterInfo info;
+                if(sharedFont!=null&&sharedFont.GetCharacterInfo(c,out info,64,FontStyle.Bold))
+                {min=Mathf.Min(min,advance+info.minX);max=Mathf.Max(max,advance+info.maxX);bottom=Mathf.Min(bottom,info.minY);top=Mathf.Max(top,info.maxY);advance+=info.advance;}
+                else {advance+=64;max=advance;bottom=Mathf.Min(bottom,0);top=Mathf.Max(top,64);}
+            }
+            float pixels=CombatTextLayout.PixelHeight(EffectPreferences.CombatTextScale,Density,critical);
+            return new Vector2(Mathf.Max(1,max-min)/Mathf.Max(1,top-bottom)*pixels,pixels);
+        }
+        private static bool TrySelectAdmission(Vector3 origin,string value,bool isCritical,bool isMechanism,out FloatingNumber replacement,
+            out int selectedLane,out Camera camera,out CombatTextLayout.Box box)
+        {
+            replacement=null;selectedLane=0;camera=Camera.main;box=default(CombatTextLayout.Box);
             int globalLimit=MobileControls.Active?20:36;
-            if(ActiveCount>=globalLimit)
+            if(isMechanism)
+            {
+                if(MechanismCount>=CombatTextLayout.MechanismLimit)return false;
+            }
+            else if(ActiveCount-MechanismCount>=globalLimit)
             {
                 if(!isCritical)return false;
-                foreach(var number in visible)
-                    if(number!=null&&!number.critical){replacement=number;break;}
+                foreach(var number in visible)if(number!=null&&!number.critical&&!number.mechanism){replacement=number;break;}
                 if(replacement==null)return false;
             }
-            camera=Camera.main;
-            Vector2 projectedOrigin=camera!=null?(Vector2)camera.WorldToScreenPoint(origin):Vector2.zero;
-            int occupied=0,nearby=0;
+            Vector3 point=camera!=null?camera.WorldToScreenPoint(origin):Vector3.zero;
+            if(camera!=null&&(point.z<=0||point.x<0||point.y<0||point.x>camera.pixelWidth||point.y>camera.pixelHeight))return false;
+            int nearby=0;
             foreach(var number in visible)
             {
-                if(number==null||number==replacement)continue;
-                bool close=camera!=null?Vector2.Distance(projectedOrigin,camera.WorldToScreenPoint(number.originAtSpawn))<110:
-                    Vector3.Distance(origin,number.originAtSpawn)<2f;
-                if(close){occupied|=1<<number.lane;nearby++;}
+                if(number==null||number==replacement||number.mechanism!=isMechanism)continue;
+                bool close=camera!=null?Vector2.Distance(point,camera.WorldToScreenPoint(number.originAtSpawn))<110*Density:Vector3.Distance(origin,number.originAtSpawn)<2f;
+                if(close)nearby++;
             }
-            if(nearby>=(isCritical?6:4))return false;
-            while(selectedLane<6&&(occupied&(1<<selectedLane))!=0)selectedLane++;
-            return true;
+            if(nearby>=(isMechanism?4:isCritical?6:4))return false;
+            Vector2 size=Measure(value,isCritical);
+            if(Place(point,size,replacement,null,camera,out selectedLane,out box))return true;
+            if(isMechanism)
+                foreach(var number in visible)
+                    if(number!=null&&!number.mechanism&&Place(point,size,number,null,camera,out selectedLane,out box))
+                    {replacement=number;return true;}
+            return false;
         }
-
-        public void Initialize(string value, Color tint, bool isCritical = false)
+        private static bool Place(Vector3 point,Vector2 size,FloatingNumber replacement,FloatingNumber self,Camera camera,out int slot,out CombatTextLayout.Box box)
         {
-            if (counted) return;
-            FloatingNumber replacement; Camera camera; int selectedLane;
-            if(!TrySelectAdmission(transform.position,isCritical,out replacement,out selectedLane,out camera))
-            {Destroy(gameObject);return;}
-            InitializeAdmitted(value,tint,isCritical,replacement,selectedLane,camera);
+            box=default(CombatTextLayout.Box);
+            for(slot=0;slot<CombatTextLayout.CandidateCount;slot++)
+            {
+                box=CombatTextLayout.Candidate(point.x,point.y,size.x,size.y,slot);
+                if(camera!=null&&!CombatTextLayout.Fits(box,camera.pixelWidth,camera.pixelHeight))continue;
+                bool blocked=false;
+                foreach(var number in visible)
+                {
+                    if(number==null||number==replacement||number==self||!number.counted)continue;
+                    if(box.Overlaps(number.bounds)){blocked=true;break;}
+                }
+                if(!blocked)return true;
+            }
+            return false;
         }
-
-        private void InitializeAdmitted(string value, Color tint, bool isCritical, FloatingNumber replacement,
-            int selectedLane, Camera camera)
+        public void Initialize(string value,Color tint,bool isCritical=false)
+        {
+            if(counted)return;
+            string shown=Display(value,isCritical);FloatingNumber replacement;Camera camera;int selectedLane;CombatTextLayout.Box box;
+            if(!TrySelectAdmission(transform.position,shown,isCritical,false,out replacement,out selectedLane,out camera,out box)){Destroy(gameObject);return;}
+            InitializeAdmitted(shown,tint,isCritical,false,replacement,selectedLane,camera,box);
+        }
+        private void InitializeAdmitted(string value,Color tint,bool isCritical,bool isMechanism,FloatingNumber replacement,int selectedLane,Camera camera,CombatTextLayout.Box box)
         {
             if(replacement!=null)replacement.Retire();
-            critical=isCritical;originAtSpawn=transform.position;lane=selectedLane;
-            ActiveCount++;counted=true;visible.Add(this);
-            color = critical ? new Color(1f, .87f, .18f) : tint;
-            if (sharedFont == null)
-                sharedFont = Font.CreateDynamicFontFromOSFont(new[] { "Microsoft YaHei", "微软雅黑", "PingFang SC", "PingFangSC-Regular", "Heiti SC", "SimHei", "Arial" }, 64);
-            string display = critical && !string.IsNullOrEmpty(value) && !value.EndsWith("!", System.StringComparison.Ordinal) ? value + "!" : value;
-            // Six bounded screen-space lanes keep overlapping AoE hits out of the
-            // character silhouette. No random crit roll or cumulative global offset.
-            if(camera!=null)
+            critical=isCritical;mechanism=isMechanism;originAtSpawn=transform.position;lane=selectedLane;display=value;bounds=box;
+            ActiveCount++;if(mechanism)MechanismCount++;counted=true;visible.Add(this);
+            color=critical?new Color(1f,.87f,.18f):tint;
+            for(int i=0;i<outline.Length;i++)
             {
-                float depth=Mathf.Max(1,Vector3.Dot(transform.position-camera.transform.position,camera.transform.forward));
-                float worldHeight=camera.orthographic?camera.orthographicSize*2:depth*2*Mathf.Tan(camera.fieldOfView*Mathf.Deg2Rad*.5f);
-                float units=worldHeight/Mathf.Max(1,camera.pixelHeight);
-                transform.position+=camera.transform.right*((lane%2==0?-1:1)*35*units)+camera.transform.up*((lane/2)*34+14)*units;
+                var edge=new GameObject("Combat text outline");edge.transform.SetParent(transform,false);
+                edge.transform.localPosition=new Vector3(i%2==0?-.018f:.018f,i<2?-.018f:.018f,.012f);
+                outline[i]=Configure(edge,value,new Color(.045f,.025f,.035f,1));edge.GetComponent<MeshRenderer>().sortingOrder=100;
             }
-            for (int i = 0; i < outline.Length; i++)
-            {
-                var edge = new GameObject("Combat text outline");
-                edge.transform.SetParent(transform, false);
-                edge.transform.localPosition = new Vector3(i % 2 == 0 ? -.018f : .018f, i < 2 ? -.018f : .018f, .012f);
-                outline[i] = Configure(edge, display, new Color(.045f, .025f, .035f, 1));
-                edge.GetComponent<MeshRenderer>().sortingOrder = 100;
-            }
-            textMesh = Configure(gameObject, display, color);
-            textRenderer = GetComponent<MeshRenderer>();
-            textRenderer.sortingOrder = 101;
-            FaceCamera();
+            textMesh=Configure(gameObject,value,color);textRenderer=GetComponent<MeshRenderer>();textRenderer.sortingOrder=101;
+            ApplyBox(camera);
         }
-
-        private TextMesh Configure(GameObject obj, string value, Color tint)
+        private TextMesh Configure(GameObject obj,string value,Color tint)
         {
-            TextMesh mesh = obj.AddComponent<TextMesh>();
-            mesh.text = value;
-            mesh.fontSize = 64;
-            mesh.characterSize = .085f;
-            mesh.anchor = TextAnchor.MiddleCenter;
-            mesh.alignment = TextAlignment.Center;
-            mesh.fontStyle = FontStyle.Bold;
-            mesh.color = tint;
-            if (sharedFont != null)
-            {
-                mesh.font = sharedFont;
-                obj.GetComponent<MeshRenderer>().sharedMaterial = sharedFont.material;
-            }
+            TextMesh mesh=obj.AddComponent<TextMesh>();mesh.text=value;mesh.fontSize=64;mesh.characterSize=.085f;
+            mesh.anchor=TextAnchor.MiddleCenter;mesh.alignment=TextAlignment.Center;mesh.fontStyle=FontStyle.Bold;mesh.color=tint;
+            if(sharedFont!=null){mesh.font=sharedFont;obj.GetComponent<MeshRenderer>().sharedMaterial=sharedFont.material;}
             return mesh;
         }
-
         private void Update()
         {
-            life += Time.deltaTime;
-            transform.position += Vector3.up * Time.deltaTime * .65f * EffectPreferences.EffectsScale;
-            float alpha = Mathf.Clamp01((Duration - life) / .25f);
-            if (textMesh != null) textMesh.color = new Color(color.r, color.g, color.b, alpha);
-            foreach (TextMesh edge in outline)
-                if (edge != null) edge.color = new Color(.045f, .025f, .035f, alpha * .98f);
-            if (life > Duration) Retire();
+            life+=Time.deltaTime;float alpha=Mathf.Clamp01((Duration-life)/.25f);
+            if(textMesh!=null)textMesh.color=new Color(color.r,color.g,color.b,alpha);
+            foreach(TextMesh edge in outline)if(edge!=null)edge.color=new Color(.045f,.025f,.035f,alpha*.98f);
+            if(life>Duration)Retire();
         }
-
-        private void LateUpdate() { FaceCamera(); }
-
-        private void FaceCamera()
+        private void LateUpdate()
         {
-            Camera camera = Camera.main;
-            if (camera == null || textRenderer == null) return;
-            transform.rotation = camera.transform.rotation;
-            float glyphHeight = textRenderer.localBounds.size.y;
-            if (glyphHeight <= .001f || camera.pixelHeight <= 0) return;
-            float depth = Mathf.Max(1, Vector3.Dot(transform.position - camera.transform.position, camera.transform.forward));
-            float visibleHeight = camera.orthographic ? camera.orthographicSize * 2f : depth * 2f * Mathf.Tan(camera.fieldOfView * Mathf.Deg2Rad * .5f);
-            float pixels = 21f * EffectPreferences.CombatTextScale * (critical ? 1.28f : 1f);
-            float pop = critical ? 1f + Mathf.Max(0, 1f - life / .16f) * .14f * EffectPreferences.EffectsScale : 1f;
-            float scale = Mathf.Clamp(pixels * visibleHeight / (camera.pixelHeight * glyphHeight), .05f, 15f);
-            transform.localScale = Vector3.one * scale * pop;
+            if(reflowFrame==Time.frameCount)return;reflowFrame=Time.frameCount;Camera camera=Camera.main;if(camera==null)return;
+            // Reproject all text together after camera motion. Old bounds remain
+            // reserved until replaced, so no pair can overlap during reflow.
+            for(int i=visible.Count-1;i>=0;i--)
+            {
+                var number=visible[i];if(number==null)continue;
+                Vector3 point=camera.WorldToScreenPoint(number.originAtSpawn);point.y+=number.life*18*Density*EffectPreferences.EffectsScale;
+                Vector2 size=Measure(number.display,number.critical);
+                if(number.textRenderer!=null)
+                {
+                    Vector3 actual=number.textRenderer.localBounds.size;
+                    if(actual.y>.001f)size.x=Mathf.Max(size.x,actual.x/actual.y*size.y);
+                }
+                int slot;CombatTextLayout.Box box;
+                if(point.z<=0||!Place(point,size,null,number,camera,out slot,out box)){number.Retire();continue;}
+                number.lane=slot;number.bounds=box;number.ApplyBox(camera);
+            }
         }
-
-        private void Retire()
-        { if(counted){counted=false;ActiveCount=Mathf.Max(0,ActiveCount-1);visible.Remove(this);}gameObject.SetActive(false);Destroy(gameObject); }
-        private void OnDestroy() { visible.Remove(this);if (counted) ActiveCount = Mathf.Max(0, ActiveCount - 1); }
+        private void ApplyBox(Camera camera)
+        {
+            if(camera==null||textRenderer==null)return;
+            float depth=Mathf.Max(1,Vector3.Dot(originAtSpawn-camera.transform.position,camera.transform.forward));
+            transform.position=camera.ScreenToWorldPoint(new Vector3(bounds.X+bounds.Width*.5f,bounds.Y+bounds.Height*.5f,depth));
+            transform.rotation=camera.transform.rotation;
+            float glyphHeight=textRenderer.localBounds.size.y;if(glyphHeight<=.001f||camera.pixelHeight<=0)return;
+            float visibleHeight=camera.orthographic?camera.orthographicSize*2:depth*2*Mathf.Tan(camera.fieldOfView*Mathf.Deg2Rad*.5f);
+            float pixels=21*EffectPreferences.CombatTextScale*Density*(critical?1.28f:1);
+            float pop=critical?1+Mathf.Max(0,1-life/.16f)*.14f*EffectPreferences.EffectsScale:1;
+            transform.localScale=Vector3.one*(pixels*visibleHeight/(camera.pixelHeight*glyphHeight)*pop);
+        }
+        private void ReleaseCount(){if(!counted)return;counted=false;ActiveCount=Mathf.Max(0,ActiveCount-1);if(mechanism)MechanismCount=Mathf.Max(0,MechanismCount-1);visible.Remove(this);}
+        private void Retire(){ReleaseCount();gameObject.SetActive(false);Destroy(gameObject);}
+        private void OnDisable(){ReleaseCount();}
+        private void OnDestroy(){ReleaseCount();}
     }
 }

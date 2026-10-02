@@ -127,6 +127,9 @@ namespace Emberfall
         public void Initialize(GameSession gameSession)
         {
             session = gameSession;
+            var targetFeedback=GetComponent<CombatTargetFeedback>();
+            if(targetFeedback==null)targetFeedback=gameObject.AddComponent<CombatTargetFeedback>();
+            targetFeedback.Initialize(session);
             session.Progression.Changed+=InvalidateAttention;
             font = Font.CreateDynamicFontFromOSFont(new[] { "Microsoft YaHei", "微软雅黑", "PingFang SC", "PingFangSC-Regular", "Heiti SC", "SimHei", "Arial" }, 18);
         }
@@ -162,8 +165,10 @@ namespace Emberfall
         {
             RefreshLayout();
             ReconcileMobileScroll();
+            ReconcileCollectionPreview();
             if (session == null || session.BackgroundPaused) return;
             ReconcileBuildPlanSurface();
+            ReconcileProgressionGoalSurface();
             if(exitRequest.Open){if(Input.GetKeyDown(KeyCode.Escape)){exitRequest.Cancel();exitError=null;BlockUITransition();}return;}
             if(mobileCastFinger!=-1000&&(session.InputBlocked||panel!=Panel.None))CancelMobileCast();
             if (suppressHotbarMouse && !Input.GetMouseButton(0)) suppressHotbarMouse = false;
@@ -226,6 +231,7 @@ namespace Emberfall
             if(session!=null&&session.Progression!=null)session.Progression.Changed-=InvalidateAttention;
             if(attentionDot!=null)Destroy(attentionDot);
             ReleaseChestTextures();
+            ReleaseCollectionPreview();
             if(terrainMap!=null)Destroy(terrainMap);
             if (thumbTexture != null) Destroy(thumbTexture);
             if (trackTexture != null) Destroy(trackTexture);
@@ -344,7 +350,7 @@ namespace Emberfall
             Color previousTextColor = style.normal.textColor;
             // Keep the global tint neutral; the style owns the intended text color.
             GUI.contentColor = Color.white;
-            style.normal.textColor = color;
+            color.a*=controlOpacity;style.normal.textColor = color;
             GUI.Label(rect, value ?? "", style);
             style.normal.textColor = previousTextColor;
             GUI.contentColor = previous;
@@ -382,10 +388,11 @@ namespace Emberfall
             return "";
         }
 
+        private static float controlOpacity=1f;
         private static void Fill(Rect rect, Color color)
         {
             Color previous = GUI.color;
-            GUI.color = color;
+            color.a*=controlOpacity;GUI.color = color;
             GUI.DrawTexture(rect, Texture2D.whiteTexture);
             GUI.color = previous;
         }
@@ -728,6 +735,8 @@ namespace Emberfall
                 tooltip = PlatformText(session.Objective + (session.InDungeon ? "\n通关后按 T 返回营地。远离敌人后可按 H 提前撤离。" : "\n靠近紫色传送门按 T 进入副本。远离敌人后可按 H 回营。"));
             DrawMinimap();
             DrawHotbar();
+            DrawCompanionCommands();
+            Text(new Rect(hotbarBounds.x-170,hotbarBounds.y-22,622,18),CurrentCombatOpportunity(),12,gold,true,false,TextAnchor.MiddleCenter);
             DrawChargeProgress();
             DrawDungeonStatus();
             DrawEdgeActions();
@@ -1024,7 +1033,7 @@ namespace Emberfall
         {
             if (texture == null) return;
             Color previous = GUI.color;
-            GUI.color = tint;
+            tint.a*=controlOpacity;GUI.color = tint;
             GUI.DrawTexture(r, texture, ScaleMode.ScaleToFit, true);
             GUI.color = previous;
         }
@@ -1283,47 +1292,7 @@ namespace Emberfall
         private void DrawFashion()
         {
             if(MobileControls.Active){DrawMobileFashion();return;}
-            ProgressionService progression = session.Progression;
-            GameProfile profile = progression.Profile;
-            Rect w = Modal(940, 638, "时装收藏", "外观自由穿戴 · 属性使用每部位最高收藏品质 · 每次开箱积累星纹");
-            if (Button(new Rect(w.xMax - 69, w.y + 20, 44, 32), "×", jade)) { panel = Panel.Inventory; return; }
-            string[] slotNames = { "翅膀", "武器外观" };
-            for (int slotIndex = 0; slotIndex < 2; slotIndex++)
-            {
-                FashionSlot slot = (FashionSlot)slotIndex;
-                float x = w.x + 24 + slotIndex * 451;
-                FashionData equipped = progression.EquippedFashion(slot);
-                Rect summary = new Rect(x, w.y + 110, 439, 60);
-                Fill(summary, card);
-                Border(summary, equipped == null ? muted : GameBalance.RarityColor(equipped.rarity));
-                Text(new Rect(x + 12, summary.y + 6, 200, 20), slotNames[slotIndex] + " · 穿戴中", 12, jade, true);
-                Text(new Rect(x + 12, summary.y + 29, 295, 23), equipped == null ? "未穿戴" : equipped.name + " · 收藏属性 " + (progression.StrongestFashion(slot)==null?"无":GameBalance.RarityName(progression.StrongestFashion(slot).rarity)),
-                    13, equipped == null ? muted : pale, true);
-                if (equipped != null && Button(new Rect(x + 335, summary.y + 14, 90, 32), "卸下", muted))
-                    Feedback(progression.UnequipFashion(slot), "已卸下" + slotNames[slotIndex]);
-                for (int rank = 0; rank < 4; rank++)
-                {
-                    Rarity rarity = (Rarity)rank;
-                    string id = "fashion-" + slotIndex + "-" + rank;
-                    FashionData owned = profile.fashions.Find(value => value != null && value.id == id);
-                    bool worn = equipped != null && equipped.id == id;
-                    Rect cardRect = new Rect(x, w.y + 181 + rank * 94, 439, 84);
-                    Fill(cardRect, card);
-                    Color accent = GameBalance.RarityColor(rarity);
-                    Fill(new Rect(cardRect.x, cardRect.y, 4, cardRect.height), accent);
-                    Text(new Rect(x + 15, cardRect.y + 9, 260, 23), ProgressionService.FashionName(slot, rarity), 16, accent, true);
-                    Text(new Rect(x + 15, cardRect.y + 34, 310, 20), GameBalance.RarityName(rarity) + " · " + ProgressionService.FashionBonus(slot, rarity), 12, pale);
-                    Text(new Rect(x + 15, cardRect.y + 57, 310, 17), owned == null ? "未获得 · 通关宝箱随机掉落" : "已收藏 · 无等级要求", 11, owned == null ? muted : jade);
-                    if (Button(new Rect(x + 333, cardRect.y + 23, 92, 36), worn ? "穿戴中" : owned == null ? "未解锁" : "穿戴",
-                        owned == null ? muted : accent, owned != null && !worn))
-                        Feedback(progression.EquipFashion(id), "已穿戴" + ProgressionService.FashionName(slot, rarity));
-                }
-            }
-            Text(new Rect(w.x + 25, w.y + 571, 890, 21), "每次开箱星纹+1；重复件额外+1/2/4/8。30星纹自选缺少的传说部位 · 当前 "+profile.fashionThreads, 12, muted);
-            for(int i=0;i<2;i++) { FashionSlot slot=(FashionSlot)i;
-                if(Button(new Rect(w.x+25+i*300,w.y+592,282,30),"30星纹自选传说"+(i==0?"翅膀":"兵装"),gold,session.IsInCamp&&profile.fashionThreads>=30&&!profile.fashions.Exists(x=>x.slot==slot&&x.rarity==Rarity.Legendary)))
-                    Feedback(progression.ChooseLegendaryFashion(slot,session.IsInCamp),"传说收藏已解锁"); }
-            if (Button(new Rect(w.x + 726, w.y + 592, 188, 30), "返回行囊", jade)) panel = Panel.Inventory;
+            DrawDesktopCollection();
         }
 
         private void DrawPotionAssignment()
@@ -1432,24 +1401,25 @@ namespace Emberfall
             Text(new Rect(r.x+18,r.y+45,r.width-36,31),ItemTitle(preview),22,levelLocked?muted*.65f:pale,true);
             ItemData equipped=progression.Equipped(item.slot);
             DrawEquipmentComparison(new Rect(r.x+18,r.y+88,r.width-36,61),equipped,item);
-            Text(new Rect(r.x+18,r.y+157,205,22),(levelLocked?"锁 · 需要 "+item.level+"级":"Lv."+item.level)+" · 部位强化 +"+slotRank,14,levelLocked?gold:muted);
-            Text(new Rect(r.x+230,r.y+157,175,22),isEquipped?"当前属性":"当前 → 换装后",14,muted,false,false,TextAnchor.MiddleRight);
-            ItemStat(r.x+18,r.y+186,"攻击",preview.attack,equipped==null?0:equipped.attack,isEquipped);
-            ItemStat(r.x+18,r.y+215,"防御",preview.defense,equipped==null?0:equipped.defense,isEquipped);
-            ItemStat(r.x+18,r.y+244,"生命",preview.health,equipped==null?0:equipped.health,isEquipped);
-            string mechanic=item.mechanic==EquipmentMechanic.None?"无特殊机制":BuildCatalog.MechanicName(item.mechanic)+" · "+BuildCatalog.MechanicDescription(item.mechanic);
-            Rect mechanism=new Rect(r.x+18,r.y+277,r.width-36,45);
-            Text(mechanism,mechanic,12,item.mechanic==EquipmentMechanic.None?muted:gold,false,true);
-            if(mechanism.Contains(Mouse))tooltip=(equipped==null?"当前：空槽":"当前："+BuildCatalog.MechanicDescription(equipped.mechanic))+"\n待更换："+BuildCatalog.MechanicDescription(item.mechanic)+"\n评分仅比较攻击、防御、生命；不包含机制价值。";
+            Text(new Rect(r.x+18,r.y+155,205,22),(levelLocked?"锁 · 需要 "+item.level+"级":"Lv."+item.level)+" · 部位强化 +"+slotRank,14,levelLocked?gold:muted);
+            Text(new Rect(r.x+230,r.y+155,175,22),isEquipped?"当前属性":"当前 → 换装后",14,muted,false,false,TextAnchor.MiddleRight);
+            ItemStat(r.x+18,r.y+180,"攻击",preview.attack,equipped==null?0:equipped.attack,isEquipped);
+            ItemStat(r.x+18,r.y+209,"防御",preview.defense,equipped==null?0:equipped.defense,isEquipped);
+            ItemStat(r.x+18,r.y+238,"生命",preview.health,equipped==null?0:equipped.health,isEquipped);
+            string mechanic=EquipmentComparisonPresentation.Changes(equipped,item,progression.Profile.heroClass);
+            Rect mechanism=new Rect(r.x+18,r.y+270,r.width-36,42);
+            Text(mechanism,mechanic,13,gold,false,true);
+            DrawPersistentMechanismDetail(new Rect(r.x+18,r.y+316,r.width-36,39),equipped,item);
             if(Button(new Rect(r.x+292,r.y+17,114,25),item.locked?"已锁定":"锁定",item.locked?gold:muted,true,"锁定后不可出售，仍可穿戴。")){bool locked=!item.locked;Feedback(progression.SetItemLocked(item.id,locked),locked?"已锁定":"已解锁");}
             bool canEquip = item.level <= progression.Profile.level && !isEquipped;
             string equipCaption = isEquipped ? "已装备" : !canEquip ? "需要 Lv." + item.level : "装备此物品";
-            if (Button(new Rect(r.x + 18, r.y + 338, 187, 40), equipCaption, jade, canEquip, null, true)) Feedback(progression.Equip(item.id), "已装备 " + item.name);
+            if (Button(new Rect(r.x + 18, r.y + 365, 187, 40), equipCaption, jade, canEquip, null, true)) Feedback(progression.Equip(item.id), "已装备 " + item.name);
             bool maxUpgrade = slotRank >= ProgressionService.MaximumUpgrade;
             int upgradeCost = progression.UpgradeCost(item);
-            if (Button(new Rect(r.x + 219, r.y + 338, 187, 40), maxUpgrade ? "部位已达 +" + ProgressionService.MaximumUpgrade : "强化部位 · " + upgradeCost + " 金", gold, !maxUpgrade && progression.Profile.gold >= upgradeCost, maxUpgrade ? "此部位已达到强化上限，换装仍会自动继承。" : "消耗 " + upgradeCost + " 金币，将" + GameBalance.SlotName(item.slot) + "部位提升至 +" + (slotRank + 1) + "；当前与以后换上的装备均生效，无需穿戴所选装备。"))
+            if (Button(new Rect(r.x + 219, r.y + 365, 187, 40), maxUpgrade ? "部位已达 +" + ProgressionService.MaximumUpgrade : "强化部位 · " + upgradeCost + " 金", gold, !maxUpgrade && progression.Profile.gold >= upgradeCost, maxUpgrade ? "此部位已达到强化上限，换装仍会自动继承。" : "消耗 " + upgradeCost + " 金币，将" + GameBalance.SlotName(item.slot) + "部位提升至 +" + (slotRank + 1) + "；当前与以后换上的装备均生效，无需穿戴所选装备。"))
                 Feedback(progression.Upgrade(item.id), GameBalance.SlotName(item.slot) + "部位强化 +" + (slotRank + 1) + " · -" + upgradeCost + " 金币");
-            Text(new Rect(r.x + 18, r.y + 386, r.width - 36, 38), "强化跟随部位，换装自动继承，无需转移。\n同一强化等级，按每件装备自身基础属性计算加成。", 12, jade, false, true);
+            Text(new Rect(r.x + 18, r.y + 409, r.width - 36, 18), "属性已含部位强化 · 机制不计入评分", 11, jade);
+
         }
 
         private void ReturnToInventory()
@@ -1565,82 +1535,6 @@ namespace Emberfall
         private static Rect SkillNodeRect(int skill)
         {
             return new Rect(10 + GameBalance.SkillTreeColumn(skill) * 160, 18 + GameBalance.SkillTreeRow(skill) * 102, 144, 82);
-        }
-
-        private void DrawSkillDetail(Rect r, int skill)
-        {
-            GameProfile p = session.Progression.Profile;
-            int rank = p.skillRanks[skill];
-            int nextRank = Mathf.Min(3, rank + 1);
-            bool passive = GameBalance.IsPassive(skill);
-            SkillCategory category = GameBalance.GetSkillCategory(p.heroClass, skill);
-            bool showOffenseScale = !passive && category != SkillCategory.Healing && category != SkillCategory.Defense;
-            Color accent = Color.Lerp(GameBalance.ClassColor(p.heroClass), gold, skill / 9f);
-            Fill(r, card);
-            Fill(new Rect(r.x, r.y, r.width, 3), accent);
-            Text(new Rect(r.x + 18, r.y + 15, 550, 35), GameBalance.SkillName(p.heroClass, skill), 27, pale, true);
-            Text(new Rect(r.x + 18, r.y + 54, 550, 20), (passive ? "被动" : "主动") + " / " + GameBalance.CategoryName(category) + " / " + GameBalance.SkillRankName(rank), 12, accent, true);
-            if (passive && new Rect(r.x + 18, r.y + 15, 550, 60).Contains(Mouse))
-                tooltip = SkillTooltip(p, skill, rank);
-            Text(new Rect(r.x + 18, r.y + 80, 550, 33), GameBalance.SkillDescription(p.heroClass, skill), 13, muted, false, true);
-            string[] labels = { "当前冷却", "资源消耗", "初习解锁", "进阶成长" };
-            string[] values = { passive ? "自动生效" : GameBalance.EffectiveCooldown(p.heroClass, skill, rank).ToString("0.#") + " 秒", passive ? "无需消耗" : GameBalance.SkillEnergyCost(p.heroClass, skill).ToString("0") + " " + GameBalance.EnergyName(p.heroClass), "Lv." + GameBalance.SkillRequiredLevels[skill], "强化 → 觉醒" };
-            for (int i = 0; i < 4; i++)
-            {
-                Rect stat = new Rect(r.x + 18 + i * 140, r.y + 120, 130, 43);
-                Fill(stat, new Color(.035f, .075f, .11f));
-                Text(new Rect(stat.x + 9, stat.y + 4, 112, 14), labels[i], 10, muted);
-                Text(new Rect(stat.x + 9, stat.y + 23, 112, 18), values[i], 12, i == 1 ? jade : pale, true);
-            }
-            Text(new Rect(r.x + 18, r.y + 177, 550, 18), "学习前置", 11, jade, true);
-            Text(new Rect(r.x + 18, r.y + 198, 550, 27), GameBalance.PrerequisiteDescription(p.heroClass, skill), 12, session.Progression.PrerequisitesMet(skill) ? pale : gold, false, true);
-            for (int stage = 1; stage <= 3; stage++)
-            {
-                Rect evolution = new Rect(r.x + 18 + (stage - 1) * 186, r.y + 235, 178, 91);
-                bool current = stage == rank;
-                Fill(evolution, current ? new Color(.13f, .2f, .2f) : new Color(.045f, .08f, .115f));
-                Border(evolution, new Color(accent.r, accent.g, accent.b, current ? .75f : .18f));
-                string stageName = GameBalance.SkillRankName(stage) + "  /  Lv." + GameBalance.SkillRankRequiredLevel(skill, stage);
-                Text(new Rect(evolution.x + 9, evolution.y + 7, 160, 18), stageName + (current ? " ✓" : ""), 12, stage <= rank ? gold : pale, true);
-                int damagePercent = 100 + (stage - 1) * 30;
-                int rangePercent = Mathf.RoundToInt(GameBalance.SkillRangeMultiplier(stage) * 100);
-                string evolutionText = skill==2&&p.heroClass!=HeroClass.Summoner?SkillBudgetHint(p.heroClass,skill,stage):GameBalance.SkillEvolution(p.heroClass, skill, stage);
-                if (showOffenseScale && !(skill==2&&p.heroClass!=HeroClass.Summoner))
-                {
-                    Text(new Rect(evolution.x + 9, evolution.y + 31, 160, 16), "阶级系数 " + damagePercent + "% · 范围 " + rangePercent + "%", 10, jade);
-                    Text(new Rect(evolution.x + 9, evolution.y + 50, 160, 35), evolutionText, 10, muted, false, true);
-                }
-                else Text(new Rect(evolution.x + 9, evolution.y + 32, 160, 50), evolutionText, 11, jade, false, true);
-                if (evolution.Contains(Mouse)) tooltip = SkillTooltip(p, skill, stage) + "\n" + evolutionText;
-            }
-            float actionX = r.x + 18;
-            string reason = session.Progression.SkillLockReason(skill);
-            bool canLearn = string.IsNullOrEmpty(reason);
-            string caption = rank == 3 ? "已完全觉醒" : rank == 0 ? "学习初习 · 1 技能点" : "进阶" + GameBalance.SkillRankName(nextRank) + " · 1 技能点";
-            if (Button(new Rect(actionX, r.y + 341, 236, 39), caption, gold, canLearn, reason, canLearn))
-                Feedback(session.Progression.LearnSkill(skill), GameBalance.SkillName(p.heroClass, skill) + "已达到" + GameBalance.SkillRankName(session.Progression.Profile.skillRanks[skill]));
-            Text(new Rect(r.x + 271, r.y + 341, 296, 40), rank == 3 ? "" : canLearn ? "下一阶段：" + GameBalance.SkillRankName(nextRank) + " · Lv." + GameBalance.SkillRankRequiredLevel(skill, nextRank) : reason, 12, muted, false, true);
-            if (passive) return;
-            if(MobileControls.Active){Text(new Rect(actionX,r.y+398,550,48),rank>0?"已在战斗界面直接显示 · 轻点自动瞄准施放":"学会后直接出现在战斗界面，无需配置或翻页",18,jade,true,true);return;}
-            Rect loadoutHeading = new Rect(actionX, r.y + 397, 365, 21);
-            Text(loadoutHeading, "十格快捷栏", 12, jade, true);
-            if (loadoutHeading.Contains(Mouse)) tooltip = "“+” 配置到槽位，“×” 卸下。\n升级保留快捷栏位置，冷却按技能保留。";
-            for (int slot = 0; slot < GameBalance.HotbarSize; slot++)
-            {
-                int equipped = LearnedSkillAtSlot(p, slot);
-                bool current = equipped == skill;
-                Rect target = new Rect(actionX + (slot % 5) * 112, r.y + 424 + (1 - slot / 5) * 40, 102, 36);
-                string key = GameBalance.KeyName(p.hotbarKeys[slot]);
-                detailSlots[slot] = target;
-                string hint = key + " · " + SlotSkillName(p, slot) + "\n" + (rank == 0 ? "先学习这项技能。" : current ? "点击从此槽卸下；不会清除技能冷却。" : "将" + GameBalance.SkillName(p.heroClass, skill) + "配置到此槽。") + "\n拖动已配置技能可移动或交换，拖到栏外取消。";
-                Fill(target, current ? new Color(.13f, .2f, .2f) : new Color(.035f, .075f, .11f));
-                Border(target, current || hotbarDragging && hotbarPointerConfiguring && (slot == hotbarPointerSlot || target.Contains(Mouse)) ? gold : new Color(jade.r, jade.g, jade.b, .4f));
-                if (target.Contains(Mouse)) tooltip = hint;
-                Text(new Rect(target.x + 6, target.y + 1, 70, 13), key, 10, pale, true);
-                Text(new Rect(target.xMax - 17, target.y + 1, 12, 13), current ? "×" : "+", 11, current ? gold : jade, true);
-                DrawSlotIdentity(new Rect(target.x + 6, target.y + 14, target.width - 12, 21), p, slot, equipped == -1 ? muted : pale);
-            }
-            HandleHotbarPointer(detailSlots, true);
         }
 
         private void OpenBindings()
@@ -1866,6 +1760,7 @@ namespace Emberfall
 
         private void ClosePanel()
         {
+            if(CloseProgressionGoalSurface())return;
             if(CloseBuildPlanSurface())return;
             if(CloseTravelMap())return;
             if(CancelSaveDeletion())return;

@@ -239,9 +239,10 @@ namespace Emberfall
             y += MobileDetailParagraph(draw, 8, y, available, MobileAttributeLine("防御", current == null ? 0 : current.defense, preview.defense), 16, pale, true) + 3;
             y += MobileDetailParagraph(draw, 8, y, available, MobileAttributeLine("生命", current == null ? 0 : current.health, preview.health), 16, pale, true) + 8;
             y += MobileDetailParagraph(draw, 8, y, available, "评分不含机制价值 · 换装自动继承部位强化", 14, muted) + 8;
-            y += MobileDetailParagraph(draw, 8, y, available, (worn ? "当前机制：" : "换装后机制：") + MobileMechanicSummary(item), 14, item.mechanic == EquipmentMechanic.None ? muted : gold) + 8;
-            if (!worn && current != null && (current.mechanic != item.mechanic || current.mechanicVariant != item.mechanicVariant))
-                y += MobileDetailParagraph(draw, 8, y, available, "当前机制：" + MobileMechanicSummary(current), 14, muted) + 8;
+            y += MobileDetailParagraph(draw, 8, y, available, EquipmentComparisonPresentation.Changes(current,item,progression.Profile.heroClass), 15, gold, true) + 8;
+            y += MobileDetailParagraph(draw, 8, y, available, "换装后机制：" + EquipmentComparisonPresentation.Description(item,progression.Profile.heroClass), 14, item.mechanic == EquipmentMechanic.None ? muted : gold) + 8;
+            if (!worn && !EquipmentComparisonPresentation.SameMechanism(current,item,progression.Profile.heroClass))
+                y += MobileDetailParagraph(draw, 8, y, available, "当前机制：" + EquipmentComparisonPresentation.Description(current,progression.Profile.heroClass), 14, muted) + 8;
             if (draw)
             {
                 var lockArea = MobileCollectionLayout.Split(available, y, 0, 2);

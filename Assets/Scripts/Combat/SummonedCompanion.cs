@@ -10,6 +10,7 @@ namespace Emberfall
         private sealed class BondState
         {
             public int Epoch;
+            public readonly CompanionDirective<EnemyController> Directive = new CompanionDirective<EnemyController>();
             public readonly CompanionCommandOpportunity Commands = new CompanionCommandOpportunity();
             public readonly CompanionCooperationTracker<EnemyController> Cooperation = new CompanionCooperationTracker<EnemyController>();
         }
@@ -82,6 +83,14 @@ namespace Emberfall
                 bonds[owner] = state;
             }
             return state;
+        }
+
+        public static void DescribeRoster(PlayerController owner,out int count,out float shortestLifetime)
+        {
+            count=0;shortestLifetime=float.PositiveInfinity;
+            foreach(var pet in active)
+                if(pet!=null&&pet.IsAlive&&pet.Owner==owner)
+                {count++;if(!pet.IsPermanent)shortestLifetime=Mathf.Min(shortestLifetime,pet.RemainingLifetime);}
         }
 
         public static SummonedCompanion[] Snapshot(PlayerController owner)
@@ -240,8 +249,35 @@ namespace Emberfall
         public static float CommandOpportunityRemaining(PlayerController owner)
         {return owner==null||owner.IsDead?0:State(owner).Commands.Remaining(Time.time);}
 
+        // Free orders change only navigation/target choice. They never invoke a
+        // contract, reset recovery, consume a dodge opportunity or grant protection.
+        public static bool SetFreeFocus(PlayerController owner, EnemyController enemy)
+        {
+            var game = GameSession.Instance;
+            if (owner == null || owner.IsDead || owner.HeroClass != HeroClass.Summoner || game == null || game.InputBlocked || game.CombatEnded || enemy == null || enemy.IsDead || !enemy.gameObject.activeInHierarchy ||
+                CombatFx.Flat(enemy.transform.position - owner.transform.position).sqrMagnitude > 196f) return false;
+            State(owner).Directive.Focus(enemy);
+            foreach (var pet in Snapshot(owner)) { pet.commandedTarget = enemy; pet.hasCommandPoint = false; pet.recallTime = 0; }
+            return true;
+        }
+        public static bool FreeRecall(PlayerController owner)
+        {
+            var game = GameSession.Instance;
+            if (owner == null || owner.IsDead || owner.HeroClass != HeroClass.Summoner || game == null || game.InputBlocked || game.CombatEnded) return false;
+            State(owner).Directive.Recall();
+            foreach (var pet in Snapshot(owner)) { pet.commandedTarget = pet.target = null; pet.hasCommandPoint = false; }
+            return true;
+        }
+        public static EnemyController ExplicitFocus(PlayerController owner)
+        {
+            if (owner == null || owner.IsDead) return null;
+            var directive = State(owner).Directive;
+            return directive.Resolve(e => e != null && !e.IsDead && e.gameObject.activeInHierarchy && CombatFx.Flat(e.transform.position-owner.transform.position).sqrMagnitude <= 196f);
+        }
+
         public static void RecallAll(PlayerController owner)
         {
+            if (owner != null) State(owner).Directive.Clear();
             foreach (SummonedCompanion pet in Snapshot(owner))
             {
                 pet.recallTime = CompanionRules.RecallDuration;
@@ -264,6 +300,7 @@ namespace Emberfall
             partner.RefreshContractPower(rank);
             if (!partner.IsPermanent) partner.RemainingLifetime = Mathf.Max(partner.RemainingLifetime, CompanionRules.ContractLifetime((int)form,rank,false));
             BondState state = State(owner);
+            state.Directive.Clear();
             bool empowered = state.Commands.TryConsume(Time.time);
             partner.Command(focus, empowered, at, preserveTargetPoint);
             if (timedPackRoute && form == Kind.Wolf)
@@ -323,7 +360,9 @@ namespace Emberfall
             hasCommandPoint = false;
             commandedTarget = ValidTarget(focus) ? focus : preservePoint ? null : Owner.FocusTarget;
             if (!ValidTarget(commandedTarget)) commandedTarget = preservePoint ? null : AcquireTarget();
-            if (preservePoint && commandedTarget == null)
+            // Preserve the captured fallback even while the original target is alive.
+            // If it dies during the command, do not silently acquire a bystander.
+            if (preservePoint)
             { commandedPoint = WorldTraversal.NearestWalkable(CombatSight.GroundPoint(Owner.transform.position,point),NavigationRadius); hasCommandPoint = true; }
             commandTime = CompanionRules.CommandDuration(empowered);
             commandEmpowered = empowered;
@@ -349,7 +388,11 @@ namespace Emberfall
 
         public void OnConfirmedHit(EnemyController enemy)
         {
-            if (!IsAlive || !ValidTarget(enemy) || !Owner.HasMechanic(EquipmentMechanic.TwinSummonResonance)) return;
+            if (!IsAlive || enemy == null) return;
+            if (commandedTarget == enemy || ExplicitFocus(Owner) == enemy)
+                session.RecordClassTutorial(HeroClass.Summoner);
+            if (!ValidTarget(enemy)) return;
+            if (!Owner.HasMechanic(EquipmentMechanic.TwinSummonResonance)) return;
             bool commandedFocus = false;
             foreach (SummonedCompanion partner in active)
                 if (partner != null && partner.Owner == Owner && partner.IsAlive && partner.commandTime > 0 && partner.commandedTarget == enemy)
@@ -358,7 +401,7 @@ namespace Emberfall
             if (!State(Owner).Cooperation.RegisterHit(enemy, (int)Form, Time.time)) return;
             enemy.TakeDamage(damage * CompanionRules.DamageMultiplier(true) * CompanionRules.CooperationDamage, Vector3.zero, impact: false);
             AdvancedSkillVfx.Beam(Owner, transform.position + Vector3.up, enemy.transform.position + Vector3.up, new Color(.5f, 1f, .9f), .3f, .2f);
-            session.SpawnFloatingText(enemy.transform.position + Vector3.up * 2f, "异契共鸣", new Color(.5f, 1f, .9f));
+            session.SpawnMechanismText(enemy.transform.position + Vector3.up * 2f, "异契共鸣", new Color(.5f, 1f, .9f));
             session.RecordCombatAction("双契共鸣");
         }
 
@@ -427,7 +470,11 @@ namespace Emberfall
         private EnemyController AcquireTarget()
         {
             if (recallTime > 0) return null;
-            if (commandTime > 0 && ValidTarget(commandedTarget)) return commandedTarget;
+            var directive = State(Owner).Directive;
+            EnemyController explicitTarget = directive.Resolve(ValidTarget);
+            if (directive.Recalling) return null;
+            if (explicitTarget != null) return explicitTarget;
+            if (ValidTarget(commandedTarget)) return commandedTarget;
             if (commandTime > 0 && hasCommandPoint) return null;
             EnemyController focused = Owner.FocusTarget;
             if (focused != null) return focused;
@@ -450,7 +497,7 @@ namespace Emberfall
             if (dt <= 0) return;
             recallTime = Mathf.Max(0, recallTime - dt);
             commandTime = Mathf.Max(0, commandTime - dt);
-            if (commandTime <= 0 || !ValidTarget(commandedTarget)) commandedTarget = null;
+            if (!ValidTarget(commandedTarget)) commandedTarget = null;
             if (commandTime <= 0) hasCommandPoint = false;
             statRefresh -= dt;
             if (statRefresh <= 0) { statRefresh = .5f; RefreshPower(false); }
@@ -487,7 +534,6 @@ namespace Emberfall
             Vector3 previous = transform.position;
             transform.position = WorldTraversal.Move(transform.position, moving ? heading * Mathf.Min(delta.magnitude, dt * (Form == Kind.Treant ? 4.2f : recallTime > 0 ? 9f : 7f)) : Vector3.zero, NavigationRadius);
             moving = (transform.position - previous).sqrMagnitude > .000001f;
-            model.Animate(moving ? 1f : 0, attackPose, false);
             delta = CombatFx.Flat(destination - transform.position);
             if (target != null && delta.magnitude <= attackRange && cooldown <= 0 && CanReachTarget(target.transform.position))
             {
@@ -515,6 +561,10 @@ namespace Emberfall
                     OnConfirmedHit(target);
                 }
             }
+            // Sample only this frame's navigated displacement, after the actual
+            // release event so projectile/damage and contact pose share a frame.
+            float locomotion = CombatFx.Flat(transform.position - previous).magnitude / Mathf.Max(.0001f, dt * (Form == Kind.Treant ? 4.2f : 7f));
+            model.Animate(Mathf.Clamp01(locomotion), attackPose, false);
         }
 
         private bool CanReachTarget(Vector3 position)

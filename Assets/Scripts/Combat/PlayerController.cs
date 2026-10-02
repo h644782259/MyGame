@@ -45,6 +45,8 @@ namespace Emberfall
         private float passiveCooldown, passiveTime, passiveReduction, passiveSpeed;
         private Vector3 aimPoint;
         private Vector3 bufferedBlinkDirection;
+        private float perfectDodgeCounterTime;
+        private bool lastMeleeDamagedEnemy;
         private float blinkBufferTime, perfectDodgeWindow, counterTime, dodgeShockTime, chargedWardTime, pursuitTime, starterRetry;
         private bool perfectDodgeAwarded, suppressBasicUntilReleased;
         private float classDodgeTime, burnStrideTime, coreWardTime;
@@ -132,6 +134,8 @@ namespace Emberfall
         {
             SummonedCompanion.RefreshBuild(this);
             CombatEpoch++;
+            perfectDodgeCounterTime = 0;
+            if (model != null) model.CancelAction();
             masteryCore.Reset();coreWardTime=0;
             if (targeting != null) targeting.Cancel();
             if (charge != null) charge.Cancel();
@@ -139,6 +143,7 @@ namespace Emberfall
             aimGeometry.Clear();
             position = WorldTraversal.NearestWalkable(position, .45f);
             transform.position = position;
+            if (model != null) model.ResetLocomotion();
             jumping = false;
             jumpAge = movementSkillLock = 0;
             aimPoint = position+transform.forward*5f;
@@ -162,6 +167,8 @@ namespace Emberfall
         {
             SummonedCompanion.RefreshBuild(this);
             CombatEpoch++;
+            perfectDodgeCounterTime = 0;
+            if (model != null) model.CancelAction();
             if (targeting != null) targeting.Cancel();
             if (charge != null) charge.Cancel();
         }
@@ -171,6 +178,8 @@ namespace Emberfall
         public void ResetCooldownsForDungeonEntry()
         {
             CombatEpoch++;
+            perfectDodgeCounterTime = 0;
+            if (model != null) model.CancelAction();
             masteryCore.Reset();coreWardTime=0; // Retire prior-zone delayed impacts as well as stale aim.
             if (targeting != null) targeting.Cancel();
             if (charge != null) charge.Cancel();
@@ -212,7 +221,9 @@ namespace Emberfall
             damage = Mathf.Max(damage, amount * CombatBalance.MinimumCombinedDamageMultiplier);
             if (session.HasBlessing(RunBlessing.RiskContract)) damage *= 1.15f;
             session.RecordIncomingDamage(source, Mathf.Min(Health, damage));
+            float healthBeforeHit = Health;
             Health = Mathf.Max(0,Health - damage);
+            CombatReviewEvents.Emit("takendamage",CombatReviewObjectId.Get(this),amount:healthBeforeHit-Health,detail:source);
             if(Health>0){float recovery=masteryCore.DamageTaken(Health/MaxHealth);if(recovery>0){Heal(MaxHealth*recovery);session.RecordCombatAction("生机核心");}}
             GameAudio.Play(SoundCue.Hit);
             invulnerability = .2f;
@@ -222,7 +233,10 @@ namespace Emberfall
             if (Health > 0) TryDefensePassive();
             if (Health <= 0)
             {
+                CombatReviewEvents.Emit("death",CombatReviewObjectId.Get(this));
                 CombatEpoch++;
+                perfectDodgeCounterTime = 0;
+                if (model != null) model.CancelAction();
             masteryCore.Reset();coreWardTime=0;
                 if (targeting != null) targeting.Cancel();
                 if (charge != null) charge.Cancel();
@@ -276,6 +290,7 @@ namespace Emberfall
             skillFeedbackCooldown = Mathf.Max(0,skillFeedbackCooldown - dt);
             perfectDodgeWindow = Mathf.Max(0, perfectDodgeWindow - dt);
             counterTime = Mathf.Max(0, counterTime - dt);
+            perfectDodgeCounterTime = Mathf.Max(0, perfectDodgeCounterTime - dt);
             classDodgeTime = Mathf.Max(0, classDodgeTime - dt); coreWardTime = Mathf.Max(0, coreWardTime - dt); masteryCore.Advance(dt); burnStrideTime = Mathf.Max(0, burnStrideTime - dt);
             dodgeShockTime = Mathf.Max(0, dodgeShockTime - dt);
             chargedWardTime = Mathf.Max(0, chargedWardTime - dt);
@@ -300,7 +315,7 @@ namespace Emberfall
                 {
                     guardPulseTimer = guardRank==3?1f:guardRank==2?1.2f:1.5f;
                     if (Specialization == ElementalistSpecialization.Burn)
-                        CombatArea.Spawn(this, session, transform.position, guardRadius, CombatAttack * .18f, 0, 0, 1.5f, .5f, new Color(1f,.5f,.25f),castId:guardCastId);
+                        CombatArea.Spawn(this, session, transform.position, guardRadius, CombatAttack * .18f, 0, 0, 1.5f, .5f, new Color(1f,.5f,.25f),castId:guardCastId,visual:SkillVisualRecipe.Fire);
                     else
                     {
                         ControlArea(transform.position,guardRadius,.25f);
@@ -314,9 +329,11 @@ namespace Emberfall
             model.transform.localRotation = Quaternion.identity;
             if (session.InputBlocked)
             {
+                model.SetLocomotion(Vector3.zero,dt,stats.MoveSpeed,false,jumping,jumpAge/.55f);
                 model.Animate(0,attackAnimation,hurtTimer > 0);
                 return;
             }
+            Vector3 walkingDisplacement = Vector3.zero;
             MaintainStarterCompanion(dt);
             bool mobile = MobileControls.Active;
             Vector2 moveInput = mobile ? MobileControls.Move : new Vector2(Input.GetAxisRaw("Horizontal"), Input.GetAxisRaw("Vertical"));
@@ -339,11 +356,14 @@ namespace Emberfall
                 if (mobilityTime>0) movementBonus += .1f+mobilityRank*.05f;
                 if (pursuitTime > 0) movementBonus += .2f;
                 if (burnStrideTime > 0) movementBonus += .2f;
+                Vector3 walkingStart = transform.position;
                 transform.position = WorldTraversal.Move(transform.position, movement * stats.MoveSpeed * (1f+movementBonus) * MovementMultiplier * dt, .45f);
+                walkingDisplacement = CombatFx.Flat(transform.position - walkingStart);
             }
             // Readiness and landing are checked before expiring an older input,
             // so a buffer at the exact cooldown boundary is not lost to frame order.
             if (!wantsBlink) blinkBufferTime = Mathf.Max(0, blinkBufferTime - dt);
+            Vector3 beforeBoundary = transform.position;
             Vector3 bounded = transform.position;
             float bound = Mathf.Max(1,session.ArenaRadius - .65f);
             float airborneHeight = jumping ? bounded.y : 0;
@@ -351,6 +371,7 @@ namespace Emberfall
             bounded = Vector3.ClampMagnitude(bounded,bound);
             bounded.y = airborneHeight;
             transform.position = bounded;
+            if (walkingDisplacement.sqrMagnitude > 0) walkingDisplacement += CombatFx.Flat(bounded-beforeBoundary);
             // Mouse selection uses this frame's final position. Walking only turns
             // the model; it never overwrites the independent mouse aim point.
             if ((charge == null || !charge.IsCharging) && (mobile || !session.PointerOverUI))
@@ -372,11 +393,12 @@ namespace Emberfall
                     }
             }
             bool suppressBasic = targeting != null && targeting.TickInput();
-            if (wantsBasic && !suppressBasic && (charge == null || (!charge.IsCharging && !charge.ConsumedThisFrame)))
+            if (!TraversalStartedThisFrame && wantsBasic && !suppressBasic && (charge == null || (!charge.IsCharging && !charge.ConsumedThisFrame)))
             {
                 FaceAim();
                 if (attackCooldown <= 0) BasicAttack();
             }
+            model.SetLocomotion(transform.InverseTransformDirection(walkingDisplacement),dt,stats.MoveSpeed,!TraversalStartedThisFrame,jumping,jumpAge/.55f);
             model.Animate(movement.magnitude,attackAnimation,hurtTimer > 0);
             if (charge != null && charge.IsCharging) model.AnimateCharge(charge.Progress);
         }
@@ -555,47 +577,52 @@ namespace Emberfall
 
         private void BasicAttack()
         {
+            if (TraversalStartedThisFrame || model.BasicActionBlocked) return;
             if (charge != null && (charge.IsCharging || charge.ConsumedThisFrame)) return;
             if ((HeroClass==HeroClass.Arcanist || HeroClass==HeroClass.Summoner) && !ValidAimTarget(AimTarget)) AimTarget=MagicConeTarget();
             FaceAim();
             GameAudio.Play(SoundCue.Attack);
-            model.PlayAction(-1,true);
+            CombatReviewEvents.Emit("attack",CombatReviewObjectId.Get(this));
+            attackCooldown = SkillDamageBudgets.BasicInterval(HeroClass);
+            if (mobilityTime > 0) attackCooldown *= .8f;
+            if (ActiveRunBonuses != null) attackCooldown /= ActiveRunBonuses.AttackSpeedMultiplier;
+            attackCooldown = Mathf.Max(.18f, attackCooldown);
+            model.PlayAction(-1,true,attackCooldown);
             attackAnimation = 1f;
             Color color = GameBalance.ClassColor(HeroClass);
             if (HeroClass == HeroClass.Vanguard)
             {
-                attackCooldown = SkillDamageBudgets.BasicInterval(HeroClass);
                 CombatFx.Slash(transform.position,transform.forward,2.3f,color);
                 float previousCounter = counterTime;
                 bool wasCounter = previousCounter > 0;
+                bool wasDodgeCounter = perfectDodgeCounterTime > 0;
                 float power = (wasCounter ? 1.75f : SkillDamageBudgets.BasicCoefficient(HeroClass)) * (HasMechanic(EquipmentMechanic.ReturningBlade) ? .92f : 1f);
                 counterTime = 0; // Consume only the captured bonus; on-hit procs may grant a NEW one.
                 bool hit = Melee(2.8f, 110f, Damage(power), .3f, .12f, basic: true);
                 counterTime = PlayerUpgradeRules.CounterAfterAttack(previousCounter, counterTime, hit);
                 if (hit && wasCounter)
                 {
+                    if (wasDodgeCounter && lastMeleeDamagedEnemy) session.RecordClassTutorial(HeroClass.Vanguard);
+                    perfectDodgeCounterTime = 0;
                     session.RecordCombatAction("剑卫反击");
                     session.RecordCombatAction("职业能力");
-                    session.SpawnFloatingText(transform.position + Vector3.up * 2.5f, "反击！", new Color(1f, .85f, .35f));
+                    session.SpawnMechanismText(transform.position + Vector3.up * 2.5f, "反击！", new Color(1f, .85f, .35f));
                 }
             }
             else
             {
                 bool ranger = HeroClass == HeroClass.Ranger;
-                attackCooldown = SkillDamageBudgets.BasicInterval(HeroClass);
                 Vector3 target=ValidAimTarget(AimTarget)?EnemyBodyPoint(AimTarget):new Vector3(aimPoint.x,1.15f,aimPoint.z);
                 float distance=CombatFx.Flat(target-transform.position).magnitude;
                 Vector3 muzzle=transform.position+Vector3.up*1.15f+transform.forward*Mathf.Min(.55f,distance*.3f);
                 CombatProjectile.BasicShot(this,session,muzzle,target,Damage(SkillDamageBudgets.BasicCoefficient(HeroClass)*(mobilityTime>0?1f+.12f*mobilityRank:1f)),color,ranger,AimTarget);
             }
-            if (mobilityTime > 0) attackCooldown *= .8f;
-            if (ActiveRunBonuses != null) attackCooldown /= ActiveRunBonuses.AttackSpeedMultiplier;
-            attackCooldown = Mathf.Max(.18f, attackCooldown);
         }
 
         private bool Melee(float range, float arc, CombatDamage damage, float knockback, float stun, float knockdown = 0, bool basic = false, int skillIndex = -1, int castId = 0)
         {
             if(castId==0)castId=NewCastId();
+            lastMeleeDamagedEnemy = false;
             DestructibleProp.StrikeCone(this,transform.position,transform.forward,range,arc,damage,castId);
             bool hit = false;
             EnemyController firstHit = null;
@@ -613,10 +640,13 @@ namespace Emberfall
                     hit = true;
                     enemy.TrySkillInterrupt(this, skillIndex, castId);
                     if(!basic&&damage.Amount>0)RegisterSkillHit(castId);
+                    float healthBefore = enemy.Health;
                     enemy.TakeDamage(damage.Amount,delta.normalized,knockback,stun,critical:damage.IsCritical);
+                    if (enemy.Health < healthBefore) lastMeleeDamagedEnemy = true;
                     if (knockdown > 0 && enemy.StatusEffects != null) enemy.StatusEffects.Knockdown(knockdown);
                 }
             }
+            if (!lastMeleeDamagedEnemy) CombatReviewEvents.Emit(basic ? "basicmiss" : "spellmiss",CombatReviewObjectId.Get(this),skill:skillIndex,detail:"melee_release_no_enemy_damage;props_not_counted");
             if (hit && basic) OnBasicAttackHitTarget(firstHitPosition, firstHit, true);
             return hit;
         }
@@ -642,7 +672,7 @@ namespace Emberfall
                     else if (session.Progression.Profile.skillRanks[0] > 0) enemy.StatusEffects.FrostMark(PlayerUpgradeRules.BasicFrostMarkDuration);
                     else enemy.StatusEffects.Freeze(.35f);
                     CombatFx.Ring(position, 1f, new Color(.5f, .9f, 1f), .35f, .12f);
-                    session.SpawnFloatingText(position + Vector3.up * 2f, "霜触", new Color(.55f, .95f, 1f));
+                    session.SpawnMechanismText(position + Vector3.up * 2f, "霜触", new Color(.55f, .95f, 1f));
                     session.RecordCombatAction("职业能力");
                 }
             }
@@ -721,9 +751,10 @@ namespace Emberfall
                 else if (Specialization != ElementalistSpecialization.Burn && status.TryShatter(this, castId))
                 {
                     direct += uncriticalDamage * PlayerUpgradeRules.ShatterMultiplier(Specialization);
-                    session.SpawnFloatingText(enemy.transform.position + Vector3.up * 2f, "碎冰！", new Color(.55f, .95f, 1f));
+                    session.SpawnMechanismText(enemy.transform.position + Vector3.up * 2f, "碎冰！", new Color(.55f, .95f, 1f));
                     CombatFx.Ring(enemy.transform.position, 1.5f, new Color(.55f, .95f, 1f), .4f, .16f);
                     session.RecordCombatAction("碎冰连招");
+                    session.RecordClassTutorial(HeroClass.Arcanist);
                 }
                 return direct;
             }
@@ -734,8 +765,9 @@ namespace Emberfall
                 {
                     bool spread = HasMechanic(EquipmentMechanic.VenomSpread);
                     baseDamage += bonus * (spread ? .8f : 1f);
-                    session.SpawnFloatingText(enemy.transform.position + Vector3.up * 2f, "三毒引爆！", new Color(.6f, 1f, .3f));
+                    session.SpawnMechanismText(enemy.transform.position + Vector3.up * 2f, "三毒引爆！", new Color(.6f, 1f, .3f));
                     session.RecordCombatAction("毒层引爆");
+                    session.RecordClassTutorial(HeroClass.Ranger);
                     session.RecordCombatAction("职业能力");
                     if (spread && venomSpreadProc.TryTrigger(2f))
                     {
@@ -804,12 +836,12 @@ namespace Emberfall
             perfectDodgeAwarded = true;
             float previousEnergy = Energy;
             skillRuntime.RestoreEnergy(PlayerUpgradeRules.PerfectDodgeEnergy);
-            if (HeroClass == HeroClass.Vanguard) counterTime = PlayerUpgradeRules.CounterWindow;
+            if (HeroClass == HeroClass.Vanguard) counterTime = perfectDodgeCounterTime = PlayerUpgradeRules.CounterWindow;
             else classDodgeTime = 3f;
             if (HeroClass == HeroClass.Summoner) { SummonedCompanion.OnPerfectDodge(this); }
             float ward=masteryCore.PerfectDodge();if(ward>0){coreWardTime=ward;session.RecordCombatAction("守御核心");}
             string reward = HeroClass == HeroClass.Vanguard ? "反击" : HeroClass == HeroClass.Ranger ? "精准箭" : HeroClass == HeroClass.Summoner ? "护契·协同" : Specialization == ElementalistSpecialization.Burn ? "余烬" : "霜痕";
-            session.SpawnFloatingText(transform.position + Vector3.up * 2.5f, "完美闪避 +" + (Energy-previousEnergy).ToString("0.#") + "能量 · " + reward, new Color(.65f, .95f, 1f));
+            session.SpawnMechanismText(transform.position + Vector3.up * 2.5f, "完美闪避 +" + (Energy-previousEnergy).ToString("0.#") + "能量 · " + reward, new Color(.65f, .95f, 1f));
             session.RecordCombatAction("完美闪避");
         }
 
@@ -879,7 +911,7 @@ namespace Emberfall
                 if(rank==3) skillRuntime.RestoreEnergy(SkillDamageBudgets.BasicEnergyOnHit);
             }
             AdvancedSkillVfx.Rune(this,transform.position,radius,tint,passiveTime,rank,true);
-            session.SpawnFloatingText(transform.position+Vector3.up*2.7f,GameBalance.SkillName(HeroClass,8),tint);
+            session.SpawnMechanismText(transform.position+Vector3.up*2.7f,GameBalance.SkillName(HeroClass,8),tint);
         }
 
         internal void HitArea(Vector3 at, float radius, CombatDamage damage, float knockback = 0, float stun = 0, int castId = 0, ProjectileVolleyBudget<EnemyController> volley = null)
@@ -920,6 +952,10 @@ namespace Emberfall
             return true;
         }
 
+        internal void CancelCombatPose() { if (model != null) model.CancelAction(); }
+        internal float CounterOpportunityRemaining { get { return IsDead ? 0 : counterTime; } }
+        internal EnemyController CurrentOpportunityTarget { get { return ValidAimTarget(AimTarget) ? AimTarget : null; } }
+
         internal bool TryBlink(Vector3 direction) { return TryBlinkCore(direction, true); }
 
         private bool TryBlinkCore(Vector3 direction, bool allowBuffer)
@@ -933,6 +969,7 @@ namespace Emberfall
                     { blinkBufferTime = PlayerUpgradeRules.DodgeBufferWindow; bufferedBlinkDirection = direction; }
                     else if (skillFeedbackCooldown <= 0)
                     {
+                        session.ReportControlFailure("dodge",dodgeCooldown>0?"冷却":jumping?"空中":"位移中");
                         session.Notify(dodgeCooldown > 0 ? "闪避冷却中（" + dodgeCooldown.ToString("0.0") + " 秒）" : jumping ? "落地后才能闪避。" : "位移结束后才能闪避。");
                         skillFeedbackCooldown = .5f;
                     }
@@ -947,6 +984,8 @@ namespace Emberfall
             if (!WorldTraversal.TryResolveBlink(origin, forward, 4.8f, .45f, session.ArenaRadius - .65f, out destination))
             { TraversalFailure(); return false; }
             if (charge != null) charge.Cancel();
+            model.CancelAction();
+            model.ResetLocomotion();
             transform.position = destination;
             dodgeCooldown = 2.1f;
             invulnerability = Mathf.Max(invulnerability, .38f);
@@ -981,6 +1020,7 @@ namespace Emberfall
         private void TraversalFailure()
         {
             if (skillFeedbackCooldown > 0) return;
+            session.ReportControlFailure("dodge","无落点");
             session.Notify("前方有障碍或没有安全落点，请走桥或调整方向。");
             skillFeedbackCooldown = .8f;
         }
@@ -1001,8 +1041,9 @@ namespace Emberfall
 
         internal bool CanBeginSkillTargeting(int skill)
         {
-            if(session==null || IsDead || jumping || !session.HasStarted || session.InputBlocked || skill<0 || skill>=GameBalance.SkillCount || GameBalance.IsPassive(skill)) return false;
-            if(charge != null && (charge.IsCharging || charge.ConsumedThisFrame)) return false;
+            if(session==null || IsDead || !session.HasStarted || session.InputBlocked || skill<0 || skill>=GameBalance.SkillCount || GameBalance.IsPassive(skill)) return false;
+            if (jumping) { session.ReportControlFailure("skill"+skill,"空中"); return false; }
+            if(charge != null && (charge.IsCharging || charge.ConsumedThisFrame)) { session.ReportControlFailure("skill"+skill,"施法中"); return false; }
             int rank=session.Progression.Profile.skillRanks[skill];
             string failure=null;
             if(rank<=0) failure="按 K 学习这个技能后再施放。";
@@ -1010,12 +1051,15 @@ namespace Emberfall
             else if(Energy<GameBalance.SkillEnergyCost(HeroClass,skill)) failure="能量不足：普攻命中回复 8 点，持续回复每秒 4 点。";
             else if(!CanUseMovementSkill(skill,rank)) failure="前方有障碍或没有安全落点，请走桥或调整方向。";
             if(failure==null) return true;
+            session.ReportControlFailure("skill"+skill,rank<=0?"未学":skillRuntime.Remaining(skill)>0?"冷却":Energy<GameBalance.SkillEnergyCost(HeroClass,skill)?"缺能":"无落点");
+            if (Energy<GameBalance.SkillEnergyCost(HeroClass,skill)) CombatReviewEvents.Emit("noenergy",CombatReviewObjectId.Get(this),skill:skill);
             if(skillFeedbackCooldown<=0) { session.Notify(failure); skillFeedbackCooldown=.8f; }
             return false;
         }
 
         internal bool CastImmediateSkill(int skill)
         {
+            CombatReviewEvents.Emit("skillattempt",CombatReviewObjectId.Get(this),skill:skill);
             if(SkillTargetingController.RequiresConfirmation(HeroClass,skill) || !CanBeginSkillTargeting(skill)) return false;
             // Mouse aim is resolved independently of movement. Re-read a selected
             // living target's position here so immediate directional casts face it.
@@ -1027,6 +1071,7 @@ namespace Emberfall
 
         internal bool ConfirmTargetedSkill(int skill,Vector3 worldPoint)
         {
+            CombatReviewEvents.Emit("skillattempt",CombatReviewObjectId.Get(this),skill:skill);
             if(!SkillTargetingController.RequiresConfirmation(HeroClass,skill) || !CanBeginSkillTargeting(skill)) return false;
             EnemyController selected=AimTarget;
             aimPoint=CombatSight.GroundPoint(transform.position,worldPoint);
@@ -1100,6 +1145,7 @@ namespace Emberfall
             session.RecordCombatAction("职业能力");
             if (executingChargedSkill && session.HasBlessing(RunBlessing.ChargedWard)) chargedWardTime = Mathf.Max(chargedWardTime, 2f);
             GameAudio.Play(SoundCue.Cast);
+            CombatReviewEvents.Emit("skillrelease",CombatReviewObjectId.Get(this),skill:slot);
             if ((HeroClass == HeroClass.Vanguard && slot == 5) || (HeroClass == HeroClass.Ranger && slot == 4)) movementSkillLock = .15f;
             if (executingChargedSkill) model.ReleaseCharge(slot);
             else model.PlayAction(slot,false);
@@ -1156,20 +1202,20 @@ namespace Emberfall
                 {
                     CombatFx.Ring(transform.position,3.4f*range,color,.45f,.2f);
                     Melee(3.4f*range,360,Damage(SkillDamageBudgets.OpeningImpact(HeroClass,slot,rank)),.75f,.3f,skillIndex:slot,castId:castId);
-                    if(rank>=2) CombatArea.Spawn(this,session,transform.position,3.4f*range,Damage(SkillDamageBudgets.OpeningImpact(HeroClass,slot,rank,1)),.25f,.18f,rank==3?.22f:0,.22f,color,true,false,rank==3?5f:0,rank==3?Damage(SkillDamageBudgets.OpeningImpact(HeroClass,slot,rank,2)):0,castId:castId);
+                    if(rank>=2) CombatArea.Spawn(this,session,transform.position,3.4f*range,Damage(SkillDamageBudgets.OpeningImpact(HeroClass,slot,rank,1)),.25f,.18f,rank==3?.22f:0,.22f,color,true,false,rank==3?5f:0,rank==3?Damage(SkillDamageBudgets.OpeningImpact(HeroClass,slot,rank,2)):0,castId:castId,visual:SkillVisualRecipe.Steel);
                 }
                 else if (slot == 1)
                 {
                     CombatFx.Slash(transform.position,transform.forward,4.8f*range,new Color(1f,.85f,.4f));
                     Melee(4.8f*range,90+(rank-1)*10,Damage(SkillDamageBudgets.OpeningImpact(HeroClass,slot,rank)),1.9f,1.3f+(rank-1)*.3f,1.3f+(rank-1)*.3f,skillIndex:slot,castId:castId);
                     CombatFx.Ring(transform.position+transform.forward*2.5f*range,2.1f*range,color,.4f,.16f);
-                    if(rank>=2) CombatArea.Spawn(this,session,CombatSight.GroundPoint(transform.position,transform.position+transform.forward*3f*range),2.3f*range,Damage(SkillDamageBudgets.OpeningImpact(HeroClass,slot,rank,1)),.6f,.25f,0,1,color,false,false,0,rank==3?Damage(SkillDamageBudgets.OpeningImpact(HeroClass,slot,rank,2)):0,castId:castId);
+                    if(rank>=2) CombatArea.Spawn(this,session,CombatSight.GroundPoint(transform.position,transform.position+transform.forward*3f*range),2.3f*range,Damage(SkillDamageBudgets.OpeningImpact(HeroClass,slot,rank,1)),.6f,.25f,0,1,color,false,false,0,rank==3?Damage(SkillDamageBudgets.OpeningImpact(HeroClass,slot,rank,2)):0,castId:castId,visual:SkillVisualRecipe.Steel);
                 }
                 else
                 {
                     invulnerability = Mathf.Max(invulnerability,.5f);
                     PeriodicSkillBudget field=SkillDamageBudgets.EarlyField(HeroClass,rank);
-                    CombatArea.Spawn(this,session,transform.position,4.1f*range,Damage(field.TickCoefficient),.14f,field.Startup,field.Duration,field.Interval,color,true,false,rank==3?2.5f:0,Damage(field.FinisherCoefficient),castId:castId);
+                    CombatArea.Spawn(this,session,transform.position,4.1f*range,Damage(field.TickCoefficient),.14f,field.Startup,field.Duration,field.Interval,color,true,false,rank==3?2.5f:0,Damage(field.FinisherCoefficient),castId:castId,visual:SkillVisualRecipe.Steel);
                 }
             }
             else if (HeroClass == HeroClass.Arcanist)
@@ -1179,13 +1225,13 @@ namespace Emberfall
                     bool frostEcho = HasMechanic(EquipmentMechanic.FrostEcho);
                     bool wideEcho = MechanicVariant(EquipmentMechanic.FrostEcho) == 1;
                     float novaPower = frostEcho ? (wideEcho ? .65f : .8f) : 1f;
-                    CombatArea.Spawn(this,session,transform.position,3.7f*range,Damage(SkillDamageBudgets.OpeningImpact(HeroClass,slot,rank)*novaPower),0,0,0,1f,new Color(.51f,.92f,1f),statusSkill:0,statusRank:rank,castId:castId);
+                    CombatArea.Spawn(this,session,transform.position,3.7f*range,Damage(SkillDamageBudgets.OpeningImpact(HeroClass,slot,rank)*novaPower),0,0,0,1f,new Color(.51f,.92f,1f),statusSkill:0,statusRank:rank,castId:castId,visual:SkillVisualRecipe.Ice);
                     if (frostEcho)
                     {
-                        CombatArea.Spawn(this,session,transform.position,3.7f*range*(wideEcho?1.35f:1f),Damage((wideEcho?.45f:.6f)*power),0,.7f,0,1f,new Color(.51f,.92f,1f),statusSkill:0,statusRank:rank,castId:castId);
+                        CombatArea.Spawn(this,session,transform.position,3.7f*range*(wideEcho?1.35f:1f),Damage((wideEcho?.45f:.6f)*power),0,.7f,0,1f,new Color(.51f,.92f,1f),statusSkill:0,statusRank:rank,castId:castId,visual:SkillVisualRecipe.Ice);
                         session.RecordCombatAction("霜环回响");
                     }
-                    if(rank>=2) CombatArea.Spawn(this,session,transform.position,3.7f*range,Damage(SkillDamageBudgets.OpeningImpact(HeroClass,slot,rank,1)),0,.5f,0,1f,new Color(.51f,.92f,1f),statusSkill:0,statusRank:rank,castId:castId);
+                    if(rank>=2) CombatArea.Spawn(this,session,transform.position,3.7f*range,Damage(SkillDamageBudgets.OpeningImpact(HeroClass,slot,rank,1)),0,.5f,0,1f,new Color(.51f,.92f,1f),statusSkill:0,statusRank:rank,castId:castId,visual:SkillVisualRecipe.Ice);
                     if(rank==3)
                     {
                         var shards=new ProjectileVolleyBudget<EnemyController>(CombatAttack,1.8f);
@@ -1200,17 +1246,17 @@ namespace Emberfall
                 }
                 else if (slot == 1)
                 {
-                    CombatArea.Spawn(this,session,target,3f*range,Damage(SkillDamageBudgets.OpeningImpact(HeroClass,slot,rank)),.7f,.7f,0,1f,new Color(1f,.59f,.28f),false,true,statusSkill:1,statusRank:rank,castId:castId);
-                    if(rank>=2) CombatArea.Spawn(this,session,target,3f*range,Damage(SkillDamageBudgets.OpeningImpact(HeroClass,slot,rank,1)),.3f,1.1f,0,1,new Color(1f,.59f,.28f),false,true,statusSkill:1,statusRank:rank,castId:castId);
-                    if(rank==3){var field=SkillDamageBudgets.MeteorAftermath(rank);CombatArea.Spawn(this,session,target,3.2f*range,Damage(field.TickCoefficient),.1f,field.Startup,field.Duration,field.Interval,new Color(1f,.43f,.22f),castId:castId);}
+                    CombatArea.Spawn(this,session,target,3f*range,Damage(SkillDamageBudgets.OpeningImpact(HeroClass,slot,rank)),.7f,.7f,0,1f,new Color(1f,.59f,.28f),false,true,statusSkill:1,statusRank:rank,castId:castId,visual:SkillVisualRecipe.Fire);
+                    if(rank>=2) CombatArea.Spawn(this,session,target,3f*range,Damage(SkillDamageBudgets.OpeningImpact(HeroClass,slot,rank,1)),.3f,1.1f,0,1,new Color(1f,.59f,.28f),false,true,statusSkill:1,statusRank:rank,castId:castId,visual:SkillVisualRecipe.Fire);
+                    if(rank==3){var field=SkillDamageBudgets.MeteorAftermath(rank);CombatArea.Spawn(this,session,target,3.2f*range,Damage(field.TickCoefficient),.1f,field.Startup,field.Duration,field.Interval,new Color(1f,.43f,.22f),castId:castId,visual:SkillVisualRecipe.Fire);}
                     if (HasMechanic(EquipmentMechanic.CinderTrail))
                     {
                         // Four ticks total 40% of the base first meteor impact.
-                        CombatArea.Spawn(this,session,target,3f*range*(MechanicVariant(EquipmentMechanic.CinderTrail)==1?.7f:1f),CombatAttack*SkillDamageBudgets.MeteorTrailTick(rank,MechanicVariant(EquipmentMechanic.CinderTrail)==1),0,1.2f,1.5f,.5f,new Color(1f,.43f,.22f),castId:castId);
+                        CombatArea.Spawn(this,session,target,3f*range*(MechanicVariant(EquipmentMechanic.CinderTrail)==1?.7f:1f),CombatAttack*SkillDamageBudgets.MeteorTrailTick(rank,MechanicVariant(EquipmentMechanic.CinderTrail)==1),0,1.2f,1.5f,.5f,new Color(1f,.43f,.22f),castId:castId,visual:SkillVisualRecipe.Fire);
                         session.RecordCombatAction("余烬地带");
                     }
                 }
-                else {var field=SkillDamageBudgets.EarlyField(HeroClass,rank);CombatArea.Spawn(this,session,target,3.9f*range,Damage(field.TickCoefficient),.22f,field.Startup,field.Duration,field.Interval,new Color(.65f,.5f,1f),false,false,rank==3?3.5f:0,Damage(field.FinisherCoefficient),castId:castId);}
+                else {var field=SkillDamageBudgets.EarlyField(HeroClass,rank);CombatArea.Spawn(this,session,target,3.9f*range,Damage(field.TickCoefficient),.22f,field.Startup,field.Duration,field.Interval,new Color(.65f,.5f,1f),false,false,rank==3?3.5f:0,Damage(field.FinisherCoefficient),castId:castId,visual:SkillVisualRecipe.Lightning);}
             }
             else
             {
@@ -1228,10 +1274,10 @@ namespace Emberfall
                 }
                 else if (slot == 1)
                 {
-                    CombatArea.Spawn(this,session,target,3f*range,Damage(SkillDamageBudgets.OpeningImpact(HeroClass,slot,rank)),2.3f+(rank-1)*.4f,.4f,0,1f,color,false,false,rank==3?5f:0,statusSkill:1,statusRank:rank,castId:castId);
-                    if(rank>=2) CombatArea.Spawn(this,session,target,3f*range,Damage(SkillDamageBudgets.OpeningImpact(HeroClass,slot,rank,1)),.5f,.8f,0,1,color,castId:castId);
+                    CombatArea.Spawn(this,session,target,3f*range,Damage(SkillDamageBudgets.OpeningImpact(HeroClass,slot,rank)),2.3f+(rank-1)*.4f,.4f,0,1f,color,false,false,rank==3?5f:0,statusSkill:1,statusRank:rank,castId:castId,visual:SkillVisualRecipe.Neutral);
+                    if(rank>=2) CombatArea.Spawn(this,session,target,3f*range,Damage(SkillDamageBudgets.OpeningImpact(HeroClass,slot,rank,1)),.5f,.8f,0,1,color,castId:castId,visual:SkillVisualRecipe.Neutral);
                 }
-                else {var field=SkillDamageBudgets.EarlyField(HeroClass,rank);CombatArea.Spawn(this,session,target,4.3f*range,Damage(field.TickCoefficient),.08f,field.Startup,field.Duration,field.Interval,new Color(.7f,1f,.59f),false,false,0,Damage(field.FinisherCoefficient),castId:castId);}
+                else {var field=SkillDamageBudgets.EarlyField(HeroClass,rank);CombatArea.Spawn(this,session,target,4.3f*range,Damage(field.TickCoefficient),.08f,field.Startup,field.Duration,field.Interval,new Color(.7f,1f,.59f),false,false,0,Damage(field.FinisherCoefficient),castId:castId,visual:SkillVisualRecipe.Poison);}
             }
         }
 

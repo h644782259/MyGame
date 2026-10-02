@@ -76,6 +76,11 @@ namespace Emberfall
         private void DrawRecapCards(RunRecapLayout layout,RunRecapPresentation data,float unit,float top=0)
         {
             float y=top,w=layout.ContentWidth;
+            string goal=session.Progression.ProgressionGoalStatus(data.Snapshot.RewardMaterials);
+            float goalHeight=RecapGoalHeight(layout,unit,data);
+            Fill(new Rect(0,y*unit,w*unit,(goalHeight-10)*unit),card);
+            Text(new Rect(12*unit,(y+8)*unit,(w-24)*unit,(goalHeight-26)*unit),goal,Mathf.RoundToInt(13*unit),jade,false,true);
+            y+=goalHeight;
             RunRecapSnapshot snapshot=data.Snapshot;
             if(data.HasFailureBanner)
             {
@@ -179,10 +184,12 @@ namespace Emberfall
         }
         private static float ProgressCardHeight(RunRecapSnapshot data)
         { return 24+(data.RewardGold>0||data.RewardExperience>0||data.RewardMaterials>0?72:0)+(data.Materials>0?72:0)+(data.GoldLost>0?34:0)+(data.PendingChest||data.FirstClearChoice?28:0); }
-        private static float RecapContentHeight(RunRecapLayout layout,RunRecapPresentation data)
+        private float RecapGoalHeight(RunRecapLayout layout,float unit,RunRecapPresentation data)
+        {return Mathf.Ceil(Style(Mathf.RoundToInt(13*unit),false,true).CalcHeight(new GUIContent(session.Progression.ProgressionGoalStatus(data.Snapshot.RewardMaterials)),(layout.ContentWidth-24)*unit)/unit)+26;}
+        private float RecapContentHeight(RunRecapLayout layout,RunRecapPresentation data)
         {
             if(data==null)return 110;
-            float result=(data.HasDamage?80:0)+(data.HasFailureBanner?76:0);
+            float result=RecapGoalHeight(layout,MobileControls.Active?TouchRatio:1,data)+(data.HasDamage?80:0)+(data.HasFailureBanner?76:0);
             if(data.Metrics.Length>0)result+=28+layout.MetricRowsHeight(data.Metrics.Length)+18;
             if(data.HasProgress)result+=28+ProgressCardHeight(data.Snapshot)+18;
             foreach(string[] values in new[]{data.Mechanics,data.Blessings,data.ExtraActions})

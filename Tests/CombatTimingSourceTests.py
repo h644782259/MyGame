@@ -14,7 +14,7 @@ check('advanceBudget.Advance(dt, distance' in enemy and '!advanceBudget.Fallback
 prepare=enemy[enemy.index('private void PrepareAttack'):enemy.index('private float ImpactRadius')]
 check('advanceBudget.Reset();' in prepare,'every real new attack resets its own approach budget')
 select=enemy[enemy.index('private BossAttackPolicy.Move SelectBossMove'):enemy.index('private void BeginAttack')]
-check('BossAttackPolicy.AfterAdvanceBudget(selected, distance, advanceBudget.FallbackActive,' in select and 'CanUseBossAttack(BossAttackPolicy.Move.Fan, target)' in select,'expired chase resolves to an actually visible ranged attack, including the anti-repeat charge band')
+check('BossAttackPolicy.LegalFallback(selected, distance, advanceBudget.FallbackActive,' in select and 'CanUseBossAttack(BossAttackPolicy.Move.Fan, target)' in select,'expired chase resolves to an actually visible ranged attack, including the anti-repeat charge band')
 check('AdventureResultPolicy.AcceptsDamage(session.HasStarted,session.CombatEnded)' in enemy,'late ordinary-dungeon and mode damage are terminal guarded')
 check('burnSchedule.Elapse(dt,true)' in status and 'poisonSchedule.Elapse(dt,true)' in status and status.count('TryTakeDueTick(true)')==2,'both damage statuses share finite scheduler')
 check('game.InputBlocked' in status and 'source.CombatEpoch==epoch' in status,'status clocks obey pause and reject stale caster')
@@ -37,7 +37,7 @@ check('executingChargedSkill ? charge.TargetEnemy : AimTarget, executingChargedS
 check('preserveTargetPoint ? CombatSight.GroundPoint' in spell and 'preserveTargetPoint ? commandTarget' in spell,'charged spirit/tree use captured location and target')
 check('living.RefreshContractPower(rank)' in pet and 'RefreshPackLifetime(living.RemainingLifetime,rank)' in pet,'full existing pack refreshes even without spawn slots')
 check('PreserveRecastHealth(healthBefore,MaxHealth)' in pet,'recast preserves absolute health rather than full heal')
-dodge=pet[pet.index('public static void OnPerfectDodge'):pet.index('public static void RecallAll')]
+dodge=pet[pet.index('public static void OnPerfectDodge'):pet.index('public static float CommandOpportunityRemaining')]
 check('Commands.Grant(Time.time)' in dodge and 'recallTime =' not in dodge and 'commandedTarget =' not in dodge,'perfect dodge protection/token cannot disrupt current pet command')
 check('SummonedCompanion.OnPerfectDodge(this)' in player and 'SummonedCompanion.RecallAll(this)' not in player,'perfect dodge no longer forces recall')
 check('owner.RegisterSkillHit(castId);' in area and 'player.RegisterSkillHit(propCast);' in spell and 'owner.RegisterSkillHit(castId);' in spell,'confirmed spell enemy hits pass real cast identity')

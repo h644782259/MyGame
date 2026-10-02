@@ -1,0 +1,117 @@
+using UnityEngine;
+namespace Emberfall
+{
+    public sealed partial class GameUI
+    {
+        private CollectionModelPreview collectionModel;
+        private FashionData collectionTrial;
+        private PlayerController collectionOwner;
+        private int collectionSlot;
+        private bool mobileFashionPreview=true;
+        private Vector2 mobilePreviewTextScroll;
+        private string collectionNotice,collectionReceiptKey;
+        private float collectionPreviewYaw=20;
+        private void ReconcileCollectionPreview()
+        {
+            if(session==null || !session.HasStarted || session.BackgroundPaused || session.Paused || session.IsDead || session.ModeFinished || session.DungeonSelectionOpen || session.RunChoices.AwaitingChoice || (panel!=Panel.Fashion&&panel!=Panel.Chests))ReleaseCollectionPreview();
+            else if(collectionOwner!=session.Player){ReleaseCollectionPreview();collectionOwner=session.Player;}
+        }
+        private void OnDisable(){ReleaseCollectionPreview();}
+        private void ReleaseCollectionPreview()
+        {if(collectionModel!=null)collectionModel.Dispose();collectionModel=null;collectionTrial=null;collectionOwner=null;collectionNotice=null;collectionReceiptKey=null;collectionPreviewYaw=20;mobileFashionPreview=true;}
+        private void TrialFashion(FashionSlot slot,Rarity rarity)
+        {collectionTrial=EquipmentComparisonPresentation.Trial(slot,rarity);collectionNotice=null;mobileFashionStatus=null;mobileFashionFailed=false;SetCollectionAngle(slot);}
+        private void SetCollectionAngle(FashionSlot slot)
+        {collectionPreviewYaw=slot==FashionSlot.Wings?160:20;if(collectionModel!=null)collectionModel.SetYaw(collectionPreviewYaw);}
+        private void DrawCollectionModel(Rect area,FashionData trial,bool rotate)
+        {
+            var progression=session.Progression;
+            if(collectionModel==null){collectionModel=new CollectionModelPreview();collectionModel.SetYaw(collectionPreviewYaw);}
+            FashionData wings=progression.EquippedFashion(FashionSlot.Wings),weapon=progression.EquippedFashion(FashionSlot.Weapon);
+            if(trial!=null){if(trial.slot==FashionSlot.Wings)wings=trial;else weapon=trial;}
+            Texture image=collectionModel.Render(progression.Profile.heroClass,progression.Equipped(ItemSlot.Weapon),progression.Equipped(ItemSlot.Armor),progression.Equipped(ItemSlot.Relic),wings,weapon);
+            Fill(area,new Color(.035f,.06f,.09f));GUI.DrawTexture(area,image,ScaleMode.ScaleToFit,false);
+            if(rotate)
+            {
+                float size=MobileControls.Active?48*TouchRatio:42;
+                if(Button(new Rect(area.x+6,area.yMax-size-6,size,size),"↶",jade))collectionModel.Rotate(-45);
+                if(Button(new Rect(area.xMax-size-6,area.yMax-size-6,size,size),"↷",jade))collectionModel.Rotate(45);
+            }
+        }
+        private string CollectionTrialTitle
+        {get{return collectionTrial==null?"当前外观":ProgressionService.FashionName(collectionTrial.slot,collectionTrial.rarity)+" · 试穿";}}
+        private string CollectionTrialState
+        {
+            get
+            {
+                if(collectionTrial==null)return "预览不会改变穿戴或属性";
+                var p=session.Progression;var worn=p.EquippedFashion(collectionTrial.slot);var strongest=p.StrongestFashion(collectionTrial.slot);
+                return EquipmentComparisonPresentation.CollectionState(p.Profile.fashions.Exists(x=>x!=null&&x.id==collectionTrial.id),worn!=null&&worn.id==collectionTrial.id,strongest!=null&&strongest.id==collectionTrial.id);
+            }
+        }
+        private void DrawDesktopCollection()
+        {
+            var p=session.Progression;var profile=p.Profile;
+            Rect w=Modal(940,638,"时装收藏","试穿与穿戴独立 · 属性来自每部位最高收藏");
+            if(Button(new Rect(w.xMax-69,w.y+20,44,32),"×",jade)){panel=Panel.Inventory;return;}
+            Rect stage=new Rect(w.x+24,w.y+110,270,365);DrawCollectionModel(stage,collectionTrial,true);
+            Text(new Rect(stage.x,stage.yMax+10,270,26),CollectionTrialTitle,16,pale,true,true);
+            Text(new Rect(stage.x,stage.yMax+40,270,36),CollectionTrialState,12,jade,false,true);
+            if(Button(new Rect(stage.x,stage.yMax+83,270,36),"恢复当前外观",muted)){collectionTrial=null;collectionNotice=null;}
+            float x=w.x+314,width=602;
+            for(int i=0;i<2;i++)if(Button(new Rect(x+i*305,w.y+110,297,34),i==0?"翅膀":"武器外观",collectionSlot==i?gold:jade))collectionSlot=i;
+            var slot=(FashionSlot)collectionSlot;var worn=p.EquippedFashion(slot);var strongest=p.StrongestFashion(slot);
+            Text(new Rect(x,w.y+153,width,20),"穿戴 · "+(worn==null?"无":worn.name),13,pale,true);
+            Text(new Rect(x,w.y+177,width,32),"属性来源 · "+(strongest==null?"尚无收藏":strongest.name+" · "+ProgressionService.FashionBonus(slot,strongest.rarity)),12,jade,false,true);
+            for(int rank=0;rank<4;rank++)
+            {
+                Rarity rarity=(Rarity)rank;string id="fashion-"+collectionSlot+"-"+rank;
+                bool owned=profile.fashions.Exists(f=>f!=null&&f.id==id),equipped=worn!=null&&worn.id==id,source=strongest!=null&&strongest.id==id;
+                Rect row=new Rect(x,w.y+213+rank*80,width,72);Fill(row,card);Color accent=GameBalance.RarityColor(rarity);
+                Fill(new Rect(row.x,row.y,3,row.height),accent);
+                Text(new Rect(x+12,row.y+8,350,22),ProgressionService.FashionName(slot,rarity),16,accent,true);
+                Text(new Rect(x+12,row.y+32,350,17),ProgressionService.FashionBonus(slot,rarity),12,pale);
+                Text(new Rect(x+12,row.y+51,350,17),EquipmentComparisonPresentation.CollectionState(owned,equipped,source),11,owned?jade:muted);
+                if(Button(new Rect(row.xMax-212,row.y+17,96,38),"试穿",jade))TrialFashion(slot,rarity);
+                if(Button(new Rect(row.xMax-108,row.y+17,96,38),equipped?"已穿戴":"穿戴",accent,owned&&!equipped))
+                {bool accepted=p.EquipFashion(id);collectionNotice=accepted?"外观已穿戴 · 属性来源保持最高收藏":p.LastError;Feedback(accepted,collectionNotice);}
+            }
+            if(Button(new Rect(x,w.y+547,124,33),"卸下外观",muted,worn!=null)){bool accepted=p.UnequipFashion(slot);collectionNotice=accepted?"已卸下 · 收藏属性保留":p.LastError;Feedback(accepted,collectionNotice);}
+            Text(new Rect(x+136,w.y+549,width-136,36),collectionNotice??("星纹 "+profile.fashionThreads+" · 未获得的外观也可试穿"),12,muted,false,true);
+            bool ownedLegendary=profile.fashions.Exists(f=>f!=null&&f.slot==slot&&f.rarity==Rarity.Legendary);
+            if(Button(new Rect(x,w.y+592,382,30),"30星纹 · 自选传说"+(slot==FashionSlot.Wings?"翅膀":"兵装"),gold,session.IsInCamp&&!ownedLegendary&&profile.fashionThreads>=ProgressionService.FashionChoiceCost))
+            {bool accepted=p.ChooseLegendaryFashion(slot,session.IsInCamp);collectionNotice=accepted?"传说收藏已解锁":p.LastError;Feedback(accepted,collectionNotice);}
+            if(Button(new Rect(x+394,w.y+592,208,30),"返回行囊",jade))panel=Panel.Inventory;
+        }
+        private void DrawMobileCollectionPreview(MobilePanelLayout layout)
+        {
+            var progression=session.Progression;
+            DrawCollectionModel(MobilePanelRect(layout.BodyLeft),collectionTrial,true);
+            string source="";
+            for(int i=0;i<2;i++)
+            {
+                var slot=(FashionSlot)i;var best=progression.StrongestFashion(slot);
+                source+=(i==0?"翅膀":"武器")+"属性来源 · "+(best==null?"无":best.name+"\n"+ProgressionService.FashionBonus(slot,best.rarity))+"\n";
+            }
+            string detail=(string.IsNullOrEmpty(mobileFashionStatus)?"":mobileFashionStatus+"\n\n")+CollectionTrialTitle+"\n"+CollectionTrialState+"\n\n"+source;
+            float width=layout.BodyRight.Width-26,total=MeasureMobileParagraph(detail,width,14)+16;
+            mobilePreviewTextScroll=BeginTouchScroll("mobile-fashion-preview",MobilePanelRect(layout.BodyRight),mobilePreviewTextScroll,
+                new Rect(0,0,(width+10)*TouchRatio,Mathf.Max(layout.BodyRight.Height,total)*TouchRatio));
+            DrawMobileParagraph(8,8,width,detail,14,pale);
+            EndTouchScroll();
+            if(Button(MobilePanelRect(layout.FooterButton(0,3)),"浏览收藏",jade)){mobileFashionPreview=false;BlockUITransition();return;}
+            bool owned=collectionTrial!=null&&progression.Profile.fashions.Exists(f=>f!=null&&f.id==collectionTrial.id);
+            var worn=collectionTrial==null?null:progression.EquippedFashion(collectionTrial.slot);
+            bool current=worn!=null&&worn.id==collectionTrial.id;
+            if(Button(MobilePanelRect(layout.FooterButton(1,3)),current?"已穿戴":owned?"穿戴试穿外观":"仅试穿 · 未获得",gold,owned&&!current))
+            {MobileFashionResult(progression.EquipFashion(collectionTrial.id),"外观已穿戴");BlockUITransition();return;}
+            if(Button(MobilePanelRect(layout.FooterButton(2,3)),"返回行囊",jade)){panel=Panel.Inventory;BlockUITransition();}
+        }
+        private bool DrawChestRewardModel(Rect area,ChestReward reward)
+        {
+            var trial=EquipmentComparisonPresentation.Receipt(reward);if(trial==null)return false;
+            if(collectionReceiptKey!=reward.Id){collectionReceiptKey=reward.Id;SetCollectionAngle(trial.slot);}
+            DrawCollectionModel(area,trial,false);return true;
+        }
+    }
+}

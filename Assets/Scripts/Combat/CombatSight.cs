@@ -12,6 +12,18 @@ namespace Emberfall
             return CombatSightRules.Allows(kind,WorldTraversal.HasLineOfSight(origin,target),
                 kind!=CombatSightKind.Melee||WorldTraversal.HasGroundPath(origin,target,.15f));
         }
+        public static void FillAreaBoundary(Vector3[] points,Vector3 center,float radius,CombatSightKind kind=CombatSightKind.Area)
+        {
+            for(int i=0;i<points.Length;i++)
+            {
+                float a=i*Mathf.PI*2/points.Length;
+                points[i]=BoundaryPoint(kind,center,center+new Vector3(Mathf.Cos(a)*radius,0,Mathf.Sin(a)*radius))+new Vector3(0,.12f,0);
+            }
+        }
+        // A swept disk is deliberately conservative: the complete visual footprint, not
+        // just its origin, must fit on the damage-visible side of solid cover.
+        public static bool VisualFootprint(Vector3 origin,Vector3 point,float extent)
+        { return Area(origin,point)&&WorldTraversal.HasClearVisualFootprint(origin,point,extent); }
         public static bool Direct(Vector3 origin,Vector3 target){return Reach(CombatSightKind.Direct,origin,target);}
         public static bool Area(Vector3 center,Vector3 target){return Reach(CombatSightKind.Area,center,target);}
         public static bool Chain(Vector3 previous,Vector3 target){return Reach(CombatSightKind.Chain,previous,target);}

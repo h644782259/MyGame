@@ -44,7 +44,7 @@ check('mobileBlessingOffer.Length!=offer.Length' in blessings and 'offer[i]!=mob
 check('mobileBlessingOwner!=session.Player' in blessings and 'mobileBlessingEpoch!=session.Player.CombatEpoch' in blessings and
       'mobileBlessingWave!=session.RunChoices.CompletedWave' in blessings,
       'new player/run/wave resets selection even if random cards repeat')
-check('Mathf.Max(cardHeight,name+detail+90)' in blessings and 'BeginTouchScroll(' in blessings,
+check('Mathf.Max(cardHeight,name+detail+association+82)' in blessings and 'BeginTouchScroll(' in blessings,
       'long blessing descriptions grow and scroll without shrinking controls')
 check('session.ConfirmBlessing(selectedBlessing)' in blessings and 'selectedBlessing>=0&&selectedBlessing<count' in blessings,
       'blessing confirm uses actual selected index and shared gameplay service')

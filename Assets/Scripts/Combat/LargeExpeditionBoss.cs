@@ -12,10 +12,11 @@ namespace Emberfall
         private readonly DestructibleProp[] anchors = new DestructibleProp[3];
         private GameObject anchorRoot, beamRoot;
         private WorldResources resources;
-        private readonly LineRenderer[] beamLines = new LineRenderer[4];
+        private readonly LineRenderer[] beamLines = new LineRenderer[6];
         private Material beamMaterial;
         private Vector3 phaseCenter;
         private float startAngle;
+        public float BeamWorldAngle {get{return startAngle+(State==null?0:State.BeamAngle);}}
         private int seed;
         private bool stopped;
 
@@ -45,8 +46,8 @@ namespace Emberfall
                 Vector3 toward = CombatFx.Flat(game.Player.transform.position-phaseCenter);
                 startAngle = Mathf.Atan2(toward.x,toward.z)*Mathf.Rad2Deg + 35f;
                 CreateAnchors(); EnsureBeam();
-                game.SpawnFloatingText(transform.position+Vector3.up*3.6f,"断能蓄力 · 摧毁供能锚",new Color(.35f,.92f,1));
-                game.LogSystem("星环执政官 · 青色蓄力可打断，摧毁供能锚可中止扫射并暴露核心");
+                game.SpawnMechanismText(transform.position+Vector3.up*3.6f,"断能蓄力 · 摧毁供能锚",new Color(.35f,.92f,1));
+                game.LogSystem("星环执政官 · 橙红边界表示危险，青色符号可打断，摧毁供能锚可中止扫射并暴露核心");
             }
             for (int i=0;i<anchors.Length;i++)
                 if ((State.LiveAnchorMask & (1<<i)) != 0 && (anchors[i]==null || anchors[i].Broken || !anchors[i].gameObject.activeInHierarchy))
@@ -59,7 +60,7 @@ namespace Emberfall
             if (!beamVisible) ReleaseAnchors();
             if (beamVisible)
             {
-                Vector3 direction=Quaternion.Euler(0,startAngle+State.BeamAngle,0)*Vector3.forward;
+                Vector3 direction=Quaternion.Euler(0,BeamWorldAngle,0)*Vector3.forward;
                 Vector3 from=phaseCenter+direction*1.5f,to=ClipBeam(from,phaseCenter+direction*LargeBossPhaseState.BeamLength);
                 DrawBeam(from,to,direction);
                 if (State.DamagePulse && !game.InputBlocked && !boss.IsDead && !game.Player.IsDead &&
@@ -78,7 +79,7 @@ namespace Emberfall
         private void AnnounceExposure()
         {
             if(game==null||boss==null||boss.IsDead)return;
-            game.SpawnFloatingText(transform.position+Vector3.up*3.2f,"核心暴露 · 伤害 +35%",new Color(1,.82f,.35f));
+            game.SpawnMechanismText(transform.position+Vector3.up*3.2f,"核心暴露 · 伤害 +35%",new Color(1,.82f,.35f));
             CombatFx.Ring(transform.position,1.6f,new Color(.2f,.9f,1),.5f,.1f);
         }
         private void CreateAnchors()
@@ -129,9 +130,9 @@ namespace Emberfall
             Shader shader=Resources.Load<Shader>("ThreatBoundary");beamMaterial=shader==null?CombatFx.NewGlow():new Material(shader);beamMaterial.renderQueue=3900;
             for(int i=0;i<beamLines.Length;i++)
             {
-                var obj=new GameObject(i==3?"Clockwise sweep arrow":"Beam footprint");obj.transform.SetParent(beamRoot.transform,false);
+                var obj=new GameObject(i==3?"Clockwise sweep arrow":i==4?"Interrupt symbol":i==5?"Windup timing arc":"Beam footprint");obj.transform.SetParent(beamRoot.transform,false);
                 var line=obj.AddComponent<LineRenderer>();line.sharedMaterial=beamMaterial;line.useWorldSpace=true;
-                line.positionCount=i==3?3:2;line.numCapVertices=4;line.shadowCastingMode=UnityEngine.Rendering.ShadowCastingMode.Off;
+                line.positionCount=i==5?33:i>=3?3:2;line.numCapVertices=4;line.shadowCastingMode=UnityEngine.Rendering.ShadowCastingMode.Off;
                 line.sortingOrder=125;beamLines[i]=line;
             }
         }
@@ -139,7 +140,7 @@ namespace Emberfall
         {
             Vector3 right=Vector3.Cross(Vector3.up,direction);from.y=to.y=.18f;
             bool live=State.Phase==LargeBossPhase.Beam;
-            Color tint=live?new Color(1,.24f,.12f,.8f):boss.CanBeSkillInterrupted?new Color(.25f,.9f,1,.85f):new Color(1,.5f,.2f,.85f);
+            Color tint=new Color(1,.24f,.12f,.85f);
             for(int i=0;i<3;i++)
             {
                 float side=i==0?0:i==1?-LargeBossPhaseState.BeamHalfWidth:LargeBossPhaseState.BeamHalfWidth;
@@ -153,6 +154,14 @@ namespace Emberfall
             Vector3 head=Vector3.Lerp(from,to,.78f);beamLines[3].SetPosition(0,head-direction*.3f);
             beamLines[3].SetPosition(1,head+right*.6f);beamLines[3].SetPosition(2,head+direction*.3f);
             beamLines[3].widthMultiplier=.11f;beamLines[3].startColor=beamLines[3].endColor=tint;
+            Vector3 clock=phaseCenter+Vector3.up*.22f;
+            var symbol=beamLines[4];symbol.enabled=!live&&boss.CanBeSkillInterrupted;
+            symbol.SetPosition(0,clock+new Vector3(-.2f,0,.19f));symbol.SetPosition(1,clock+new Vector3(.03f,0,-.19f));symbol.SetPosition(2,clock+new Vector3(.2f,0,.19f));
+            symbol.widthMultiplier=.09f;symbol.startColor=symbol.endColor=new Color(.2f,1,.9f,1);
+            var timer=beamLines[5];timer.enabled=!live;timer.widthMultiplier=.09f;timer.startColor=timer.endColor=tint;
+            float progress=Mathf.Clamp01(1-State.Remaining/LargeBossPhaseState.WindupSeconds);
+            for(int i=0;i<33;i++){float a=progress*i*Mathf.PI*2/32;timer.SetPosition(i,clock+new Vector3(Mathf.Sin(a),0,Mathf.Cos(a))*.55f);}
+
         }
         private static Vector3 ClipBeam(Vector3 from,Vector3 to)
         {

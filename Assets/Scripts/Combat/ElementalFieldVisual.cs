@@ -7,6 +7,8 @@ namespace Emberfall
     {
         private static int activeCount;
         private bool counted;
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetCount(){activeCount=0;}
         private ElementalCombatVfx.Element element;
         private float radius;
         private bool onBody;
@@ -75,6 +77,9 @@ namespace Emberfall
                 float angle = i * 2.39996f + time * (onBody ? .45f : .2f);
                 float distance = radius * (onBody ? .75f : .28f + (i % 4) * .19f);
                 Vector3 origin = new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle)) * distance;
+                bool visible=onBody||CombatSight.VisualFootprint(transform.position,transform.TransformPoint(origin),.55f);
+                if(bubbles!=null)bubbles[i].gameObject.SetActive(visible);else strands[i].enabled=visible;
+                if(!visible)continue;
                 if (bubbles != null)
                 {
                     float rise = Mathf.Repeat(time * .65f + i * .173f, 1f);
@@ -105,6 +110,9 @@ namespace Emberfall
             }
         }
 
-        private void OnDestroy() { if(counted)activeCount=Mathf.Max(0,activeCount-1);if (material != null) Destroy(material); }
+        private void Release(){if(!counted)return;counted=false;activeCount=Mathf.Max(0,activeCount-1);}
+        private void OnDisable(){Release();}
+        private void OnEnable(){if(material==null||counted)return;if(activeCount>=(MobileControls.Active?12:20)){gameObject.SetActive(false);return;}activeCount++;counted=true;}
+        private void OnDestroy() { Release();if (material != null) Destroy(material); }
     }
 }

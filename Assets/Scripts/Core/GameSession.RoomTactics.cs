@@ -4,6 +4,7 @@ namespace Emberfall
     public sealed partial class GameSession
     {
         private int previousRoomSeed=-1, beforePreviousRoomSeed=-1;
+        private readonly DeferredRoomChoice pendingRoomChoice=new DeferredRoomChoice();
         public bool RoomCaptureInside {get;private set;}
         public bool RoomCaptureContested {get;private set;}
         private GameObject roomObjectiveMarker;
@@ -52,6 +53,7 @@ namespace Emberfall
         private void TickRoomTactics()
         {
             if(RoomChainRun==null||RoomChainRun.Finished||InputBlocked||Player==null)return;
+            if(TryOpenPendingRoomChoice())return;
             if(!RoomChainRun.DoorUnlocked && roomObjectiveMarker!=null)
             {
                 Vector3 target=RoomObjectivePoint;
@@ -79,7 +81,21 @@ namespace Emberfall
             if(RoomChainRun==null||RoomChainRun.Finished||roomSupplier==null||roomSupplier.IsDead||enemy==null||enemy==roomSupplier||enemy.IsBoss)return 1;
             return Vector3.Distance(enemy.transform.position,roomSupplier.transform.position)<=6 && WorldTraversal.HasLineOfSight(enemy.transform.position,roomSupplier.transform.position) ? .7f : 1;
         }
+        private bool TryOpenPendingRoomChoice()
+        {
+            bool valid=HasStarted&&InDungeon&&!IsDead&&Player!=null&&RoomChainRun!=null&&!RoomChainRun.Finished&&
+                RoomChainRun.Room.Index==0&&RoomChainRun.DoorUnlocked&&RunChoices.CompletedWave==0;
+            if(!pendingRoomChoice.TryClaim(RoomChainRun==null?null:RoomChainRun.Room,Player==null?-1:Player.CombatEpoch,
+                Time.frameCount,valid,!InputBlocked))return false;
+            RunChoices.PrepareRoomChoice(1,Progression.Profile,MobileControls.Active,runSeed);
+            UpdateTimeScale();return RunChoices.AwaitingChoice;
+        }
         private void OpenRoomGate()
-        {if(roomExitMarker!=null)roomExitMarker.SetActive(true);Notify("目标完成 · 北门已开；撤离会放弃剩余敌人的击杀收益");}
+        {
+            if(RoomChainRun!=null&&RoomChainRun.Room.Index==0&&RunChoices.CompletedWave==0&&Player!=null)
+                pendingRoomChoice.Request(RoomChainRun.Room,Player.CombatEpoch,Time.frameCount);
+            if(roomExitMarker!=null)roomExitMarker.SetActive(true);
+            Notify(pendingRoomChoice.Pending?"首房完成 · 选择本局打法":"目标完成 · 北门已开；撤离会放弃剩余敌人的击杀收益");
+        }
     }
 }

@@ -116,22 +116,24 @@ namespace Emberfall
                     AdvancedSkillVfx.FallingBlade(owner,fault,color,.5f);
                     owner.HitArea(fault,2.6f*range,damage*SkillDamageBudgets.AdvancedImpact(heroClass,skill,rank,step),.7f,.5f,castId:castId);
                     LaunchArea(fault, 2.6f * range, .6f + rank * .12f, 1f + rank * .2f);
-                    if (rank==3 && step==steps-1) Burst(fault,4f*range,damage*SkillDamageBudgets.AdvancedAuxiliary(heroClass,skill,rank),color,3);
+                    if (rank==3 && step==steps-1) Burst(fault,4f*range,damage*SkillDamageBudgets.AdvancedAuxiliary(heroClass,skill,rank),color,3,SkillVisualRecipe.Steel);
                     break;
-                case 9: // Successive executions culminate in one enormous falling blade.
-                    if (step < steps-1)
+                case 9: // The main judgment lands first; the unchanged sword budget follows.
+                    if (step == 0) GameAudio.Play(SoundCue.Judgment);
+                    if (CombatReviewEvents.Enabled) CombatReviewEvents.Emit("skillimpact",CombatReviewObjectId.Get(owner),skill:skill,detail:step==0?"judgment":"sword-array");
+                    if (step > 0)
                     {
-                        float radius = (2.4f+step*.55f)*range;
-                        AdvancedSkillVfx.FallingBlade(owner,target+Circle(step*2.1f,1.8f*range),color,.85f);
+                        float radius = (2.4f+(step-1)*.55f)*range;
+                        AdvancedSkillVfx.FallingBlade(owner,target+Circle((step-1)*2.1f,1.8f*range),color,.85f);
                         CombatFx.Ring(target,radius,color,.5f,.18f);
                         owner.HitArea(target,radius,damage*SkillDamageBudgets.AdvancedImpact(heroClass,skill,rank,step),.1f,.2f,castId:castId);
                     }
                     else
                     {
                         AdvancedSkillVfx.FallingBlade(owner,target,new Color(1f,.95f,.63f),2.1f);
-                        Burst(target,6.2f*range,damage*SkillDamageBudgets.AdvancedImpact(heroClass,skill,rank,step),color,3);
-                        if (rank==3) SpawnTail(target,5.2f*range,.25f);
+                        Burst(target,6.2f*range,damage*SkillDamageBudgets.AdvancedImpact(heroClass,skill,rank,step),color,3,SkillVisualRecipe.Steel);
                     }
+                    if (rank==3 && step==steps-1) SpawnTail(target,5.2f*range,.25f);
                     break;
             }
         }
@@ -150,7 +152,7 @@ namespace Emberfall
                         AdvancedSkillVfx.Beam(owner,target+Circle(a,4.3f*range)+Vector3.up*2,target+Vector3.up*.4f,new Color(.74f,.42f,1f),.45f,.17f);
                         owner.HitArea(target,4.8f*range,damage*SkillDamageBudgets.AdvancedImpact(heroClass,skill,rank,step),0,.12f,castId:castId);
                     }
-                    else Burst(target,5.3f*range,damage*SkillDamageBudgets.AdvancedImpact(heroClass,skill,rank,step),new Color(.84f,.6f,1f),3);
+                    else Burst(target,5.3f*range,damage*SkillDamageBudgets.AdvancedImpact(heroClass,skill,rank,step),new Color(.84f,.6f,1f),3,SkillVisualRecipe.Arcane);
                     break;
                 case 9:
                     Color element = owner.Specialization==ElementalistSpecialization.Burn?new Color(1f,.5f,.28f):owner.Specialization==ElementalistSpecialization.Shatter?new Color(.5f,.92f,1f):step%3==0?new Color(1f,.5f,.28f):step%3==1?new Color(.5f,.92f,1f):new Color(.77f,.48f,1f);
@@ -159,13 +161,13 @@ namespace Emberfall
                         Vector3 axis = Circle(step*.65f,6f*range);
                         AdvancedSkillVfx.Beam(owner,target-axis+Vector3.up,target+axis+Vector3.up,element,.65f,.34f);
                         AdvancedSkillVfx.Beam(owner,target+Vector3.up*10f,target,element,.65f,.24f);
-                        FilledSkillVfx.Impact(owner,target,4.4f*range,element.r>.8f&&element.g<.7f?FilledVfxKind.Fire:FilledVfxKind.Ice,element);
+                        FilledSkillVfx.Impact(owner,target,4.4f*range,SkillVisualRecipes.Filled(SkillVisualRecipes.Ultimate(owner.Specialization,step,false)),element);
                         owner.ElementalAdvancedArea(target,5.5f*range,damage*SkillDamageBudgets.AdvancedImpact(heroClass,skill,rank,step),castId,false);
                     }
                     else
                     {
                         AdvancedSkillVfx.Rune(owner,target,6.5f*range,new Color(.92f,.83f,1f),.8f,3);
-                        FilledSkillVfx.Impact(owner,target,6.5f*range,owner.Specialization==ElementalistSpecialization.Burn?FilledVfxKind.Fire:FilledVfxKind.Ice,owner.Specialization==ElementalistSpecialization.Burn?new Color(1f,.43f,.12f):new Color(.2f,.75f,1f));
+                        FilledSkillVfx.Impact(owner,target,6.5f*range,SkillVisualRecipes.Filled(SkillVisualRecipes.Ultimate(owner.Specialization,step,true)),owner.Specialization==ElementalistSpecialization.Burn?new Color(1f,.43f,.12f):new Color(.2f,.75f,1f));
                         owner.ElementalAdvancedArea(target,6.5f*range,damage*SkillDamageBudgets.AdvancedImpact(heroClass,skill,rank,step),castId,true);
                         if(rank==3) SpawnTail(target,5.5f*range,.3f,3f);
                     }
@@ -191,15 +193,14 @@ namespace Emberfall
                 case 5:
                     AdvancedSkillVfx.Rune(owner,target,3.7f*range,new Color(.55f,.95f,.3f),4.3f+rank,rank+1);
                     var field=SkillDamageBudgets.ToxicField(rank);
-                    CombatArea.Spawn(owner,session,target,3.7f*range,damage*field.TickCoefficient,0,field.Startup,field.Duration,field.Interval,new Color(.51f,.88f,.32f),false,false,rank==3?2.8f:0,damage*field.FinisherCoefficient,5,rank,castId:castId);
+                    CombatArea.Spawn(owner,session,target,3.7f*range,damage*field.TickCoefficient,0,field.Startup,field.Duration,field.Interval,new Color(.51f,.88f,.32f),false,false,rank==3?2.8f:0,damage*field.FinisherCoefficient,5,rank,castId:castId,visual:SkillVisualRecipe.Poison);
                     break;
                 case 7:
                     EnemyController mark=lockedTarget != null && !lockedTarget.IsDead ? lockedTarget : null;
-                    if (mark != null && mark.StatusEffects != null) mark.StatusEffects.Mark(4f, .08f + rank * .04f);
                     Vector3 fireDirection=mark!=null?CombatFx.Flat(mark.transform.position-owner.transform.position).normalized:forward;
                     Vector3 side=Vector3.Cross(Vector3.up,fireDirection)*(step%2==0?-.55f:.55f);
                     if (CombatSight.Direct(owner.transform.position, owner.transform.position + side + fireDirection))
-                        CombatProjectile.Friendly(owner,session,owner.transform.position+side+fireDirection,fireDirection,damage*SkillDamageBudgets.AdvancedImpact(heroClass,skill,rank,step),color,rank>=2,true,false,range,24f*range,mark,castId:castId);
+                        CombatProjectile.Friendly(owner,session,owner.transform.position+side+fireDirection,fireDirection,damage*SkillDamageBudgets.AdvancedImpact(heroClass,skill,rank,step),color,rank>=2,true,false,range,24f*range,mark,castId:castId,markTarget:lockedTarget,markStrength:.08f+rank*.04f);
                     if(step%4==0) AdvancedSkillVfx.Beam(owner,owner.transform.position+side+Vector3.up,owner.transform.position+fireDirection*7f+side+Vector3.up,color,.2f,.07f);
                     break;
                 case 9:
@@ -216,7 +217,7 @@ namespace Emberfall
                     else
                     {
                         AdvancedSkillVfx.Beam(owner,target+Vector3.up*12f,target,new Color(.93f,1f,.65f),.8f,.7f);
-                        Burst(target,6f*range,damage*SkillDamageBudgets.AdvancedImpact(heroClass,skill,rank,step),color,3);
+                        Burst(target,6f*range,damage*SkillDamageBudgets.AdvancedImpact(heroClass,skill,rank,step),color,3,SkillVisualRecipe.Neutral);
                         if(rank==3) for(int i=0;i<SkillDamageBudgets.RadialArrowCount(heroClass,skill,rank);i++) CombatProjectile.Friendly(owner,session,target,Circle(i*Mathf.PI/6,1),damage*SkillDamageBudgets.RadialArrowCoefficient,color,true,true,false,1.5f,22f,castId:castId);
                     }
                     break;
@@ -226,7 +227,7 @@ namespace Emberfall
         private void SpawnTail(Vector3 at,float radius,float stun,float pull=0)
         {
             var tail=SkillDamageBudgets.AdvancedTail(heroClass,skill,rank);
-            CombatArea.Spawn(owner,session,at,radius,damage*tail.TickCoefficient,stun,tail.Startup,tail.Duration,tail.Interval,color,false,false,pull,castId:castId);
+            CombatArea.Spawn(owner,session,at,radius,damage*tail.TickCoefficient,stun,tail.Startup,tail.Duration,tail.Interval,color,false,false,pull,castId:castId,visual:heroClass==HeroClass.Vanguard?SkillVisualRecipe.Steel:heroClass==HeroClass.Arcanist?SkillVisualRecipes.Ultimate(owner.Specialization,step,true):heroClass==HeroClass.Summoner?SkillVisualRecipe.Spirit:SkillVisualRecipe.Neutral);
         }
 
         private void LaunchArea(Vector3 center, float radius, float duration, float height)
@@ -307,9 +308,10 @@ namespace Emberfall
             }
         }
 
-        private void Burst(Vector3 at,float radius,CombatDamage amount,Color tint,int detail)
+        private void Burst(Vector3 at,float radius,CombatDamage amount,Color tint,int detail,SkillVisualRecipe visual)
         {
-            FilledSkillVfx.Impact(owner,at,radius,heroClass==HeroClass.Summoner?FilledVfxKind.Summon:tint.r>.8f&&tint.g<.7f?FilledVfxKind.Fire:FilledVfxKind.Ice,tint);
+            if (visual == SkillVisualRecipe.Steel) FilledSkillVfx.Crescent(owner,at,forward,radius,tint);
+            else if (visual != SkillVisualRecipe.Neutral) FilledSkillVfx.Impact(owner,at,radius,SkillVisualRecipes.Filled(visual),tint);
             CombatFx.Ring(at,radius,tint,.6f,.25f);
             owner.HitArea(at,radius,amount,1.1f,.7f,castId:castId);
         }

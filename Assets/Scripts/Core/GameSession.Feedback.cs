@@ -16,6 +16,8 @@ namespace Emberfall
             if (systemMessages.Count >= 32) systemMessages.RemoveAt(0);
             systemMessages.Add(new SystemMessage { Text = message, Time = Time.unscaledTime });
         }
+        public void SpawnMechanismText(Vector3 position,string value,Color tint)
+        { FloatingNumber.Spawn(position,value,tint,isMechanism:true); }
         public void SpawnCombatDamage(Vector3 position, string value, bool critical)
         {
             FloatingNumber.Spawn(position,value,

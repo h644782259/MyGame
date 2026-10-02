@@ -20,6 +20,7 @@ namespace Emberfall
             }
             var layout = MobilePanelGeometry();
             if (DrawMobilePanelChrome(layout, "时装收藏", "星纹 " + profile.fashionThreads + "  ·  外观自由穿戴，属性取最高收藏")) return;
+            if(mobileFashionPreview){DrawMobileCollectionPreview(layout);return;}
             string[] names = { "翅膀", "武器外观" };
             for (int i = 0; i < names.Length; i++)
                 if (Button(MobilePanelRect(layout.Tab(i, 2)), names[i], mobileFashionSlot == i ? gold : jade))
@@ -42,7 +43,7 @@ namespace Emberfall
             Fill(TouchRect(0, statusHeight, width, summaryHeight), card);
             DrawMobileParagraph(8, statusHeight + 8, textWidth, summary, 14, pale);
             bool unequip = Button(TouchRect(width - 136, statusHeight + 8, 128, 48), "卸下外观", jade, worn != null);
-            float y = statusHeight + summaryHeight + 12; string chosenId = null;
+            float y = statusHeight + summaryHeight + 12; string chosenId = null; int trialRank=-1;
             for (int rank = 0; rank < 4; rank++)
             {
                 Rarity rarity = (Rarity)rank;
@@ -55,12 +56,14 @@ namespace Emberfall
                 float at = y + 8;
                 at += DrawMobileParagraph(10, at, textWidth, ProgressionService.FashionName(slot, rarity), 16, accent, true);
                 at += DrawMobileParagraph(10, at, textWidth, GameBalance.RarityName(rarity) + " · " + ProgressionService.FashionBonus(slot, rarity), 14, pale);
-                DrawMobileParagraph(10, at, textWidth, owned == null ? "未收藏 · 来自通关宝箱" : "已收藏 · 无等级要求", 14, owned == null ? muted : jade);
-                if (Button(TouchRect(width - 136, y + (rowHeight - 48) * .5f, 128, 48), current ? "穿戴中" : owned == null ? "未解锁" : "穿戴", accent, owned != null && !current)) chosenId = id;
+                DrawMobileParagraph(10, at, textWidth, EquipmentComparisonPresentation.CollectionState(owned!=null,current,strongest!=null&&strongest.id==id), 14, owned == null ? muted : jade);
+                if (Button(TouchRect(width - 136, y + 8, 128, 48), "试穿", jade)) trialRank=rank;
+                if (Button(TouchRect(width - 136, y + 64, 128, 48), current ? "穿戴中" : owned == null ? "未解锁" : "穿戴", accent, owned != null && !current)) chosenId = id;
                 y += rowHeight + 8;
             }
             y += DrawMobileParagraph(8, y + 4, width - 16, rules, 14, muted) + 8;
             EndTouchScroll();
+            if(trialRank>=0){TrialFashion(slot,(Rarity)trialRank);mobileFashionPreview=true;mobilePreviewTextScroll=Vector2.zero;BlockUITransition();return;}
             if (unequip) { MobileFashionResult(progression.UnequipFashion(slot), "已卸下外观，收藏属性保留"); BlockUITransition(); return; }
             if (chosenId != null) { MobileFashionResult(progression.EquipFashion(chosenId), "外观已穿戴"); BlockUITransition(); return; }
             if (Button(MobilePanelRect(layout.FooterButton(0, 2)), "返回行囊", jade)) { panel = Panel.Inventory; BlockUITransition(); return; }
@@ -80,7 +83,7 @@ namespace Emberfall
 
         private float MobileFashionRowHeight(FashionSlot slot, Rarity rarity, float width)
         {
-            return Mathf.Max(80, 16 + MeasureMobileParagraph(ProgressionService.FashionName(slot, rarity), width, 16, true) +
+            return Mathf.Max(120, 16 + MeasureMobileParagraph(ProgressionService.FashionName(slot, rarity), width, 16, true) +
                 MeasureMobileParagraph(GameBalance.RarityName(rarity) + " · " + ProgressionService.FashionBonus(slot, rarity), width, 14) +
                 MeasureMobileParagraph("未收藏 · 来自通关宝箱", width, 14));
         }
@@ -170,7 +173,8 @@ namespace Emberfall
             float progress = Mathf.Clamp01((Time.unscaledTime - chestRevealedAt) / ChestDuration);
             var art = layout.BodyLeft;
             Fill(MobilePanelRect(art), new Color(.055f, .08f, .11f)); Border(MobilePanelRect(art), accent);
-            DrawRewardChest(TouchRect(art.X + 8, art.Y + 8, art.Width - 16, art.Height - 16), true, 1, progress);
+            if(progress<.76f||!DrawChestRewardModel(TouchRect(art.X+8,art.Y+8,art.Width-16,art.Height-16),reward))
+                DrawRewardChest(TouchRect(art.X + 8, art.Y + 8, art.Width - 16, art.Height - 16), true, 1, progress);
             if (progress > .35f)
             {
                 Rect clip = TouchRect(art.X + 8, art.Y + 8, art.Width - 16, art.Height - 16);

@@ -32,6 +32,14 @@ public static class CombatSightTraversalTests
   WorldTraversal.RemoveDynamicObstacle(blocker);
   Check(WorldTraversal.Revision!=revision&&CombatSight.Area(a,b),"broken rubble opens preview and actual hit policy immediately");
   Check(!CombatSight.Direct(a,new Vector3(float.NaN,0,0))&&Vector3.Distance(CombatSight.GroundPoint(a,new Vector3(float.NaN,0,0)),a)<.001f,"invalid coordinates fail safely");
+  WorldTraversal.Reset(ZoneKind.Dungeon);WorldTraversal.AddBox(Vector3.zero,new Vector2(1,8));
+  a=new Vector3(-3,0,0);var contour=new Vector3[64];CombatSight.FillAreaBoundary(contour,a,5);
+  foreach(var point in contour)Check(CombatSight.Area(a,point),"released and preview contour stay on damage-visible side");
+  Check(!CombatSight.VisualFootprint(a,new Vector3(-.7f,0,0),.3f),"mesh center visible but full mesh crossing wall is suppressed");
+  Check(CombatSight.VisualFootprint(a,new Vector3(-1.5f,0,0),.3f),"complete same-side footprint remains visible");
+  WorldTraversal.Reset(ZoneKind.Dungeon);blocker=WorldTraversal.AddDynamicCircle(Vector3.zero,.8f);
+  Check(!CombatSight.VisualFootprint(a,b,.2f),"intact dynamic cover clips visuals");WorldTraversal.RemoveDynamicObstacle(blocker);
+  Check(CombatSight.VisualFootprint(a,b,.2f),"removed cover immediately restores visuals");
   WorldTraversal.Reset(ZoneKind.Wilderness);
   return "PASS: "+count+" production combat-sight/traversal assertions (managed geometry)";
  }

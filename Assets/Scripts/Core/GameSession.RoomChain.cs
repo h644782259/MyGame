@@ -13,6 +13,7 @@ namespace Emberfall
   public string RoomObjectiveStatus {get{return RoomChainRun==null?"":RoomChainRun.Finished?(RoomChainRun.Failed?"远征结束 · 返回营地":"远征完成 · 领取结算"):"房间 "+(RoomChainRun.Room.Index+1)+" / 5 · "+TacticalObjectiveStatus;}}
   private void ResetRoomChain(bool dungeon)
   {
+   pendingRoomChoice.Cancel();
    if(RoomChainRun!=null)RoomChainRun.Dispose();RoomChainRun=null;roomEnemies.Clear();roomExitMarker=null;roomObjectiveMarker=null;roomSupplier=null;roomResultRecorded=false;
    if(dungeon&&SelectedArenaMode==3){runSeed=RoomTactics.NextSeed(runSeed,previousRoomSeed,beforePreviousRoomSeed);beforePreviousRoomSeed=previousRoomSeed;previousRoomSeed=runSeed;RoomChainRun=new RoomChainState(runSeed);DungeonLayout=RoomChainRun.Room.Layout;modeReceipt=System.Guid.NewGuid().ToString("N");}
   }
@@ -23,7 +24,7 @@ namespace Emberfall
    BuildRoomObjective();if(RoomChainRun.Finished){FinalizeRoomChain();return;}
    if(plan.Index==RoomTactics.EventRoom(runSeed))BuildSideEvent();
    if(plan.Interlude)
-   {Player.Heal(Player.MaxHealth*.25f);RunChoices.Prepare(1,Progression.Profile.heroClass,Progression.Profile.skillRanks,runSeed+577);UpdateTimeScale();return;}
+   {Player.Heal(Player.MaxHealth*.25f);RunChoices.PrepareRoomChoice(2,Progression.Profile,MobileControls.Active,runSeed);UpdateTimeScale();return;}
    var occupied=new List<Vector3>();
    for(int index=0;index<plan.EnemyCount;index++)
    {
@@ -49,7 +50,7 @@ namespace Emberfall
   }
   public bool EnterNextRoom()
   {
-   if(RoomChainRun==null||!NearRoomExit||InputBlocked)return false;
+   if(RoomChainRun==null||!NearRoomExit||InputBlocked||pendingRoomChoice.Pending)return false;
    if(!SaveBeforeLeaving())return false;
    if(!RoomChainRun.Next(true,false))return false;
    SuspendInputs();changingZone=true;sideEventEnemies.Clear();sideEventStarted=false;sideCrystal=null;
@@ -58,18 +59,24 @@ namespace Emberfall
    foreach(var obj in transientObjects)if(obj!=null){obj.SetActive(false);Destroy(obj);}transientObjects.Clear();
    if(world!=null){world.SetActive(false);Destroy(world);}
    Player.RetireCombatForWorldTransition();RetireWorldLootReceipts(previousCombatEpoch);
-   DungeonLayout=RoomChainRun.Room.Layout;world=WorldBuilder.Build(ZoneKind.Dungeon,DungeonLayout,Progression.Profile.bestFloor);
+   DungeonLayout=RoomChainRun.Room.Layout;world=WorldBuilder.Build(ZoneKind.Dungeon,DungeonLayout,Progression.HighestAdventureTier);
    // Room travel cancels stale effects but deliberately keeps every skill cooldown.
    Player.Teleport(TacticalRoomGeometry.Entrance);Camera.main.GetComponent<AdventureCamera>().Snap();BeginRoomChainScene();
    changingZone=false;UpdateTimeScale();Notify(RoomTactics.Name(RoomChainRun.Room.Objective)+" · 房间 "+(RoomChainRun.Room.Index+1)+" / 5");return true;
   }
   private bool ConfirmRoomInterlude(int index)
   {
-   if(RoomChainRun==null||!RoomChainRun.Room.Interlude||!RunChoices.Choose(index)||!RoomChainRun.ChooseInterlude())return false;
-   if(roomExitMarker!=null)roomExitMarker.SetActive(true);UpdateTimeScale();Notify("祝福已选 · 北门通往最终首领");return true;
+   if(RoomChainRun==null||RoomChainRun.Finished||!HasStarted||!InDungeon||IsDead||Paused||pauseState.BackgroundPaused)return false;
+   bool first=RoomChainRun.Room.Index==0&&RoomChainRun.DoorUnlocked&&RunChoices.CompletedWave==1;
+   bool second=RoomChainRun.Room.Interlude&&!RoomChainRun.DoorUnlocked&&RunChoices.CompletedWave==2;
+   if((!first&&!second)||!RunChoices.Choose(index))return false;
+   if(second&&!RoomChainRun.ChooseInterlude())return false;
+   if(roomExitMarker!=null)roomExitMarker.SetActive(true);UpdateTimeScale();Notify(second?"祝福已选 · 北门通往最终首领":"祝福已选 · 继续下一间");return true;
   }
+
   private void FinalizeRoomChain()
   {
+   if(RoomChainRun!=null&&RoomChainRun.Finished)pendingRoomChoice.Cancel();
    if(RoomChainRun==null||!RoomChainRun.Finished||roomResultRecorded)return;
    roomResultRecorded=true;DungeonCleared=!RoomChainRun.Failed;
    if(DungeonCleared){TrySettleRoomReward();GameAudio.Play(SoundCue.Victory);}
@@ -80,7 +87,7 @@ namespace Emberfall
    if(RoomChainRun==null||!RoomChainRun.Finished||RoomChainRun.Failed||RoomChainRun.RewardClaimed)return true;
    int beforeGold=Progression.Profile.gold,beforeMaterials=Progression.Profile.mechanicMaterials;long xp=TotalEarnedExperience(Progression.Profile);
    int reward=200+DungeonTier*35;if(HasBlessing(RunBlessing.RiskContract))reward=Mathf.RoundToInt(reward*1.3f);
-   bool saved=Progression.TryGrantModeReward(modeReceipt,reward,160+DungeonTier*25,TierRewardBand.Materials(4,DungeonTier));
+   bool saved=Progression.TryGrantModeReward(modeReceipt,reward,160+DungeonTier*25,TierRewardBand.Materials(4,DungeonTier),DungeonTier);
    if(!saved){Notify(Progression.LastError);return false;}
    RoomChainRun.ClaimReward(true);modeGoldReward=Progression.Profile.gold-beforeGold;modeMaterialReward=Progression.Profile.mechanicMaterials-beforeMaterials;modeXpReward=(int)System.Math.Max(0,TotalEarnedExperience(Progression.Profile)-xp);
    LastRunSummary=BuildRunSummary(true);return true;

@@ -6,9 +6,10 @@ namespace Emberfall
     // Original four-legged astrolabe silhouette; no scaled copy of the small-trial giant.
     internal sealed class LargeBossRig : MonoBehaviour
     {
-        private Transform body, core, firstRing, secondRing;
+        private Transform body, core, firstRing, secondRing, beamEmitter;
         private readonly Transform[] legs = new Transform[4], petals = new Transform[4];
-        private float age, opening, locomotion;
+        private float age, opening, locomotion,bodyHeight=1.45f,bodyPitch,bodyYaw,coreScale=1,brace;
+        private readonly LargeBossMotion motion=new LargeBossMotion();
         private LargeExpeditionBoss encounter;
         public void Build(Func<Color, VisualSurface, Material> material)
         {
@@ -19,6 +20,8 @@ namespace Emberfall
             body = Joint(transform,"Suspended astrolabe chassis",new Vector3(0,1.45f,0));
             Part(body,"Faceted engine housing",PrimitiveType.Cylinder,Vector3.zero,new Vector3(1.55f,.33f,1.55f),shell);
             Part(body,"Engine collar",PrimitiveType.Cylinder,new Vector3(0,.3f,0),new Vector3(1.7f,.07f,1.7f),bronze);
+            beamEmitter=Joint(body,"Aim-aligned beam emitter",new Vector3(0,.53f,0));
+            Part(beamEmitter,"Radial beam emitter",PrimitiveType.Cube,new Vector3(0,0,.96f),new Vector3(.26f,.22f,.62f),light);
             core = Part(body,"Exposed star heart",PrimitiveType.Sphere,new Vector3(0,.65f,0),new Vector3(.85f,1.12f,.85f),light);
             Part(body,"Split crown spindle",PrimitiveType.Cube,new Vector3(0,1.8f,0),new Vector3(.24f,.55f,.24f),bronze).localRotation=Quaternion.Euler(0,45,22);
             Mesh ring = MakeRing(); var owned=gameObject.AddComponent<OwnedCombatMesh>();owned.Value=ring;
@@ -42,18 +45,27 @@ namespace Emberfall
         {
             float dt=Time.deltaTime;if(dt<=0)return;age+=dt;
             locomotion=Mathf.Lerp(locomotion,speed,1-Mathf.Exp(-dt*9));
-            bool exposed=encounter!=null&&encounter.State.Phase==LargeBossPhase.Exposed;
-            bool charging=encounter!=null&&encounter.State.OwnsAttacks&&!exposed;
-            opening=Mathf.Lerp(opening,exposed?1:charging?.35f:0,1-Mathf.Exp(-dt*6));
-            body.localPosition=new Vector3(0,1.45f+Mathf.Sin(age*2)*.055f-attack*.12f,0);
-            body.localRotation=Quaternion.Euler(attack*-8,Mathf.Sin(age)*3,0);
-            core.localScale=new Vector3(.85f,1.12f,.85f)*(1+opening*.12f+Mathf.Sin(age*3)*.025f);
-            firstRing.localRotation=Quaternion.Euler(73,age*(charging?55:22),28);
-            secondRing.localRotation=Quaternion.Euler(25,age*(charging?-38:-17),75);
+            LargeBossPhase phase=encounter!=null&&encounter.State!=null?encounter.State.Phase:LargeBossPhase.Combat;
+            float remaining=encounter!=null&&encounter.State!=null?encounter.State.Remaining:0;
+            var pose=LargeBossMotion.Pose(phase,remaining);motion.Advance(dt,phase);
+            float blend=1-Mathf.Exp(-dt*8);
+            opening=Mathf.Lerp(opening,pose.Opening,blend);bodyHeight=Mathf.Lerp(bodyHeight,pose.Height,blend);
+            bodyPitch=Mathf.Lerp(bodyPitch,pose.Pitch,blend);coreScale=Mathf.Lerp(coreScale,pose.CoreScale,blend);brace=Mathf.Lerp(brace,pose.Brace,blend);
+            bool aimsBeam=phase==LargeBossPhase.Windup||phase==LargeBossPhase.Beam;
+            // The chassis turns with inertia; the independently pivoted muzzle remains
+            // exactly aligned with the actual damage corridor, without snapping the rings.
+            bodyYaw=Mathf.LerpAngle(bodyYaw,aimsBeam?Mathf.DeltaAngle(transform.eulerAngles.y,encounter.BeamWorldAngle):0,blend);
+            body.localPosition=new Vector3(0,bodyHeight+Mathf.Sin(age*2)*(.055f*(1-brace))-attack*.12f,0);
+            body.localRotation=Quaternion.Euler(bodyPitch-attack*8,bodyYaw,phase==LargeBossPhase.Exposed?Mathf.Sin(age*2)*2:0);
+            beamEmitter.gameObject.SetActive(aimsBeam);
+            if(aimsBeam)beamEmitter.rotation=Quaternion.Euler(0,encounter.BeamWorldAngle,0);
+            core.localScale=new Vector3(.85f,1.12f,.85f)*(coreScale+Mathf.Sin(age*(phase==LargeBossPhase.Exposed?5:3))*.025f);
+            firstRing.localRotation=Quaternion.Euler(73,motion.FirstAngle,28);
+            secondRing.localRotation=Quaternion.Euler(25,motion.SecondAngle,75);
             for(int i=0;i<4;i++)
             {
-                float swing=Mathf.Sin(age*7+i*Mathf.PI*.5f)*locomotion;
-                legs[i].localRotation=Quaternion.Euler(swing*11,45+i*90,swing*4);
+                float swing=Mathf.Sin(age*7+i*Mathf.PI*.5f)*locomotion*(1-brace);
+                legs[i].localRotation=Quaternion.Euler(swing*11-brace*8,45+i*90,swing*4);
                 petals[i].localRotation=Quaternion.Euler(-opening*48,i*90,0);
             }
         }

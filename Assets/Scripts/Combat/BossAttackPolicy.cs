@@ -43,6 +43,19 @@ namespace Emberfall
         public static bool ShouldAdvance(float distance, Move previous, int repeated)
         { return distance > ChargeRange && previous == Move.Fan && repeated > 0; }
 
+        public static bool PreferredApproach(int pattern, float distance, Move previous, int repeated, bool slamReachable)
+        { return ShouldAdvance(distance, previous, repeated) || pattern == 1 && (distance > CloseRange || !slamReachable); }
+
+        public static bool InRange(Move move, float distance)
+        { return CanEngage(distance) && (move == Move.Fan || distance <= (move == Move.Slam ? CloseRange : ChargeRange)); }
+
+        public static Move LegalFallback(Move selected, float distance, bool expired, bool chargeReachable, bool rangedVisible)
+        {
+            if (!expired) return selected;
+            if (InRange(Move.Charge, distance) && chargeReachable) return Move.Charge;
+            return InRange(Move.Fan, distance) && rangedVisible ? Move.Fan : selected;
+        }
+
         public static Move AfterAdvanceBudget(Move selected, float distance, bool expired, bool rangedVisible)
         {
             // Opening the range gate alone is not enough: the anti-repeat selector

@@ -15,7 +15,7 @@ namespace Emberfall
     return kind;
    }
   }
-  public static Vector3 HubNpcPosition(int index){return index==0?new Vector3(-4.5f,0,-10):index==1?new Vector3(4.5f,0,-10):new Vector3(0,0,-5.5f);}
+  public static Vector3 HubNpcPosition(int index){return HubSettlementPlan.Npc(index);}
   private bool CanTravelNow()
   {
    bool nearby=false;if(Player!=null)foreach(var enemy in Enemies)if(enemy!=null&&!enemy.IsDead&&Vector3.Distance(Player.transform.position,enemy.transform.position)<7){nearby=true;break;}

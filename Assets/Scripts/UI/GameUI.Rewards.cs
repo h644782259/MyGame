@@ -74,7 +74,8 @@ namespace Emberfall
                 Fill(new Rect(r.x + 15, r.y + 16, 18, 1), closed ? muted * .35f : edge);
                 Text(new Rect(r.x + 17, r.y + 21, 30, 17), new[] { "I", "II", "III" }[i], 11, closed ? muted * .35f : muted);
                 float progress=chosen ? Mathf.Clamp01((Time.unscaledTime-chestRevealedAt)/ChestDuration) : 0;
-                DrawRewardChest(new Rect(r.x + 18, r.y + 16 + (hover ? -3 : 0), 196, 167), chosen, closed ? .22f : 1f, progress);
+                if(!chosen||progress<.76f||!DrawChestRewardModel(new Rect(r.x+18,r.y+16,196,167),reward))
+                    DrawRewardChest(new Rect(r.x + 18, r.y + 16 + (hover ? -3 : 0), 196, 167), chosen, closed ? .22f : 1f, progress);
                 if(chosen && progress>.35f) DrawRewardRadiance(new Rect(r.x+17,r.y+18,198,154), rewardColor, progress);
                 if (chosen)
                 {
@@ -144,12 +145,7 @@ namespace Emberfall
                 Color c=new Color(tint.r,tint.g,tint.b,strength*.72f);
                 Fill(new Rect(p.x-1,p.y-4,2,8),c);Fill(new Rect(p.x-4,p.y-1,8,2),c);
             }
-            if(progress>.76f)
-            {
-                var reward=session.Progression.LastChestReward;
-                string glyph=reward!=null && reward.Slot.HasValue ? reward.Slot.Value==FashionSlot.Wings?"✧":"✦":"✧";
-                Text(new Rect(r.center.x-30,r.y+12-(progress-.76f)*28,60,52),glyph,40,tint,true,false,TextAnchor.MiddleCenter);
-            }
+
         }
 
         private void DrawRewardChest(Rect r, bool opened, float opacity, float progress)

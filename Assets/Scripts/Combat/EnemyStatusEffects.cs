@@ -145,12 +145,20 @@ namespace Emberfall
         public void Burn(PlayerController source, float duration, float totalDamage)
         {
             if (source == null || source.IsDead || enemy == null || enemy.IsDead || !FinitePositive(duration) || !FinitePositive(totalDamage)) return;
+            bool refresh = burnSchedule != null && !burnSchedule.Complete && burnSource == source && burnEpoch == source.CombatEpoch;
+            float previousRemaining = refresh ? burnSchedule.Remaining : 0;
+            float previousBudget = refresh ? burnDamage * previousRemaining : 0;
             if (burnSchedule == null || burnSchedule.Complete || burnSource != source || burnEpoch != source.CombatEpoch)
             { burnDamage = 0; burnSchedule = new ScheduledTickWindow(duration,StatusTickRates.Burn,StatusTickRates.Burn); }
             else burnSchedule.Refresh(duration);
             burnTime = burnSchedule.Remaining;
             burnDamage = Mathf.Max(burnDamage, totalDamage / duration);
             burnSource = source; burnEpoch = source.CombatEpoch;
+            if (refresh && (burnTime > previousRemaining + .0001f || burnDamage * burnTime > previousBudget + .0001f))
+            {
+                var game = GameSession.Instance;
+                if (game != null) game.RecordClassTutorial(HeroClass.Arcanist);
+            }
             enemy.Provoke();
             ElementalCombatVfx.OnEnemy(enemy, ElementalCombatVfx.Element.Fire, duration);
         }

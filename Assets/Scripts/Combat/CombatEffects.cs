@@ -5,7 +5,7 @@ namespace Emberfall
 {
     internal static class CombatFx
     {
-        public static GameObject Ring(Vector3 center, float radius, Color color, float lifetime, float width = .1f, bool expand = true)
+        public static GameObject Ring(Vector3 center, float radius, Color color, float lifetime, float width = .1f, bool expand = true, bool respectCover = false)
         {
             if (expand && FadingCombatEffect.ActiveCount >= (Application.isMobilePlatform ? 32 : 48)) return null;
             GameObject obj = new GameObject("Combat Ring");
@@ -28,7 +28,7 @@ namespace Emberfall
             line.numCapVertices = 2;
             line.sharedMaterial = NewGlow();
             line.startColor = line.endColor = color;
-            obj.AddComponent<FadingCombatEffect>().Setup(line, color, radius, lifetime, expand);
+            obj.AddComponent<FadingCombatEffect>().Setup(line, color, radius, lifetime, expand, respectCover: respectCover);
             return obj;
         }
 
@@ -61,17 +61,21 @@ namespace Emberfall
         private LineRenderer line;
         private Color color;
         private float radius, lifetime, age;
-        private bool expand, slash, registered;
+        private bool expand, slash, registered, respectCover;
+        private readonly Vector3[] boundary=new Vector3[64];
+        private int boundaryRevision=-1;private Vector3 boundaryCenter;
         public static int ActiveCount { get; private set; }
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetCount() { ActiveCount = 0; }
-        public void Setup(LineRenderer renderer, Color value, float size, float duration, bool growing, bool ribbon = false)
+        public void Setup(LineRenderer renderer, Color value, float size, float duration, bool growing, bool ribbon = false, bool respectCover = false)
         {
             line = renderer; color = value; radius = size; lifetime = Mathf.Max(.05f, duration); expand = growing; slash = ribbon;
             color.a *= growing ? Mathf.Lerp(.4f,1f,EffectPreferences.EffectsScale) : 1f;
-            registered = true; ActiveCount++;
+            this.respectCover=respectCover; registered = true; ActiveCount++;
             transform.localScale = Vector3.one * (expand ? radius * .4f : radius);
+            RefreshBoundary();
         }
+        private void LateUpdate(){RefreshBoundary();}
         private void Update()
         {
             age += Time.deltaTime;
@@ -83,7 +87,17 @@ namespace Emberfall
             faded.a *= Mathf.Clamp01((1f - fraction) * 2f);
             line.startColor = line.endColor = faded;
         }
-        private void OnDestroy() { if (registered) ActiveCount = Mathf.Max(0,ActiveCount-1); if (line != null && line.sharedMaterial != null) Destroy(line.sharedMaterial); }
+        private void RefreshBoundary()
+        {
+            if(!respectCover||line==null)return;
+            if(boundaryRevision==WorldTraversal.Revision&&(boundaryCenter-transform.position).sqrMagnitude<.000001f)return;
+            boundaryRevision=WorldTraversal.Revision;boundaryCenter=transform.position;line.useWorldSpace=true;
+            CombatSight.FillAreaBoundary(boundary,transform.position,radius);line.SetPositions(boundary);
+        }
+        private void Release(){if(!registered)return;registered=false;ActiveCount=Mathf.Max(0,ActiveCount-1);}
+        private void OnDisable(){Release();}
+        private void OnEnable(){if(line==null||registered)return;if(expand&&ActiveCount>=(Application.isMobilePlatform?32:48)){gameObject.SetActive(false);return;}registered=true;ActiveCount++;}
+        private void OnDestroy() { Release(); if (line != null && line.sharedMaterial != null) Destroy(line.sharedMaterial); }
     }
 
     internal sealed class CombatProjectile : MonoBehaviour
@@ -106,6 +120,9 @@ namespace Emberfall
         private bool hostile, pierce, basicAttack, energyAwarded, arrowShape;
         private EnemyController homingTarget;
         private EnemyController basicAimTarget;
+        private EnemyController impactMarkTarget;
+        private float impactMarkStrength;
+        private string terminationReason = "disposed";
         private bool bodyHeightFlight;
         private float launchHeight, impactHeight, aimedDistance, distanceTravelled;
         private int epoch;
@@ -113,7 +130,7 @@ namespace Emberfall
         private Material bodyMaterial, trailMaterial;
         private Color color;
 
-        public static void Friendly(PlayerController player, GameSession game, Vector3 at, Vector3 forward, CombatDamage amount, Color tint, bool piercing = false, bool arrow = false, bool basic = false, float size = 1f, float velocity = 0f, EnemyController tracking = null, CombatDamage blastDamage = default(CombatDamage), float blastRadius = 0f, int skillIndex = -1, int castId = 0, SummonedCompanion companionSource = null, ProjectileVolleyBudget<EnemyController> volley = null)
+        public static void Friendly(PlayerController player, GameSession game, Vector3 at, Vector3 forward, CombatDamage amount, Color tint, bool piercing = false, bool arrow = false, bool basic = false, float size = 1f, float velocity = 0f, EnemyController tracking = null, CombatDamage blastDamage = default(CombatDamage), float blastRadius = 0f, int skillIndex = -1, int castId = 0, SummonedCompanion companionSource = null, ProjectileVolleyBudget<EnemyController> volley = null, EnemyController markTarget = null, float markStrength = 0)
         {
             CombatProjectile projectile = Make(at, forward, tint, arrow);
             projectile.owner = player;
@@ -122,6 +139,7 @@ namespace Emberfall
             projectile.epoch = player.CombatEpoch;
             projectile.damage = amount;
             projectile.volley = volley;
+            projectile.impactMarkTarget = markTarget; projectile.impactMarkStrength = markStrength;
             projectile.speed = arrow ? 20f : 16f;
             projectile.lifetime = 1.15f;
             projectile.radius = piercing ? .38f : .22f;
@@ -136,6 +154,7 @@ namespace Emberfall
             projectile.radius *= Mathf.Min(2f,size);
             if (velocity > 0) projectile.speed = velocity;
             if (tracking != null) projectile.lifetime = 2.5f;
+            if (CombatReviewEvents.Enabled) CombatReviewEvents.Emit("projectilelaunch",CombatReviewObjectId.Get(player),tracking==null?"0":CombatReviewObjectId.Get(tracking),skill:skillIndex,detail:CombatReviewObjectId.Get(projectile).ToString());
         }
 
         internal static bool CanLaunchFromMuzzle(PlayerController player,Vector3 muzzle,CombatDamage amount,int castId)
@@ -153,7 +172,7 @@ namespace Emberfall
         {
             int attackId=player.NewCastId();
             if (!CanLaunchFromMuzzle(player,muzzle,amount,attackId))
-            {CombatFx.Ring(player.transform.position,.4f,tint,.15f);return;}
+            {CombatReviewEvents.Emit("basicmiss",CombatReviewObjectId.Get(player),detail:"blocked_muzzle;prop_may_have_been_hit");CombatFx.Ring(player.transform.position,.4f,tint,.15f);return;}
             Vector3 direction=CombatFx.Flat(target-muzzle);
             if(direction.sqrMagnitude<.0001f) direction=player.transform.forward;
             CombatProjectile projectile=Make(muzzle,direction,tint,arrow);
@@ -176,6 +195,7 @@ namespace Emberfall
             projectile.aimedDistance=Mathf.Max(.25f,CombatFx.Flat(target-muzzle).magnitude);
             projectile.transform.position=muzzle;
             projectile.AlignBodyFlight();
+            if (CombatReviewEvents.Enabled) CombatReviewEvents.Emit("projectilelaunch",CombatReviewObjectId.Get(player),selected==null?"0":CombatReviewObjectId.Get(selected),detail:CombatReviewObjectId.Get(projectile).ToString());
         }
 
         public static void Hostile(GameSession game, Vector3 at, Vector3 forward, float amount, float velocity = 8f, string sourceName = "敌方弹幕")
@@ -240,11 +260,11 @@ namespace Emberfall
         private void Update()
         {
             if (session == null || session.Player == null || session.Player != playerGeneration || !session.HasStarted || session.IsDead || session.CombatEnded || session.Player.CombatEpoch != epoch || (!hostile && owner == null))
-            { Destroy(gameObject); return; }
+            { terminationReason = "retired"; Destroy(gameObject); return; }
             float dt = Time.deltaTime;
             if (dt <= 0) return;
             age += dt;
-            if (age > lifetime) { Destroy(gameObject); return; }
+            if (age > lifetime) { terminationReason = "expired"; Destroy(gameObject); return; }
             if (homingTarget != null && !homingTarget.IsDead && homingTarget.gameObject.activeInHierarchy)
             {
                 Vector3 towards = CombatFx.Flat(homingTarget.transform.position-transform.position).normalized;
@@ -318,7 +338,11 @@ namespace Emberfall
                     hitTargets.Add(enemy);
                     Vector3 hitPosition = enemy.transform.position;
                     CombatDamage impact=volley==null?damage:volley.Apply(enemy,damage,false);
+                    float healthBefore = enemy.Health;
+                    if (LockedImpactMarkPolicy.ShouldApply(impactMarkTarget, enemy, !enemy.IsDead, impact.Amount, impactMarkStrength) && enemy.StatusEffects != null)
+                        enemy.StatusEffects.Mark(4f, impactMarkStrength);
                     if(impact.Amount>0){if(!basicAttack&&companionSource==null)owner.RegisterSkillHit(castId);enemy.TakeDamage(owner.ResolveSkillImpact(enemy, skillIndex, castId, impact.Amount, impact.IsCritical, impact.CriticalMultiplier), direction, .18f, critical:impact.IsCritical);}
+                    if (CombatReviewEvents.Enabled) CombatReviewEvents.Emit("projectilehit",CombatReviewObjectId.Get(owner),CombatReviewObjectId.Get(enemy),Mathf.Max(0,healthBefore-enemy.Health),skillIndex,CombatReviewObjectId.Get(this).ToString());
                     if (companionSource != null) companionSource.OnConfirmedHit(enemy);
                     CombatFx.Ring(hitPosition, .7f, color, .2f);
                     if (basicAttack && !energyAwarded)
@@ -342,13 +366,14 @@ namespace Emberfall
                     CombatFx.Ring(point,.45f,color,.2f,.04f);Destroy(gameObject);return;
                 }
             }
-            if (terrainHit) { CombatFx.Ring(transform.position, .4f, color, .15f); Destroy(gameObject); return; }
+            if (terrainHit) { terminationReason = "terrain"; CombatFx.Ring(transform.position, .4f, color, .15f); Destroy(gameObject); return; }
             float bound = session.ArenaRadius + 3f;
             if (Mathf.Abs(transform.position.x) > bound || Mathf.Abs(transform.position.z) > bound) Destroy(gameObject);
         }
 
         private void OnDestroy()
         {
+            if (!hostile && owner != null && CombatReviewEvents.Enabled) CombatReviewEvents.Emit("projectileend",CombatReviewObjectId.Get(owner),skill:skillIndex,detail:CombatReviewObjectId.Get(this)+":"+terminationReason+":hits="+hitTargets.Count);
             hostileProjectiles.Remove(this);
             if (bodyMaterial != null) Destroy(bodyMaterial);
             if (trailMaterial != null) Destroy(trailMaterial);
@@ -375,11 +400,12 @@ namespace Emberfall
         private GameObject marker, fallingOrb;
         private Material orbMaterial;
         private bool fireVisual, poisonVisual, lightningVisual, solidImpactSpawned;
+        private SkillVisualRecipe visualRecipe;
         private readonly ScheduledImpactBatch<EnemyController> pendingTickTargets = new ScheduledImpactBatch<EnemyController>();
         private bool IsCurrentCast { get { return owner != null && session != null && session.Player == owner && !owner.IsDead && session.HasStarted && !session.CombatEnded && owner.CombatEpoch == epoch; } }
 
         public static void Spawn(PlayerController player, GameSession game, Vector3 at, float size, CombatDamage amount, float disable,
-            float startup, float activeTime, float tickInterval, Color tint, bool followPlayer = false, bool fallingMeteor = false, float pulling = 0f, CombatDamage finisher = default(CombatDamage), int statusSkill = -1, int statusRank = 1, int castId = 0)
+            float startup, float activeTime, float tickInterval, Color tint, bool followPlayer = false, bool fallingMeteor = false, float pulling = 0f, CombatDamage finisher = default(CombatDamage), int statusSkill = -1, int statusRank = 1, int castId = 0, SkillVisualRecipe visual = SkillVisualRecipe.Neutral)
         {
             GameObject obj = new GameObject("Skill Area");
             obj.transform.position = new Vector3(at.x,0,at.z);
@@ -392,13 +418,11 @@ namespace Emberfall
             area.statusSkill = statusSkill; area.statusRank = statusRank; area.castId = castId==0?player.NewCastId():castId;
             area.nextTick = startup;
             if (startup > 0) FilledSkillVfx.Charge(obj.transform, player, obj.transform.position, size, tint, startup);
-            area.marker = CombatFx.Ring(at, size, tint, startup + activeTime + .2f, .075f, false);
-            area.fireVisual = fallingMeteor || (player.HeroClass == HeroClass.Arcanist && tint.r > .8f && tint.g < .7f);
-            area.poisonVisual = !area.fireVisual &&
-                ((tint.g > .9f && tint.r < .8f && tint.b < .8f) ||
-                 (statusSkill == 5 && player.HeroClass == HeroClass.Ranger) ||
-                 (statusSkill == 1 && player.HeroClass == HeroClass.Summoner));
-            area.lightningVisual = player.HeroClass == HeroClass.Arcanist && tint.b > .9f && tint.r > .55f && tint.g < .7f;
+            area.marker = CombatFx.Ring(at, size, tint, startup + activeTime + .2f, .075f, false, respectCover:true);
+            area.visualRecipe = visual;
+            area.fireVisual = visual == SkillVisualRecipe.Fire;
+            area.poisonVisual = visual == SkillVisualRecipe.Poison;
+            area.lightningVisual = visual == SkillVisualRecipe.Lightning;
             if (fallingMeteor)
             {
                 area.orbMaterial = new Material(Shader.Find("Standard")) { color = new Color(.64f,.19f,.075f) };
@@ -454,11 +478,11 @@ namespace Emberfall
                             ElementalCombatVfx.Area(transform, radius, fireVisual ? ElementalCombatVfx.Element.Fire :
                                 poisonVisual ? ElementalCombatVfx.Element.Poison : ElementalCombatVfx.Element.Lightning);
                         if (fireVisual) FilledSkillVfx.Impact(owner, transform.position, radius, FilledVfxKind.Fire, new Color(1f,.43f,.12f));
-                        else if (owner.HeroClass == HeroClass.Arcanist && statusSkill == 0)
+                        else if (visualRecipe == SkillVisualRecipe.Ice)
                             FilledSkillVfx.Impact(owner, transform.position, radius, FilledVfxKind.Ice, new Color(.2f,.75f,1f));
-                        else if (owner.HeroClass == HeroClass.Summoner)
+                        else if (visualRecipe == SkillVisualRecipe.Spirit || visualRecipe == SkillVisualRecipe.Arcane)
                             FilledSkillVfx.Impact(owner, transform.position, radius, FilledVfxKind.Summon, color);
-                        else if (owner.HeroClass == HeroClass.Vanguard)
+                        else if (visualRecipe == SkillVisualRecipe.Steel)
                             FilledSkillVfx.Crescent(owner, transform.position, owner.transform.forward, radius, color);
                     }
                     if (tick == 0)

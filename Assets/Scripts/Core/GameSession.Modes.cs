@@ -15,7 +15,7 @@ namespace Emberfall
   public string ModeObjectiveStatus
   {get{if(RoomChainRun!=null)return RoomObjectiveStatus;if(ModeRun==null)return "";if(ModeRun.Status==ExpeditionModeStatus.Won)return ModeRewardPending?"挑战完成 · 奖励待保存":"挑战完成 · 奖励已保存";
    if(ModeRun.Status==ExpeditionModeStatus.Failed)return ModeRun.Failure==ExpeditionModeFailure.TimeExpired?"时限已到 · 返回营地再试":"挑战结束 · 返回营地";
-   return "阶段 "+(ModeRun.PhaseIndex+1)+" / 3  ·  "+Mathf.CeilToInt(ModeRun.RemainingSeconds)+"秒"+(ModeRun.Mode==ExpeditionModeKind.HoldPoint?"  ·  守点 "+Mathf.RoundToInt(ModeRun.ObjectiveProgress*100)+"%":"");}}
+   return "阶段 "+(ModeRun.PhaseIndex+1)+" / 3  ·  "+Mathf.CeilToInt(ModeRun.RemainingSeconds)+"秒"+(ModeRun.Mode==ExpeditionModeKind.HoldPoint?"  ·  "+ModeRun.HoldStateLabel+" "+Mathf.RoundToInt(ModeRun.ObjectiveProgress*100)+"%":"");}}
   private sealed class ArenaEnemyReceipt {public ExpeditionPhasePlan Plan;public int Index;}
   private readonly Dictionary<EnemyController,ArenaEnemyReceipt> arenaEnemies=new Dictionary<EnemyController,ArenaEnemyReceipt>();
   private string modeReceipt;
@@ -78,8 +78,8 @@ namespace Emberfall
    if(ModeRun==null)return;
    if(ModeRun.Status==ExpeditionModeStatus.Active)
    {
-    int pressure=0;foreach(var enemy in Enemies)if(enemy!=null&&!enemy.IsDead&&CombatFx.Flat(enemy.transform.position).sqrMagnitude<36)pressure++;
-    ModeRun.Advance(Time.deltaTime,!InputBlocked,Player!=null&&CombatFx.Flat(Player.transform.position).sqrMagnitude<=10.24f,pressure,!IsDead);
+    int pressure=0;foreach(var enemy in Enemies)if(enemy!=null&&!enemy.IsDead&&enemy.gameObject.activeInHierarchy&&ExpeditionModeState.ContestsHoldPoint(CombatFx.Flat(enemy.transform.position).sqrMagnitude,enemy.NavigationRadius))pressure++;
+    ModeRun.Advance(Time.deltaTime,!InputBlocked,Player!=null&&ExpeditionModeState.InsideHoldPoint(CombatFx.Flat(Player.transform.position).sqrMagnitude),pressure,!IsDead);
     if(arenaHazards!=null&&!ModeRun.IsTerminal)arenaHazards.Advance(Time.deltaTime);
     arenaSpawnDelay-=Time.deltaTime;
     if(arenaSpawnDelay<=0){arenaSpawnDelay=1.4f;SpawnArenaEnemies();}
@@ -88,7 +88,7 @@ namespace Emberfall
    if(ModeRun.Status==ExpeditionModeStatus.AwaitingSpawn&&!arenaAwaitingBlessing)
    {
     arenaAwaitingBlessing=true;if(!ChallengeRun)Player.Heal(Player.MaxHealth*.2f);else HealingCharges=Mathf.Min(3,HealingCharges+1);
-    RunChoices.Prepare(ModeRun.CompletedPhases,Progression.Profile.heroClass,Progression.Profile.skillRanks,runSeed+ModeRun.CompletedPhases*197);UpdateTimeScale();
+    RunChoices.Prepare(ModeRun.CompletedPhases,Progression.Profile.heroClass,RunChoices.UsableRanks(Progression.Profile,MobileControls.Active),runSeed+ModeRun.CompletedPhases*197);UpdateTimeScale();
    }
    FinalizeArenaResult();
   }
@@ -115,7 +115,7 @@ namespace Emberfall
    ExpeditionRewardTicket ticket;if(!ModeRun.TryReserveReward(out ticket))return false;
    int beforeGold=Progression.Profile.gold,beforeMaterials=Progression.Profile.mechanicMaterials;long beforeXp=TotalEarnedExperience(Progression.Profile);
    int goldReward=HasBlessing(RunBlessing.RiskContract)?Mathf.RoundToInt(ticket.Reward.Gold*1.3f):ticket.Reward.Gold;
-   bool saved=Progression.TryGrantModeReward(modeReceipt,goldReward,ticket.Reward.Experience,ticket.Reward.Materials);
+   bool saved=Progression.TryGrantModeReward(modeReceipt,goldReward,ticket.Reward.Experience,ticket.Reward.Materials,DungeonTier);
    ModeRun.CompleteReward(ticket,saved);
    if(saved){modeGoldReward=Mathf.Max(0,Progression.Profile.gold-beforeGold);modeXpReward=(int)Math.Max(0,TotalEarnedExperience(Progression.Profile)-beforeXp);modeMaterialReward=Mathf.Max(0,Progression.Profile.mechanicMaterials-beforeMaterials);LogSystem("挑战结算 · +"+modeGoldReward+"金币 · +"+modeXpReward+"经验 · +"+modeMaterialReward+"碎片");LastRunSummary=BuildRunSummary(true);}
    else Notify(Progression.LastError);

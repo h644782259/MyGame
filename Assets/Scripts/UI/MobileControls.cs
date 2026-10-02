@@ -5,7 +5,7 @@ namespace Emberfall
 {
     /// <summary>Independent touch ownership keeps movement, combat and skill dragging separate.</summary>
     [DefaultExecutionOrder(-200)]
-    public sealed class MobileControls : MonoBehaviour
+    public sealed partial class MobileControls : MonoBehaviour
     {
         private enum Role { Move, Attack, Skill, Aim, Camera, Consumed }
         private readonly Dictionary<int, Role> fingers = new Dictionary<int, Role>();
@@ -40,10 +40,11 @@ namespace Emberfall
         private bool hasJoystickOrigin;
         private static MobileControlLayout cachedLayout;
         private static Vector3 cachedLayoutInputs;
+        private static int cachedPosition;
         public static MobileControlLayout Layout
         {
             get { Rect safe=SafeArea;Vector3 input=new Vector3(safe.width,safe.height,Screen.dpi);
-                if(cachedLayout==null||input!=cachedLayoutInputs){cachedLayout=new MobileControlLayout(input.x,input.y,input.z);cachedLayoutInputs=input;}
+                if(cachedLayout==null||input!=cachedLayoutInputs||cachedPosition!=EffectPreferences.TouchPosition){cachedLayout=new MobileControlLayout(input.x,input.y,input.z,EffectPreferences.TouchPosition);cachedLayoutInputs=input;cachedPosition=EffectPreferences.TouchPosition;}
                 return cachedLayout; }
         }
         private float Scale { get { return Layout.Scale; } }
@@ -81,7 +82,7 @@ namespace Emberfall
         {
             if (!Active || instance == null || instance.session == null || instance.session.InputBlocked) return false;
             Vector2 point = instance.ToUI(screen);
-            return Area(Layout.MoveZone).Contains(point) || instance.Attack.Contains(point) || instance.Dodge.Contains(point) || instance.Potion.Contains(point) || Area(Layout.Interact).Contains(point) || instance.Jump.Contains(point) || instance.Cancel.Contains(point);
+            return (instance.ui!=null&&instance.ui.CompanionCommandsVisible&&(Area(Layout.FocusCommand).Contains(point)||Area(Layout.RecallCommand).Contains(point))) || Area(Layout.MoveZone).Contains(point) || instance.Attack.Contains(point) || instance.Dodge.Contains(point) || instance.Potion.Contains(point) || Area(Layout.Interact).Contains(point) || instance.Jump.Contains(point) || instance.Cancel.Contains(point);
         }
         private void Update()
         {
@@ -137,9 +138,11 @@ namespace Emberfall
                     if (targeting != null && targeting.IsTargeting) { targeting.Confirm(); role = Role.Consumed; }
                     else role = Role.Attack;
                 }
+                else if (ui!=null&&ui.CompanionCommandsVisible&&(Area(Layout.FocusCommand).Contains(point)||Area(Layout.RecallCommand).Contains(point)))
+                {ui.ActivateFreeCommand(Area(Layout.RecallCommand).Contains(point));role=Role.Consumed;}
                 else if (Area(Layout.Interact).Contains(point)) { if(ui!=null)ui.ActivateMobileInteraction(finger);role=Role.Consumed; }
-                else if (Dodge.Contains(point)) { dodge = true; role = Role.Consumed; }
-                else if (Potion.Contains(point)) { potion = true; role = Role.Consumed; }
+                else if (Dodge.Contains(point)) { CheckDodgeFeedback(); dodge = true; role = Role.Consumed; }
+                else if (Potion.Contains(point)) { CheckPotionFeedback(); potion = true; role = Role.Consumed; }
                 else if (Cancel.Contains(point) && CanCancel)
                 {
                     if (targeting != null) targeting.Cancel();
@@ -194,9 +197,9 @@ namespace Emberfall
             GUI.matrix = Matrix4x4.TRS(Offset, Quaternion.identity, new Vector3(Scale, Scale, 1));
             Vector2 origin=hasJoystickOrigin?joystickOrigin:Joystick.center;
             Rect baseRect=new Rect(origin.x-64,origin.y-64,128,128);
-            Circle(baseRect, new Color(.10f, .19f, .23f, .55f), "");
+            Circle(baseRect, new Color(.10f, .19f, .23f, .55f), "",false);
             Rect thumb = new Rect(origin.x - 25 + Move.x * 45, origin.y - 25 - Move.y * 45, 50, 50);
-            Circle(thumb, new Color(.38f, .78f, .71f, .82f), "");
+            Circle(thumb, new Color(.38f, .78f, .71f, .82f), "",false);
             SkillTargetingController targeting = session.Player.GetComponent<SkillTargetingController>();
             SkillChargeController charge = session.Player.GetComponent<SkillChargeController>();
             Circle(Attack, AttackHeld ? new Color(.76f, .54f, .20f, .95f) : new Color(.43f, .31f, .15f, .9f), targeting != null && targeting.IsTargeting ? "confirm" : "attack");
@@ -204,10 +207,12 @@ namespace Emberfall
             Circle(Potion, new Color(.18f, .38f, .27f, .9f), "potion");
             if (CanCancel) Circle(Cancel, new Color(.48f, .17f, .20f, .94f), "cancel");
             else Circle(Jump, new Color(.22f, .27f, .40f, .9f), "jump");
+            DrawAvailability();
             GUI.matrix = oldMatrix; GUI.color = oldColor;
         }
-        private void Circle(Rect rect, Color color, string icon)
+        private void Circle(Rect rect, Color color, string icon,bool button=true)
         {
+            if(button){rect=VisualRect(rect);color.a*=EffectPreferences.TouchOpacity;}
             GUI.color = color;
             GUI.DrawTexture(rect, disc);
             GUI.color = Color.white;
@@ -216,6 +221,7 @@ namespace Emberfall
             Rect centered = new Rect(rect.center.x - size * .5f, rect.center.y - size * .5f, size, size);
             // Texture glyphs cannot inherit a temporary GUIContent string from
             // another MonoBehaviour's OnGUI (for example the notification toast).
+            GUI.color=new Color(1,1,1,EffectPreferences.TouchOpacity);
             GUI.DrawTexture(centered, UIIconAtlas.Utility(icon), ScaleMode.ScaleToFit, true);
         }
         private void OnApplicationFocus(bool focus) { if (!focus) ResetInput(); }

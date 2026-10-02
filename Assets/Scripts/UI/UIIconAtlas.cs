@@ -15,15 +15,20 @@ namespace Emberfall
             var ink = new Icon(GameBalance.ClassColor(hero));
             if (hero == HeroClass.Summoner && skill != 3 && skill != 6 && skill != 8 && skill != 9)
             {
-                if (skill == 0 || skill == 1)
+                if (skill == 0)
                 {
-                    ink.Polygon(new[] { V(16, 31), V(11, 10), V(29, 22), V(35, 22), V(53, 10), V(48, 31), V(47, 45), V(32, 55), V(17, 45) });
-                    ink.Disc(24, 34, 3); ink.Disc(40, 34, 3); ink.Line(29, 43, 35, 43, 3);
-                    if (skill == 1) { ink.Arc(32, 32, 29, 5, 78, 2); ink.Arc(32, 32, 29, 105, 170, 2); }
+                    ink.Disc(16, 32, 5); ink.Arrow(20, 32, 49, 32);
+                    ink.Arc(16, 32, 22, -60, 60, 4); ink.Arc(16, 32, 35, -60, 60, 3);
+                }
+                else if (skill == 1)
+                {
+                    ink.Ring(32, 34, 19, 3);
+                    for (int i = 0; i < 3; i++) { float x = 17 + i * 15; ink.Line(x, 52, x, 14, 4); ink.Line(x, 32, x - 7, 23, 3); ink.Line(x, 42, x + 7, 33, 3); }
                 }
                 else if (skill == 2)
                 {
-                    ink.Shield(); ink.Ring(32, 29, 9, 3); ink.Line(14, 50, 8, 56, 4); ink.Line(50, 50, 56, 56, 4);
+                    ink.Polygon(new[] { V(16, 31), V(11, 10), V(29, 22), V(35, 22), V(53, 10), V(48, 31), V(47, 45), V(32, 55), V(17, 45) });
+                    ink.Disc(24, 34, 3); ink.Disc(40, 34, 3); ink.Line(29, 43, 35, 43, 3);
                 }
                 else if (skill == 4)
                 {
@@ -32,13 +37,19 @@ namespace Emberfall
                 }
                 else if (skill == 5)
                 {
-                    ink.Disc(16, 32, 9); ink.Disc(48, 32, 9); ink.Line(24, 32, 40, 32, 4); ink.Arc(32, 32, 25, 205, 335, 3); ink.Arc(32, 32, 25, 25, 155, 3);
+                    ink.Shield(); ink.Ring(32, 29, 9, 3);
                 }
                 else
                 {
-                    ink.Polygon(new[] { V(12, 26), V(31, 12), V(31, 51), V(12, 39) });
-                    ink.Arc(29, 32, 15, -60, 60, 3); ink.Arc(29, 32, 25, -65, 65, 3);
+                    ink.Disc(32, 32, 6); ink.Ring(32, 32, 17, 3);
+                    ink.Arrow(5, 5, 22, 22); ink.Arrow(59, 59, 42, 42);
                 }
+                texture = ink.Finish("Skill icon " + key); cache[key] = texture; return texture;
+            }
+            if (hero == HeroClass.Summoner && skill == 9)
+            {
+                ink.Line(32, 54, 32, 24, 8); ink.Line(32, 35, 13, 22, 5); ink.Line(32, 35, 51, 22, 5);
+                ink.Disc(32, 16, 11); ink.Disc(14, 19, 9); ink.Disc(50, 19, 9);
                 texture = ink.Finish("Skill icon " + key); cache[key] = texture; return texture;
             }
             switch (skill)
