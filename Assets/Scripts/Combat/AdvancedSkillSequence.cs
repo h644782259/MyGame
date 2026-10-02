@@ -299,6 +299,8 @@ namespace Emberfall
 
         private void HitLine(Vector3 a,Vector3 b,float width,CombatDamage amount,float knockback,float stun)
         {
+            CombatImpactBatch.Begin();try
+            {
             DestructibleProp.StrikeLine(owner,a,b,width,amount,castId);
             for(int i=session.Enemies.Count-1;i>=0;i--)
             {
@@ -306,6 +308,8 @@ namespace Emberfall
                 if(enemy!=null && !enemy.IsDead && CombatFx.SegmentDistance(enemy.transform.position,a,b)<=width+(enemy.IsBoss?.8f:.4f) && CombatSight.Melee(a,enemy.transform.position))
                 {owner.RegisterSkillHit(castId);enemy.TakeDamage(amount.Amount,forward,knockback,stun, critical:amount.IsCritical);}
             }
+                    }
+            finally { CombatImpactBatch.End(); }
         }
 
         private void Burst(Vector3 at,float radius,CombatDamage amount,Color tint,int detail,SkillVisualRecipe visual)

@@ -510,6 +510,8 @@ namespace Emberfall
                 fallingOrb.transform.Rotate(Time.deltaTime*120f,Time.deltaTime*70f,0,Space.Self);
                 if (age >= delay) { Destroy(fallingOrb); fallingOrb = null; }
             }
+            CombatImpactBatch.Begin();try
+            {
             for (int tick = 0; tick < ScheduledTickWindow.MaximumCatchUp; tick++)
             {
                 if (!IsCurrentCast) { Retire(); return; }
@@ -526,11 +528,11 @@ namespace Emberfall
                             ElementalCombatVfx.Area(transform, radius, fireVisual ? ElementalCombatVfx.Element.Fire :
                                 poisonVisual ? ElementalCombatVfx.Element.Poison : ElementalCombatVfx.Element.Lightning);
                         if(poisonVisual)FilledSkillVfx.PoisonVines(owner,transform.position,radius,color);
-                        if (fireVisual) FilledSkillVfx.Impact(owner, transform.position, radius, FilledVfxKind.Fire, new Color(1f,.43f,.12f),CombatVisualPriority.RealContact);
+                        if (fireVisual) FilledSkillVfx.Impact(owner, transform.position, radius, FilledVfxKind.Fire, new Color(1f,.43f,.12f),CombatVisualPriority.ActionBody);
                         else if (visualRecipe == SkillVisualRecipe.Ice)
-                            FilledSkillVfx.Impact(owner, transform.position, radius, FilledVfxKind.Ice, new Color(.2f,.75f,1f),CombatVisualPriority.RealContact);
+                            FilledSkillVfx.Impact(owner, transform.position, radius, FilledVfxKind.Ice, new Color(.2f,.75f,1f),CombatVisualPriority.ActionBody);
                         else if (visualRecipe == SkillVisualRecipe.Spirit || visualRecipe == SkillVisualRecipe.Arcane || visualRecipe == SkillVisualRecipe.Lightning || visualRecipe == SkillVisualRecipe.Steel)
-                            FilledSkillVfx.Impact(owner, transform.position, radius, SkillVisualRecipes.Filled(visualRecipe), color,CombatVisualPriority.RealContact);
+                            FilledSkillVfx.Impact(owner, transform.position, radius, SkillVisualRecipes.Filled(visualRecipe), color,CombatVisualPriority.ActionBody);
                     }
                     if (tick == 0)
                     { DestructibleProp.StrikeArea(owner,transform.position,radius,damage,castId); CombatFx.Ring(transform.position,radius,color,.42f,.15f); }
@@ -579,6 +581,8 @@ namespace Emberfall
                     }
                 }
             }
+            }
+            finally { CombatImpactBatch.End(); }
             if (!IsCurrentCast) { Retire(); return; }
             if (session.InputBlocked) return;
             bool ticksDrained = !pendingTickTargets.Pending && ScheduledTickWindow.Drained(nextTick, delay + duration);

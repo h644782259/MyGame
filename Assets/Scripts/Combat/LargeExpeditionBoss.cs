@@ -62,9 +62,7 @@ namespace Emberfall
             {
                 BeginPhasePresentation();
             }
-            for (int i=0;i<anchors.Length;i++)
-                if ((State.LiveAnchorMask & (1<<i)) != 0 && (anchors[i]==null || anchors[i].Broken || !anchors[i].gameObject.activeInHierarchy))
-                    State.DestroyAnchor(State.PhaseNumber,i);
+            ReconcileAnchors();
             State.Advance(delta,true,!boss.IsDead);
             if(before==LargeBossPhase.Recovery&&State.Phase==LargeBossPhase.Windup)BeginPhasePresentation();
             if (State.Phase == LargeBossPhase.Exposed && before != LargeBossPhase.Exposed)
@@ -93,17 +91,35 @@ namespace Emberfall
             bool heroic=chapterConfigured&&chapterDifficulty==ChapterDifficulty.Heroic;
             sweepSign=ChapterBossPattern.SweepSign(heroic,seed,State.PhaseNumber);
             startAngle=Mathf.Atan2(toward.x,toward.z)*Mathf.Rad2Deg+ChapterBossPattern.StartOffset(heroic,seed,State.PhaseNumber);
-            CreateAnchors();EnsureBeam();
-            game.SpawnMechanismText(transform.position+Vector3.up*3.6f,State.IsFollowup?"追加扫射预警 · 断锚可中止":"断能蓄力 · 摧毁供能锚",new Color(.35f,.92f,1));
+            if(State.IsFollowup) { sweepSign=1; startAngle=Mathf.Atan2(toward.x,toward.z)*Mathf.Rad2Deg-48f; }
+            else CreateAnchors();
+            EnsureBeam();
+            game.SpawnMechanismText(transform.position+Vector3.up*3.6f,State.IsFollowup?"追加扫射预警 · 打断可中止":"断能蓄力 · 摧毁供能锚",new Color(.35f,.92f,1));
             game.LogSystem("星环执政官 · 橙红边界表示危险，青色符号可打断，摧毁供能锚可中止扫射并暴露核心"+
-                (chapterConfigured&&chapterDifficulty!=ChapterDifficulty.Normal?" · 完整扫射后追加预警；断锚可止连扫":"")+
+                (chapterConfigured&&chapterDifficulty!=ChapterDifficulty.Normal?" · 完整扫射后追加锁向预警；打断止连扫，断锚暴露核心":"")+
                 (heroic?(sweepSign>0?" · 本轮顺时针扫射":" · 本轮逆时针扫射"):""));
+        }
+        private void ReconcileAnchors()
+        {
+            for (int i=0;i<anchors.Length;i++)
+                if ((State.LiveAnchorMask & (1<<i)) != 0 && (anchors[i]==null || anchors[i].Broken || !anchors[i].gameObject.activeInHierarchy))
+                    State.DestroyAnchor(State.PhaseNumber,i);
         }
         internal void InterruptWindup()
         {
-            if (stopped || State == null || !State.InterruptWindup()) return;
-            if (beamRoot != null) beamRoot.SetActive(false);
-            ReleaseAnchors(); AnnounceExposure();
+            if(stopped||State==null||!State.Interruptible)return;
+            CombatImpactBatch.Resolve(ResolveInterrupt);
+        }
+        private void ResolveInterrupt()
+        {
+            if(stopped||State==null||boss==null||boss.IsDead||!ChapterOwnerValid)return;
+            // Same attack may destroy its last anchor after enumerating the boss.
+            ReconcileAnchors();
+            if(State.Phase!=LargeBossPhase.Exposed&&!State.InterruptWindup())return;
+            if(beamRoot!=null)beamRoot.SetActive(false);
+            ReleaseAnchors();
+            if(State.Phase==LargeBossPhase.Exposed)AnnounceExposure();
+            else game.SpawnMechanismText(transform.position+Vector3.up*3.2f,"施法中断 · 恢复 2 秒",new Color(.35f,.92f,1));
         }
         private void AnnounceExposure()
         {

@@ -73,12 +73,21 @@ public static class ChapterCombatProductionTests
             else
             {
                 Check(enemy.BeginCalls==2&&boss.State.IsFollowup&&boss.State.Phase==LargeBossPhase.Windup,"hard component must create exactly one full warned followup");
-                Check(boss.State.Remaining==2.2f&&boss.State.LiveAnchorMask!=0&&!boss.State.DamagePulse,"followup commits fresh anchors without immediate damage");
+                Check(boss.State.Remaining==2.2f&&boss.State.LiveAnchorMask==0&&!boss.State.DamagePulse,"followup never creates new anchors or immediate damage");
                 Steps(boss,40);Check(boss.State.Phase==LargeBossPhase.Windup,"followup retains readable 2.2 second warning");
-                for(int i=0;i<3;i++)boss.State.DestroyAnchor(boss.State.PhaseNumber,i);
-                Check(boss.State.Phase==LargeBossPhase.Exposed,"followup anchors still counter the attack");
+                float locked=boss.BeamWorldAngle;Check(Math.Abs(locked+48f)<.01f,"followup warning begins bearing minus 48 degrees");game.Player.transform.position=new Vector3(5,0,0);
+                Steps(boss,4);Check(boss.State.Phase==LargeBossPhase.Beam&&Math.Abs(boss.BeamWorldAngle-locked)<.01f,"followup releases at its locked warning bearing");
+                Steps(boss,79);Check(boss.State.Phase==LargeBossPhase.Beam&&Math.Abs(boss.BeamWorldAngle-(locked+94.8f))<.02f,"followup sweeps bounded 96 degrees over four seconds");
                 Steps(boss,230);Check(enemy.BeginCalls==2&&!boss.State.OwnsAttacks,"followup never chains indefinitely");
             }
+        }
+        game=Game();enemy=new EnemyController();var clock=LargeExpeditionBoss.ConfigureChapter(enemy,1,0,ChapterDifficulty.Hard);int ticks=0;
+        do{clock.Tick(.05f);ticks++;}while(clock.State.OwnsAttacks&&ticks<1000);
+        Check(Math.Abs(ticks*.05f-26.4f)<.06f,"uncountered chapter threshold retains 26.4 seconds complete clock");
+        foreach(var difficulty in new[]{ChapterDifficulty.Hard,ChapterDifficulty.Heroic}) {
+            game=Game();enemy=new EnemyController();var interrupted=LargeExpeditionBoss.ConfigureChapter(enemy,1,0,difficulty);
+            do{interrupted.Tick(.05f);}while(!interrupted.State.IsFollowup);
+            interrupted.InterruptWindup();Check(interrupted.State.Phase==LargeBossPhase.Recovery&&interrupted.State.Remaining==2f&&interrupted.State.IncomingMultiplier==1,"followup interrupt is recovery not exposure");
         }
         game=Game();game.Player.transform.position=new Vector3(0,0,5);enemy=new EnemyController();var complete=LargeExpeditionBoss.ConfigureChapter(enemy,1,0,ChapterDifficulty.Hard);Steps(complete,900);
         Check(enemy.BeginCalls==2&&complete.State.Phase==LargeBossPhase.Combat,"unbroken hard sequence ends after one followup");
@@ -91,8 +100,22 @@ public static class ChapterCombatProductionTests
         Check(Vector3.Dot(arrows[3].points[1]-arrowHead,Vector3.Cross(Vector3.up,direction))<0,"heroic warning arrow matches actual reverse beam sign");
         Steps(reverse,50);
         Check(reverse.BeamWorldAngle<initial&&game.Logs.Exists(s=>s.Contains("逆时针")),"heroic actual beam follows the announced reverse direction");
-        game=Game();game.Player.transform.position=new Vector3(0,0,5);enemy=new EnemyController();var hard=LargeExpeditionBoss.ConfigureChapter(enemy,1,0,ChapterDifficulty.Hard);hard.Tick(.05f);hard.InterruptWindup();Steps(hard,600);
-        Check(enemy.BeginCalls==1&&hard.State.Phase==LargeBossPhase.Combat,"interrupt cancels pending followup and rewards exposure");
+        game=Game();game.Player.transform.position=new Vector3(0,0,5);enemy=new EnemyController();var hard=LargeExpeditionBoss.ConfigureChapter(enemy,1,0,ChapterDifficulty.Hard);hard.Tick(.05f);hard.InterruptWindup();Check(hard.State.Phase==LargeBossPhase.Recovery&&hard.State.Remaining==2f&&hard.State.IncomingMultiplier==1,"chapter interrupt gives two seconds recovery without vulnerability");Steps(hard,600);
+        Check(enemy.BeginCalls==1&&hard.State.Phase==LargeBossPhase.Combat,"interrupt cancels pending followup without new attacks");
+        foreach(bool bossFirst in new[]{true,false})
+        {
+            game=Game();enemy=new EnemyController();var atomic=LargeExpeditionBoss.ConfigureChapter(enemy,1,0,ChapterDifficulty.Hard);atomic.Tick(.05f);
+            var actualAnchors=(DestructibleProp[])Field<DestructibleProp[]>(atomic,"anchors").Clone();
+            actualAnchors[0].Broken=true;actualAnchors[1].Broken=true;atomic.Tick(.05f);
+            Check(atomic.State.LiveAnchorMask==4,"two prior broken anchors leave exactly the last anchor");
+            CombatImpactBatch.Begin();try {
+                if(bossFirst)atomic.InterruptWindup();
+                for(int i=0;i<3;i++)actualAnchors[i].Broken=true;
+                if(!bossFirst)atomic.InterruptWindup();
+            } finally { CombatImpactBatch.End(); }
+            Check(atomic.State.Phase==LargeBossPhase.Exposed&&atomic.State.Remaining==6f&&atomic.State.IncomingMultiplier==1.35f,"same attack last anchor break wins over interrupt in both target orders");
+            Steps(atomic,700);Check(enemy.BeginCalls==1,"anchor counter cancels the threshold followup");
+        }
         game=Game();enemy=new EnemyController();DestructibleProp.AllowPlacement=false;hard=LargeExpeditionBoss.ConfigureChapter(enemy,1,0,ChapterDifficulty.Hard);hard.Tick(.05f);
         Check(hard.State.Phase==LargeBossPhase.Exposed,"no safe anchors degrades to exposure");
         game.InputBlocked=true;game.Player.CombatEpoch++;hard.Tick(.05f);

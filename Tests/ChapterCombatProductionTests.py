@@ -22,14 +22,18 @@ def main():
         fixture=fixture.replace(declaration,declaration.replace('class ','partial class ').replace('struct ','partial struct '))
     enums=(ROOT/'Assets/Scripts/Core/ChapterProgression.cs').read_text()
     enums='namespace Emberfall{'+''.join(re.findall(r'public enum Chapter(?:Node|Difficulty)\s*\{[^}]*\}',enums))+'}'
-    cases=[('current',None),('no-body-activation','physical hazard grows during warning before active damage'),('no-followup','hard component must create exactly one full warned followup'),('no-hazard-pause','blocked chapter hazard must preserve clock and health'),('late-owner-cleanup','finished chapter retires hazard at zero delta while blocked')]
+    cases=[('current',None),('no-body-activation','physical hazard grows during warning before active damage'),('no-anchor-reconcile','same attack last anchor break wins over interrupt in both target orders'),('immediate-interrupt','same attack last anchor break wins over interrupt in both target orders'),('old-interrupt-exposure','followup interrupt is recovery not exposure'),('long-followup','followup never chains indefinitely'),('no-followup','hard component must create exactly one full warned followup'),('no-hazard-pause','blocked chapter hazard must preserve clock and health'),('late-owner-cleanup','finished chapter retires hazard at zero delta while blocked')]
     with tempfile.TemporaryDirectory(prefix='chapter-combat-') as temporary:
         for title,expected in cases:
             directory=Path(temporary)/title;directory.mkdir()
             (directory/'FixtureMath.cs').write_text(fixture);(directory/'ChapterEnums.cs').write_text(enums)
-            files=['Core/LargeBossPhaseState','Core/ChapterBossPattern','Core/ArenaPulseRules','Core/CombatSightRules','World/ChapterRoomGeometry','World/WorldTraversal','World/ChapterHazards','World/ChapterHazardGeometry','Combat/LargeExpeditionBoss','Combat/CombatSight','Combat/ThreatVisualStyle']
+            files=['Core/CombatImpactBatch','Core/LargeBossPhaseState','Core/ChapterBossPattern','Core/ArenaPulseRules','Core/CombatSightRules','World/ChapterRoomGeometry','World/WorldTraversal','World/ChapterHazards','World/ChapterHazardGeometry','Combat/LargeExpeditionBoss','Combat/CombatSight','Combat/ThreatVisualStyle']
             for name in files:
                 source=(ROOT/('Assets/Scripts/'+name+'.cs')).read_text()
+                if title=='no-anchor-reconcile' and name=='Combat/LargeExpeditionBoss':source=once(source,'            ReconcileAnchors();\n            if(State.Phase!=LargeBossPhase.Exposed', '            if(State.Phase!=LargeBossPhase.Exposed')
+                if title=='immediate-interrupt' and name=='Combat/LargeExpeditionBoss':source=once(source,'CombatImpactBatch.Resolve(ResolveInterrupt);','ResolveInterrupt();')
+                if title=='old-interrupt-exposure' and name=='Core/LargeBossPhaseState':source=once(source,'if (chapterFollowup) { followupPending=false;', 'if (false) { followupPending=false;')
+                if title=='long-followup' and name=='Core/LargeBossPhaseState':source=once(source,'chapterFollowup && IsFollowup ? 4f : BeamSeconds','BeamSeconds')
                 if title=='no-followup' and name=='Combat/LargeExpeditionBoss':source=once(source,'new LargeBossPhaseState(difficulty!=ChapterDifficulty.Normal)','new LargeBossPhaseState()')
                 if title=='no-body-activation' and name=='World/ChapterHazards':source=once(source,'body.localScale=new Vector3(.24f,Mathf.Max(.025f,height),.24f)','body.localScale=new Vector3(.24f,.025f,.24f)')
                 if title=='no-hazard-pause' and name=='World/ChapterHazards':source=once(source,'            if(game.InputBlocked)return;\n','')
