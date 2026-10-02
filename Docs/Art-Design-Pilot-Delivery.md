@@ -1,5 +1,7 @@
 # Art and design pilot delivery matrix
 
+> **Historical PR21 snapshot.** The draft/main-unchanged statements, intermediate 185-check result and moving-attack fallback below describe that earlier revision and are preserved for traceability. PR21–PR28 are now merged on Windows and iOS; supported moving basic attacks use layered sampling. See [the current release status and validation boundaries](Release-2026-10-03.md).
+
 Baseline Windows main: `03422ab83d0ab6a8f84f2147a81d8aeb63a6cd5e`. This matrix covers the complete requested round; preview work does not replace the gameplay/UI work. Source implementation is distinct from Unity/device or visual acceptance.
 
 | Request | Implemented source and bounded behavior | Remaining acceptance |

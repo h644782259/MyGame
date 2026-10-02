@@ -1,5 +1,7 @@
 # Moving basic attack: bounded authored-pilot candidate
 
+> **Historical PR25 design and pre-acceptance record.** The observed baseline and pending decision below refer to that development stage. The bounded moving-basic implementation has since been merged; current validation and remaining Unity/device limits are recorded in [the release guide](Release-2026-10-03.md).
+
 This work concerns the existing optional Vanguard pilot, which remains disabled by default. It does not extend the equipment, class or skill roster, change combat timing, add root motion, or change saves.
 
 ## Observed baseline
@@ -28,4 +30,4 @@ Acceptance requires actual production sampler/state tests with meaningful hierar
 
 The registered facing probe executes extracted production walking and Update-tail code, the original FaceAim method, and BasicAttack through its visual commit. It covers target turns, subsequent frames, stops, collision-accepted zero movement, owner versus model orientation and exact gait advancement. Input, aim resolution, traversal and engine objects remain test boundaries; damage/effects after the visual commit are excluded. The isolated-preview clock test checks the final Idle pose at the expected preview time rather than the last sampled clip's timestamp.
 
-Unity Editor import, native clip bindings, skinned bounds, shadows, shader appearance, touch/device performance and gameplay feel remain unverified without an available licensed Editor/device environment. Current source inspection has not established a shadow or bounds defect; this candidate must not add speculative renderer toggles. Validation results and final retention decision are pending.
+Unity Editor import, native clip bindings, skinned bounds, shadows, shader appearance, touch/device performance and gameplay feel remain unverified without an available licensed Editor/device environment. Current source inspection has not established a shadow or bounds defect; this candidate must not add speculative renderer toggles. Historical PR25 checkpoint: validation results and the final retention decision were pending at the time of this record; see [current merged status and validation](Release-2026-10-03.md).
