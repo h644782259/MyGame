@@ -32,7 +32,15 @@ def main():
     assert direct | dict(zip(facility_ids, facility_labels)) == EXPECTED
     assert 'Label(facilities, names[i], labels[i],' in source
     assert 'new GameObject(objectName)' in source
-    assert 'Resources.Load<Font>("Fonts/EmberfallWorldLabels")' in source
+    assert 'Font font=GameFont.WorldLabels;' in source
+    resolver = (ROOT / "Assets/Scripts/UI/GameFont.cs").read_text(encoding="utf-8")
+    assert 'WorldLabelPath="Fonts/EmberfallWorldLabels"' in resolver
+    world_labels = re.search(r'public static Font WorldLabels\s*\{(.*?)\n        \}', resolver, re.S)
+    assert world_labels is not None, 'World-label resolver is missing'
+    assert 'worldLabels=Resources.Load<Font>(WorldLabelPath)' in world_labels.group(1)
+    assert 'return worldLabels!=null?worldLabels:Shared;' in world_labels.group(1)
+    assert 'BundledUiPath="Fonts/NotoSansSC-Regular"' in resolver
+    assert 'shared=Resources.Load<Font>(BundledUiPath)' in resolver
     assert 'text.font=font' in source and 'sharedMaterial=font.material' in source
     metadata = FONT.with_suffix('.otf.meta').read_text()
     assert 'includeFontData: 1' in metadata and 'forceTextureCase: -2' in metadata
@@ -44,6 +52,7 @@ def main():
         cmap = font.getBestCmap()
         glyphs = font.getGlyphSet()
         characters = set(''.join(EXPECTED.values()))
+        assert len(characters) == 18, 'Authored label glyph coverage changed'
         for character in sorted(characters):
             assert ord(character) in cmap, 'Missing character: ' + character
             name = cmap[ord(character)]
