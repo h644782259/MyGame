@@ -32,8 +32,13 @@ namespace Emberfall
             if (chargeTime <= 0) return false;
             int rank = session.Progression.Profile.skillRanks[skill];
             Vector3 origin = owner.transform.position;
-            TargetPoint = Vector3.ClampMagnitude(origin + Vector3.ClampMagnitude(CombatFx.Flat(owner.AimPoint - origin), 9f * GameBalance.SkillRangeMultiplier(rank)), session.ArenaRadius);
-            TargetEnemy = owner.AimTarget;
+            bool contract = owner.HeroClass == HeroClass.Summoner && (skill == 4 || skill == 9);
+            var targeting = contract ? owner.GetComponent<SkillTargetingController>() : null;
+            bool explicitPoint = targeting != null && targeting.ConfirmingContract;
+            TargetEnemy = contract && !explicitPoint ? SummonedCompanion.ExplicitFocus(owner) ?? owner.AimTarget : owner.AimTarget;
+            Vector3 intendedPoint = contract && !explicitPoint && TargetEnemy != null ? TargetEnemy.transform.position : owner.AimPoint;
+            TargetPoint = Vector3.ClampMagnitude(origin + Vector3.ClampMagnitude(CombatFx.Flat(intendedPoint - origin), 9f * GameBalance.SkillRangeMultiplier(rank)), session.ArenaRadius);
+            if (contract) TargetPoint = CombatSight.GroundPoint(origin, TargetPoint);
             if (!ValidSnapshotTarget()) TargetEnemy = null;
             Direction = owner.transform.forward;
             epoch = owner.CombatEpoch;

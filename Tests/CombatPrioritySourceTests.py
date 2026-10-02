@@ -7,10 +7,13 @@ assert basic.index('TraversalStartedThisFrame || skillBasicRecovery.Blocked')<ba
 command=pet[pet.index('private void Command('):pet.index('private float AttackMultiplier')]
 assert 'if (preservePoint)\n            { commandedPoint' in command and 'preservePoint && commandedTarget == null' not in command
 acquire=pet[pet.index('private EnemyController AcquireTarget()'):pet.index('private void Update()')]
-assert acquire.index('if (ValidTarget(commandedTarget)) return commandedTarget;')<acquire.index('if (commandTime > 0 && hasCommandPoint) return null;')<acquire.index('EnemyController focused = Owner.FocusTarget;')
-assert 'if (commandTime <= 0) hasCommandPoint = false;' in pet
+assert acquire.index('if (ValidTarget(commandedTarget)) return commandedTarget;')<acquire.index('if (hasCommandPoint) return null;')<acquire.index('EnemyController focused = Owner.FocusTarget;')
+assert 'if (commandTime <= 0) { commandedTarget = null; hasCommandPoint = commandHadTarget = false; }' in pet
+assert 'commandHadTarget && !ValidTarget(commandedTarget)' in pet
 assert 'if (!ValidSnapshotTarget()) TargetEnemy = null;' in charge
 free=pet[pet.index('public static bool SetFreeFocus'):pet.index('public static EnemyController ExplicitFocus')]
-assert 'pet.hasCommandPoint = false;' in free
+assert 'pet.hasCommandPoint = pet.commandHadTarget = false;' in free
+focus=free.split('public static bool FreeRecall',1)[0]
+assert 'commandedTarget =' not in focus and 'hasCommandPoint =' not in focus
 assert 'Commands.TryConsume' not in free and 'commandTime =' not in free and 'commandMultiplier =' not in free
 print('PASS: 8 dodge/basic and captured-target-death priority source contracts (no PlayMode claim)')

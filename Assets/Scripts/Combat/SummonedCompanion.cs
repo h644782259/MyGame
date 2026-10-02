@@ -53,7 +53,7 @@ namespace Emberfall
         private bool commandEmpowered;
         private EnemyController commandedTarget;
         private Vector3 commandedPoint;
-        private bool hasCommandPoint;
+        private bool hasCommandPoint, commandHadTarget;
         private CombatModel model;
         private EnemyController target;
         private Transform healthBar;
@@ -219,7 +219,7 @@ namespace Emberfall
                 // directly after Teleport increments the owner's combat epoch.
                 if (pet == null || pet.Owner != owner || !CompanionRules.CanTransfer(pet.IsPermanent, pet.Health, pet.gameObject.activeInHierarchy) || pet.session == null || pet.session.Player != owner) continue;
                 pet.epoch = owner.CombatEpoch;
-                pet.commandedTarget = pet.target = null; pet.hasCommandPoint = false;
+                pet.commandedTarget = pet.target = null; pet.hasCommandPoint = pet.commandHadTarget = false;
                 pet.commandTime = pet.recallTime = pet.idleTime = pet.attackPose = 0;
                 pet.commandMultiplier = 1;
                 pet.commandEmpowered = false;
@@ -254,25 +254,26 @@ namespace Emberfall
         public static bool SetFreeFocus(PlayerController owner, EnemyController enemy)
         {
             var game = GameSession.Instance;
-            if (owner == null || owner.IsDead || owner.HeroClass != HeroClass.Summoner || game == null || game.InputBlocked || game.CombatEnded || enemy == null || enemy.IsDead || !enemy.gameObject.activeInHierarchy ||
+            if (owner == null || owner.IsDead || owner.HeroClass != HeroClass.Summoner || game == null || game.Player != owner || !game.HasStarted || game.InputBlocked || game.CombatEnded || enemy == null || enemy.IsDead || !enemy.gameObject.activeInHierarchy || !game.Enemies.Contains(enemy) ||
                 CombatFx.Flat(enemy.transform.position - owner.transform.position).sqrMagnitude > 196f) return false;
             State(owner).Directive.Focus(enemy);
-            foreach (var pet in Snapshot(owner)) { pet.commandedTarget = enemy; pet.hasCommandPoint = false; pet.recallTime = 0; }
+            foreach (var pet in Snapshot(owner)) { pet.target = null; pet.recallTime = 0; }
             return true;
         }
         public static bool FreeRecall(PlayerController owner)
         {
             var game = GameSession.Instance;
-            if (owner == null || owner.IsDead || owner.HeroClass != HeroClass.Summoner || game == null || game.InputBlocked || game.CombatEnded) return false;
+            if (owner == null || owner.IsDead || owner.HeroClass != HeroClass.Summoner || game == null || game.Player != owner || !game.HasStarted || game.InputBlocked || game.CombatEnded) return false;
             State(owner).Directive.Recall();
-            foreach (var pet in Snapshot(owner)) { pet.commandedTarget = pet.target = null; pet.hasCommandPoint = false; }
+            foreach (var pet in Snapshot(owner)) { pet.commandedTarget = pet.target = null; pet.hasCommandPoint = pet.commandHadTarget = false; }
             return true;
         }
         public static EnemyController ExplicitFocus(PlayerController owner)
         {
             if (owner == null || owner.IsDead) return null;
             var directive = State(owner).Directive;
-            return directive.Resolve(e => e != null && !e.IsDead && e.gameObject.activeInHierarchy && CombatFx.Flat(e.transform.position-owner.transform.position).sqrMagnitude <= 196f);
+            var game = GameSession.Instance;
+            return directive.Resolve(e => game != null && game.Player == owner && e != null && !e.IsDead && e.gameObject.activeInHierarchy && game.Enemies.Contains(e) && CombatFx.Flat(e.transform.position-owner.transform.position).sqrMagnitude <= 196f);
         }
 
         public static void RecallAll(PlayerController owner)
@@ -281,7 +282,7 @@ namespace Emberfall
             foreach (SummonedCompanion pet in Snapshot(owner))
             {
                 pet.recallTime = CompanionRules.RecallDuration;
-                pet.commandedTarget = null; pet.hasCommandPoint = false;
+                pet.commandedTarget = null; pet.hasCommandPoint = pet.commandHadTarget = false;
                 pet.target = null;
             }
         }
@@ -300,7 +301,7 @@ namespace Emberfall
             partner.RefreshContractPower(rank);
             if (!partner.IsPermanent) partner.RemainingLifetime = Mathf.Max(partner.RemainingLifetime, CompanionRules.ContractLifetime((int)form,rank,false));
             BondState state = State(owner);
-            state.Directive.Clear();
+            if (!preserveTargetPoint) focus = ExplicitFocus(owner) ?? focus;
             bool empowered = state.Commands.TryConsume(Time.time);
             partner.Command(focus, empowered, at, preserveTargetPoint);
             if (timedPackRoute && form == Kind.Wolf)
@@ -350,7 +351,7 @@ namespace Emberfall
 
         private bool ValidTarget(EnemyController enemy)
         {
-            return enemy != null && !enemy.IsDead && enemy.gameObject.activeInHierarchy &&
+            return enemy != null && !enemy.IsDead && enemy.gameObject.activeInHierarchy && session != null && session.Enemies.Contains(enemy) &&
                 CombatFx.Flat(enemy.transform.position - Owner.transform.position).sqrMagnitude <= 14f * 14f;
         }
 
@@ -364,6 +365,7 @@ namespace Emberfall
             // If it dies during the command, do not silently acquire a bystander.
             if (preservePoint)
             { commandedPoint = WorldTraversal.NearestWalkable(CombatSight.GroundPoint(Owner.transform.position,point),NavigationRadius); hasCommandPoint = true; }
+            commandHadTarget = commandedTarget != null;
             commandTime = CompanionRules.CommandDuration(empowered);
             commandEmpowered = empowered;
             commandMultiplier = CompanionRules.ActiveCommandMultiplier(rank, commandEmpowered);
@@ -397,7 +399,7 @@ namespace Emberfall
             foreach (SummonedCompanion partner in active)
                 if (partner != null && partner.Owner == Owner && partner.IsAlive && partner.commandTime > 0 && partner.commandedTarget == enemy)
                 { commandedFocus = true; break; }
-            if (!CompanionRules.CoordinatedTarget(Owner.FocusTarget == enemy, commandedFocus)) return;
+            if (!CompanionRules.CoordinatedTarget(Owner.FocusTarget == enemy, commandedFocus, ExplicitFocus(Owner) == enemy)) return;
             if (!State(Owner).Cooperation.RegisterHit(enemy, (int)Form, Time.time)) return;
             enemy.TakeDamage(damage * CompanionRules.DamageMultiplier(true) * CompanionRules.CooperationDamage, Vector3.zero, impact: false);
             AdvancedSkillVfx.Beam(Owner, transform.position + Vector3.up, enemy.transform.position + Vector3.up, new Color(.5f, 1f, .9f), .3f, .2f);
@@ -472,10 +474,13 @@ namespace Emberfall
             if (recallTime > 0) return null;
             var directive = State(Owner).Directive;
             EnemyController explicitTarget = directive.Resolve(ValidTarget);
+            if (commandTime > 0)
+            {
+                if (ValidTarget(commandedTarget)) return commandedTarget;
+                if (hasCommandPoint) return null;
+            }
             if (directive.Recalling) return null;
             if (explicitTarget != null) return explicitTarget;
-            if (ValidTarget(commandedTarget)) return commandedTarget;
-            if (commandTime > 0 && hasCommandPoint) return null;
             EnemyController focused = Owner.FocusTarget;
             if (focused != null) return focused;
             EnemyController chosen = null;
@@ -489,16 +494,22 @@ namespace Emberfall
             return chosen;
         }
 
+        private void AdvanceCommand(float dt)
+        {
+            recallTime = Mathf.Max(0, recallTime - dt);
+            commandTime = Mathf.Max(0, commandTime - dt);
+            if (commandHadTarget && !ValidTarget(commandedTarget))
+            { commandedTarget = null; hasCommandPoint = commandHadTarget = false; }
+            if (commandTime <= 0) { commandedTarget = null; hasCommandPoint = commandHadTarget = false; }
+        }
+
         private void Update()
         {
             if (Owner == null || Owner.IsDead || session == null || session.Player != Owner || !session.HasStarted || Owner.CombatEpoch != epoch) { Dismiss(); return; }
             if (session.InputBlocked) return;
             float dt = Time.deltaTime;
             if (dt <= 0) return;
-            recallTime = Mathf.Max(0, recallTime - dt);
-            commandTime = Mathf.Max(0, commandTime - dt);
-            if (!ValidTarget(commandedTarget)) commandedTarget = null;
-            if (commandTime <= 0) hasCommandPoint = false;
+            AdvanceCommand(dt);
             statRefresh -= dt;
             if (statRefresh <= 0) { statRefresh = .5f; RefreshPower(false); }
             RemainingLifetime -= dt;
