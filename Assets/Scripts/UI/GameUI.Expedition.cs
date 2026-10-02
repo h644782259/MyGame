@@ -28,7 +28,7 @@ namespace Emberfall
         {
             if(MobileControls.Active){DrawMobileBlessingChoice();return;}
             RunBlessing[] offer = session.RunChoices.Offer;
-            Rect w = Modal(1000, 470, "星烬祝福", session.RoomChainRun!=null?(session.RunChoices.CompletedWave==1?"首房 · 定打法 / 补资源与生存":"星泉 · 强化已有搭配 / 补短板"):"第 " + session.DungeonWave + " 波完成 · 选择一项，仅本局生效");
+            Rect w = Modal(1000, 470, "星烬祝福", BlessingSubtitle(false));
             for (int i=0;i<offer.Length;i++)
             {
                 Rect cardRect = new Rect(w.x+28+i*322,w.y+117,300,240);

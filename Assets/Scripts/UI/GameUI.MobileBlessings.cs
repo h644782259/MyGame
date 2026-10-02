@@ -19,7 +19,7 @@ namespace Emberfall
             {mobileBlessingOffer=offer;mobileBlessingOwner=session.Player;mobileBlessingEpoch=session.Player.CombatEpoch;
              mobileBlessingWave=session.RunChoices.CompletedWave;mobileBlessingScroll=Vector2.zero;selectedBlessing=-1;}
             var layout=MobilePanelGeometry();
-            if(DrawMobilePanelChrome(layout,"星烬祝福",session.RoomChainRun!=null?(session.RunChoices.CompletedWave==1?"首房 · 定打法 / 补资源与生存":"星泉 · 强化搭配 / 补短板"):"选择一项 · 仅本局生效",false,true))return;
+            if(DrawMobilePanelChrome(layout,"星烬祝福",BlessingSubtitle(true),false,true))return;
             int count=offer.Length;if(count==0)return;
             float column=(layout.Body.Width-16-(count-1)*10)/count;
             float cardHeight=150;
