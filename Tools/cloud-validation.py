@@ -278,6 +278,8 @@ def main():
             'using System; internal static class Program { static void Main() { Console.WriteLine(MobilePauseNavigationTests.Run()); } }'))
         checks.append(("collection-render-lifecycle",[ROOT/"Assets/Scripts/UI/CollectionModelPreview.cs",ROOT/"Assets/Scripts/UI/CollectionPreviewState.cs",ROOT/"Assets/Scripts/UI/CollectionPreviewComposition.cs",ROOT/"Tests/CollectionRenderLifecycleTests.cs"],
             'using System; internal static class Program { static void Main() { Console.WriteLine(CollectionRenderLifecycleTests.Run()); } }'))
+        checks.append(("collection-render-lifecycle-modern",[ROOT/"Assets/Scripts/UI/CollectionModelPreview.cs",ROOT/"Assets/Scripts/UI/CollectionPreviewState.cs",ROOT/"Assets/Scripts/UI/CollectionPreviewComposition.cs",ROOT/"Tests/CollectionRenderLifecycleTests.cs"],
+            'using System; internal static class Program { static void Main() { Console.WriteLine(CollectionRenderLifecycleTests.Run()); } }'))
         checks.append(("ui-render-cache",[ROOT/"Assets/Scripts/Core/GameTypes.cs",ROOT/"Assets/Scripts/Core/ProgressionService.cs",ROOT/"Tests/ProgressionTests.cs",ROOT/"Assets/Scripts/UI/CollectionPreviewState.cs",ROOT/"Assets/Scripts/Combat/CombatTextMetrics.cs",ROOT/"Assets/Scripts/Combat/CombatTextLayout.cs",ROOT/"Tests/UiRenderCacheTests.cs"],
             'using System; internal static class Program { static void Main() { Console.WriteLine(UiRenderCacheTests.Run()); } }'))
         checks.append(("ui-render-cache-lifecycle",[ROOT/"Assets/Scripts/Combat/FloatingNumber.cs",ROOT/"Assets/Scripts/Combat/CombatTextMetrics.cs",ROOT/"Assets/Scripts/Combat/CombatTextLayout.cs",ROOT/"Tests/UiRenderCacheLifecycleTests.cs"],
@@ -311,7 +313,7 @@ def main():
                 for helper in ["HubTravelRules","MasteryCoreRuntime","TierRewardRules","TierRewardBand","ProgressionGoalState"]:sources.append(ROOT/("Assets/Scripts/Core/"+helper+".cs"))
             if ROOT/"Tests/CombatBalanceTests.cs" in sources:sources.append(ROOT/"Assets/Scripts/Core/SkillDamageBudgets.cs")
         for name, sources, program in checks:
-            project = write_project(workspace / name, sources, program, defines={"combat-review-object-id-modern-contract":"UNITY_6000_6_OR_NEWER", "game-font-android":"UNITY_ANDROID", "game-font-ios":"UNITY_IOS"}.get(name, ""))
+            project = write_project(workspace / name, sources, program, defines={"collection-render-lifecycle-modern":"UNITY_2023_1_OR_NEWER", "combat-review-object-id-modern-contract":"UNITY_6000_6_OR_NEWER", "game-font-android":"UNITY_ANDROID", "game-font-ios":"UNITY_IOS"}.get(name, ""))
             commands = [[dotnet, "restore", str(project), "--configfile", str(config), "--verbosity", "quiet"],
                         [dotnet, "run", "--project", str(project), "--no-restore", "--configuration", "Release", "--", str(workspace / "saves")]]
             passed = run_check(name, commands, env, output, report)
