@@ -22,4 +22,17 @@ Measurements use warmed .NET 8 production algorithms and recorded/no-allocation 
 
 The HUD baseline observed redundant snapshot construction within a single draw event. Reuse is local to that event; later events query current state again. The navigation baseline observed two invariant eight-integer offset arrays allocated per A* search. Reusing these private read-only arrays retains neighbor ordering. The large search buffers and heap remain, so the navigation improvement is deliberately modest.
 
-Final measured values, exact source identities and validation results are recorded in the accompanying review evidence. No Unity Editor, real font rendering, touch/controller hardware, device gameplay or platform package build is claimed.
+The HUD probe warms 3,000 calls then records five samples of 10,000 calls. All five samples were equal for each case in this environment:
+
+| Managed bytes per draw | Before | After |
+|---|---:|---:|
+| Expedition mobile | 1,560 | 784 |
+| Expedition desktop | 1,656 | 1,272 |
+| Chapter mobile | 792 | 392 |
+| Chapter desktop | 1,280 | 880 |
+
+The actual constructor remains 200 bytes in the probe. Rendering boundaries and host getters are explicit managed doubles; the values isolate snapshot/draw work, not the entire live HUD. `HudAllocationProbe.py` is a measurement tool, while the registered actual Draw regression enforces per-event query counts and next-event state freshness.
+
+For navigation, the controlled 240-query-tick blocked cases saved 4,480 bytes for one wolf and 18,480 bytes for four wolves, about 0.257%; open cases stayed at zero. Target indexes and direction float-bit traces matched the compiled legacy variant exactly in all four cases. The maintained allocation check enforces the bounded improvement and unchanged outputs. See `Tests/CompanionPathAllocationNotes.md` for inputs and remaining allocations.
+
+Exact source identities and validation results are recorded in the accompanying review evidence. No Unity Editor, real font rendering, touch/controller hardware, device gameplay or platform package build is claimed.
