@@ -5,6 +5,19 @@ namespace Emberfall
     {
         private bool equipmentAppearanceOpen,equipmentAppearanceCandidate,equipmentAppearanceDetail;
         private string equipmentAppearanceItem;
+        private Vector2 equipmentAppearanceScroll;
+        private void DrawMobileEquipmentAppearance(Rect viewport,ItemData item,float u)
+        {
+            if(equipmentAppearanceItem!=item.id)equipmentAppearanceScroll=Vector2.zero;
+            // Controls, mannequin and override explanation belong to the clipped body.
+            // Short landscape panels scroll this content; the fixed footer owns its area.
+            float contentHeight=Mathf.Max(viewport.height,360*u);
+            float contentWidth=Mathf.Max(1,viewport.width-18*u);
+            equipmentAppearanceScroll=BeginTouchScroll("equipment-appearance",viewport,equipmentAppearanceScroll,
+                new Rect(0,0,contentWidth,contentHeight));
+            DrawEquipmentAppearanceDetail(new Rect(0,0,contentWidth,contentHeight),item,u);
+            EndTouchScroll();
+        }
         private bool DrawEquipmentAppearanceDetail(Rect area,ItemData item,float u)
         {
             if(!equipmentAppearanceOpen||item==null)return false;

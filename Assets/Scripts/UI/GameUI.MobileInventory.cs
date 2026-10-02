@@ -196,7 +196,7 @@ namespace Emberfall
         private bool DrawMobileInventoryDetail(MobilePanelLayout.Area viewport, ItemData item)
         {
             if (mobileDetailItem != (item == null ? null : item.id)) { mobileDetailItem = item == null ? null : item.id; mobileInventoryDetailScroll = Vector2.zero; }
-            if(item!=null&&equipmentAppearanceOpen){DrawEquipmentAppearanceDetail(MobilePanelRect(viewport),item,TouchRatio);return false;}
+            if(item!=null&&equipmentAppearanceOpen){DrawMobileEquipmentAppearance(MobilePanelRect(viewport),item,TouchRatio);return false;}
             float contentWidth = viewport.Width - 18;
             int ignored;
             float contentHeight = MobileItemDetailContent(item, contentWidth, false, out ignored);
