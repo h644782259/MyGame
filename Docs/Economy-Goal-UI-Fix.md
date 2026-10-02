@@ -8,4 +8,6 @@ All goal status surfaces use `CurrentProgressionGoalStatus`, which passes the ac
 
 Validation: 15 new production UI/context assertions, 15 existing milestone assertions, 52 existing identity/transaction assertions; two compiled negative controls. Original EconomyGrowthTests and its regression groups/negative controls pass. AdventureProgressionSourceTests and GrowthNavigationSourceTests pass; the fixed header and action layout remain intact. Executed with .NET 8 and DOTNET_TieredCompilation=0. No Unity execution, device rendering or platform build.
 
-Aggregate registration for integration: add `('economy-goal-ui','EconomyGoalUiTests.py')` to the Python checks list. No new core dependencies are required by other harnesses.
+Default aggregate registers `('economy-goal-ui','EconomyGoalUiTests.py')` in the Python checks list. No new core dependencies are required by other harnesses.
+
+Follow-up registration audit: all 65 `*SourceTests.py` passed. All runtime C# sources compiled for Windows/default, `UNITY_ANDROID`, and `UNITY_IOS` against the cached Unity 2021.3.33 references, with zero warnings/errors. These are supplementary old-reference checks, not Unity 6000.6 validation. All five production status call sites route through the actual-context helper; standalone goal harnesses already include the complete partial and require no new dependency. Evidence: `/workspace/scratch/economy-goal-ui-validation/`. No full aggregate or push was performed.
