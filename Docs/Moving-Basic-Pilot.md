@@ -18,10 +18,14 @@ During a basic attack, Root and the nine lower-body bones retain that base. The 
 
 Hit and stationary representative skill retain their full-body paths. Moving skills, other skills, charge, death, airborne/landing, strafe/backstep, incompatible gear and fashion retain procedural fallback. The sword and its sockets follow Hand.R; there is no independent weapon interpolation.
 
+Moving-basic eligibility also checks the actual accepted walking direction against the player's current facing. Player Update records movement before FaceAim can turn toward a target; the existing smoothed direction alone can remain stale for several frames after a 90- or 180-degree turn. SetLocomotion therefore records the accepted vector in the owner's world basis, and the sampler reprojects it through the current owner orientation. This extra guard never advances locomotion again. A valid zero displacement clears the old direction while allowing the existing speed decay; unknown or nonfinite movement is rejected. The ordinary default-off path does no extra transform projection.
+
 The imported visual becomes visible only after a successful complete sample. A sampler exception hides it and restores the procedural renderers in the same call, preventing an incomplete combination from being presented. This boundary does not catch gameplay execution or introduce saved state. Existing action-over-hit priority remains: cancelling an action during a still-live hit window can reveal the Hit pose before normal locomotion resumes.
 
 ## Acceptance boundary
 
 Acceptance requires actual production sampler/state tests with meaningful hierarchical TRS doubles, compiled negative controls, matched native Blender baseline/candidate videos at the default combat camera, and FBX roundtrip evidence. The comparison must preserve source timing, camera, lighting and geometry. Rendered smoothness, feet motion and recovery must be inspected, not inferred from sampling counts.
+
+The registered facing probe executes extracted production walking and Update-tail code, the original FaceAim method, and BasicAttack through its visual commit. It covers target turns, subsequent frames, stops, collision-accepted zero movement, owner versus model orientation and exact gait advancement. Input, aim resolution, traversal and engine objects remain test boundaries; damage/effects after the visual commit are excluded. The isolated-preview clock test checks the final Idle pose at the expected preview time rather than the last sampled clip's timestamp.
 
 Unity Editor import, native clip bindings, skinned bounds, shadows, shader appearance, touch/device performance and gameplay feel remain unverified without an available licensed Editor/device environment. Current source inspection has not established a shadow or bounds defect; this candidate must not add speculative renderer toggles. Validation results and final retention decision are pending.
