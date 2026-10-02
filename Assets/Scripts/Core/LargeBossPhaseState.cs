@@ -20,13 +20,16 @@ namespace Emberfall
         public bool Interruptible { get { return Phase == LargeBossPhase.Windup; } }
         public float IncomingMultiplier { get { return Phase == LargeBossPhase.Exposed ? CoreDamageMultiplier : 1f; } }
         private float nextPulse, phaseCooldown;
-        private bool anchorsCommitted;
+        private bool anchorsCommitted, followupPending;
+        private readonly bool chapterFollowup;
+        public bool IsFollowup { get; private set; }
+        public LargeBossPhaseState(bool chapterFollowup = false) { this.chapterFollowup = chapterFollowup; }
 
         public bool TryBegin(float healthFraction, bool combatActive)
         {
             if (!combatActive || Phase != LargeBossPhase.Combat || phaseCooldown > 0 || PhaseNumber >= 2 ||
                 !Finite(healthFraction) || healthFraction <= 0 || healthFraction > (PhaseNumber == 0 ? .7f : .35f)) return false;
-            PhaseNumber++; Phase = LargeBossPhase.Windup; Remaining = WindupSeconds; BeamAngle = 0;
+            PhaseNumber++; followupPending = chapterFollowup; IsFollowup = false; Phase = LargeBossPhase.Windup; Remaining = WindupSeconds; BeamAngle = 0;
             LiveAnchorMask = 0; anchorsCommitted = false; DamagePulse = false; return true;
         }
         public bool CommitAnchors(int mask)
@@ -50,7 +53,7 @@ namespace Emberfall
         public bool InterruptWindup()
         { if (!Interruptible) return false; Expose(); return true; }
         private void Expose()
-        { Phase = LargeBossPhase.Exposed; Remaining = ExposureSeconds; DamagePulse = false; LiveAnchorMask = 0; }
+        { followupPending = false; Phase = LargeBossPhase.Exposed; Remaining = ExposureSeconds; DamagePulse = false; LiveAnchorMask = 0; }
         public void Advance(float delta, bool combatActive, bool bossAlive)
         {
             DamagePulse = false;
@@ -72,10 +75,12 @@ namespace Emberfall
             { Phase = LargeBossPhase.Beam; Remaining = BeamSeconds; BeamAngle = 0; nextPulse = BeamTickSeconds; }
             else if (Phase == LargeBossPhase.Beam)
             { Phase = LargeBossPhase.Recovery; Remaining = 2f; LiveAnchorMask = 0; DamagePulse = false; }
+            else if (Phase == LargeBossPhase.Recovery && followupPending)
+            { followupPending = false; IsFollowup = true; Phase = LargeBossPhase.Windup; Remaining = WindupSeconds; BeamAngle = 0; LiveAnchorMask = 0; anchorsCommitted = false; }
             else { Phase = LargeBossPhase.Combat; Remaining = 0; phaseCooldown = 4f; }
         }
         public void Dispose()
-        { Phase = LargeBossPhase.Finished; Remaining = 0; LiveAnchorMask = 0; DamagePulse = false; }
+        { followupPending = false; Phase = LargeBossPhase.Finished; Remaining = 0; LiveAnchorMask = 0; DamagePulse = false; }
         private static bool Finite(float value) { return !float.IsNaN(value) && !float.IsInfinity(value); }
     }
 }
