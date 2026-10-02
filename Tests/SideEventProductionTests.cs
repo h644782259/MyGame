@@ -37,7 +37,7 @@ public static class SideEventProductionTests
 }
 namespace Emberfall
 {
- public class EnemyController{}
+ public class EnemyController{public bool IsDead;public UnityEngine.GameObject gameObject=new UnityEngine.GameObject();}
  public class PlayerController{public int CombatEpoch,Heals;public bool IsDead;public float MaxHealth=100;public void Heal(float amount){Heals++;}}
  public class ProgressionService
  {
@@ -64,6 +64,6 @@ namespace Emberfall
 }
 namespace UnityEngine
 {
- public class GameObject{}public static class Time{public static float unscaledTime;}
+ public class GameObject{public bool activeInHierarchy=true;}public static class Time{public static float unscaledTime;}
  public static class Mathf{public static int Min(int a,int b){return Math.Min(a,b);}}
 }
