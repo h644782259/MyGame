@@ -36,8 +36,8 @@
     },
     {
       "path": "Assets/Resources/BlenderPilot/Vanguard.fbx",
-      "bytes": 1006236,
-      "sha256": "88136a176af870c782fd0630decf897727fb214a6697ca0751363f7e3a9a5551"
+      "bytes": 1018460,
+      "sha256": "8b89fb808fa4ce4eb65045f6a12cb842df7ab4173977a111f44f60ddb668f529"
     },
     {
       "path": "Assets/Resources/BlenderPilot/WayfarerTent.fbx",
@@ -45,7 +45,7 @@
       "sha256": "0da4461f859aebd8eea27f3b242490f6ed428cdeedf52f224956a6af100eb4c1"
     }
   ],
-  "total_bytes": 1897340,
+  "total_bytes": 1909564,
   "runtime_texture_uncompressed_rgba_mib_with_full_mips": 10.666666666666666,
   "hero_draw_meshes": 6,
   "hero_bones": 19,

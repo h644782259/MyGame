@@ -5,6 +5,7 @@ from mathutils import Matrix
 exec((Path(__file__).parent/'build_pilot.py').read_text().split('sword(); tent(); crate(); fire()')[0])
 begin()
 weights={}
+blended_weights={}
 def bind(o,bone): weights[o.name]=bone; return o
 def shell(name,rings,s,bone,n=8):
  verts=[]
@@ -14,6 +15,54 @@ def shell(name,rings,s,bone,n=8):
  return bind(mesh(name,verts,faces,s),bone)
 def plate(name,points,depth,s,pos,bone):
  o=outline(name,points,depth,s); o.location=pos; bevel(o,.012); return bind(o,bone)
+def continuous_sleeve(suf,side):
+ # Closed continuous cloth from torso under the shoulder armor to the glove.
+ # Intermediate rings share vertices across joints; at most two existing bones
+ # influence each vertex, so bending cannot split two separately capped rods.
+ S='Spine';U='UpperArm.'+suf;F='Forearm.'+suf;H='Hand.'+suf
+ rings=[((side*.28,0,1.60),.095,((S,.8),(U,.2))),
+        ((side*.37,0,1.62),.115,((S,.25),(U,.75))),
+        ((side*.43,-.004,1.56),.119,((U,1),)),
+        ((side*.50,-.011,1.42),.099,((U,1),)),
+        ((side*.535,-.014,1.355),.094,((U,.65),(F,.35))),
+        ((side*.548,-.023,1.31),.090,((U,.2),(F,.8))),
+        ((side*.557,-.047,1.20),.087,((F,1),)),
+        ((side*.57,-.075,1.085),.080,((F,.35),(H,.65)))]
+ n=10;verts=[];groups=[]
+ for j,(center,radius,influences) in enumerate(rings):
+  before=Vector(rings[max(0,j-1)][0]);after=Vector(rings[min(len(rings)-1,j+1)][0]);q=(after-before).to_track_quat('Z','Y')
+  for k in range(n):
+   verts.append(Vector(center)+q@Vector((radius*math.cos(k*math.tau/n),radius*math.sin(k*math.tau/n),0)));groups.append(influences)
+ faces=[tuple(range(n-1,-1,-1)),tuple(range((len(rings)-1)*n,len(rings)*n))]
+ faces += [(j*n+k,j*n+(k+1)%n,(j+1)*n+(k+1)%n,(j+1)*n+k) for j in range(len(rings)-1) for k in range(n)]
+ o=bind(mesh('Vanguard_ContinuousSleeve_'+suf,verts,faces,5),U);blended_weights[o.name]=groups
+ for f in o.data.polygons:f.use_smooth=len(f.vertices)==4
+ return o
+
+def folded_mantle():
+ # Closed thin volume with three long folds and bowed side profile. Shape is
+ # authored rather than simulated; the existing Spine/Mantle hinge is retained.
+ cols=9;rows=[0,.16,.35,.58,.80,1];verts=[]
+ for layer in [-1,1]:
+  for t in rows:
+   width=.28+.048*math.sin(t*math.pi*.75)
+   for c in range(cols):
+    u=-1+2*c/(cols-1);fold=(.010+.032*t)*math.cos(3*math.pi*u)*(1-.25*abs(u))
+    x=u*width;y=.235+.12*t+.026*math.sin(math.pi*t)+fold+layer*.009
+    z=1.67-.68*t+.083*math.exp(-u*u*22)*t**6+.022*u*u*t
+    verts.append((x,y,z))
+ size=cols*len(rows);faces=[]
+ for j in range(len(rows)-1):
+  for c in range(cols-1):
+   a=j*cols+c;b=a+1;d=a+cols;e=d+1
+   faces.extend([(a,d,e,b),(a+size,b+size,e+size,d+size)])
+ perimeter=list(range(cols))+[j*cols+cols-1 for j in range(1,len(rows))]+list(range(size-2,size-cols-1,-1))+[j*cols for j in range(len(rows)-2,0,-1)]
+ for a,b in zip(perimeter,perimeter[1:]+perimeter[:1]):faces.append((a,b,b+size,a+size))
+ o=bind(mesh('Vanguard_BackMantle',verts,faces,5),'Mantle')
+ # Preserve fold ridges in the silhouette; shared normals soften only the broad cloth panels.
+ for f in o.data.polygons[:2*(len(rows)-1)*(cols-1)]:f.use_smooth=True
+ return o
+
 # Tailored silhouette: broad left pauldron, tapered chest, split tabard, articulated greaves.
 shell('Vanguard_PaddedTorso',[(1.04,.25,.16,0,0),(1.31,.31,.20,0,0),(1.64,.40,.22,0,0),(1.75,.30,.17,0,0)],5,'Spine')
 shell('Vanguard_Breastplate',[(1.19,.235,.173,0,-.035),(1.43,.34,.24,0,-.012),(1.66,.37,.23,0,0),(1.73,.27,.17,0,0)],1,'Spine')
@@ -31,8 +80,8 @@ for side in [-1,1]:
  plate('Vanguard_ToeCap_'+suf,[(-.10,0),(.10,0),(.09,.05),(-.09,.05)],.15,1,(x,-.275,.10),'Foot.'+suf)
  # arm rests in a shallow A pose; sword in right hand
  shoulder=(side*.39,0,1.64); elbow=(side*.54,-.015,1.34); hand=(side*.57,-.075,1.08)
- bind(rod('Vanguard_Sleeve_'+suf,shoulder,elbow,.125,5,8,r2=.09),'UpperArm.'+suf)
- bind(rod('Vanguard_Vambrace_'+suf,elbow,hand,.12,1,8,r2=.09),'Forearm.'+suf)
+ continuous_sleeve(suf,side)
+ bind(rod('Vanguard_Vambrace_'+suf,(side*.545,-.021,1.31),hand,.113,1,8,r2=.09),'Forearm.'+suf)
  shell('Vanguard_Glove_'+suf,[(.99,.09,.09,hand[0],hand[1]),(1.15,.10,.10,hand[0],hand[1])],7,'Hand.'+suf)
  # overlaid segmented asymmetric pauldron, readable from top camera
  for i in range(3 if side<0 else 2):
@@ -52,7 +101,7 @@ plate('Vanguard_Brow',[(-.21,0),(0,.04),(.21,0),(.19,-.035),(0,.008),(-.19,-.035
 # swept crest: wedge volume in YZ, oriented along forward-back, rises to legacy 2.535 crest height
 crest=mesh('Vanguard_Crest',[(-.042,-.14,2.20),(.042,-.14,2.20),(-.033,-.03,2.535),(.033,-.03,2.535),(-.027,.24,2.34),(.027,.24,2.34),(-.03,.19,2.18),(.03,.19,2.18)],[(0,2,4,6),(1,7,5,3),(0,1,3,2),(2,3,5,4),(4,5,7,6),(6,7,1,0)],5); bind(crest,'Head')
 # back mantle with centre crease and bottom notch, rigged separately
-plate('Vanguard_BackMantle',[(-.29,0),(.29,0),(.32,-.62),(.08,-.69),(0,-.59),(-.08,-.69),(-.32,-.62)],.03,5,(0,.23,1.67),'Mantle')
+folded_mantle()
 hero=current[:]
 # Build deform rig in Blender coordinates (+Z up, -Y forward).
 bones=[('Root',(0,0,0),(0,0,.2),None),('Pelvis',(0,0,1.05),(0,0,1.25),'Root'),('Spine',(0,0,1.25),(0,0,1.73),'Pelvis'),('Head',(0,0,1.78),(0,0,2.21),'Spine'),('Mantle',(0,.23,1.67),(0,.25,1.0),'Spine')]
@@ -68,7 +117,11 @@ bpy.ops.object.mode_set(mode='OBJECT')
 for o in hero:
  bpy.ops.object.select_all(action='DESELECT'); o.select_set(True); bpy.context.view_layer.objects.active=o; bpy.ops.object.transform_apply(location=True,rotation=True,scale=True)
  b=weights[o.name]; g=o.vertex_groups.new(name=b)
- if 'Tabard' in o.name or 'BackMantle' in o.name:
+ if o.name in blended_weights:
+  for index,influences in enumerate(blended_weights[o.name]):
+   for bone,value in influences:
+    group=o.vertex_groups.get(bone) or o.vertex_groups.new(name=bone);group.add([index],value,'REPLACE')
+ elif 'Tabard' in o.name or 'BackMantle' in o.name:
   parent='Pelvis' if 'Tabard' in o.name else 'Spine'; p=o.vertex_groups.new(name=parent)
   top=1.10 if parent=='Pelvis' else 1.67
   for v in o.data.vertices:

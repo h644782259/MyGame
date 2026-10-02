@@ -1,0 +1,14 @@
+{
+  "before": {
+    "path": "Assets/Resources/BlenderPilot/Vanguard.fbx",
+    "bytes": 1006236,
+    "sha256": "88136a176af870c782fd0630decf897727fb214a6697ca0751363f7e3a9a5551"
+  },
+  "after": {
+    "path": "Assets/Resources/BlenderPilot/Vanguard.fbx",
+    "bytes": 1018460,
+    "sha256": "8b89fb808fa4ce4eb65045f6a12cb842df7ab4173977a111f44f60ddb668f529"
+  },
+  "fbx_bytes_delta": 12224,
+  "other_runtime_assets_unchanged": true
+}

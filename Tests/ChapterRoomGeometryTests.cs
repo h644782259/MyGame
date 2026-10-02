@@ -11,9 +11,65 @@ public static class ChapterRoomGeometryTests
         WorldTraversal.Reset(ZoneKind.Dungeon);ChapterRoomGeometry.Register(plan);
         if(rubble)for(int side=-1;side<=1;side+=2)WorldTraversal.AddDynamicCircle(new Vector3(side*13.3f,0,2.2f),.7f);
     }
+    static void ReplayRoutes()
+    {
+        foreach(int legacy in new[]{0,1,2,3,4,999999,int.MinValue,int.MaxValue})
+            Check(!ChapterRoomGeometry.RedrockSplitRoute(legacy),"legacy seed has no replay format marker");
+        for(int raw=0;raw<64;raw++)
+        {
+            int split=ChapterRoomGeometry.RedrockReplaySeed(raw,true),solid=ChapterRoomGeometry.RedrockReplaySeed(raw,false);
+            Check((split&255)==(raw&255)&&(solid&255)==(raw&255),"route flag preserves entire spawn jitter byte including mirror and Forest formation");
+            Check(ChapterRoomGeometry.RedrockReplaySeed(split,true)==split,"encoded seed idempotent replay");
+            foreach(ChapterNode node in Enum.GetValues(typeof(ChapterNode)))for(int room=0;room<2;room++)
+            {
+                var old=ChapterRoomGeometry.Plan(node,room,raw);var chosen=ChapterRoomGeometry.Plan(node,room,split);
+                if(node==ChapterNode.Redrock&&room==1)continue;
+                Check(old.Obstacles.Length==chosen.Obstacles.Length,"replay route scoped to Redrock room two");
+                for(int i=0;i<old.Obstacles.Length;i++)Check(Vector3.Distance(old.Obstacles[i].Center,chosen.Obstacles[i].Center)<.001f&&old.Obstacles[i].Size.x==chosen.Obstacles[i].Size.x&&old.Obstacles[i].Size.y==chosen.Obstacles[i].Size.y&&old.Obstacles[i].Radius==chosen.Obstacles[i].Radius,"all other room footprints unchanged");
+            }
+            var plan=ChapterRoomGeometry.Plan(ChapterNode.Redrock,1,split);
+            var again=ChapterRoomGeometry.FromLayout(plan.Layout,split);
+            Check(plan.Obstacles.Length==4&&again.Obstacles.Length==4,"saved seed reconstructs split geometry without profile");
+            Register(ChapterRoomGeometry.Plan(ChapterNode.Redrock,1,solid));
+            Check(!WorldTraversal.HasLineOfSight(plan.SpawnCandidates[1],plan.SpawnCandidates[2]),"continuous wall separates existing ranged branches");
+            Register(plan);
+            Check(WorldTraversal.HasLineOfSight(plan.SpawnCandidates[1],plan.SpawnCandidates[2]),"SPLIT_CROSSING existing crossfire branches now share sight across passage");
+            foreach(float radius in new[]{.45f,.65f,.9f,1.3f})
+            {
+                var left=new Vector3(-4,0,-1);var right=new Vector3(4,0,-1);
+                Register(ChapterRoomGeometry.Plan(ChapterNode.Redrock,1,solid));
+                Check(!WorldTraversal.HasLineOfSight(left,right)&&!WorldTraversal.HasGroundPath(left,right,radius),"continuous wall blocks cross passage LOS and motion");
+                var detour=WorldTraversal.FindPath(left,right,radius);float length=0;var previous=left;
+                foreach(var point in detour){length+=Vector3.Distance(previous,point);previous=point;}
+                Check(detour.Count>1&&length>12,"continuous wall requires a substantial real detour");
+                Register(plan);
+                Check(WorldTraversal.HasLineOfSight(left,right)&&WorldTraversal.HasGroundPath(left,right,radius)&&WorldTraversal.FindPath(left,right,radius).Count==1,"SPLIT_CROSSING opens direct movement and ranged sight for every actor radius");
+                foreach(var target in new List<Vector3>(plan.Objectives){plan.Exit})Check(WorldTraversal.IsWalkable(plan.Entrance,radius)&&WorldTraversal.IsWalkable(target,radius)&&WorldTraversal.CanReach(plan.Entrance,target,radius),"split entrance objectives exit safe and reachable");
+                for(int x=-12;x<=12;x+=3)for(int z=-12;z<=12;z+=3)
+                {var point=new Vector3(x,0,z);if(WorldTraversal.IsWalkable(point,radius))Check(WorldTraversal.CanReach(plan.Entrance,point,radius),"split map has no isolated usable sample");}
+                var occupied=new List<Vector3>();
+                var desired=new[]{plan.SpawnCandidates[2],plan.SpawnCandidates[1],new Vector3(-2,0,11),new Vector3(2,0,11),plan.SpawnCandidates[4],plan.SpawnCandidates[5]};
+                for(int i=0;i<6;i++)
+                {
+                    Vector3 at,replay;
+                    Check(ChapterRoomGeometry.TrySpawnAt(plan,desired[i],occupied,radius,out at),"six crossfire positions resolve at every radius");
+                    Check(ChapterRoomGeometry.TrySpawnAt(again,desired[i],occupied,radius,out replay)&&Vector3.Distance(at,replay)<.0001f,"fixed seed reproduces actual spawn positions");
+                    Check(WorldTraversal.CanReach(plan.Entrance,at,radius)&&Vector3.Distance(plan.Entrance,at)>=5.5f,"split spawns preserve safe arrival and reachable target");
+                    foreach(var other in occupied)Check(Vector3.Distance(at,other)>=Mathf.Max(2.4f,radius*2),"split spawns retain actor clearance");
+                    occupied.Add(at);
+                }
+                Vector3 seventh;Check(!ChapterRoomGeometry.TrySpawn(plan,6,occupied,radius,out seventh),"split roster cap remains six");
+                // Existing Heroic heat line cannot seal the new passage plus both old side routes.
+                float half=ChapterHazardGeometry.HeatHalfWidth;
+                WorldTraversal.AddBox((plan.HazardStart+plan.HazardEnd)*.5f,new Vector2(Mathf.Abs(plan.HazardEnd.x-plan.HazardStart.x)+2*half,2*half));
+                Check(WorldTraversal.CanReach(plan.Entrance,plan.Objectives[0],radius),"heroic heat envelope preserves a safe route");
+            }
+        }
+    }
     public static string Run()
     {
         checks=0;
+        ReplayRoutes();
         foreach(ChapterNode node in Enum.GetValues(typeof(ChapterNode)))for(int room=0;room<2;room++)for(int seed=0;seed<2;seed++)
         {
             var p=ChapterRoomGeometry.Plan(node,room,seed);Register(p);
