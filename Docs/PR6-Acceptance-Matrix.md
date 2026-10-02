@@ -1,3 +1,5 @@
+> 2026-10-02 correction candidate: prior c022a463/11d02c8 heads failed independent Unity 6000.6.3 reference compilation. Review IDs now use complete decimal strings via the EntityId API, iOS mobile availability labels bind the packaged font, and ordinary/arena Guardian attacks retain an explicit active-charge pose through their last swept hit. Legacy reference compilation and managed tests do not establish Unity 6 or rendered acceptance; independent corrected-head verification is pending.
+
 # PR6 逐项实现与验收矩阵
 
 PR5 已由父任务合并；PR6 基于 Windows main `abe5ef06` / iOS main `f83b7d28`，保持 draft。本表按可独立验收的18组美术项归类，再逐项列策划00–09；同一功能跨两表只实现一次。

@@ -91,8 +91,9 @@ def main():
     parser.add_argument("--dotnet", default=os.environ.get("DOTNET", "dotnet"),
                         help=".NET 8 SDK executable (or set DOTNET)")
     parser.add_argument("--compile", action="store_true", help="also compile all runtime sources against Unity references")
+    parser.add_argument("--compile-android", action="store_true", help="compile the UNITY_ANDROID runtime branch against pinned references; does not build an APK")
     parser.add_argument("--download-references", action="store_true", help="download pinned Unity reference DLLs if missing; implies --compile")
-    parser.add_argument("--unity-editor", type=Path, help="also compile Windows/iOS runtime, Editor, and visual-validation source using installed Unity 6000.6 DLLs (does not launch Unity)")
+    parser.add_argument("--unity-editor", type=Path, help="also compile Windows/iOS/Android runtime, Editor, and visual-validation source using installed Unity 6000.6 DLLs (does not launch Unity)")
     args = parser.parse_args()
     dotnet = shutil.which(args.dotnet)
     if not dotnet:
@@ -233,6 +234,7 @@ def main():
             ("combat-opportunity", "CombatOpportunityTests", ["UI/CombatOpportunityPresentation"]),
             ("large-boss-motion", "LargeBossMotionTests", ["Core/LargeBossMotion", "Core/LargeBossPhaseState"]),
             ("deferred-room-choice", "DeferredRoomChoiceTests", ["Core/DeferredRoomChoice"]),
+            ("guardian-charge-pose", "GuardianChargePoseTests", ["Core/LocomotionPoseState", "Combat/BossAttackPolicy"]),
             ("locomotion-poses", "LocomotionPoseTests", ["Core/LocomotionPoseState"]),
             ("camera-visibility", "CameraVisibilityTests", ["Core/CameraVisibilityRules"]),
             ("companion-directive", "CompanionDirectiveTests", ["Combat/CompanionDirective"]),
@@ -251,6 +253,15 @@ def main():
             'using System; internal static class Program { static void Main() { Console.WriteLine(HoldPointStateTests.Run()); } }'))
         checks.append(("room-blessing-routes",[ROOT/"Assets/Scripts/Core/GameTypes.cs",ROOT/"Assets/Scripts/Core/RunChoices.cs",ROOT/"Assets/Scripts/Core/CampRouteCards.cs",ROOT/"Assets/Scripts/Core/SkillRuntime.cs",ROOT/"Tests/SkillRuntimeTests.cs",ROOT/"Tests/RoomBlessingRouteTests.cs"],
             'using System; internal static class Program { static void Main() { Console.WriteLine(RoomBlessingRouteTests.Run()); } }'))
+        for variant in ("desktop", "android", "ios"):
+            checks.append(("game-font-"+variant,[ROOT/"Assets/Scripts/UI/GameFont.cs",ROOT/"Tests/GameFontTests.cs"],
+                'using System; internal static class Program { static void Main() { Console.WriteLine(GameFontTests.Run()); } }'))
+        checks.append(("android-lifecycle",[ROOT/"Assets/Scripts/UI/TouchViewportState.cs",ROOT/"Assets/Scripts/UI/TouchReleaseLatch.cs",ROOT/"Assets/Scripts/Core/AudioLifecycleGate.cs",ROOT/"Assets/Scripts/Core/ApplicationPauseState.cs",ROOT/"Assets/Scripts/Core/SaveLifecycleGate.cs",ROOT/"Tests/AndroidLifecycleTests.cs"],
+            'using System; internal static class Program { static void Main() { Console.WriteLine(AndroidLifecycleTests.Run()); } }'))
+        checks.append(("combat-review-object-id-modern-contract",[ROOT/"Assets/Scripts/Core/CombatReviewObjectId.cs",ROOT/"Tests/CombatReviewObjectIdTests.cs"],
+            'using System; internal static class Program { static void Main() { Console.WriteLine(CombatReviewObjectIdTests.Run()); } }'))
+        checks.append(("combat-review-object-id-legacy",[ROOT/"Assets/Scripts/Core/CombatReviewObjectId.cs",ROOT/"Tests/CombatReviewObjectIdTests.cs"],
+            'using System; internal static class Program { static void Main() { Console.WriteLine(CombatReviewObjectIdTests.Run()); } }'))
         checks.append(("combat-review-events",[ROOT/"Assets/Scripts/Core/GameTypes.cs",ROOT/"Assets/Scripts/Core/CombatReviewEvents.cs",ROOT/"Assets/Scripts/Core/CombatReviewConfigurations.cs",ROOT/"Assets/Scripts/Core/SkillRuntime.cs",ROOT/"Tests/SkillRuntimeTests.cs",ROOT/"Tests/CombatReviewEventsTests.cs"],
             'using System; internal static class Program { static void Main() { Console.WriteLine(CombatReviewEventsTests.Run()); } }'))
         checks.append(("combat-review-rules",[ROOT/"Assets/Scripts/Core/GameTypes.cs",ROOT/"Assets/Scripts/Core/SkillRuntime.cs",ROOT/"Assets/Scripts/Core/SkillDamageBudgets.cs",ROOT/"Assets/Scripts/Core/AudioVoicePolicy.cs",ROOT/"Assets/Scripts/Core/LockedImpactMarkPolicy.cs",ROOT/"Assets/Scripts/Core/BasicActionTimeline.cs",ROOT/"Assets/Scripts/Combat/BossAttackPolicy.cs",ROOT/"Tests/SkillRuntimeTests.cs",ROOT/"Tests/CombatReviewRulesTests.cs"],
@@ -269,24 +280,28 @@ def main():
                 for helper in ["HubTravelRules","MasteryCoreRuntime","TierRewardRules","TierRewardBand"]:sources.append(ROOT/("Assets/Scripts/Core/"+helper+".cs"))
             if ROOT/"Tests/CombatBalanceTests.cs" in sources:sources.append(ROOT/"Assets/Scripts/Core/SkillDamageBudgets.cs")
         for name, sources, program in checks:
-            project = write_project(workspace / name, sources, program)
+            project = write_project(workspace / name, sources, program, defines={"combat-review-object-id-modern-contract":"UNITY_6000_6_OR_NEWER", "game-font-android":"UNITY_ANDROID", "game-font-ios":"UNITY_IOS"}.get(name, ""))
             commands = [[dotnet, "restore", str(project), "--configfile", str(config), "--verbosity", "quiet"],
                         [dotnet, "run", "--project", str(project), "--no-restore", "--configuration", "Release", "--", str(workspace / "saves")]]
             passed = run_check(name, commands, env, output, report)
             failed = failed or not passed
-        if args.compile or args.download_references:
+        if args.compile or args.download_references or args.compile_android:
             try:
                 refs = unity_references(args.download_references)
                 sources = sorted((ROOT / "Assets/Scripts").rglob("*.cs"))
-                project = write_project(workspace / "runtime-compile", sources, references=list(refs.glob("*.dll")))
-                commands = [[dotnet, "restore", str(project), "--configfile", str(config), "--verbosity", "quiet"],
-                            [dotnet, "build", str(project), "--no-restore", "--configuration", "Release", "--verbosity", "minimal"]]
-                passed = run_check("runtime-compile", commands, env, output, report)
+                variants = [("runtime-compile", "")] if args.compile or args.download_references else []
+                if args.compile_android:
+                    variants.append(("android-runtime-compile", "UNITY_ANDROID"))
+                for name, defines in variants:
+                    project = write_project(workspace / name, sources, references=list(refs.glob("*.dll")), defines=defines)
+                    commands = [[dotnet, "restore", str(project), "--configfile", str(config), "--verbosity", "quiet"],
+                                [dotnet, "build", str(project), "--no-restore", "--configuration", "Release", "--verbosity", "minimal"]]
+                    passed = run_check(name, commands, env, output, report)
+                    failed = failed or not passed
                 report["runtimeSourceCount"] = len(sources)
-                failed = failed or not passed
             except (OSError, RuntimeError, subprocess.CalledProcessError) as error:
-                print("FAIL runtime-compile: " + str(error), file=sys.stderr)
-                report["checks"].append({"name": "runtime-compile", "passed": False, "error": str(error)})
+                print("FAIL reference-compile-setup: " + str(error), file=sys.stderr)
+                report["checks"].append({"name": "reference-compile-setup", "passed": False, "error": str(error)})
                 failed = True
         if args.unity_editor:
             managed = args.unity_editor.resolve().parent / "Data/Managed"
@@ -300,6 +315,7 @@ def main():
                 for variant, extra_defines in [
                     ("runtime", "UNITY_STANDALONE;UNITY_STANDALONE_WIN"),
                     ("ios-runtime", "UNITY_IOS"),
+                    ("android-runtime", "UNITY_ANDROID"),
                     ("editor", "UNITY_EDITOR;UNITY_EDITOR_LINUX"),
                     ("visual-validation", "EMBERFALL_VISUAL_VALIDATION;UNITY_STANDALONE;UNITY_STANDALONE_WIN"),
                 ]:

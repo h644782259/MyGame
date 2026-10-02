@@ -38,9 +38,12 @@ namespace Emberfall
             wasAirborne=airborne;
         }
     }
-    public enum EnemyPosePhase { Idle, Windup, Recovery }
+    public enum EnemyPosePhase { Idle, Windup, Recovery, ActiveCharge }
     public static class EnemyActionPose
     {
+        public static EnemyPosePhase Select(bool preparing,bool activeCharge,float recovery)
+        {return activeCharge?EnemyPosePhase.ActiveCharge:preparing?EnemyPosePhase.Windup:recovery>0?EnemyPosePhase.Recovery:EnemyPosePhase.Idle;}
+        public static float Charge(EnemyPosePhase phase){return phase==EnemyPosePhase.ActiveCharge?1:0;}
         public static float Windup(EnemyPosePhase phase,float progress)
         { float t=Math.Max(0,Math.Min(1,progress));return phase==EnemyPosePhase.Windup?t*t*(3-2*t):0; }
         public static float Contact(EnemyPosePhase phase,float progress)

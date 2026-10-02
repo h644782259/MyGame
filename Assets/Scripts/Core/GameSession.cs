@@ -694,7 +694,7 @@ namespace Emberfall
 
         public bool ExitApplication(bool alreadySaved = false)
         {
-#if UNITY_IOS || UNITY_ANDROID
+#if UNITY_IOS
             return QuitToTitle(alreadySaved);
 #else
             if (!alreadySaved && !SaveBeforeLeaving()) return false;
@@ -762,6 +762,7 @@ namespace Emberfall
         private void OnApplicationPause(bool pause)
         {
             pauseState.SetSuspended(pause);
+            GameAudio.SetBackgroundPaused(pauseState.BackgroundPaused);
             if (pause) SuspendInputs();
             lifecycleSave.Observe(pauseState.BackgroundPaused,HasStarted,SaveBeforeLeaving);
             UpdateTimeScale();
@@ -769,6 +770,7 @@ namespace Emberfall
         private void OnApplicationFocus(bool focus)
         {
             pauseState.SetFocus(focus);
+            GameAudio.SetBackgroundPaused(pauseState.BackgroundPaused);
             if (!focus) SuspendInputs();
             lifecycleSave.Observe(pauseState.BackgroundPaused,HasStarted,SaveBeforeLeaving);
             UpdateTimeScale();
@@ -884,6 +886,7 @@ namespace Emberfall
 
         private void ResetOrbitInput() { orbitInput.Reset(); inputFrame = -1; }
         private void OnApplicationFocus(bool focused) { if (!focused) ResetOrbitInput(); }
+        private void OnApplicationPause(bool suspended) { if(suspended)ResetOrbitInput(); }
         private void OnDisable() { ResetOrbitInput();RestoreVisibility(); }
         private void OnDestroy() { RestoreVisibility();if (active == this) active = null; }
     }

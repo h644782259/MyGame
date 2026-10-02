@@ -21,13 +21,13 @@ namespace Emberfall.Editor
         static string lastHoldState;
         static double nextPose;
         static bool ending;
-        static readonly Dictionary<int,float> health=new Dictionary<int,float>();
-        static readonly Dictionary<int,Vector3> petPositions=new Dictionary<int,Vector3>();
-        static readonly Dictionary<int,int> petTargets=new Dictionary<int,int>();
+        static readonly Dictionary<string,float> health=new Dictionary<string,float>();
+        static readonly Dictionary<string,Vector3> petPositions=new Dictionary<string,Vector3>();
+        static readonly Dictionary<string,string> petTargets=new Dictionary<string,string>();
         static readonly FieldInfo petTarget=typeof(SummonedCompanion).GetField("target",Private);
         [Serializable] sealed class Row
         {
-            public string kind,detail; public int frame,actorId,targetId,skill;
+            public string kind,detail,actorId,targetId; public int frame,skill;
             public float time,amount,x,y,z;
         }
         static CombatReviewFixture()
@@ -91,8 +91,8 @@ namespace Emberfall.Editor
             writer=new StreamWriter(Path.Combine(output,"events.jsonl"),false);rows=0;health.Clear();petPositions.Clear();petTargets.Clear();
             started=EditorApplication.timeSinceStartup;nextSample=started;nextPose=started;lastHoldState=null;
             CombatReviewEvents.Observed+=Record;
-            Write("session_start",0,0,0,-1,"Actual Unity editor session; unity="+Application.unityVersion+"; scenario="+scenario+"; width="+Screen.width+"; height="+Screen.height+"; quality="+QualitySettings.GetQualityLevel()+"; observed HP deltas are sampled, not individual hit attribution");
-            foreach(var e in game.Enemies){health[e.GetInstanceID()]=e.Health;Write("fixture_enemy",e.GetInstanceID(),0,e.Health,-1,e.Kind+"; ai="+e.enabled,e.transform.position);}
+            Write("session_start","0","0",0,-1,"Actual Unity editor session; id_format=decimal-string-v2; ids=session-local; unity="+Application.unityVersion+"; scenario="+scenario+"; width="+Screen.width+"; height="+Screen.height+"; quality="+QualitySettings.GetQualityLevel()+"; observed HP deltas are sampled, not individual hit attribution");
+            foreach(var e in game.Enemies){health[CombatReviewObjectId.Get(e)]=e.Health;Write("fixture_enemy",CombatReviewObjectId.Get(e),"0",e.Health,-1,e.Kind+"; ai="+e.enabled,e.transform.position);}
             Debug.Log("Combat review ready; real event log: "+output);
         }
         static void Spawn(EnemyKind kind,Vector3 at,bool ai)
@@ -108,19 +108,19 @@ namespace Emberfall.Editor
             {
                 if(ending)return;
                 if(writer==null){game=GameSession.Instance;if(game==null||game.Progression==null)return;StartFixture();}
-                if(EditorApplication.timeSinceStartup-started>=180||rows>=100000){Write("session_end",0,0,0,-1,"bounded duration/event cap; no acceptance assertion");Close();EditorApplication.isPlaying=false;return;}
+                if(EditorApplication.timeSinceStartup-started>=180||rows>=100000){Write("session_end","0","0",0,-1,"bounded duration/event cap; no acceptance assertion");Close();EditorApplication.isPlaying=false;return;}
                 if(EditorApplication.timeSinceStartup<nextSample)return;nextSample=EditorApplication.timeSinceStartup+.1;
                 foreach(var e in game.Enemies)
                 {
-                    if(e==null)continue;int id=e.GetInstanceID();float old;
-                    if(health.TryGetValue(id,out old)&&old>e.Health)Write("observed_enemy_hp_delta",id,0,old-e.Health,-1,"100ms sample; may aggregate several hits",e.transform.position);
+                    if(e==null)continue;string id=CombatReviewObjectId.Get(e);float old;
+                    if(health.TryGetValue(id,out old)&&old>e.Health)Write("observed_enemy_hp_delta",id,"0",old-e.Health,-1,"100ms sample; may aggregate several hits",e.transform.position);
                     health[id]=e.Health;
                 }
                 foreach(var pet in SummonedCompanion.Snapshot(game.Player))
                 {
-                    if(pet==null)continue;int id=pet.GetInstanceID();var target=petTarget.GetValue(pet) as EnemyController;
-                    Vector3 old;int oldTarget;int targetId=target==null?0:target.GetInstanceID();
-                    if(targetId!=0&&petPositions.TryGetValue(id,out old)&&(pet.transform.position-old).sqrMagnitude>.0001f)
+                    if(pet==null)continue;string id=CombatReviewObjectId.Get(pet);var target=petTarget.GetValue(pet) as EnemyController;
+                    Vector3 old;string oldTarget;string targetId=target==null?"0":CombatReviewObjectId.Get(target);
+                    if(targetId!="0"&&petPositions.TryGetValue(id,out old)&&(pet.transform.position-old).sqrMagnitude>.0001f)
                         Write("petchase",id,targetId,Vector3.Distance(pet.transform.position,target.transform.position),-1,"sampled movement with live target; not path-success proof",pet.transform.position);
                     if(!petTargets.TryGetValue(id,out oldTarget)||oldTarget!=targetId)Write("pet_target",id,targetId,0,-1,pet.Form.ToString());
                     petPositions[id]=pet.transform.position;petTargets[id]=targetId;
@@ -128,8 +128,8 @@ namespace Emberfall.Editor
                 if(EditorApplication.timeSinceStartup>=nextPose)
                 {
                     nextPose=EditorApplication.timeSinceStartup+1;
-                    Write("player_pose",game.Player.GetInstanceID(),0,game.Player.Health,-1,"energy="+game.Player.Energy,game.Player.transform.position);
-                    if(Camera.main!=null)Write("camera_pose",Camera.main.GetInstanceID(),0,Camera.main.fieldOfView,-1,"rotation="+Camera.main.transform.eulerAngles,Camera.main.transform.position);
+                    Write("player_pose",CombatReviewObjectId.Get(game.Player),"0",game.Player.Health,-1,"energy="+game.Player.Energy,game.Player.transform.position);
+                    if(Camera.main!=null)Write("camera_pose",CombatReviewObjectId.Get(Camera.main),"0",Camera.main.fieldOfView,-1,"rotation="+Camera.main.transform.eulerAngles,Camera.main.transform.position);
                 }
                 if(game.ModeRun!=null)
                 {
@@ -139,20 +139,20 @@ namespace Emberfall.Editor
                     if(hold!=null&&idle!=null)
                     {
                         string state=Convert.ToString(hold.GetValue(mode,null));
-                        if(state!=lastHoldState){Write("hold_state",0,0,0,-1,state);lastHoldState=state;}
-                        Write("hold_idle_wait",0,0,Convert.ToSingle(idle.GetValue(mode,null)),-1,"cumulative combat-active wait seconds");
+                        if(state!=lastHoldState){Write("hold_state","0","0",0,-1,state);lastHoldState=state;}
+                        Write("hold_idle_wait","0","0",Convert.ToSingle(idle.GetValue(mode,null)),-1,"cumulative combat-active wait seconds");
                     }
                 }
                 writer.Flush();
             }
-            catch(Exception error){Debug.LogException(error);if(writer!=null)Write("fixture_error",0,0,0,-1,error.ToString());Close();EditorApplication.isPlaying=false;}
+            catch(Exception error){Debug.LogException(error);if(writer!=null)Write("fixture_error","0","0",0,-1,error.ToString());Close();EditorApplication.isPlaying=false;}
         }
         static void Record(CombatReviewEvents.Entry e){Write(e.kind,e.actorId,e.targetId,e.amount,e.skill,e.detail);}
-        static void Write(string kind,int actor,int target,float amount,int skill,string detail,Vector3 position=default(Vector3))
+        static void Write(string kind,string actor,string target,float amount,int skill,string detail,Vector3 position=default(Vector3))
         {
             if(writer==null||rows>=100001)return;
             writer.WriteLine(JsonUtility.ToJson(new Row{kind=kind,frame=Time.frameCount,time=Time.time,actorId=actor,targetId=target,amount=amount,skill=skill,detail=detail,x=position.x,y=position.y,z=position.z}));rows++;
         }
-        static void Close(){ending=true;CombatReviewEvents.Observed-=Record;if(writer!=null){Write("recorder_closed",0,0,0,-1,"Recorder stopped; no acceptance verdict");writer.Flush();writer.Dispose();writer=null;}game=null;}
+        static void Close(){ending=true;CombatReviewEvents.Observed-=Record;if(writer!=null){Write("recorder_closed","0","0",0,-1,"Recorder stopped; no acceptance verdict");writer.Flush();writer.Dispose();writer=null;}game=null;}
     }
 }

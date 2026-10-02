@@ -34,8 +34,8 @@ namespace Emberfall
             if(rotate)
             {
                 float size=MobileControls.Active?48*TouchRatio:42;
-                if(Button(new Rect(area.x+6,area.yMax-size-6,size,size),"↶",jade))collectionModel.Rotate(-45);
-                if(Button(new Rect(area.xMax-size-6,area.yMax-size-6,size,size),"↷",jade))collectionModel.Rotate(45);
+                if(Button(new Rect(area.x+6,area.yMax-size-6,size,size),"左转",jade))collectionModel.Rotate(-45);
+                if(Button(new Rect(area.xMax-size-6,area.yMax-size-6,size,size),"右转",jade))collectionModel.Rotate(45);
             }
         }
         private string CollectionTrialTitle

@@ -498,7 +498,7 @@ namespace Emberfall
             GameObject go=new GameObject(objectName); go.transform.SetParent(parent); go.transform.position=p;
             // Ship the exact Chinese glyphs rather than relying on a device's OS fonts.
             // TextMesh needs both the font and its atlas material to render correctly.
-            Font font=Resources.Load<Font>("Fonts/EmberfallWorldLabels");
+            Font font=GameFont.WorldLabels;
             if(font==null) throw new System.InvalidOperationException("Bundled world-label font is missing.");
             TextMesh text=go.AddComponent<TextMesh>(); text.font=font; text.fontSize=64; text.characterSize=size;
             text.anchor=TextAnchor.MiddleCenter; text.alignment=TextAlignment.Center; text.color=color;

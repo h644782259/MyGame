@@ -95,7 +95,7 @@ namespace Emberfall
                 ring.SetPosition(i, new Vector3(Mathf.Cos(angle) * (.4f + look.Tier * .04f), .105f,
                     Mathf.Sin(angle) * (.4f + look.Tier * .04f)));
             }
-            font = Font.CreateDynamicFontFromOSFont(new[] { "Microsoft YaHei", "PingFang SC", "PingFangSC-Regular", "Heiti SC", "SimHei", "Arial" }, 24);
+            font = GameFont.Shared;
             label = new GameObject("Item name").transform;
             label.SetParent(transform, false);
             label.localPosition = new Vector3(0, 1.25f, 0);
@@ -177,7 +177,7 @@ namespace Emberfall
             if (bodyMaterial != null) Destroy(bodyMaterial);
             if (accentMaterial != null) Destroy(accentMaterial);
             if (glowMaterial != null) Destroy(glowMaterial);
-            if (font != null) Destroy(font);
+            GameFont.Release(ref font);
         }
     }
 }

@@ -48,3 +48,11 @@ python3 Tools/summarize-combat-review.py Tests/TestResults/CombatReview-<id>/eve
 The summary counts raw kinds and adds only `damage` callbacks for damage totals (not projectilehit or sampled HP a second time). `derived_projectile_no_enemy_hit` counts `projectileend` with `expired`/`terrain` and `hits=0`; retired/disposed projectiles are excluded. This is the transparent ranged-miss proxy, may include projectiles that struck props, and is not whole-attack/melee/skill miss rate. `projectilehit` details retain projectile IDs. `enemydeath` and player `death` are separate. Unobserved event kinds are listed as missing evidence, not zero failures. No synthetic parser test output is a gameplay report.
 
 `basicmiss` / `spellmiss` 来自已释放近战在该次直接伤害检查中没有造成敌人生命损失，或已尝试射击但枪口受阻；不统计可破坏物，不代表所有持续领域/后续命中都落空。汇总保留事件类别，不将其与投射物到期代理合成统一命中率。
+
+## Unity 6 identity compatibility correction
+
+Recorder v2 emits `actorId` and `targetId` as invariant decimal **strings**, including `"0"` for absent/destroyed objects. `CombatReviewObjectId` uses `EntityId.ToULong(GetEntityId())` on Unity 6.4+ and signed `GetInstanceID()` only in the older conditional branch. No integer cast, hash, registry, or object retention is involved; every raw bit is preserved. IDs identify live objects within one recording session, not persistent save identities or cross-run comparable values. Unity's raw bit layout can change between engine versions, so consumers treat these strings as opaque keys. Projectile detail IDs use the same format.
+
+The summary accepts legacy integer IDs and new strings without float conversion; fixture health/pet dictionaries use string keys. Tests include adjacent values at ulong max, signed legacy values, repeated reads, deliberately colliding object hashes and null/destroyed objects. API-double tests do not establish engine compatibility: actual Unity 6000.6.3 reference compilation must be reported separately. The previous frozen c022a463/11d02c8 candidates failed that check because `GetInstanceID` and EntityId-to-int conversion are error-obsolete; legacy 2021 compilation was insufficient.
+
+API references: https://docs.unity3d.com/6000.6/Documentation/ScriptReference/EntityId.ToULong.html and https://docs.unity3d.com/6000.4/Documentation/ScriptReference/Object.GetEntityId.html .

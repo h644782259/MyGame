@@ -7,7 +7,7 @@ assert 'transform.InverseTransformDirection(walkingDisplacement)' in p and '!Tra
 assert 'model.ResetLocomotion();' in p
 assert 'knockVelocity * dt, NavigationRadius)' in e and 'walkingDisplacement += CombatFx.Flat(next-transform.position);' in e
 assert e.index('if (windup <= 0) ResolveAttack();')<e.index('AnimateModel(0,preparing?.95f:attackAnimation,hurtTime>0);')
-assert 'model.SetEnemyAttackPose(preparing?EnemyPosePhase.Windup' in e
+assert 'model.SetEnemyAttackPose(EnemyActionPose.Select(preparing,activeChargePose,attackAnimation)' in e
 assert 'speed = smoothedSpeed = locomotion.Speed' in m and 'gaitPhase = locomotion.Phase' in m
 assert 'EnemyActionPose.Contact(enemyActionPhase,enemyActionProgress)' in m and 'enemyPose = Mathf.Lerp' not in m
 assert 'inertiaSide*.004f' in cloth and 'length*length' in cloth
