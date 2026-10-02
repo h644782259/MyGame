@@ -21,6 +21,7 @@ namespace Emberfall{
  public Motion locomotion=new Motion();public class Motion{public float Landing,Side,Forward,Phase,Speed;}
  private Dictionary<string,Material> palette=new Dictionary<string,Material>();private void BeginVisualRecovery(bool ignored=true){}private void AdvanceVisualMotion(float dt){}
  public void Init(){spine=transform;ConfigureBlenderPilot();}public bool Sample(bool acting=false,float progress=0,bool hurt=false)=>SampleBlenderPilot(acting,progress,hurt);
+ public void Tick(float dt,bool hurt=false)=>AnimateHero(locomotion.Speed,1,hurt,dt);
  public BlenderPilotVisual View=>blenderPilot;public bool Visible=>pilotVisible;
  public void Unsupported(string which){pilotHasGear=which=="gear";pilotHasFashion=which=="fashion";pilotAirborne=which=="airborne";pilotCharging=which=="charge";dying=which=="death";locomotion.Landing=which=="landing"?1:0;locomotion.Side=which=="strafe"?1:0;locomotion.Forward=which=="backwards"?-1:0;}
  }

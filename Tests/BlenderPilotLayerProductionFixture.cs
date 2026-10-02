@@ -25,10 +25,14 @@ static class LayerFixture
         public Vector3 P,S;public Quaternion Q;
         public void Apply(Transform t){t.localPosition=P;t.localScale=S;t.localRotation=Q;}
     }
-    // Distinct nonzero per-clip/bone/time translations, rotations and scales; Root motion zero.
+    // Adversarial managed clip boundary, NOT the actual FBX or an authored root-motion claim.
+    // Root has a static bind-like local TRS, and Basic deliberately overwrites it differently;
+    // preserving the locomotion Root must therefore be observable in all three channels.
     static Pose Clip(string clip,int i,float t)
     {
-        if(i==0)return new Pose{P=Vector3.zero,S=Vector3.one,Q=Quaternion.identity};
+        if(i==0)return clip=="Pilot_Basic"
+            ?new Pose{P=new Vector3(-.4f,.3f,.2f),S=new Vector3(.8f,1.2f,.9f),Q=Quaternion.Euler(-20,35,10)}
+            :new Pose{P=new Vector3(.12f,-.08f,.24f),S=new Vector3(1.1f,.95f,1.05f),Q=Quaternion.Euler(15,-25,8)};
         int c=clip=="Pilot_Idle"?1:clip=="Pilot_Move"?3:clip=="Pilot_Basic"?7:clip=="Pilot_Hit"?11:13;
         float wave=(float)Math.Sin(t*Math.PI*2),v=c*(1+wave*.1f)+i*.13f;
         return new Pose{P=new Vector3(v*.012f,i*.025f,v*.003f),S=new Vector3(1+v*.002f,1+v*.001f,1),Q=Quaternion.Euler(v*2,v*3,v*4)};
@@ -94,6 +98,30 @@ static class LayerFixture
             float age=m.actionAge;m.Sample(true,.52f);C(m.actionAge==age,"repeat sampling cannot advance authoritative action age");
             C(m.Visible&&m.View.gameObject.activeSelf,"run basic run keeps same imported renderer family");
             m.CancelAction();C(m.actionDuration==0,"actual cancellation clears action");m.Sample();Expected(m.View.gameObject,Time.time,1.2f,.8f,false,0);
+        }
+        // Execute the extracted production AnimateHero action clock, rather than supplying
+        // progress to Sample. Locomotion inputs remain explicit managed boundary values.
+        foreach(float interval in new[]{.18f,.46f,.92f})
+        {
+            Time.frameCount++;m.locomotion.Speed=.8f;m.PlayAction(-1,true,interval);
+            float age=m.actionAge;m.Tick(.03f);
+            C(m.actionAge==age,"actual AnimateHero cannot advance on commit frame");
+            Time.frameCount++;m.Tick(0);
+            C(m.actionAge==age,"actual AnimateHero zero dt preserves committed phase");
+            for(int frame=0;frame<40;frame++)
+            {
+                Time.frameCount++;Time.time+=.03f;
+                m.locomotion.Speed=frame<5?1:frame<10?0:.6f;
+                m.locomotion.Phase=6.2f+frame*.1f;
+                float phase=m.locomotion.Phase,expectedAge=Math.Min(age+.03f,m.actionDuration);
+                m.Tick(.03f);
+                C(Math.Abs(m.actionAge-expectedAge)<.000001f,"actual AnimateHero advances authoritative action age by dt");
+                C(m.locomotion.Phase==phase,"actual AnimateHero retains supplied continuous gait phase");
+                float progress=expectedAge/m.actionDuration;
+                Expected(m.View.gameObject,Time.time,phase,m.locomotion.Speed,progress<1,progress);
+                C(m.Visible,"actual AnimateHero keeps imported rig through contact recovery and end");age=expectedAge;
+            }
+            C(m.actionAge==m.actionDuration,"actual AnimateHero reaches original duration without extra recovery clock");
         }
         // Stop/restart sequence changes existing speed/phase only, no sampler state or hidden clock.
         float[] speeds={1,.5f,.051f,.049f,0,0,.02f,.2f,.7f,1};
