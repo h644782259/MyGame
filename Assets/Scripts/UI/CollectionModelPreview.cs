@@ -2,26 +2,47 @@ using System;
 using UnityEngine;
 namespace Emberfall
 {
-    // One bounded, isolated real model; no player controller, stats, inventory or save mutations.
+    // One real isolated mannequin. No player/controller, equipment or save mutation.
     public sealed class CollectionModelPreview : IDisposable
     {
         const int PreviewLayer=31;
         GameObject stage,avatar;
+        Transform turnRing;
         Camera camera;
         CombatModel model;
         RenderTexture texture;
+        Material shadowMaterial,ringMaterial;
+        Texture2D shadowTexture;
+        Renderer[] renderers;
+        Light[] sceneLights;
+        int[] sceneMasks;
         CollectionPreviewState state=new CollectionPreviewState();
+        CollectionPreviewMotion motion=new CollectionPreviewMotion();
+        CollectionPreviewComposition composition;
+        CollectionPreviewSurface requested=new CollectionPreviewSurface(384,480,false),allocated;
+        int surfaceFrame=-1;
         public void Rotate(float degrees){SetYaw(state.Yaw+degrees);}
         public void SetYaw(float degrees){state.SetYaw(degrees);}
-        public void Invalidate(){state.Invalidate();}
+        public void SetComposition(CollectionPreviewComposition value)
+        {if(((int)value<0||(int)value>2)||composition==value)return;composition=value;state.SetYaw(CollectionPreviewFraming.DefaultYaw(value));state.Invalidate();}
+        public void SetViewport(float pixelWidth,float pixelHeight,bool mobile)
+        {requested=new CollectionPreviewSurface(pixelWidth,pixelHeight,mobile);}
+        public void Invalidate(){state.Invalidate();sceneLights=null;}
         public Texture Render(HeroClass hero,ItemData weapon,ItemData armor,ItemData relic,FashionData wings,FashionData fashionWeapon)
         {
-            if(stage==null||camera==null){float yaw=state.Yaw;Dispose();state.SetYaw(yaw);CreateStage();}
+            if(Event.current==null||Event.current.type!=EventType.Repaint)return texture;
+            if(stage==null||camera==null)
+            {
+                float yaw=state.Yaw;var mode=composition;var surface=requested;
+                Dispose();composition=mode;requested=surface;state.SetYaw(yaw);CreateStage();
+            }
             state.Observe(new CollectionPreviewAppearance(hero,weapon,armor,relic,wings,fashionWeapon));
-            if(texture==null)CreateTexture();
+            if((texture==null||!allocated.Equals(requested))&&surfaceFrame!=Time.frameCount)CreateTexture();
+            if(texture==null)return null;
             if(!texture.IsCreated()){texture.Create();state.InvalidateTexture();}
             if(!texture.IsCreated())return null;
-            if(Event.current.type!=EventType.Repaint||!state.ShouldRender(true,Time.frameCount))return texture;
+            if(motion.Advance(Time.unscaledDeltaTime,Time.frameCount))state.Invalidate();
+            if(!state.ShouldRender(true,Time.frameCount))return texture;
             if(state.NeedsModel)
             {
                 if(avatar!=null){avatar.SetActive(false);UnityEngine.Object.Destroy(avatar);}
@@ -32,39 +53,114 @@ namespace Emberfall
                 foreach(var t in avatar.GetComponentsInChildren<Transform>(true))t.gameObject.layer=PreviewLayer;
                 foreach(var c in avatar.GetComponentsInChildren<Collider>(true))c.enabled=false;
                 foreach(var behaviour in avatar.GetComponentsInChildren<MonoBehaviour>(true))behaviour.enabled=false;
-                Bounds bounds=new Bounds(avatar.transform.position+Vector3.up,Vector3.one*.1f);
-                foreach(var renderer in avatar.GetComponentsInChildren<Renderer>(true))
-                {renderer.shadowCastingMode=UnityEngine.Rendering.ShadowCastingMode.Off;bounds.Encapsulate(renderer.bounds);}
-                float radial=Mathf.Sqrt(Mathf.Pow(Mathf.Abs(bounds.center.x-stage.transform.position.x)+bounds.extents.x,2)+Mathf.Pow(Mathf.Abs(bounds.center.z-stage.transform.position.z)+bounds.extents.z,2));
-                camera.aspect=(float)texture.width/texture.height;
-                camera.orthographicSize=Mathf.Max(1.25f,bounds.extents.y,radial/camera.aspect)*1.18f;
-                Vector3 center=new Vector3(stage.transform.position.x,bounds.center.y,stage.transform.position.z);
-                camera.transform.position=center+Vector3.forward*8;camera.transform.LookAt(center);
+                renderers=avatar.GetComponentsInChildren<Renderer>(true);
+                foreach(var renderer in renderers){renderer.shadowCastingMode=UnityEngine.Rendering.ShadowCastingMode.Off;renderer.receiveShadows=false;}
                 state.ModelReady();
             }
             avatar.transform.localRotation=Quaternion.Euler(0,state.Yaw,0);
-            camera.Render();state.Rendered(Time.frameCount);
+            avatar.transform.localScale=Vector3.one;
+            FrameModel(); // Stable framing must not zoom in/out with the breathing scale.
+            avatar.transform.localScale=new Vector3(1,motion.BreathScale,1);
+            turnRing.localRotation=Quaternion.Euler(0,motion.RingYaw,0);
+            RenderIsolated();state.Rendered(Time.frameCount);
             return texture;
+        }
+        bool InComposition(Transform part)
+        {
+            if(composition==CollectionPreviewComposition.Full)return true;
+            for(var t=part;t!=null&&t!=avatar.transform;t=t.parent)
+            {
+                if(composition==CollectionPreviewComposition.Back&&t.name=="Fashion Wings")return true;
+                if(composition==CollectionPreviewComposition.Weapon&&(t.name=="Sword Wrist"||t.name=="Staff Wrist"||t.name=="Bow"||t.name=="Equipped Weapon"||t.name=="Fashion Weapon"))return true;
+            }
+            return false;
+        }
+        void FrameModel()
+        {
+            bool found=false;Bounds bounds=new Bounds();
+            foreach(var renderer in renderers)
+                if(renderer!=null&&renderer.enabled&&renderer.gameObject.activeInHierarchy&&InComposition(renderer.transform))
+                {if(!found){bounds=renderer.bounds;found=true;}else bounds.Encapsulate(renderer.bounds);}
+            if(!found)bounds=new Bounds(avatar.transform.position+Vector3.up*1.3f,new Vector3(1.3f,1.6f,1));
+            if(composition==CollectionPreviewComposition.Back)
+                bounds.Encapsulate(new Bounds(avatar.transform.position+Vector3.up*1.4f,new Vector3(1,1.3f,.7f)));
+            camera.aspect=(float)texture.width/texture.height;
+            camera.orthographicSize=CollectionPreviewFraming.Size(bounds.extents.x,bounds.extents.y,bounds.extents.z,camera.aspect,composition);
+            camera.transform.position=bounds.center+new Vector3(0,1.1134f,7.9221f);camera.transform.LookAt(bounds.center);
+        }
+        void RenderIsolated()
+        {
+            if(sceneLights==null)
+            {
+#if UNITY_2023_1_OR_NEWER
+                sceneLights=UnityEngine.Object.FindObjectsByType<Light>(FindObjectsSortMode.None);
+#else
+                sceneLights=UnityEngine.Object.FindObjectsOfType<Light>();
+#endif
+                sceneMasks=new int[sceneLights.Length];
+            }
+            var ambientMode=RenderSettings.ambientMode;Color ambient=RenderSettings.ambientLight;bool fog=RenderSettings.fog;
+            try
+            {
+                for(int i=0;i<sceneLights.Length;i++)if(sceneLights[i]!=null)
+                {sceneMasks[i]=sceneLights[i].cullingMask;if(!sceneLights[i].transform.IsChildOf(stage.transform))sceneLights[i].cullingMask&=~(1<<PreviewLayer);}
+                RenderSettings.ambientMode=UnityEngine.Rendering.AmbientMode.Flat;RenderSettings.ambientLight=new Color(.38f,.42f,.5f);RenderSettings.fog=false;
+                camera.Render();
+            }
+            finally
+            {
+                RenderSettings.ambientMode=ambientMode;RenderSettings.ambientLight=ambient;RenderSettings.fog=fog;
+                for(int i=0;i<sceneLights.Length;i++)if(sceneLights[i]!=null)sceneLights[i].cullingMask=sceneMasks[i];
+            }
         }
         void CreateStage()
         {
             stage=new GameObject("Collection preview (isolated)"){hideFlags=HideFlags.HideAndDontSave};stage.transform.position=new Vector3(0,-10000,0);
             var lens=new GameObject("Preview camera");lens.transform.SetParent(stage.transform,false);camera=lens.AddComponent<Camera>();
             camera.enabled=false;camera.orthographic=true;camera.clearFlags=CameraClearFlags.SolidColor;camera.backgroundColor=new Color(.035f,.06f,.09f);
-            camera.cullingMask=1<<PreviewLayer;camera.nearClipPlane=.1f;camera.farClipPlane=30;camera.allowHDR=false;camera.allowMSAA=false;
-            CreateTexture();
-            var lamp=new GameObject("Preview light");lamp.transform.SetParent(stage.transform,false);lamp.transform.localRotation=Quaternion.Euler(35,155,0);
-            var light=lamp.AddComponent<Light>();light.type=LightType.Directional;light.intensity=1.2f;light.cullingMask=1<<PreviewLayer;light.shadows=LightShadows.None;
+            camera.cullingMask=1<<PreviewLayer;camera.nearClipPlane=.1f;camera.farClipPlane=30;camera.allowHDR=false;camera.allowMSAA=true;
+            AddLight("Preview key",new Vector3(35,155,0),1.05f,new Color(1,.91f,.8f));
+            AddLight("Preview fill",new Vector3(15,30,0),.45f,new Color(.63f,.78f,1));
+            AddLight("Preview rim",new Vector3(20,-65,0),.6f,new Color(.76f,.86f,1));
+            CreateContact();
+        }
+        void AddLight(string name,Vector3 angle,float intensity,Color color)
+        {
+            var lamp=new GameObject(name);lamp.transform.SetParent(stage.transform,false);lamp.transform.localRotation=Quaternion.Euler(angle);
+            var light=lamp.AddComponent<Light>();light.type=LightType.Directional;light.intensity=intensity;light.color=color;light.cullingMask=1<<PreviewLayer;light.shadows=LightShadows.None;
+        }
+        void CreateContact()
+        {
+            shadowTexture=new Texture2D(64,64,TextureFormat.RGBA32,false){hideFlags=HideFlags.HideAndDontSave,wrapMode=TextureWrapMode.Clamp};
+            var pixels=new Color[4096];for(int y=0;y<64;y++)for(int x=0;x<64;x++)
+            {float distance=new Vector2((x-31.5f)/31.5f,(y-31.5f)/31.5f).magnitude;float a=Mathf.Clamp01(1-distance);pixels[y*64+x]=new Color(.005f,.01f,.015f,a*a*.4f);}
+            shadowTexture.SetPixels(pixels);shadowTexture.Apply(false,true);
+            shadowMaterial=new Material(Shader.Find("Sprites/Default")){hideFlags=HideFlags.HideAndDontSave,mainTexture=shadowTexture};
+            var shadow=GameObject.CreatePrimitive(PrimitiveType.Quad);shadow.name="Soft preview contact";shadow.layer=PreviewLayer;shadow.transform.SetParent(stage.transform,false);
+            shadow.transform.localPosition=Vector3.up*.015f;shadow.transform.localRotation=Quaternion.Euler(90,0,0);shadow.transform.localScale=new Vector3(2.3f,1.6f,1);
+            shadow.GetComponent<Collider>().enabled=false;shadow.GetComponent<Renderer>().sharedMaterial=shadowMaterial;
+            var ring=new GameObject("Preview turn arc");ring.layer=PreviewLayer;ring.transform.SetParent(stage.transform,false);turnRing=ring.transform;
+            var line=ring.AddComponent<LineRenderer>();ringMaterial=new Material(Shader.Find("Sprites/Default")){hideFlags=HideFlags.HideAndDontSave,color=new Color(.4f,.6f,.72f,.35f)};
+            line.sharedMaterial=ringMaterial;line.useWorldSpace=false;line.positionCount=49;line.startWidth=line.endWidth=.018f;
+            for(int i=0;i<49;i++){float a=i/48f*Mathf.PI*1.75f;line.SetPosition(i,new Vector3(Mathf.Cos(a)*1.2f,.025f,Mathf.Sin(a)*1.2f));}
         }
         void CreateTexture()
         {
-            texture=new RenderTexture(384,480,16){name="Collection preview",hideFlags=HideFlags.HideAndDontSave};
+            if(texture!=null){camera.targetTexture=null;texture.Release();UnityEngine.Object.Destroy(texture);}
+            allocated=requested;surfaceFrame=Time.frameCount;
+            var descriptor=new RenderTextureDescriptor(allocated.Width,allocated.Height,RenderTextureFormat.ARGB32,16){msaaSamples=allocated.Samples};
+            descriptor.msaaSamples=Mathf.Clamp(SystemInfo.GetRenderTextureSupportedMSAASampleCount(descriptor),1,allocated.Samples);
+            texture=new RenderTexture(descriptor){name="Collection preview",hideFlags=HideFlags.HideAndDontSave};
             texture.Create();camera.targetTexture=texture;state.InvalidateTexture();
         }
         public void Dispose()
         {
+            if(camera!=null)camera.targetTexture=null;
             if(stage!=null){stage.SetActive(false);UnityEngine.Object.Destroy(stage);}
-            if(texture!=null){texture.Release();UnityEngine.Object.Destroy(texture);}stage=null;avatar=null;model=null;camera=null;texture=null;state=new CollectionPreviewState();
+            if(texture!=null){texture.Release();UnityEngine.Object.Destroy(texture);}
+            if(shadowMaterial!=null)UnityEngine.Object.Destroy(shadowMaterial);if(ringMaterial!=null)UnityEngine.Object.Destroy(ringMaterial);if(shadowTexture!=null)UnityEngine.Object.Destroy(shadowTexture);
+            stage=null;avatar=null;model=null;camera=null;texture=null;turnRing=null;shadowMaterial=ringMaterial=null;shadowTexture=null;renderers=null;sceneLights=null;sceneMasks=null;surfaceFrame=-1;
+            state=new CollectionPreviewState();motion=new CollectionPreviewMotion();
         }
     }
 }

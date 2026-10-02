@@ -6,7 +6,7 @@ assert 'CombatModel.Hero(' in p and 'model.ApplyEquipment(' in p and 'model.Appl
 assert 'finally {UnityEngine.Random.state=random;}' in p
 assert 'c.enabled=false' in p and 'behaviour.enabled=false' in p
 assert 'camera.enabled=false' in p and 'camera.cullingMask=1<<PreviewLayer' in p and 'light.cullingMask=1<<PreviewLayer' in p
-assert 'new RenderTexture(384,480,16)' in p and 'state.ShouldRender(true,Time.frameCount)' in p and 'texture.IsCreated()' in p
+assert 'new RenderTextureDescriptor(allocated.Width,allocated.Height' in p and 'state.ShouldRender(true,Time.frameCount)' in p and 'texture.IsCreated()' in p
 assert 'texture.Release()' in p and 'stage.SetActive(false)' in p
 assert 'ReleaseCollectionPreview();' in base and 'private void OnDisable(){ReleaseCollectionPreview();}' in ui
 assert 'EquipmentComparisonPresentation.Receipt(reward)' in ui
@@ -17,3 +17,12 @@ assert 'owned&&!current' in ui and 'owned&&!equipped' in ui
 assert 'StrongestFashion(slot)' in ui and '属性来源' in ui
 assert '.EquipFashion' not in p and 'ProgressionService' not in p and '.Save(' not in p
 print('PASS: 14 real-model, isolation, cleanup, bounded-render and persistent-comparison wiring contracts')
+
+assert 'surfaceFrame!=Time.frameCount' in p and 'GetRenderTextureSupportedMSAASampleCount' in p
+assert 'Event.current==null||Event.current.type!=EventType.Repaint' in p
+assert 'CollectionPreviewFraming.Size(' in p and 'renderer.gameObject.activeInHierarchy' in p
+assert 'finally' in p and 'RenderSettings.ambientMode=ambientMode' in p and 'sceneLights[i].cullingMask=sceneMasks[i]' in p
+assert 'shadowMaterial!=null' in p and 'ringMaterial!=null' in p and 'shadowTexture!=null' in p
+assert 'camera.targetTexture=null' in p and 'sceneLights=null' in p
+assert p.count('model.Animate(')==1 and 'motion.Advance(Time.unscaledDeltaTime,Time.frameCount)' in p
+print('PASS: composition, bounded surface, static mannequin, lighting restoration and owned-resource cleanup source contracts')
