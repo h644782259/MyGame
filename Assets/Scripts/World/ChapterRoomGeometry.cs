@@ -21,9 +21,11 @@ namespace Emberfall
         public readonly Vector3 HazardCenter,HazardStart,HazardEnd;
         internal ChapterRoomPlan(ChapterNode node,int room,int seed,ChapterObstacle[] obstacles,Vector3[] objectives,Vector3[] spawns,int mirror)
         {
-            Node=node;Room=room;Seed=seed;Layout=100+(int)node*2+room;
+            Node=node;Room=room;Seed=seed;Layout=100+(int)node*2+(node==ChapterNode.StarPlatform?1:room);
             Obstacles=obstacles;Objectives=objectives;SpawnCandidates=spawns;
-            HazardCenter=new Vector3(-mirror*7,0,0);HazardStart=new Vector3(-4,0,1);HazardEnd=new Vector3(4,0,1);
+            HazardCenter=new Vector3(-mirror*7,0,-5);
+            // Cross the inner, short approach to the mirrored hunt target; outer rail stays a safe detour.
+            HazardStart=new Vector3(mirror*2.7f,0,-4);HazardEnd=new Vector3(mirror*5.8f,0,-4);
         }
     }
     public struct ChapterStarMapPiece
@@ -83,11 +85,17 @@ namespace Emberfall
                     float angle=(30+spoke*120)*(Mathf.PI/180f),distance=9+step*3;
                     obstacles.Add(new ChapterObstacle(new Vector3(Mathf.Sin(angle)*distance,0,Mathf.Cos(angle)*distance),1.05f,1.6f+step*.4f));
                 }
-            Vector3[] objectives=node==ChapterNode.ForestCourt&&room==0?new[]{new Vector3(-mirror*8,0,-5),new Vector3(mirror*8,0,7)}:
+            Vector3[] objectives=node==ChapterNode.ForestCourt&&room==0?new[]{new Vector3(-mirror*8,0,1),new Vector3(mirror*8,0,1)}:
                 node==ChapterNode.Redrock&&room==0?new[]{new Vector3(mirror*8,0,7)}:
                 node==ChapterNode.StarPlatform?new[]{new Vector3(0,0,1)}:new[]{new Vector3(0,0,11)};
             Vector3[] spawns={node==ChapterNode.StarPlatform?new Vector3(0,0,1):node==ChapterNode.Redrock&&room==0?objectives[0]:new Vector3(0,0,8),
                 new Vector3(-mirror*8,0,-1),new Vector3(mirror*8,0,2),new Vector3(-mirror*7,0,9),new Vector3(mirror*10,0,7),new Vector3(mirror*5,0,-4)};
+            if(node==ChapterNode.ForestCourt&&room==0)
+            {
+                spawns[0]=new Vector3(-mirror*5.8f,0,3); // Supplier sees the left seal guard within the real six-metre range.
+                spawns[1]=new Vector3(-mirror*8,0,1);
+                spawns[4]=new Vector3(mirror*8,0,3); // Opposite guard has no cross-island supply LOS.
+            }
             return new ChapterRoomPlan(node,room,seed,obstacles.ToArray(),objectives,spawns,mirror);
         }
         public static ChapterRoomPlan FromLayout(int layout,int seed)
