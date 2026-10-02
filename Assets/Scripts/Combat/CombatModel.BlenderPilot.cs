@@ -35,13 +35,22 @@ namespace Emberfall
             bool supported = BlenderPilotArt.Enabled && !pilotHasGear && !pilotHasFashion &&
                 !pilotAirborne && !pilotCharging && !dying && !pilotOwnerDead && locomotion.Landing <= 0 &&
                 Mathf.Abs(locomotion.Side) < .1f && locomotion.Forward >= -.05f &&
-                (!acting || locomotion.Speed <= .05f) && // Full-body pilot attacks have no moving lower-body layer.
+                (!acting || actionBasic || locomotion.Speed <= .05f) && // Only basic attacks own a locomotion lower-body layer.
                 (!acting || actionBasic || actionSkill == 7);
-            SetBlenderPilotVisible(supported);
-            if (!supported) return false;
+            if (!supported) { SetBlenderPilotVisible(false); return false; }
             transform.localPosition = Vector3.zero;
             transform.localRotation = Quaternion.identity;
-            blenderPilot.Sample(isolatedPreview?previewTime:Time.time, locomotion.Phase, locomotion.Speed, acting, actionBasic, progress, isolatedPreview?1:Time.time-pilotHurtStarted);
+            try
+            {
+                blenderPilot.Sample(isolatedPreview?previewTime:Time.time, locomotion.Phase, locomotion.Speed, acting, actionBasic, progress, isolatedPreview?1:Time.time-pilotHurtStarted);
+            }
+            catch(System.Exception)
+            {
+                // An import/sample failure must not expose a partly composed skeleton.
+                SetBlenderPilotVisible(false);
+                return false;
+            }
+            SetBlenderPilotVisible(true);
             return true;
         }
         private void SetBlenderPilotVisible(bool visible)
