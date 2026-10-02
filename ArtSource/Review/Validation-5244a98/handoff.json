@@ -1,0 +1,53 @@
+{
+  "passed": true,
+  "checks": 189,
+  "passedChecks": 189,
+  "failedChecks": [],
+  "defaultJIT": true,
+  "testedHead": "bce7b1f4e8ad65e270e78c0e2b9a44484cef9191",
+  "testedTree": "4a106eb08c61a7c5a2ae8bf03227e444e414e3cd",
+  "finalHeads": [
+    {
+      "platform": "Windows",
+      "head": "5244a985c71efc8bd7cbb55859e77e891b0720f0",
+      "tree": "4a106eb08c61a7c5a2ae8bf03227e444e414e3cd",
+      "runtimeMatchesCompiledInputs": true
+    },
+    {
+      "platform": "iOS",
+      "head": "150ba90ea125362b3c4d913aa88dda84636bb15c",
+      "tree": "337604ef6acef0cf996bea03b0a88188ebde4923",
+      "runtimeMatchesCompiledInputs": true
+    },
+    {
+      "platform": "Android",
+      "head": "a5d78d03ce3ae84c3d90b39cfb72e60661aab0fb",
+      "tree": "068fa568be96a25fba6326a68a3b7bbaadf863b4",
+      "runtimeMatchesCompiledInputs": true
+    }
+  ],
+  "windowsExactTreeMatch": true,
+  "sourceChangedDuringRun": [],
+  "runtimeSourceCount": 256,
+  "runtimeManifestSha256": "c88a9a1b5daafbd4ce0fc05f1e9a1b13cf94c6e3119ea6d6b50cf1d62c35b853",
+  "allSourceManifestSha256": "9838e3aca6d2adbfbfabca0e574faf030ead6ded4ce4123b246dbe31fe0210ba",
+  "reportPath": "/workspace/scratch/pilot-49e624b-final/final-report/report.json",
+  "reportSha256": "c293612316333de3828ba59a402c33131cda6a4e9eac507f558eb30f858ecf70",
+  "fullLog": "/workspace/scratch/pilot-49e624b-final/repaired-full.log",
+  "platformApiReport": "/workspace/scratch/pilot-49e624b-final/platform-api-report.json",
+  "platformApiPassed": true,
+  "runtimeParity": true,
+  "pilotResourceCount": 16,
+  "pilotResourceParity": true,
+  "pilotResourceManifestSha256": "dd5b482ac50b05adc0ae8c6cabda3bfb6709331f4c1b8cedd434c0f5ed038d34",
+  "startedUtc": "20261002T155402456270Z",
+  "completedUtc": "2026-10-02T16:08:53.977973+00:00",
+  "scope": "Standalone production-logic tests; optional Unity API/source compilation. No Unity Editor execution, real JsonUtility, rendering, shaders, or platform build executed.",
+  "notes": [
+    "Runtime/assets unchanged by final two-line fixture correction bce7b1f.",
+    "Final Windows5244a98 and testedbce7b1f have identical git trees.",
+    "Three platform compiler inputs rehashed at final heads; no redundant API rerun.",
+    "Full earlier187/189 frozen report and all prior failure logs retained.",
+    "No Unity6 Editor/PlayMode, engine imports, rendering, touchscreen/device or platform build acceptance."
+  ]
+}
