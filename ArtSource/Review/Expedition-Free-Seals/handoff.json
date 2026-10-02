@@ -1,0 +1,124 @@
+{
+  "testedHead": "1e61f1166e7a2ec60c37aa066557a9699b77ce4b",
+  "testedTree": "5481a6e53248797f4a82ae05465d2653ff935927",
+  "deliveryTreeEquivalence": [
+    {
+      "path": "/workspace/emberfall_free_seals_integration",
+      "testedHead": "1e61f1166e7a2ec60c37aa066557a9699b77ce4b",
+      "deliveryHead": "3d2c33ea3a4262d1186e0bede073d2041cc551cb",
+      "identicalTree": "5481a6e53248797f4a82ae05465d2653ff935927"
+    },
+    {
+      "path": "/workspace/emberfall_ios_free_seals",
+      "testedHead": "388b85f41f5a773b1a81860f49e6920f4c8cb2df",
+      "deliveryHead": "2243793d8fc63eaf859861468ddf99779fc6d534",
+      "identicalTree": "5bc6e169573a2bd5239095fe82ba720dba41bdf6"
+    },
+    {
+      "path": "/workspace/emberfall_android_free_seals",
+      "testedHead": "e94f2914b435f7f0824f643f7401bfeb6863f8b7",
+      "deliveryHead": "e94f2914b435f7f0824f643f7401bfeb6863f8b7",
+      "identicalTree": "cb6adff1b6563eae3a9d3384656ee9927438be45"
+    }
+  ],
+  "defaultJIT": true,
+  "fullSuite": {
+    "passed": true,
+    "passedCount": 191,
+    "totalCount": 191,
+    "startedUtc": "20261002T173132470831Z",
+    "completedUtc": "2026-10-02T17:46:30.261731+00:00",
+    "report": "/workspace/scratch/free-seals-validation/1e61f11/final-report/report.json",
+    "reportSha256": "555afa33acab9def224a8f93c2f1fd912d0e081099ceb37276c926fde188b3da",
+    "log": "/workspace/scratch/free-seals-validation/1e61f11/full.log",
+    "sourceChangedDuringRun": [],
+    "runtimeSourceCount": 256,
+    "allSourceManifestSha256": "8e4b9850b57f8abf6b5da3958544f594f20960e1484b91b9ac8c78eee36f67f2"
+  },
+  "explicitRedrock": {
+    "passed": true,
+    "registeredInAggregate": false,
+    "spawnIsolationChecks": 3232,
+    "geometryNavigationSpawnChecks": 51209,
+    "formationNavigationChecks": 780,
+    "compiledNegativeControls": [
+      "wall",
+      "low-bit"
+    ],
+    "log": "/workspace/scratch/free-seals-validation/1e61f11/redrock-explicit.log",
+    "logSha256": "565feca4b4d139e63f4d2323d7d2792b2f5b13a3f2edcdd87fbae55671a5b723"
+  },
+  "separateFirstRoomProbe": {
+    "report": "/workspace/scratch/free-seals-evidence/first-room-choice/report.json",
+    "reportSha256": "76864dec16e31957263b91005910207cce9b5910bfe908fa7920ca6dc9317768",
+    "script": "/workspace/scratch/free-seals-evidence/first-room-choice/probe.py",
+    "scriptSha256": "996d0c2fd4c7e69c3c7af88cd1a925b12db6a98a4f46750d359f8a15fe3e1a62",
+    "assertions": 90,
+    "compiledNegativeControls": 2,
+    "registeredInAggregate": false,
+    "runBy": "chapter_mastery agent",
+    "sourceHashesIndependentlyMatched": true,
+    "scope": [
+      "Managed scene and save-service doubles; no Unity or real filesystem save",
+      "Real full RunChoices/RunChoices.Rooms/ApplicationPauseState and extracted actual InputBlocked/UpdateTimeScale/ConfirmRoomInterlude used",
+      "Actual full RoomTactics and state/navigation; actual room begin, gate, enter, save-before-leaving methods",
+      "Standalone scratch validation, not part of frozen repository or191aggregate"
+    ]
+  },
+  "platformAPI": {
+    "passed": true,
+    "report": "/workspace/scratch/free-seals-validation/1e61f11/platform-api-report.json",
+    "runtimeParity": true,
+    "runtimeManifestSha256": "c8fce9ba1f64495c9a53d5f8b72a91c83c00f73c4f1cf7ee10afedf18e45bfd0",
+    "platformHeadsAfterRun": [
+      {
+        "testedHead": "1e61f1166e7a2ec60c37aa066557a9699b77ce4b",
+        "currentHead": "1e61f1166e7a2ec60c37aa066557a9699b77ce4b",
+        "tree": "5481a6e53248797f4a82ae05465d2653ff935927",
+        "runtimeSourceUnchanged": true,
+        "trackedStatus": ""
+      },
+      {
+        "testedHead": "388b85f41f5a773b1a81860f49e6920f4c8cb2df",
+        "currentHead": "2243793d8fc63eaf859861468ddf99779fc6d534",
+        "tree": "5bc6e169573a2bd5239095fe82ba720dba41bdf6",
+        "runtimeSourceUnchanged": true,
+        "trackedStatus": ""
+      },
+      {
+        "testedHead": "e94f2914b435f7f0824f643f7401bfeb6863f8b7",
+        "currentHead": "e94f2914b435f7f0824f643f7401bfeb6863f8b7",
+        "tree": "cb6adff1b6563eae3a9d3384656ee9927438be45",
+        "runtimeSourceUnchanged": true,
+        "trackedStatus": ""
+      }
+    ]
+  },
+  "platformProtection": {
+    "sourceHead": "1e61f1166e7a2ec60c37aa066557a9699b77ce4b",
+    "platforms": [
+      {
+        "path": "/workspace/emberfall_ios_free_seals",
+        "head": "388b85f41f5a773b1a81860f49e6920f4c8cb2df",
+        "priorHead": "44d24269470076010c626465c75630da18a58b51",
+        "protectedVerified": 24,
+        "syncedFilesVerified": 21,
+        "errors": []
+      },
+      {
+        "path": "/workspace/emberfall_android_free_seals",
+        "head": "e94f2914b435f7f0824f643f7401bfeb6863f8b7",
+        "priorHead": "57445429957bbc2c65a471e7ae5affeb9df841c3",
+        "protectedVerified": 24,
+        "syncedFilesVerified": 21,
+        "errors": []
+      }
+    ],
+    "passed": true
+  },
+  "limitations": [
+    "Five old unregistered source-contract scripts have known baseline drift; this is not an all-repository-script pass claim.",
+    "Standalone production logic, Unity API doubles, cached Unity2021 reference API compile. No Unity Editor, Unity6 import/render, real JsonUtility, device gameplay or platform package build."
+  ],
+  "candidateEdits": false
+}

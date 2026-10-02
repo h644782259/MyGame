@@ -1,0 +1,20 @@
+[
+  {
+    "path": "/workspace/emberfall_free_seals_integration",
+    "testedHead": "1e61f1166e7a2ec60c37aa066557a9699b77ce4b",
+    "deliveryHead": "3d2c33ea3a4262d1186e0bede073d2041cc551cb",
+    "identicalTree": "5481a6e53248797f4a82ae05465d2653ff935927"
+  },
+  {
+    "path": "/workspace/emberfall_ios_free_seals",
+    "testedHead": "388b85f41f5a773b1a81860f49e6920f4c8cb2df",
+    "deliveryHead": "2243793d8fc63eaf859861468ddf99779fc6d534",
+    "identicalTree": "5bc6e169573a2bd5239095fe82ba720dba41bdf6"
+  },
+  {
+    "path": "/workspace/emberfall_android_free_seals",
+    "testedHead": "e94f2914b435f7f0824f643f7401bfeb6863f8b7",
+    "deliveryHead": "e94f2914b435f7f0824f643f7401bfeb6863f8b7",
+    "identicalTree": "cb6adff1b6563eae3a9d3384656ee9927438be45"
+  }
+]

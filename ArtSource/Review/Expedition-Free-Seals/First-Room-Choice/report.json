@@ -1,0 +1,51 @@
+{
+  "source_ref": "1e61f116",
+  "source_commit": "1e61f1166e7a2ec60c37aa066557a9699b77ce4b",
+  "tree": "5481a6e53248797f4a82ae05465d2653ff935927",
+  "equivalent_commit": "3d2c33ea3a4262d1186e0bede073d2041cc551cb",
+  "sha256": {
+    "Assets/Scripts/Core/GameSession.RoomChain.cs": "0374f2cf3ed36743bf511e851e73e5577ff477a9de9e6df937c1eed6ca990e95",
+    "Assets/Scripts/Core/GameSession.cs": "b63f5db45e45cff6b1a09b2e7230c6f1dd78f2dcae42b774c6854583ac85849b",
+    "Tests/RoomFreeSealHostTests.cs": "4f0ab3ae96197cb7fef55c0060c1cdc3c3d21819ef06c7db62e008ece62a585c",
+    "Tests/DestructibleTraversalTests.cs": "de407d16f35f12a0319571379a1db036945225798e1840461a229edd23ae5eed",
+    "Assets/Scripts/Core/RoomChainState.cs": "b28cc6dc41f36ba9fba0678b6f36d2870379c6f8a5bad4dcd7a3a6cee7f9360b",
+    "Assets/Scripts/Core/RoomTactics.cs": "f6639acd369783c85b63338c616fe3365d8f54d95d015f46775e58ff98ad7743",
+    "Assets/Scripts/Core/RoomTacticalRegion.cs": "6597402326f5fa5b41b75f317bb9c422aacf1e54dcd8fa4d6b519ff2560143b5",
+    "Assets/Scripts/Core/DeferredRoomChoice.cs": "730954cc3a9e8a2e9c3dce65d89d3cd66ac7018b27e9956e1893a8d01eddb67b",
+    "Assets/Scripts/Core/EscapePostPolicy.cs": "738b865a71bbae6b0051133041f63572f1ca273f287d27d2ef0d2c23971377a0",
+    "Assets/Scripts/Core/GameSession.RoomTactics.cs": "bba3adc6ce9537cdd564971bdffd48fbbcf720069d8d26eec7e6759b8aea97aa",
+    "Assets/Scripts/World/WorldTraversal.cs": "5348222e2a6d38cfca9f9df6bb482f725d1ceaf19fa449ccdf38045659cd42b3",
+    "Assets/Scripts/World/TacticalRoomGeometry.cs": "3776605fd488a2c454333c98565751e953e831583a6edec78a3a69fddfd19ccf",
+    "Assets/Scripts/World/EscapeRoomFormation.cs": "71060a3d57f6419e5484b2eb95a9d0d585ca3a38c71249029fa56af706e4a511",
+    "Assets/Scripts/UI/ChapterSealPresentation.cs": "b1af91428568582477d049002d678e866f30e226bd2fe091170509d37e8f82b0",
+    "Assets/Scripts/UI/RoomObjectivePresentation.cs": "c0fc03bdbafd05ec38a70db6ec2a1ce4456ec62170ca0ba0100d3a907ad6ed65",
+    "Assets/Scripts/Core/GameTypes.cs": "f2d4d5c0e04b1808369683504d345730d4e7fc4eafae2bac1d76017311f2466e",
+    "Assets/Scripts/Core/CombatBalance.cs": "6e1f8ac93dd53bb5c77c0c74a3b9fd05e1350c9d6f05781b465fd21196a73404",
+    "Assets/Scripts/Core/RunChoices.cs": "935aad1aca90198413db2079884d36a84c0cd41f69e8ea2eb628394b0257e3ab",
+    "Assets/Scripts/Core/RunChoices.Rooms.cs": "7c449d82846c168cd5934ba2f1543d7df2ec4c671e2605ec6a5588d66007d59c",
+    "Assets/Scripts/Core/ApplicationPauseState.cs": "b28dbba08b326c480089b6cebac845ccae7955bb790f7905868a3d3feb9d6ef6"
+  },
+  "results": [
+    {
+      "mode": "current",
+      "exit": 0,
+      "expected_failure": null
+    },
+    {
+      "mode": "remove-pending-block",
+      "exit": -6,
+      "expected_failure": "pending blessing blocks actual EnterNextRoom before save or transition"
+    },
+    {
+      "mode": "remove-deferred-claim",
+      "exit": -6,
+      "expected_failure": "next frame claims deferred blessing through real offer generation"
+    }
+  ],
+  "limits": [
+    "Managed scene and save-service doubles; no Unity or real filesystem save",
+    "Real full RunChoices/RunChoices.Rooms/ApplicationPauseState and extracted actual InputBlocked/UpdateTimeScale/ConfirmRoomInterlude used",
+    "Actual full RoomTactics and state/navigation; actual room begin, gate, enter, save-before-leaving methods",
+    "Standalone scratch validation, not part of frozen repository or191aggregate"
+  ]
+}

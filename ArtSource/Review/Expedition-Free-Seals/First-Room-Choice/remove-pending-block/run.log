@@ -1,0 +1,4 @@
+Unhandled exception. System.Exception: pending blessing blocks actual EnterNextRoom before save or transition
+   at Emberfall.GameSession.C(Boolean ok, String message) in /workspace/scratch/free-seals-evidence/first-room-choice/remove-pending-block/Probe.cs:line 4
+   at Emberfall.GameSession.Probe() in /workspace/scratch/free-seals-evidence/first-room-choice/remove-pending-block/Probe.cs:line 15
+   at Program.Main() in /workspace/scratch/free-seals-evidence/first-room-choice/remove-pending-block/Probe.cs:line 29

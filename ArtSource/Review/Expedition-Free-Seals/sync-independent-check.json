@@ -1,0 +1,22 @@
+{
+  "sourceHead": "1e61f1166e7a2ec60c37aa066557a9699b77ce4b",
+  "platforms": [
+    {
+      "path": "/workspace/emberfall_ios_free_seals",
+      "head": "388b85f41f5a773b1a81860f49e6920f4c8cb2df",
+      "priorHead": "44d24269470076010c626465c75630da18a58b51",
+      "protectedVerified": 24,
+      "syncedFilesVerified": 21,
+      "errors": []
+    },
+    {
+      "path": "/workspace/emberfall_android_free_seals",
+      "head": "e94f2914b435f7f0824f643f7401bfeb6863f8b7",
+      "priorHead": "57445429957bbc2c65a471e7ae5affeb9df841c3",
+      "protectedVerified": 24,
+      "syncedFilesVerified": 21,
+      "errors": []
+    }
+  ],
+  "passed": true
+}

@@ -1,0 +1,4 @@
+Unhandled exception. System.Exception: next frame claims deferred blessing through real offer generation
+   at Emberfall.GameSession.C(Boolean ok, String message) in /workspace/scratch/free-seals-evidence/first-room-choice/remove-deferred-claim/Probe.cs:line 4
+   at Emberfall.GameSession.Probe() in /workspace/scratch/free-seals-evidence/first-room-choice/remove-deferred-claim/Probe.cs:line 17
+   at Program.Main() in /workspace/scratch/free-seals-evidence/first-room-choice/remove-deferred-claim/Probe.cs:line 29
