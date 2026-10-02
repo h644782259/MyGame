@@ -306,8 +306,8 @@
       "sha256": "6862d99ac3e0b8bc12253313fa4d52620686ea29c4bf093e70c38e8aa82d553e"
     },
     "journey-ledger.csv": {
-      "bytes": 10868,
-      "sha256": "d1c062589e30d217b7a962d6b4c1aafa740543e1bc2931f1fa36b1cd6d90e04b"
+      "bytes": 10731,
+      "sha256": "8f60f4fd0670671de965199669157e9371a6ac548a422112b5638223d18ff658"
     },
     "journey-ledger.json": {
       "bytes": 47064,
