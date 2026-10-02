@@ -25,7 +25,10 @@ namespace Emberfall
                 }
             }
             if(game==null||game.Player==null||!game.HasStarted||game.IsDead){CameraOcclusionSurface.RestoreAll();return;}
-            CameraOcclusionSurface.Advance(transform.position,game.Player.transform.position+Vector3.up,Time.unscaledDeltaTime);
+            var target=game.Player.AimTarget;
+            bool protectTarget=target!=null&&!target.IsDead&&target.gameObject.activeInHierarchy&&CombatFx.Flat(target.transform.position-game.Player.transform.position).sqrMagnitude<=18*18;
+            CameraOcclusionSurface.Advance(transform.position,game.Player.transform.position+Vector3.up*1.35f,
+                game.Player.transform.position+Vector3.up*.18f,protectTarget?target.transform.position+Vector3.up:Vector3.zero,protectTarget,Time.unscaledDeltaTime);
         }
         private void RestoreVisibility(){CameraOcclusionSurface.RestoreAll();if(viewCamera!=null)viewCamera.ResetProjectionMatrix();GameFont.Release(ref occlusionFont);occlusionLabel=null;}
         private void OnGUI()

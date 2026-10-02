@@ -13,7 +13,7 @@ def check(ok,message):
     checks+=1
 check('surfaces.Count<CameraVisibilityRules.MaximumSurfaces' in fade,'Registration is bounded')
 check(fade.index('fadedCount>=CameraVisibilityRules.MaximumFaded')<fade.index('new Material(original)'), 'Fading refuses resource admission before cloning')
-check('if(hit)LastOccluders++' in fade and fade.index('if(hit)LastOccluders++')<fade.index('surface.SetFade(hit,deltaTime)'), 'Position-marker signal survives exhausted fade slots')
+check('if(surface.requested)LastOccluders++' in fade and fade.index('if(surface.requested)LastOccluders++')<fade.index('ReserveGroup(ref available,needed)'), 'Position-marker signal survives exhausted fade slots')
 check('visual.sharedMaterial=original' in fade and 'Destroy(fade)' in fade, 'Original material restored and owned clone destroyed')
 check('private void OnDisable(){surfaces.Remove(this);Restore();}' in fade, 'Disable returns registry/material slots immediately')
 check('private void OnDestroy(){surfaces.Remove(this);Restore();}' in fade, 'Destruction cleanup is idempotent')

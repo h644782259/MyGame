@@ -25,7 +25,7 @@ check('enemy.ApplyControl(duration)' in status and 'enemy.ControlStunRemaining' 
 fx=read('Assets/Scripts/Combat/CombatEffects.cs')
 check('skillIndex, castId, impact.Amount, impact.IsCritical, impact.CriticalMultiplier' in fx and 'statusSkill, castId, damage.Amount, damage.IsCritical, damage.CriticalMultiplier' in fx,'projectile budget and area preserve their actual critical multiplier')
 t=read('Assets/Scripts/Combat/EnemyAttackTelegraph.cs')
-check('Resources.Load<Shader>("ThreatBoundary")' in t and 'sortingOrder = 120' in t and 'SetInterruptible' in t,'warning keeps visible boundary and distinct interrupt cue')
+check('ThreatVisualStyle.Material()' in t and 'Resources.Load<Shader>("ThreatBoundary")' in read('Assets/Scripts/Combat/ThreatVisualStyle.cs') and 'sortingOrder = 120' in t and 'SetInterruptible' in t,'warning keeps visible boundary and distinct interrupt cue')
 shader=read('Assets/Resources/ThreatBoundary.shader')
 check('ZTest Always' in shader and 'ZWrite Off' in shader,'thin threat outlines remain readable above floor effects')
 for source in ['CombatEffects','SummonerSpell','AdvancedSkillSequence']:
