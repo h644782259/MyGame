@@ -62,6 +62,7 @@ namespace Emberfall {
   public class LayoutStub {public float Scale=1;}public static LayoutStub Layout=new LayoutStub();
   public static Vector2 Move;public static bool AttackHeld;private static bool dodge,potion,jump;
   private Dictionary<int,int> fingers=new Dictionary<int,int>();private int moveFinger;private bool hasJoystickOrigin;private GameUI ui;
+  private object worldPointerOwner,worldPointerTarget;
   private class Gesture {public void Cancel(){}}private Gesture cameraGesture=new Gesture();
   public static void OwnJoystick(GameUI owner){instance.ui=owner;instance.fingers[11]=1;instance.moveFinger=11;instance.hasJoystickOrigin=true;AttackHeld=true;}
   public static bool Cleared=>instance.fingers.Count==0&&!AttackHeld&&!dodge&&!potion&&!jump&&instance.moveFinger==-1000&&!instance.hasJoystickOrigin;

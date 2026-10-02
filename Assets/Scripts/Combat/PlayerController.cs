@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace Emberfall
 {
-    public sealed class PlayerController : MonoBehaviour
+    public sealed partial class PlayerController : MonoBehaviour
     {
         public float Health { get; private set; }
         public float MaxHealth { get; private set; }
@@ -140,6 +140,7 @@ namespace Emberfall
         {
             SummonedCompanion.RefreshBuild(this);
             CombatEpoch++;
+            ClearMobilePinnedTarget();
             perfectDodgeCounterTime = 0;
             CancelCombatPose();
             masteryCore.Reset();coreWardTime=0;
@@ -173,6 +174,7 @@ namespace Emberfall
         {
             SummonedCompanion.RefreshBuild(this);
             CombatEpoch++;
+            ClearMobilePinnedTarget();
             perfectDodgeCounterTime = 0;
             CancelCombatPose();
             if (targeting != null) targeting.Cancel();
@@ -184,6 +186,7 @@ namespace Emberfall
         public void ResetCooldownsForDungeonEntry()
         {
             CombatEpoch++;
+            ClearMobilePinnedTarget();
             perfectDodgeCounterTime = 0;
             CancelCombatPose();
             masteryCore.Reset();coreWardTime=0; // Retire prior-zone delayed impacts as well as stale aim.
@@ -241,6 +244,7 @@ namespace Emberfall
             {
                 if (CombatReviewEvents.Enabled) CombatReviewEvents.Emit("death",CombatReviewObjectId.Get(this));
                 CombatEpoch++;
+            ClearMobilePinnedTarget();
                 perfectDodgeCounterTime = 0;
                 CancelCombatPose();
             masteryCore.Reset();coreWardTime=0;
@@ -453,6 +457,8 @@ namespace Emberfall
 
         private Vector3 ResolveMobileAim(Vector3 movement)
         {
+            var pinned=MobilePinnedTarget;
+            if(pinned!=null){AimTarget=pinned;return CombatFx.Flat(pinned.transform.position);}
             AimTarget = null;
             Vector3 direction = movement.sqrMagnitude > .01f ? movement.normalized : transform.forward;
             float nearest = 14f;
@@ -477,6 +483,10 @@ namespace Emberfall
         {
             var preview=SkillTargetingController.Describe(HeroClass,skill,session.Progression.Profile.skillRanks[skill]);
             if(preview.shape==SkillTargetingController.Shape.Self){enemy=null;point=transform.position;return;}
+            if(HeroClass==HeroClass.Summoner&&(skill==2||skill==4||skill==9))
+            {var team=SummonedCompanion.ExplicitFocus(this);if(team!=null){enemy=team;point=CombatFx.Flat(team.transform.position);return;}}
+            var pinned=MobilePinnedTarget;
+            if(pinned!=null&&MobilePinAppliesToSkill(skill)){enemy=pinned;point=CombatFx.Flat(pinned.transform.position);return;}
             float range=preview.distance>0?preview.distance:14f;
             mobileAimCandidates.Clear();
             foreach(var candidate in session.Enemies)
@@ -590,6 +600,7 @@ namespace Emberfall
         private void BasicAttack()
         {
             if (TraversalStartedThisFrame || skillBasicRecovery.Blocked) return;
+            if(!MobilePinnedActionAllowed(-1,true))return;
             if (charge != null && (charge.IsCharging || charge.ConsumedThisFrame)) return;
             if ((HeroClass==HeroClass.Arcanist || HeroClass==HeroClass.Summoner) && !ValidAimTarget(AimTarget)) AimTarget=MagicConeTarget();
             FaceAim();
@@ -1107,7 +1118,7 @@ namespace Emberfall
         internal bool CastImmediateSkill(int skill)
         {
             if (CombatReviewEvents.Enabled) CombatReviewEvents.Emit("skillattempt",CombatReviewObjectId.Get(this),skill:skill);
-            if(SkillTargetingController.RequiresConfirmation(HeroClass,skill) || !CanBeginSkillTargeting(skill)) return false;
+            if(SkillTargetingController.RequiresConfirmation(HeroClass,skill) || !CanBeginSkillTargeting(skill) || !MobilePinnedActionAllowed(skill,true)) return false;
             // Mouse aim is resolved independently of movement. Re-read a selected
             // living target's position here so immediate directional casts face it.
             FaceAim();
@@ -1119,7 +1130,7 @@ namespace Emberfall
         internal bool ConfirmTargetedSkill(int skill,Vector3 worldPoint)
         {
             if (CombatReviewEvents.Enabled) CombatReviewEvents.Emit("skillattempt",CombatReviewObjectId.Get(this),skill:skill);
-            if(!SkillTargetingController.RequiresConfirmation(HeroClass,skill) || !CanBeginSkillTargeting(skill)) return false;
+            if(!SkillTargetingController.RequiresConfirmation(HeroClass,skill) || !CanBeginSkillTargeting(skill) || !MobilePinnedActionAllowed(skill,true)) return false;
             EnemyController selected=AimTarget;
             aimPoint=CombatSight.GroundPoint(transform.position,worldPoint);
             // Ground spell placement normally owns a point. A selected summon

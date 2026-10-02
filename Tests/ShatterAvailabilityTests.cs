@@ -44,11 +44,12 @@ namespace Emberfall
  public static class CombatSight
  {public static float Wall=float.PositiveInfinity;public static bool Direct(Vector3 a,Vector3 b)=>a.z<=Wall&&b.z<=Wall;public static bool Area(Vector3 a,Vector3 b)=>Direct(a,b);public static Vector3 GroundPoint(Vector3 a,Vector3 b)=>new Vector3(b.x,b.y,Math.Min(b.z,Wall));}
  public static class WorldTraversal {public static bool CanLeap(Vector3 a,Vector3 b,float radius)=>true;}
- public static class SummonedCompanion {public static void DescribeRoster(PlayerController p,out int count,out float life){count=0;life=0;}public static float CommandOpportunityRemaining(PlayerController p)=>0;}
+ public static class SummonedCompanion {public static EnemyController ExplicitFocus(PlayerController p)=>null;public static void DescribeRoster(PlayerController p,out int count,out float life){count=0;life=0;}public static float CommandOpportunityRemaining(PlayerController p)=>0;}
  public partial class GameUI {private GameSession session;private PlayerController opportunityOwner;private int opportunityEpoch;public GameUI(GameSession value){session=value;}public string Read()=>CurrentCombatOpportunity();}
  public partial class PlayerController
  {
   public SkillTargetingController targeting=new SkillTargetingController();
+  public EnemyController MobilePinnedTarget=>null;internal bool MobilePinAppliesToSkill(int skill)=>false;
   public int CombatEpoch=1;public float CounterOpportunityRemaining;public bool IsJumping=>jumping;
   public T GetComponent<T>() where T:class {return charge as T;}
   public float SkillCooldownRemaining(int skill)=>skillRuntime.Remaining(skill);
