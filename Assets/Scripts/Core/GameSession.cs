@@ -608,7 +608,7 @@ namespace Emberfall
         {
             GameAudio.Play(SoundCue.LevelUp);
             if (Player != null) { Player.RefreshStats(true); SpawnFloatingText(Player.transform.position + Vector3.up * 3, "LEVEL " + level + "  +1 SP", new Color(.9f, .82f, .4f)); }
-            Notify("升至 " + level + " 级！生命恢复，获得 1 技能点 · 按 K 学习或强化技能。");
+            Notify("升至 " + level + " 级！生命恢复，获得 " + GameBalance.SkillPointsGainedAtLevel(level) + " 技能点 · 按 K 查看技能。");
         }
         public void Notify(string message) { notification = message; notificationUntil = Time.unscaledTime + 6; }
 

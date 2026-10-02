@@ -17,6 +17,7 @@ namespace UnityEngine {
  public enum RuntimeInitializeLoadType {SubsystemRegistration}public class RuntimeInitializeOnLoadMethodAttribute:Attribute {public RuntimeInitializeOnLoadMethodAttribute(RuntimeInitializeLoadType value){}}
 }
 namespace Emberfall {
+ internal static class FilledSkillVfx{internal static void SkipFinales(GameSession game){}}
  public enum VisualSurface {Metal,Crystal,Wood}
  public class PlayerController:MonoBehaviour {public int CombatEpoch;public bool IsDead;}
  public class GameSession:MonoBehaviour {public static GameSession Instance;public bool Paused;public PlayerController Player;public bool HasStarted=true,InputBlocked;}

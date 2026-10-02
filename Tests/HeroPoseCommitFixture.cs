@@ -24,6 +24,13 @@ namespace Emberfall
  public enum WeaponVisualAnchor {BowGrip,BowNock}
  public sealed partial class CombatModel
  {
+  // Optional imported visual boundary: disabled, always returns to procedural poses.
+  // It records arguments only; no Animator, asset importer or render behavior is simulated.
+  private bool pilotCharging;
+  public bool PilotCharging=>pilotCharging;public void PretendPilotCharge(){pilotCharging=true;}
+  public int PilotSamples;public bool PilotActing,PilotHurt;public float PilotProgress;
+  private bool SampleBlenderPilot(bool acting,float progress,bool hurt)
+  {PilotSamples++;PilotActing=acting;PilotProgress=progress;PilotHurt=hurt;return false;}
   private bool isHero=true,actionBasic,isolatedPreview;private float previewTime;private HeroClass heroClass;private int actionSkill,swingCount,actionStartedFrame,weaponActionId,lastRibbonAction;private float actionAge,actionDuration,gaitPhase,smoothedSpeed,phase;
   private readonly Transform spine=new Transform(),headRig=new Transform(),leftArm=new Transform(),rightArm=new Transform(),leftElbow=new Transform(),rightElbow=new Transform(),swordRig=new Transform(),staffRig=new Transform(),bowRig=new Transform(),cloak=new Transform(),pelvis=new Transform(),leftLeg=new Transform(),rightLeg=new Transform(),leftKnee=new Transform(),rightKnee=new Transform(),castingOrb=new Transform(),arrowRig=new Transform(),decoration=new Transform();
   private Transform fashionWings;
@@ -37,6 +44,7 @@ namespace Emberfall
 }
 public static class HeroPoseCommitTests
 {
+ public static bool RequirePilotSample;
  static int n;static void Check(bool yes,string text){n++;if(!yes)throw new Exception(text);}
  static bool Same(Quaternion a,Quaternion b)=>Quaternion.Difference(a,b)<.00001f;
  public static string Run()
@@ -59,6 +67,17 @@ public static class HeroPoseCommitTests
    Check(!chained.TryClaimSwordRibbon(chained.Identity),"cancelled action cannot claim another sword ribbon");
    Check(chained.Identity!=identity&&Same(chained.Arm,cancel),"cancel retires attack identity but starts bounded visual settling");
    chained.Frame(.13f);Check(!Same(chained.Arm,cancel),"cancel settling reaches idle without extending combat recovery");
+  }
+  if(RequirePilotSample)
+  {
+   foreach(float interval in new[]{.18f,.46f,.9f})
+   {
+    var model=new CombatModel(HeroClass.Vanguard);model.PretendPilotCharge();model.PlayAction(-1,true,interval);
+    Check(!model.PilotCharging,"committed action clears optional visual charge flag");
+    Check(model.PilotSamples==1&&model.PilotActing&&!model.PilotHurt&&Math.Abs(model.PilotProgress-.52f)<.00001f,"pilot receives contact phase synchronously at basic commit");
+    float age=model.Age;int samples=model.PilotSamples;model.PoseAgain();
+    Check(model.PilotSamples==samples+1&&model.Age==age&&Math.Abs(model.PilotProgress-.52f)<.00001f,"optional pilot resampling preserves immediate contact and action clock");
+   }
   }
   var castArms=new Quaternion[4];var castWeapons=new Quaternion[4];int[] skills={0,1,5,2};
   for(int i=0;i<skills.Length;i++)

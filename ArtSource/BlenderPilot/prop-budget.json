@@ -1,0 +1,50 @@
+{
+  "StarcoreSword": {
+    "triangles": 392,
+    "vertices": 226,
+    "materials": 1,
+    "dimensions_blender_xyz_m": [
+      0.49789685010910034,
+      0.08500000089406967,
+      1.4943807125091553
+    ],
+    "uv_layers": 1,
+    "fbx_bytes": 33228
+  },
+  "WayfarerTent": {
+    "triangles": 1588,
+    "vertices": 948,
+    "materials": 1,
+    "dimensions_blender_xyz_m": [
+      2.708840847015381,
+      2.3350000381469727,
+      1.9437013864517212
+    ],
+    "uv_layers": 1,
+    "fbx_bytes": 49196
+  },
+  "SupplyCrate": {
+    "triangles": 1228,
+    "vertices": 692,
+    "materials": 1,
+    "dimensions_blender_xyz_m": [
+      0.9300000071525574,
+      0.9144999384880066,
+      0.9940000772476196
+    ],
+    "uv_layers": 1,
+    "fbx_bytes": 37804
+  },
+  "StarEmberCampfire": {
+    "triangles": 842,
+    "vertices": 492,
+    "materials": 1,
+    "dimensions_blender_xyz_m": [
+      1.3780925273895264,
+      1.3262461423873901,
+      0.8337497115135193
+    ],
+    "uv_layers": 1,
+    "fbx_bytes": 37884
+  }
+}

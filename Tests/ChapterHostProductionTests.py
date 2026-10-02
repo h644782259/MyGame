@@ -11,10 +11,12 @@ def method(file,signature):
         elif text[end]=='}':depth-=1
         end+=1
     return text[start:end]
-core=['GameTypes','ProgressionService','ProgressionService.Chapter','ProgressionService.Reforge','ReforgeQuote','ChapterProgression','ChapterResultSnapshot','ChapterCombatRun','RoomTactics','RoomChainState','ExpeditionModeState','RoomTacticalRegion','CombatBalance','HubTravelRules','MasteryCoreRuntime','TierRewardRules','TierRewardBand','ProgressionGoalState','AdventureResultPolicy','GameSession.Chapter','EscapePostPolicy']
+core=['GameTypes', 'ProgressionService', 'ProgressionService.Chapter', 'ProgressionService.Reforge', 'ReforgeQuote', 'ChapterProgression', 'ChapterResultSnapshot', 'ChapterCombatRun', 'RoomTactics', 'RoomChainState', 'ExpeditionModeState', 'RoomTacticalRegion', 'CombatBalance', 'HubTravelRules', 'MasteryCoreRuntime', 'TierRewardRules', 'TierRewardBand', 'ProgressionGoalState', 'AdventureResultPolicy', 'GameSession.Chapter', 'GameSession.ChapterSeals', 'EscapePostPolicy', 'RunChoices', 'RunChoices.Rooms', 'RunChoices.Chapter']
 with tempfile.TemporaryDirectory(prefix='chapter-host-production-') as temp:
     folder=Path(temp)
     for name in core:(folder/(name+'.cs')).write_text((root/'Assets/Scripts/Core'/(name+'.cs')).read_text())
+    (folder/'ChapterSealPresentation.cs').write_text((root/'Assets/Scripts/UI/ChapterSealPresentation.cs').read_text())
+    (folder/'EnemyControlPolicy.cs').write_text((root/'Assets/Scripts/Combat/EnemyControlPolicy.cs').read_text())
     (folder/'ChapterEntryPresentation.cs').write_text((root/'Assets/Scripts/UI/ChapterEntryPresentation.cs').read_text())
     (folder/'ChapterRoomGeometry.cs').write_text((root/'Assets/Scripts/World/ChapterRoomGeometry.cs').read_text())
     for name in ['ProgressionTests','ChapterHostFixture']:(folder/(name+'.cs')).write_text((root/'Tests'/(name+'.cs')).read_text())
@@ -36,7 +38,7 @@ with tempfile.TemporaryDirectory(prefix='chapter-host-production-') as temp:
     command=[dotnet,'run','--project',str(project),'--no-restore','--',str(folder/'saves')]
     subprocess.run(command,env=env,check=True)
     # Compile mutants independently: an unrelated compile error is never a passing negative control.
-    mutants=[('Lifecycle.cs','if(ChapterActive)FailChapter("角色倒下：本次章节挑战失败。");','if(ChapterActive){ChapterRun.Fail();Progression.CancelChapterRun();}', 'DEATH_RESULT_CAPTURE must exist before XP budget cancellation'),('GameSession.Chapter.cs','&&!LargeBossShutdownVisual.IsPresenting(this)','', 'ACTIVE_BOSS_EXIT must keep opaque result hidden'),('GameSession.Chapter.cs','index<2?EnemyKind.Wisp:index<4?EnemyKind.Guardian:index==4?EnemyKind.Goblin:EnemyKind.Slime',
+    mutants=[('GameSession.Chapter.cs','if(SelectedChapterTactic>=0)RunChoices.ChooseChapterTactic(Progression.Profile,receipt.Node,MobileControls.Active,SelectedChapterTactic);','','C tactic applies after entry reset; first Hard lineup A'),('Lifecycle.cs','if(ChapterActive)FailChapter("角色倒下：本次章节挑战失败。");','if(ChapterActive){ChapterRun.Fail();Progression.CancelChapterRun();}', 'DEATH_RESULT_CAPTURE must exist before XP budget cancellation'),('GameSession.Chapter.cs','&&!LargeBossShutdownVisual.IsPresenting(this)','', 'ACTIVE_BOSS_EXIT must keep opaque result hidden'),('GameSession.Chapter.cs','index<2?EnemyKind.Wisp:index<4?EnemyKind.Guardian:index==4?EnemyKind.Goblin:EnemyKind.Slime',
               'index==0?EnemyKind.Wisp:index%3==1?EnemyKind.Guardian:index%3==2?EnemyKind.Goblin:EnemyKind.Slime',
               'crossfire roster uses two wisps and two guardians within six-enemy cap'),
              ('GameSession.Chapter.cs','if(!SaveBeforeLeaving())return false;','', 'entry save failure leaves old world and epoch intact'),

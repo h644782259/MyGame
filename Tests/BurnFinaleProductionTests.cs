@@ -11,6 +11,7 @@ namespace UnityEngine
 }
 namespace Emberfall
 {
+    internal static class FilledSkillVfx{internal static int Confirmed;internal static void ConfirmFinale(PlayerController hero,int castId){Confirmed++;}}
     public enum HeroClass{Arcanist}public enum ElementalistSpecialization{None,Burn,Shatter}
     public class CombatModel:MonoBehaviour{}
     public class GameSession{public static GameSession Instance;public bool HasStarted=true,CombatEnded,InputBlocked;public PlayerController Player;public List<EnemyController> Enemies=new List<EnemyController>();public void RecordClassTutorial(HeroClass hero){} }
@@ -110,7 +111,8 @@ public static class BurnFinaleProductionTests
         enemy=Create(out owner);status=enemy.StatusEffects;status.Burn(owner,3,30);Frame(.1f);var settlement=status.PrepareBurnFinale(owner,16,60);
         Check(settlement.Apply()&&!settlement.Apply()&&enemy.Hits.Count==1,"prepared cash receipt delivers exactly once");
         enemy=Create(out owner);status=enemy.StatusEffects;status.Burn(owner,3,30);Frame(.1f);settlement=status.PrepareBurnFinale(owner,17,60);owner.CombatEpoch++;settlement.Apply();Check(enemy.Hits.Count==0,"prepared cash cannot cross world epoch after direct callback");
-        enemy=Create(out owner);status=enemy.StatusEffects;status.Burn(owner,3,30);Frame(.1f);enemy.Health=1;owner.ElementalAdvancedArea(Vector3.zero,4,new CombatDamage(100,false),18,true);
+        enemy=Create(out owner);status=enemy.StatusEffects;status.Burn(owner,3,30);Frame(.1f);enemy.Health=1;int confirmedBefore=FilledSkillVfx.Confirmed;owner.ElementalAdvancedArea(Vector3.zero,4,new CombatDamage(100,false),18,true);
+        Check(FilledSkillVfx.Confirmed==confirmedBefore+1,"actual direct lethal finale confirms visual tail without cash");
         Check(enemy.Hits.Count==1&&enemy.Hits[0].Amount==65&&enemy.IsDead&&CombatFx.CashContacts==0&&!owner.BurnCashFeedback(out _,out _),"direct hit keeps priority and dead target cannot receive cash or contact");
         enemy=Create(out owner);status=enemy.StatusEffects;status.Burn(owner,3,30);Frame(.1f);settlement=status.PrepareBurnFinale(owner,101,60);enemy.IsDead=true;Check(!settlement.Apply()&&enemy.Hits.Count==0,"direct-lethal target never reports accepted burn cash");
         enemy=Create(out owner);status=enemy.StatusEffects;status.Burn(owner,3,30);enemy.IgnoreDamage=true;Frame(.1f);Check(status.ResolveBurnFinale(owner,102,60)==0&&enemy.Hits.Count==0,"claimed ticks without actual HP loss never report cash success");

@@ -10,10 +10,11 @@ namespace UnityEngine
 namespace Emberfall
 {
  public static class CombatFx {public static Vector3 Flat(Vector3 p)=>p;}
- public static class WorldTraversal {public static bool Blocked;public static Vector3 Move(Vector3 p,Vector3 v,float r)=>Blocked?p:p+v;}
+ public static class WorldTraversal {public static bool Blocked;public static bool HasLineOfSight(Vector3 a,Vector3 b)=>!Blocked;public static Vector3 Move(Vector3 p,Vector3 v,float r)=>Blocked?p:p+v;}
  public class Route {public Vector3 Direction(Vector3 a,Vector3 b,float r)=>(b-a).normalized;}
  public sealed partial class EnemyController
  {
+  private EnemyController mobileSupplier,mobileFirst,mobileSecond;public bool IsDead,isActiveAndEnabled=true;private float attackAnimation;
   private EscapePostPolicy escapePost=new EscapePostPolicy(EscapeRole.GateGuard);private float escapeChaseMovement,chargeTime,hurtTime;private bool preparing;private object companionTarget;
   private readonly Transform transform=new Transform();private Vector3 escapePostPosition,walkingDisplacement;private Route route=new Route();private float NavigationRadius=>.6f;
   public int Cancels,ReleaseCount;public bool Preparing {get=>preparing;set=>preparing=value;}public Vector3 Position {get=>transform.position;set=>transform.position=value;}

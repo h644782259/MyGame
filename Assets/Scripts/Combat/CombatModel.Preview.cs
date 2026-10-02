@@ -18,11 +18,14 @@ namespace Emberfall
         {
             if(!isolatedPreview||!isHero||float.IsNaN(time)||float.IsInfinity(time)||float.IsNaN(progress)||float.IsInfinity(progress))return;
             previewTime=time;
-            actionBasic=action==CollectionPreviewAction.Attack;
+            actionBasic=action==CollectionPreviewAction.Attack && heroClass!=HeroClass.Ranger;
             actionSkill=heroClass==HeroClass.Summoner?2:heroClass==HeroClass.Arcanist?1:heroClass==HeroClass.Ranger?2:0;
             actionDuration=action==CollectionPreviewAction.Idle?0:1;
             actionAge=Mathf.Clamp01(progress);
             AnimateHero(0,0,false,0);
+            // Preview shows a complete draw/release/reload; live basic commits at contact.
+            if(heroClass==HeroClass.Ranger && arrowRig!=null && action==CollectionPreviewAction.Attack)
+                arrowRig.gameObject.SetActive(progress < BasicActionTimeline.BowRelease || progress >= BasicActionTimeline.ArrowReload);
             if(decoration!=null)decoration.localRotation=previewDecorationRest*Quaternion.Euler(0,time*42,0);
             // The host owns a separate wrapped angle: its 16-degree orbit must not
             // inherit the 120s breathing/cloth clock reset. Framing uses static time=0.

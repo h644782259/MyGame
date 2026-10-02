@@ -99,7 +99,7 @@ public static class SkillRuntimeTests
                 Check(GameBalance.SkillTreeRow(parent) < GameBalance.SkillTreeRow(skill), "tree connector flows down to its child");
             }
             Check(GameBalance.SkillRankRequiredLevel(skill, 1) == GameBalance.SkillRequiredLevels[skill], "initial rank uses its own branch unlock level");
-            Check(GameBalance.SkillRankRequiredLevel(skill, 2) == GameBalance.SkillRequiredLevels[skill]+8 && GameBalance.SkillRankRequiredLevel(skill,3) == GameBalance.SkillRequiredLevels[skill]+18, "rank evolution gated by character level");
+            Check(GameBalance.SkillRankRequiredLevel(skill, 2) == Math.Max(2,GameBalance.SkillRequiredLevels[skill])+8 && GameBalance.SkillRankRequiredLevel(skill,3) == Math.Max(2,GameBalance.SkillRequiredLevels[skill])+18, "rank evolution gated by character level");
             if (GameBalance.IsPassive(skill))
             {
                 passiveCount++;

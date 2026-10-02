@@ -8,6 +8,8 @@ namespace Emberfall
         // for collision origins, target selection or combat reach.
         public bool TryGetWeaponVisualAnchor(WeaponVisualAnchor anchor, out Vector3 worldPosition)
         {
+            if(pilotVisible && blenderPilot != null && anchor <= WeaponVisualAnchor.SwordTip)
+                return blenderPilot.Anchor(anchor,out worldPosition);
             Transform rig = anchor <= WeaponVisualAnchor.SwordTip ? swordRig :
                 anchor <= WeaponVisualAnchor.StaffTop ? staffRig : bowRig;
             worldPosition = transform.position;

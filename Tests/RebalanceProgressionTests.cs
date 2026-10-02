@@ -27,7 +27,7 @@ public static class RebalanceProgressionTests
             Check(ProgressionService.MasteryCap(level)==expected,"segmented unlock boundary");
             for(int i=0;i<expected;i++)Check(p.LearnMastery(MasteryType.Technique),"segment accepts lawful points");
             Check(!p.LearnMastery(MasteryType.Technique),"segment limit enforced");
-            Check(p.Profile.skillPoints+p.Profile.masteryRanks[3]==level-1,"lifetime point conservation");
+            Check(p.Profile.skillPoints+p.Profile.masteryRanks[3]+p.Profile.skillRanks[0]==level-1,"lifetime point conservation");
             Check(Reload(p).Profile.masteryRanks[3]==expected,"segment stable after reload");
         }
         var old=Fresh();old.Profile.level=100;for(int i=0;i<10;i++)old.Profile.skillRanks[i]=3;old.Save();

@@ -170,7 +170,7 @@ namespace Emberfall
                     else
                     {
                         AdvancedSkillVfx.Rune(owner,target,6.5f*range,new Color(.92f,.83f,1f),.8f,3);
-                        FilledSkillVfx.Impact(owner,target,6.5f*range,SkillVisualRecipes.Filled(SkillVisualRecipes.Ultimate(owner.Specialization,step,true)),owner.Specialization==ElementalistSpecialization.Burn?new Color(1f,.43f,.12f):new Color(.2f,.75f,1f),CombatVisualPriority.Finale);
+                        FilledSkillVfx.Impact(owner,target,6.5f*range,SkillVisualRecipes.Filled(SkillVisualRecipes.Ultimate(owner.Specialization,step,true)),owner.Specialization==ElementalistSpecialization.Burn?new Color(1f,.43f,.12f):new Color(.2f,.75f,1f),CombatVisualPriority.Finale,castId);
                         owner.ElementalAdvancedArea(target,6.5f*range,damage*SkillDamageBudgets.AdvancedImpact(heroClass,skill,rank,step),castId,true);
                         if(rank==3) SpawnTail(target,5.5f*range,.3f,3f);
                     }

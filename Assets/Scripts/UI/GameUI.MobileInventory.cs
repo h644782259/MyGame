@@ -196,6 +196,7 @@ namespace Emberfall
         private bool DrawMobileInventoryDetail(MobilePanelLayout.Area viewport, ItemData item)
         {
             if (mobileDetailItem != (item == null ? null : item.id)) { mobileDetailItem = item == null ? null : item.id; mobileInventoryDetailScroll = Vector2.zero; }
+            if(item!=null&&equipmentAppearanceOpen){DrawEquipmentAppearanceDetail(MobilePanelRect(viewport),item,TouchRatio);return false;}
             float contentWidth = viewport.Width - 18;
             int ignored;
             float contentHeight = MobileItemDetailContent(item, contentWidth, false, out ignored);
@@ -228,6 +229,8 @@ namespace Emberfall
                 y += MobileDetailParagraph(draw, 8, y, width - 16, status, 14,
                     mobileInventoryFailed || string.IsNullOrEmpty(mobileInventoryStatus) ? gold : jade, true) + 12;
             if (item == null) return y + MobileDetailParagraph(draw, 8, y, width - 16, "选择装备查看比较与操作", 16, muted) + 16;
+            if(draw&&Button(TouchRect(8,y,width-16,48),"外观比较",jade)){equipmentAppearanceOpen=true;collectionOwner=session.Player;BlockUITransition();}
+            y+=56;
             var progression = session.Progression;
             ItemData preview = MobileEquipmentPreview(item), current = progression.Equipped(item.slot);
             float available = width - 16;

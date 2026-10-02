@@ -18,7 +18,7 @@ namespace Emberfall
         internal static bool IsPresenting(GameSession game)
         {foreach(var v in active)if(v!=null&&v.leased&&v.gameObject.activeInHierarchy&&v.session==game&&v.owner!=null&&game!=null&&game.Player==v.owner&&v.owner.CombatEpoch==v.epoch)return true;return false;}
         internal static void Skip(GameSession game)
-        {if(game==null)return;skippedSession=game;skippedOwner=game.Player;skippedEpoch=skippedOwner==null?-1:skippedOwner.CombatEpoch;foreach(var v in active.ToArray())if(v!=null&&v.session==game)v.Retire();}
+        {if(game==null)return;FilledSkillVfx.SkipFinales(game);skippedSession=game;skippedOwner=game.Player;skippedEpoch=skippedOwner==null?-1:skippedOwner.CombatEpoch;foreach(var v in active.ToArray())if(v!=null&&v.session==game)v.Retire();}
         internal static bool Detach(CombatModel model,LargeBossRig rig,GameSession session)
         {
             if(model==null||rig==null||session==null||live>=2||model.GetComponent<LargeBossShutdownVisual>()!=null)return false;

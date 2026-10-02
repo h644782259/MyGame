@@ -1151,7 +1151,7 @@ namespace Emberfall
                 if (rank < 0 || rank > MasteryCap(Profile.level)) return "当前等级不足以应用方案中的精通投入，或精通点数无效。";
                 spent += rank;
             }
-            if (spent > Profile.level - 1) return "当前技能点不足；方案还会保留保存后新学的1阶技能，未退点或改变配装。";
+            if (spent > GameBalance.SkillPointBudget(Profile.level)) return "当前技能点不足；方案还会保留保存后新学的1阶技能，未退点或改变配装。";
             if (preset.masteryCore < -1 || preset.masteryCore >= 4 ||
                 (preset.masteryCore >= 0 && preset.masteryRanks[preset.masteryCore] < MasteryCoreRules.InitialInvestment))
                 return "方案核心无效或该方向未投入10点。";
@@ -1599,7 +1599,7 @@ namespace Emberfall
             candidate.gold = (int)Math.Min(MaximumGold, (long)candidate.gold + gold);
             long xp = (long)candidate.xp + experience;
             while (candidate.level < MaximumLevel && xp >= GameBalance.XpToNext(candidate.level))
-            { xp -= GameBalance.XpToNext(candidate.level); candidate.level++; candidate.skillPoints++; }
+            { xp -= GameBalance.XpToNext(candidate.level); candidate.level++; candidate.skillPoints += GameBalance.SkillPointsGainedAtLevel(candidate.level); }
             candidate.xp = candidate.level >= MaximumLevel ? 0 : (int)xp;
             candidate.mechanicMaterials = Math.Min(999999, candidate.mechanicMaterials + TierRewardRules.ClearMaterials(tier));
             candidate.materialRewardedClears = candidate.clearedRuns;
@@ -1620,7 +1620,7 @@ namespace Emberfall
             candidate.gold=(int)Math.Min(MaximumGold,(long)candidate.gold+gold);
             candidate.mechanicMaterials=Math.Min(999999,candidate.mechanicMaterials+materials);
             long xp=(long)candidate.xp+experience;
-            while(candidate.level<MaximumLevel&&xp>=GameBalance.XpToNext(candidate.level)){xp-=GameBalance.XpToNext(candidate.level);candidate.level++;candidate.skillPoints++;}
+            while(candidate.level<MaximumLevel&&xp>=GameBalance.XpToNext(candidate.level)){xp-=GameBalance.XpToNext(candidate.level);candidate.level++;candidate.skillPoints += GameBalance.SkillPointsGainedAtLevel(candidate.level);}
             candidate.xp=candidate.level>=MaximumLevel?0:(int)xp;candidate.lastModeRewardId=receipt;
             if(completedTier>0)
             {
@@ -1651,7 +1651,7 @@ namespace Emberfall
                 {
                     totalExperience -= GameBalance.XpToNext(Profile.level);
                     Profile.level++;
-                    Profile.skillPoints++;
+                    Profile.skillPoints += GameBalance.SkillPointsGainedAtLevel(Profile.level);
                 }
                 Profile.xp = Profile.level == MaximumLevel ? 0 : (int)totalExperience;
             }
@@ -1673,7 +1673,7 @@ namespace Emberfall
             {
                 experience -= GameBalance.XpToNext(Profile.level);
                 Profile.level++;
-                Profile.skillPoints++;
+                Profile.skillPoints += GameBalance.SkillPointsGainedAtLevel(Profile.level);
                 gainedLevels.Add(Profile.level);
             }
             Profile.xp = Profile.level == MaximumLevel ? 0 : (int)experience;
@@ -2188,6 +2188,7 @@ namespace Emberfall
         private static GameProfile CreateProfile(HeroClass heroClass)
         {
             var profile = new GameProfile { heroClass = heroClass };
+            profile.skillRanks[0] = 1;
             for (int slot = 0; slot < 3; slot++) AddStarterItem(profile, (ItemSlot)slot);
             return profile;
         }
@@ -2343,10 +2344,11 @@ namespace Emberfall
             // Version 1 saves originally held three skills. Preserve their ranks while adding
             // seven unlearned entries; the character, gear, experience and currencies stay intact.
             int[] ranks = new int[GameBalance.SkillCount];
-            int remaining = profile.level - 1;
+            int remaining = GameBalance.SkillPointBudget(profile.level);
             for (int slot = 0; slot < GameBalance.SkillCount; slot++)
             {
                 int rank = profile.skillRanks != null && slot < profile.skillRanks.Length ? Clamp(profile.skillRanks[slot], 0, 3) : 0;
+                if (profile.level == 1 && slot == 0) rank = 1;
                 int previousRank = rank;
                 while (rank > 0 && profile.level < GameBalance.SkillRankRequiredLevel(slot, rank)) rank--;
                 refundedRanks += previousRank - rank;

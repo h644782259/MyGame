@@ -124,6 +124,11 @@ public static class MobilePinnedTargetProductionTests
    Check(Math.Abs(player.Energy-(before-GameBalance.SkillEnergyCost(HeroClass.Summoner,9)))<.001f&&player.skillRuntime.Remaining(9)>0&&SummonedCompanion.Commands==0,"contract release spends real skill budget once and pin never sends a free command");
   }
   CombatSight.BlockedZ=float.NaN;
+  {
+   var game=new GameSession();var warrior=new PlayerController(game);warrior.HeroClass=HeroClass.Vanguard;
+   var distant=new EnemyController(4);game.Enemies.Add(distant);warrior.PinMobileTarget(distant);
+   Check(warrior.MobilePinnedActionReason(-1)=="距离不足"&&warrior.MobilePinnedActionReason(1)=="","warrior basic rejection does not reject longer-range skill");
+  }
   foreach(bool unlearned in new[]{false,true})
   {
    Time.frameCount++;var game=new GameSession();var player=new PlayerController(game);var target=new EnemyController(8);game.Enemies.Add(target);player.PinMobileTarget(target);Check(player.targeting.Begin(1),"budget revalidation case starts a real confirmed charge");

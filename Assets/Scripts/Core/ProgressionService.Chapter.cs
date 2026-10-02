@@ -31,7 +31,7 @@ namespace Emberfall
             GameProfile candidate=Snapshot();ChapterProgression.Normalize(candidate);int oldLevel=candidate.level;
             long experience=(long)candidate.xp+chapterExperience.CompletionExperience;
             while(candidate.level<MaximumLevel&&experience>=GameBalance.XpToNext(candidate.level))
-            {experience-=GameBalance.XpToNext(candidate.level);candidate.level++;candidate.skillPoints++;}
+            {experience-=GameBalance.XpToNext(candidate.level);candidate.level++;candidate.skillPoints += GameBalance.SkillPointsGainedAtLevel(candidate.level);}
             candidate.xp=candidate.level>=MaximumLevel?0:(int)experience;
             int index=(int)receipt.Node,bit=1<<index;
             candidate.chapterRevision=1;candidate.chapterCompletedMask|=bit;candidate.chapterFirstRewardMask|=bit;

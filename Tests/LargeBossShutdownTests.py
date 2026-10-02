@@ -14,5 +14,5 @@ with tempfile.TemporaryDirectory(prefix='boss-shutdown-') as d:
  print('PASS scaled-clock mutation fails actual zero-timescale settlement assertion')
 session=(r/'Assets/Scripts/Core/GameSession.cs').read_text();kill=session[session.index('public void OnEnemyKilled('):];assert kill.index('Enemies.Remove(enemy)')<kill.index('Progression.GrantEnemyKillReward')<kill.index('enemy.BeginDeath()')
 enemy=(r/'Assets/Scripts/Combat/EnemyController.cs').read_text();assert 'if(model!=null&&model.TryBeginLargeBossShutdown()){gameObject.SetActive(false);Destroy(gameObject);return;}' in enemy
-visual=(r/'Assets/Scripts/Combat/LargeBossShutdownVisual.cs').read_text();assert 'GrantEnemyKillReward' not in visual and 'TakeDamage(' not in visual
+visual=(r/'Assets/Scripts/Combat/LargeBossShutdownVisual.cs').read_text();assert 'FilledSkillVfx.SkipFinales(game)' in visual;assert 'GrantEnemyKillReward' not in visual and 'TakeDamage(' not in visual
 print('PASS reward/exactly-once guard remains before visual entry; large host immediately disables; shutdown has no reward/damage API')

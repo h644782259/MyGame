@@ -107,7 +107,7 @@ namespace UnityEngine
     public enum RuntimeInitializeLoadType{SubsystemRegistration}
     [AttributeUsage(AttributeTargets.Method)]public sealed class RuntimeInitializeOnLoadMethodAttribute:Attribute{public RuntimeInitializeOnLoadMethodAttribute(RuntimeInitializeLoadType value){}}
     public static class Application{public static bool isMobilePlatform;}
-    public static class Time{public static float deltaTime,time;public static int frameCount;}
+    public static class Time{public static float deltaTime,time,unscaledDeltaTime;public static int frameCount;}
     public class Object{public string name;public bool Destroyed;public static void Destroy(Object value){if(value==null||value.Destroyed)return;value.Destroyed=true;if(value is GameObject go){go.SetActive(false);go.Call("OnDestroy");foreach(var child in GameObject.All.Where(x=>x.transform.parent==go.transform).ToArray())Destroy(child);}}}
     public class Component:Object{public GameObject gameObject;public Transform transform=>gameObject.transform;public T GetComponent<T>()where T:Component=>gameObject.GetComponent<T>();}
     public class MonoBehaviour:Component{}

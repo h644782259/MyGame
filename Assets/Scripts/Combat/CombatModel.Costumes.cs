@@ -12,6 +12,7 @@ namespace Emberfall
         }
         private void BuildFashionWingShape(FashionData wings,Color color)
         {
+            fashionWings.localPosition += RearSilhouette.WingOffset(heroClass);
             WingSilhouette style=CostumeRecipes.WingStyle(wings.rarity);
             if(style==WingSilhouette.Mechanical)
             {
@@ -34,7 +35,7 @@ namespace Emberfall
                     var feather=CostumeMesh(style==WingSilhouette.Crystal?"Faceted wing crystal":"Swept flight feather",style,fashionWings,
                         new Vector3(side*(.18f+i*.18f),.18f-i*.12f,-i*.025f),
                         new Vector3(1,1.05f-i*.065f,1),i%2==0?color:Color.Lerp(color,Color.white,.28f),style==WingSilhouette.Crystal?VisualSurface.Crystal:VisualSurface.Cloth);
-                    feather.localRotation=Quaternion.Euler(12,side*8,-side*(30+i*12));
+                    feather.localRotation=Quaternion.Euler(12,side*RearSilhouette.WingYaw(heroClass),-side*(RearSilhouette.WingSpread(heroClass)+i*12));
                 }
                 Part("Wing scapular support",PrimitiveType.Capsule,new Vector3(side*.3f,.08f,0),new Vector3(.14f,.45f,.13f),color,fashionWings,style==WingSilhouette.Crystal?VisualSurface.Crystal:VisualSurface.Cloth).localRotation=Quaternion.Euler(0,0,-side*52);
             }
@@ -44,6 +45,9 @@ namespace Emberfall
         {
             Color accent=GameBalance.ClassColor(heroClass),leather=new Color(.25f,.17f,.10f);
             if(body!=null)body.GetComponent<Renderer>().sharedMaterial=Mat(accent*.62f,heroClass==HeroClass.Vanguard?VisualSurface.Metal:VisualSurface.Cloth);
+            if(heroClass==HeroClass.Arcanist)
+                for(int side=-1;side<=1;side+=2)
+                    Part("Scholar rear high collar",PrimitiveType.Cube,new Vector3(side*.21f,.49f,-.18f),new Vector3(.12f,.29f,.22f),accent*.65f,spine,VisualSurface.Cloth).localRotation=Quaternion.Euler(-12,0,side*15);
             if(heroClass==HeroClass.Vanguard)return;
             RemovePart(leftArm.Find("Pauldrons"));RemovePart(rightArm.Find("Pauldrons"));
             if(heroClass==HeroClass.Arcanist)

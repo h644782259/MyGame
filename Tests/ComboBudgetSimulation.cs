@@ -51,7 +51,7 @@ public static class ComboBudgetSimulation
     }
     public static int[] LegalRanks(int level,Recipe recipe)
     {
-        var ranks=new int[GameBalance.SkillCount];int points=Math.Max(0,Math.Min(100,level)-1);
+        var ranks=new int[GameBalance.SkillCount];int points=GameBalance.SkillPointBudget(Math.Min(100,level));
         for(int skill=0;skill<ranks.Length;skill++)
             if(points>0&&level>=GameBalance.SkillRankRequiredLevel(skill,1)&&GameBalance.SkillPrerequisites[skill].All(p=>ranks[p]>0)){ranks[skill]=1;points--;}
         foreach(int skill in recipe.Priority.Concat(Enumerable.Range(0,ranks.Length)).Distinct())
