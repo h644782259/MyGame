@@ -24,3 +24,16 @@ Limits that must accompany the video:
 - Managed quaternion/TRS reconstruction is not Unity execution. The hero body is only a shared reference, not the subject of this VFX comparison.
 
 Validation checks the 216-frame sequence, finite geometry, triangle/vertex mappings, release frame (one primary crescent before delayed pieces), .125 s frame (six pieces), empty tail after .5 s, exact ring widths, and alternating cast sides. Baseline native renders must retain the closed volumes and shard surfaces rather than simplifying the old version to flat lines.
+
+## Complete baseline with dynamic sword ribbon (preferred)
+
+```
+python ArtSource/VfxBaseline/export_with_ribbon.py REPOSITORY OUTPUT DOTNET
+python ArtSource/VfxBaseline/validate_ribbon.py BASE_JSON OUTPUT/baseline-vfx-with-ribbon-03422ab.json
+```
+
+The complete exporter now includes the real sword trail, superseding the no-ribbon limitation above. It executes pinned `PlayAction`, `AnimateHero`, `Pose`, `WeaponRig` anchors and `WeaponSlashRibbon.Spawn/LateUpdate/Sample`. Original unit-scale spine/shoulder/elbow/wrist offsets were separately checked against the full baseline Hero constructor. Zero locomotion has no upper-body movement contribution; breath phase is fixed at 3.14 (matching the previous baseline hero fixture). The skill pose begins at .52 of .68 s; trail lives .22 s and is sampled sequentially at 24 Hz, retaining actual previous endpoints. This is an honest 24 Hz sampling fixture, not a claim of device refresh-rate equivalence.
+
+Only frames 120–125 and 168–173 add a trail (12 frames). All previously exported filled surfaces/rings are byte-equivalent. Shared mesh `Weapon root-tip swept volume` has 8 vertices and 12 triangles, with actual .024 thickness. Material is the SAME FilledSpell shader: `_Opacity=1`, `_Progress=0`, `_Style=0`; no UV exists in production, so default (0,0) is exported. Fade changes material color alpha. Optional `sockets.root` and `sockets.tip` are world-space validation metadata.
+
+Complete JSON SHA256: `1dd484a473987317fc6dbb6e687cd00af8a19e41d8e5c4a78a88a763b2de9f23`. Independent rebuild matches exactly. Validations check 12 changing socket/fade samples, prior endpoints matching successive swept mesh corners, .024 thickness, exact changed frames and preservation of every previous effect. Shader/LineRenderer/Unity-rendering limitations remain. A static body reference in a VFX-only comparison must not be described as a full animated gameplay recording.
