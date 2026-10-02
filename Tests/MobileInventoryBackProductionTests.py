@@ -1,4 +1,5 @@
-"""Execute actual ClosePanel and detail navigation; --legacy proves old-entry failure.
+"""Execute actual ClosePanel and mandatory old-entry negative control by default.
+--legacy runs only the intentionally failing old-entry replay for debugging.
 Engine/session shells do not validate Unity event delivery or actual touch rendering.
 """
 from pathlib import Path
@@ -11,7 +12,8 @@ def method(file,signature):
   depth+=(source[end]=='{')-(source[end]=='}');end+=1
  return source[start:end]
 close=method('GameUI.cs','private void ClosePanel()')
-if '--legacy' in sys.argv:close=close.replace('if(CloseMobileInventoryDetail())return;','')
+hook='if(CloseMobileInventoryDetail())return;'
+assert close.count(hook)==1,'production entry must contain exactly one inventory detail hook'
 assert 'ClosePanel(); return;' in method('GameUI.MobileInventory.cs','private void DrawMobileEquipmentActions(')
 assert 'else ClosePanel();' in method('GameUI.MobilePanels.cs','private bool DrawMobilePanelChrome(')
 assert 'else if (panel != Panel.None) ClosePanel();' in method('GameUI.cs','private void Update()')
@@ -53,10 +55,23 @@ namespace Emberfall {
   }
  }
 }
-'''.replace('CLOSE',close).replace('Time.unscaledTime','UnityEngine.Time.unscaledTime')
-with tempfile.TemporaryDirectory(prefix='inventory-back-') as tmp:
- out=Path(tmp);p=cv.write_project(out/'project',[root/'Assets/Scripts/UI/GameUI.MobileInventoryNavigation.cs',root/'Assets/Scripts/UI/MobileCollectionLayout.cs',root/'Assets/Scripts/UI/MobilePanelLayout.cs'],program=shell)
- config=out/'NuGet.Config';config.write_text('<configuration><packageSources><clear /></packageSources></configuration>');env=dict(os.environ,DOTNET_CLI_HOME=str(out/'cli'),DOTNET_NOLOGO='1')
- dotnet=next((x for x in sys.argv[1:] if not x.startswith('--')),'dotnet')
- subprocess.run([dotnet,'build',str(p),'--configfile',str(config),'-v:q'],env=env,check=True)
- subprocess.run([dotnet,str(p.parent/'bin/Debug/net8.0/Validation.dll')],env=env,check=True)
+'''.replace('Time.unscaledTime','UnityEngine.Time.unscaledTime')
+dotnet=next((x for x in sys.argv[1:] if not x.startswith('--')),'dotnet')
+legacy_only='--legacy' in sys.argv
+for legacy in ([True] if legacy_only else [False,True]):
+ with tempfile.TemporaryDirectory(prefix='inventory-back-') as tmp:
+  source=shell.replace('CLOSE',close.replace(hook,'') if legacy else close)
+  out=Path(tmp);p=cv.write_project(out/'project',[root/'Assets/Scripts/UI/GameUI.MobileInventoryNavigation.cs',root/'Assets/Scripts/UI/MobileCollectionLayout.cs',root/'Assets/Scripts/UI/MobilePanelLayout.cs'],program=source)
+  config=out/'NuGet.Config';config.write_text('<configuration><packageSources><clear /></packageSources></configuration>');env=dict(os.environ,DOTNET_CLI_HOME=str(out/'cli'),DOTNET_NOLOGO='1')
+  # A compilation error is never accepted as the expected old-behavior failure.
+  subprocess.run([dotnet,'build',str(p),'--configfile',str(config),'-v:q'],env=env,check=True)
+  command=[dotnet,str(p.parent/'bin/Debug/net8.0/Validation.dll')]
+  if not legacy or legacy_only:
+   subprocess.run(command,env=env,check=True)
+  else:
+   result=subprocess.run(command,env=env,stdout=subprocess.PIPE,stderr=subprocess.STDOUT,text=True)
+   expected='Unhandled exception. System.Exception: first Back must return to equipment list and keep combat blocked'
+   lines=result.stdout.splitlines()
+   if result.returncode==0 or not lines or lines[0]!=expected or any('Exception:' in line for line in lines[1:]):
+    raise RuntimeError('Old-entry replay did not fail at the required blocking assertion: exit '+str(result.returncode)+'\n'+result.stdout)
+   print('PASS: mandatory legacy negative control compiled, then failed precisely at first-Back combat-blocking assertion')
