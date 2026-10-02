@@ -7,6 +7,13 @@ namespace Emberfall
   {
    int count=0;Action<bool,string> check=(ok,message)=>{count++;if(!ok)throw new Exception(message);};
    var p=new ProgressionService(Path.Combine(root,"goal-ui"));check(p.CreateNewSlot(HeroClass.Arcanist),"create UI character");
+   var textUi=new GameUI{session=new Context{Progression=p}};
+   string expectedTiers="30/35/50/65/80/95级 → 上限5/10/15/20/30/35点";
+   check(textUi.ReplayDesktopMastery().Contains(expectedTiers),"desktop mastery text includes every production tier and cap");
+   check(textUi.ReplayMobileMastery().Contains(expectedTiers),"mobile mastery shares all tier text");
+   foreach(MasteryType mastery in Enum.GetValues(typeof(MasteryType)))check(BuildCatalog.MasteryDescription(mastery).Contains(expectedTiers),"all mastery detail hints share tier text");
+   int[] starts={30,35,50,65,80,95},caps={5,10,15,20,30,35};
+   for(int level=1;level<=100;level++){int expected=0;for(int i=0;i<starts.Length;i++)if(level>=starts[i])expected=caps[i];check(ProgressionService.MasteryCap(level)==expected,"service cap remains unchanged at every level");}
    p.Profile.level=10;p.Profile.gold=9999;p.Save();var item=p.CreateMechanicItem(EquipmentMechanic.FrostEcho);check(p.CollectLoot(item),"collect reforge item");
    p.Profile.level=20;p.Save();var ui=new GameUI{session=new Context{Progression=p}};ui.OpenProgressionGoals();
    ui.click="重铸至 20 级";ui.DrawProgressionGoalOptions(520,1,true);
