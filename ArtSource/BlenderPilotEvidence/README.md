@@ -23,4 +23,4 @@ The baseline JSON is the pinned `03422ab` production geometry export described b
 
 The clearer front and side views still show angular helmet/armor silhouettes, abrupt shoulder-to-arm and elbow-to-forearm transitions, simple cylindrical hands, and narrow straight back cloth with limited volume in profile. The rear view reads as a broad stiff plate with a small lower notch rather than draping cloth. More samples do not refine these meshes or establish acceptable joints, cloth dynamics, animation blending or Unity shading. Those require separate geometry work and actual engine review. No performance, device compatibility or player-experience claims follow from these images.
 
-Final PNGs and render manifest are generated outside Assets under `/workspace/scratch/pilot-static-review-49e624b`. Delivery/upload is owned by the parent task.
+Final review sheets are published under `ArtSource/Review/Vanguard-Static-Review.png` and `ArtSource/Review/Vanguard-Combat-Distance-Comparison.png`. Individual render outputs remain outside Assets under `/workspace/scratch/pilot-static-review-49e624b`. Delivery/upload is owned by the parent task.
