@@ -1,0 +1,54 @@
+SOURCE 0 4523
+SOURCE 1000 4523
+SOURCE 2000 4523
+SOURCE 3000 4523
+SOURCE 4000 4523
+REFERENCE COMPLETE 4523
+Extensions: writing cache failed ([Errno 30] Read-only file system: '/home/agent/.config/blender/4.3/extensions').
+FBX version: 7400
+baseline 0 4523
+baseline 1000 4523
+baseline 2000 4523
+baseline 3000 4523
+baseline 4000 4523
+RESULT baseline {"bytes": 1018460, "byteRatio": 1.0, "sha256": "8b89fb808fa4ce4eb65045f6a12cb842df7ab4173977a111f44f60ddb668f529", "maxima": {"Idle": {"vertexM": 1.2345501545496518e-06, "socketM": 9.684608464999152e-07, "integerVertexM": 1.0062422006740235e-06, "integerSocketM": 7.372687385590661e-07, "samples": 1801, "vertexAt": {"frame": 67.6875, "domain": "fractional", "mesh": "Sword"}, "socketAt": {"frame": 79.137, "domain": "fractional", "anchor": "Tip"}}, "Move": {"vertexM": 1.2516975402832031e-06, "socketM": 1.2302260065406736e-06, "integerVertexM": 9.991558727051597e-07, "integerSocketM": 9.629425061585611e-07, "samples": 721, "vertexAt": {"frame": 5.9375, "domain": "fractional", "mesh": "Sword"}, "socketAt": {"frame": 25.125, "domain": "fractional", "anchor": "Tip"}}, "Basic": {"vertexM": 0.01558282133191824, "socketM": 0.015582523962304865, "integerVertexM": 9.005036645248765e-07, "integerSocketM": 8.724499445143013e-07, "samples": 451, "vertexAt": {"frame": 9.5, "domain": "fractional", "mesh": "Sword"}, "socketAt": {"frame": 9.5, "domain": "fractional", "anchor": "Tip"}}, "Hit": {"vertexM": 0.00015146270743571222, "socketM": 0.00015160540700313174, "integerVertexM": 1.2057977301083156e-06, "integerSocketM": 8.134450950596441e-07, "samples": 361, "vertexAt": {"frame": 0.5, "domain": "fractional", "mesh": "Sword"}, "socketAt": {"frame": 0.5, "domain": "fractional", "anchor": "Tip"}}, "Skill": {"vertexM": 0.0003250865265727043, "socketM": 0.00032492548058367236, "integerVertexM": 1.0994593822033494e-06, "integerSocketM": 8.36591055847299e-07, "samples": 901, "vertexAt": {"frame": 0.5, "domain": "fractional", "mesh": "Sword"}, "socketAt": {"frame": 0.5, "domain": "fractional", "anchor": "Tip"}}, "layered": {"vertexM": 0.0006716488860547543, "socketM": 0.000671748953137516, "integerVertexM": 0, "integerSocketM": 0, "samples": 288, "vertexAt": {"scenario": "continuous-forward", "index": 30, "time": 1.2500001, "progress": 0.7808693, "mesh": "Sword"}, "socketAt": {"scenario": "continuous-forward", "index": 30, "time": 1.2500001, "progress": 0.7808693, "anchor": "Tip"}}}, "completed": true, "strictPass": false, "elapsedSeconds": 51.9159236389969}
+
+FBX export starting... '/workspace/scratch/fbx-subframe-bake/step0.5.fbx'
+(bpy.data.armatures['Vanguard_Rig'], 'POSE')
+(bpy.data.armatures['Vanguard_Rig'], 'POSE')
+(bpy.data.armatures['Vanguard_Rig'], 'POSE')
+(bpy.data.armatures['Vanguard_Rig'], 'POSE')
+(bpy.data.armatures['Vanguard_Rig'], 'POSE')
+(bpy.data.armatures['Vanguard_Rig'], 'POSE')
+export finished in 0.4303 sec.
+Extensions: writing cache failed ([Errno 30] Read-only file system: '/home/agent/.config/blender/4.3/extensions').
+FBX version: 7400
+step0.5 0 4523
+step0.5 1000 4523
+step0.5 2000 4523
+step0.5 3000 4523
+step0.5 4000 4523
+RESULT step0.5 {"bytes": 1236716, "byteRatio": 1.2143000216012412, "sha256": "ac61ba92455a36edfb5ccacd0237c2fb1bd9b251b5aa6f15933aac67d92a6df0", "maxima": {"Idle": {"vertexM": 1.07765890788869e-06, "socketM": 9.629425061585611e-07, "integerVertexM": 1.0062422006740235e-06, "integerSocketM": 7.372687385590661e-07, "samples": 1801, "vertexAt": {"frame": 5.375, "domain": "fractional", "mesh": "Sword"}, "socketAt": {"frame": 79.137, "domain": "fractional", "anchor": "Tip"}}, "Move": {"vertexM": 1.2502775916800601e-06, "socketM": 1.0062422165950616e-06, "integerVertexM": 9.991558727051597e-07, "integerSocketM": 9.629425061585611e-07, "samples": 721, "vertexAt": {"frame": 5.9375, "domain": "fractional", "mesh": "Sword"}, "socketAt": {"frame": 25.125, "domain": "fractional", "anchor": "Tip"}}, "Basic": {"vertexM": 0.0039327447302639484, "socketM": 0.003932469828103377, "integerVertexM": 9.005036645248765e-07, "integerSocketM": 8.724499445143013e-07, "samples": 451, "vertexAt": {"frame": 9.75, "domain": "fractional", "mesh": "Sword"}, "socketAt": {"frame": 9.75, "domain": "fractional", "anchor": "Tip"}}, "Hit": {"vertexM": 3.84247068723198e-05, "socketM": 3.8661366396683726e-05, "integerVertexM": 1.2057977301083156e-06, "integerSocketM": 8.134450950596441e-07, "samples": 361, "vertexAt": {"frame": 0.25, "domain": "fractional", "mesh": "Sword"}, "socketAt": {"frame": 0.25, "domain": "fractional", "anchor": "Tip"}}, "Skill": {"vertexM": 8.23729278636165e-05, "socketM": 8.222833942441841e-05, "integerVertexM": 1.0994593822033494e-06, "integerSocketM": 8.36591055847299e-07, "samples": 901, "vertexAt": {"frame": 0.25, "domain": "fractional", "mesh": "Sword"}, "socketAt": {"frame": 0.25, "domain": "fractional", "anchor": "Tip"}}, "layered": {"vertexM": 0.0001659703702898696, "socketM": 0.00016596473173670655, "integerVertexM": 0, "integerSocketM": 0, "samples": 288, "vertexAt": {"scenario": "stop1.4-restart2.4", "index": 75, "time": 3.1250002, "progress": 0.78956497, "mesh": "Sword"}, "socketAt": {"scenario": "stop1.4-restart2.4", "index": 75, "time": 3.1250002, "progress": 0.78956497, "anchor": "Tip"}}}, "completed": true, "strictPass": false, "elapsedSeconds": 55.67141643499781}
+
+FBX export starting... '/workspace/scratch/fbx-subframe-bake/step0.25.fbx'
+(bpy.data.armatures['Vanguard_Rig'], 'POSE')
+(bpy.data.armatures['Vanguard_Rig'], 'POSE')
+(bpy.data.armatures['Vanguard_Rig'], 'POSE')
+(bpy.data.armatures['Vanguard_Rig'], 'POSE')
+(bpy.data.armatures['Vanguard_Rig'], 'POSE')
+(bpy.data.armatures['Vanguard_Rig'], 'POSE')
+export finished in 0.6567 sec.
+Extensions: writing cache failed ([Errno 30] Read-only file system: '/home/agent/.config/blender/4.3/extensions').
+FBX version: 7400
+step0.25 0 4523
+step0.25 1000 4523
+step0.25 2000 4523
+step0.25 3000 4523
+step0.25 4000 4523
+RESULT step0.25 {"bytes": 1683004, "byteRatio": 1.6524988708442159, "sha256": "8e5977f449a4e0d7250b316300745705ea139eab2799d3e23fb091f32df5d130", "maxima": {"Idle": {"vertexM": 1.2215317610753118e-06, "socketM": 7.996802249550068e-07, "integerVertexM": 1.0062422006740235e-06, "integerSocketM": 7.372687385590661e-07, "samples": 1801, "vertexAt": {"frame": 61.4375, "domain": "fractional", "mesh": "Sword"}, "socketAt": {"frame": 68.0625, "domain": "fractional", "anchor": "Tip"}}, "Move": {"vertexM": 1.2516975402832031e-06, "socketM": 1.0062422165950616e-06, "integerVertexM": 9.991558727051597e-07, "integerSocketM": 9.629425061585611e-07, "samples": 721, "vertexAt": {"frame": 5.9375, "domain": "fractional", "mesh": "Sword"}, "socketAt": {"frame": 20.5625, "domain": "fractional", "anchor": "Tip"}}, "Basic": {"vertexM": 0.0009850021451711655, "socketM": 0.0009848560030764, "integerVertexM": 9.005036645248765e-07, "integerSocketM": 8.724499445143013e-07, "samples": 451, "vertexAt": {"frame": 9.875, "domain": "fractional", "mesh": "Sword"}, "socketAt": {"frame": 9.875, "domain": "fractional", "anchor": "Tip"}}, "Hit": {"vertexM": 9.620197488402482e-06, "socketM": 9.718664819026845e-06, "integerVertexM": 1.2057977301083156e-06, "integerSocketM": 8.134450950596441e-07, "samples": 361, "vertexAt": {"frame": 0.125, "domain": "fractional", "mesh": "Sword"}, "socketAt": {"frame": 0.125, "domain": "fractional", "anchor": "Tip"}}, "Skill": {"vertexM": 2.0684528863057494e-05, "socketM": 2.074113175919467e-05, "integerVertexM": 1.0994593822033494e-06, "integerSocketM": 8.36591055847299e-07, "samples": 901, "vertexAt": {"frame": 0.125, "domain": "fractional", "mesh": "Sword"}, "socketAt": {"frame": 0.125, "domain": "fractional", "anchor": "Tip"}}, "layered": {"vertexM": 4.257244654581882e-05, "socketM": 4.251094192413905e-05, "integerVertexM": 0, "integerSocketM": 0, "samples": 288, "vertexAt": {"scenario": "continuous-forward", "index": 63, "time": 2.6250002, "progress": 0.7547824, "mesh": "Sword"}, "socketAt": {"scenario": "continuous-forward", "index": 119, "time": 4.9583335, "progress": 0.7547824, "anchor": "Tip"}}}, "completed": true, "strictPass": false, "elapsedSeconds": 54.94971798500046}
+Blender 4.3.2
+Read blend: "/workspace/emberfall_android_player_journey/ArtSource/BlenderPilot/Emberfall-Pilot-Vanguard.blend"
+Read blend: "/workspace/emberfall_android_player_journey/ArtSource/BlenderPilot/Emberfall-Pilot-Vanguard.blend"
+Read blend: "/workspace/emberfall_android_player_journey/ArtSource/BlenderPilot/Emberfall-Pilot-Vanguard.blend"
+
+Blender quit

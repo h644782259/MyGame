@@ -1,0 +1,23 @@
+{
+  "hardened-mixed.fbx": {
+    "sha256": "9111f987ab40fabb6c86e9bf7effcede8b8535bea6b92cfc625816e9970475dd",
+    "curveHashes": {
+      "Pilot_Basic": "99c56c1de4573be03dd4d492d9c6e9e6086fb1fdee6af27fa74bfa12cced489c",
+      "Pilot_Hit": "2d95e311b842126d007d8b6a9ca22cdc20933c837a739bff030396f72a3a0f5c",
+      "Pilot_Idle": "7bc01aa243d0c508436fb20bcb912aaa052b80c4f3fef16439cbb6fb7cdd4cb0",
+      "Pilot_Move": "c48acd9c6a762bd3638805023fdbfd6761245f42953ad0e117b439bf691b7e06",
+      "Pilot_Skill": "37f18ab9184c642685b3079b815042be0ee11587be70a48419fc68ed8da18e85"
+    }
+  },
+  "helper-output.fbx": {
+    "sha256": "0dac3643c78b839a2d42ceee5b605f6e71f91a6addf4c9631a63c62372e5219c",
+    "curveHashes": {
+      "Pilot_Basic": "99c56c1de4573be03dd4d492d9c6e9e6086fb1fdee6af27fa74bfa12cced489c",
+      "Pilot_Hit": "2d95e311b842126d007d8b6a9ca22cdc20933c837a739bff030396f72a3a0f5c",
+      "Pilot_Idle": "7bc01aa243d0c508436fb20bcb912aaa052b80c4f3fef16439cbb6fb7cdd4cb0",
+      "Pilot_Move": "c48acd9c6a762bd3638805023fdbfd6761245f42953ad0e117b439bf691b7e06",
+      "Pilot_Skill": "37f18ab9184c642685b3079b815042be0ee11587be70a48419fc68ed8da18e85"
+    }
+  },
+  "allFiveImportedCurvesExactlyEqual": true
+}

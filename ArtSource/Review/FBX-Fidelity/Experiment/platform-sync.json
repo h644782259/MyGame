@@ -1,0 +1,27 @@
+{
+  "source": "/workspace/emberfall_fbx_fidelity",
+  "targets": [
+    {
+      "path": "/workspace/emberfall_ios_fbx_fidelity",
+      "paths": {
+        "ArtSource/BlenderPilot/build_vanguard.py": "cec8c477a7ed7c84bef7998c9e272e86a810dfe06dd3e23bffbac8daebc95cb5",
+        "ArtSource/BlenderPilot/export_vanguard_fbx.py": "969a40a114afb422a897c6ed08303739cd4d61f07045cc99a0fbd46422a2f368",
+        "ArtSource/BlenderPilot/export-manifest.json": "91aaf2a8d3e1d9ff7e61f6c8419ca6cbe9c1538e6f28a2f06ecc7214a05f8d65",
+        "ArtSource/BlenderPilot/validation-fbx-motion.json": "e7890896fdaa8cb6f689c995d5812fbe244d07dbf07bddc176aec17f4097f5ec",
+        "Assets/Resources/BlenderPilot/Vanguard.fbx": "0dac3643c78b839a2d42ceee5b605f6e71f91a6addf4c9631a63c62372e5219c",
+        "Docs/FBX-Sampling-Fidelity.md": "856959b0a0a22def8847382db46b69e0a922b0492ab562776d887b13d4385e53"
+      }
+    },
+    {
+      "path": "/workspace/emberfall_android_fbx_fidelity",
+      "paths": {
+        "ArtSource/BlenderPilot/build_vanguard.py": "cec8c477a7ed7c84bef7998c9e272e86a810dfe06dd3e23bffbac8daebc95cb5",
+        "ArtSource/BlenderPilot/export_vanguard_fbx.py": "969a40a114afb422a897c6ed08303739cd4d61f07045cc99a0fbd46422a2f368",
+        "ArtSource/BlenderPilot/export-manifest.json": "91aaf2a8d3e1d9ff7e61f6c8419ca6cbe9c1538e6f28a2f06ecc7214a05f8d65",
+        "ArtSource/BlenderPilot/validation-fbx-motion.json": "e7890896fdaa8cb6f689c995d5812fbe244d07dbf07bddc176aec17f4097f5ec",
+        "Assets/Resources/BlenderPilot/Vanguard.fbx": "0dac3643c78b839a2d42ceee5b605f6e71f91a6addf4c9631a63c62372e5219c",
+        "Docs/FBX-Sampling-Fidelity.md": "856959b0a0a22def8847382db46b69e0a922b0492ab562776d887b13d4385e53"
+      }
+    }
+  ]
+}

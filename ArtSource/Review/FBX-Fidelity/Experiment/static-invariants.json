@@ -1,0 +1,81 @@
+{
+  "baseline": {
+    "Anchor_BladeRoot": "4a1c1af601c7b0caaaa76d63ccc54c0766f6c8b0a95806cda202dfc414255798",
+    "Anchor_Emission": "3d1bd530361db1e42f7c67e069ab8446e2f2b4d4c96e305c0514f9709bdaae54",
+    "Anchor_Grip": "ada008f137cf75a93cdd0bf700e1805eb243fe7d425820077fa01e0a1187982b",
+    "Anchor_Guard": "f815e7a48fa01390421fbb1783b790f74f894664fd0894d7fd0675c25e1a8714",
+    "Anchor_Pommel": "597e459c4d422ec6615b379c558ac32b433ea0515bd8e8c6c72f12990a1e724d",
+    "Anchor_Tip": "3cd3d1924e38183d2bf4b08984681dbb76285018729b54380d3c4d26fa146fcc",
+    "Vanguard_Armor": "d56c583a7d392e7e3ad998f054d05ff93f2f77b0bac5408bc5c92055bacfb4d8",
+    "Vanguard_Back": "d825d07972c2b66bd342db48f62de2fed43e19d3eea0aba88a3863bda0252b76",
+    "Vanguard_Body": "6dfc90c8a270784e3c647bd19aa1c6636bdcf714070550d64d889edcc85c6b6f",
+    "Vanguard_Clothes": "1db37045062442679bd57b0e1a3538bbb0c1621ec5290357a12a4dd5f1a4e2a2",
+    "Vanguard_Head": "f5689fd1a4df3271dbfcc50a947bda2786194351c4dba4c97096c02d4c1cbc23",
+    "Vanguard_Rig": "3d3bba8a0469bdf5aae88444b84101025c7d72e3b619255fbec12cd832d98763",
+    "Vanguard_Sword": "96c80c05bc96dc40f8d15dc098c676e555a1347a97173ae423c1c977038f4543",
+    "materials": "e1d341691f088a497275f882b0c79b54c68af754d1a028a461cf63585dfc47b9"
+  },
+  "candidates": {
+    "step-mixed.fbx": {
+      "staticEqual": true,
+      "differentEntries": [],
+      "sha256ByEntry": {
+        "Anchor_BladeRoot": "4a1c1af601c7b0caaaa76d63ccc54c0766f6c8b0a95806cda202dfc414255798",
+        "Anchor_Emission": "3d1bd530361db1e42f7c67e069ab8446e2f2b4d4c96e305c0514f9709bdaae54",
+        "Anchor_Grip": "ada008f137cf75a93cdd0bf700e1805eb243fe7d425820077fa01e0a1187982b",
+        "Anchor_Guard": "f815e7a48fa01390421fbb1783b790f74f894664fd0894d7fd0675c25e1a8714",
+        "Anchor_Pommel": "597e459c4d422ec6615b379c558ac32b433ea0515bd8e8c6c72f12990a1e724d",
+        "Anchor_Tip": "3cd3d1924e38183d2bf4b08984681dbb76285018729b54380d3c4d26fa146fcc",
+        "Vanguard_Armor": "d56c583a7d392e7e3ad998f054d05ff93f2f77b0bac5408bc5c92055bacfb4d8",
+        "Vanguard_Back": "d825d07972c2b66bd342db48f62de2fed43e19d3eea0aba88a3863bda0252b76",
+        "Vanguard_Body": "6dfc90c8a270784e3c647bd19aa1c6636bdcf714070550d64d889edcc85c6b6f",
+        "Vanguard_Clothes": "1db37045062442679bd57b0e1a3538bbb0c1621ec5290357a12a4dd5f1a4e2a2",
+        "Vanguard_Head": "f5689fd1a4df3271dbfcc50a947bda2786194351c4dba4c97096c02d4c1cbc23",
+        "Vanguard_Rig": "3d3bba8a0469bdf5aae88444b84101025c7d72e3b619255fbec12cd832d98763",
+        "Vanguard_Sword": "96c80c05bc96dc40f8d15dc098c676e555a1347a97173ae423c1c977038f4543",
+        "materials": "e1d341691f088a497275f882b0c79b54c68af754d1a028a461cf63585dfc47b9"
+      }
+    },
+    "step0.25.fbx": {
+      "staticEqual": true,
+      "differentEntries": [],
+      "sha256ByEntry": {
+        "Anchor_BladeRoot": "4a1c1af601c7b0caaaa76d63ccc54c0766f6c8b0a95806cda202dfc414255798",
+        "Anchor_Emission": "3d1bd530361db1e42f7c67e069ab8446e2f2b4d4c96e305c0514f9709bdaae54",
+        "Anchor_Grip": "ada008f137cf75a93cdd0bf700e1805eb243fe7d425820077fa01e0a1187982b",
+        "Anchor_Guard": "f815e7a48fa01390421fbb1783b790f74f894664fd0894d7fd0675c25e1a8714",
+        "Anchor_Pommel": "597e459c4d422ec6615b379c558ac32b433ea0515bd8e8c6c72f12990a1e724d",
+        "Anchor_Tip": "3cd3d1924e38183d2bf4b08984681dbb76285018729b54380d3c4d26fa146fcc",
+        "Vanguard_Armor": "d56c583a7d392e7e3ad998f054d05ff93f2f77b0bac5408bc5c92055bacfb4d8",
+        "Vanguard_Back": "d825d07972c2b66bd342db48f62de2fed43e19d3eea0aba88a3863bda0252b76",
+        "Vanguard_Body": "6dfc90c8a270784e3c647bd19aa1c6636bdcf714070550d64d889edcc85c6b6f",
+        "Vanguard_Clothes": "1db37045062442679bd57b0e1a3538bbb0c1621ec5290357a12a4dd5f1a4e2a2",
+        "Vanguard_Head": "f5689fd1a4df3271dbfcc50a947bda2786194351c4dba4c97096c02d4c1cbc23",
+        "Vanguard_Rig": "3d3bba8a0469bdf5aae88444b84101025c7d72e3b619255fbec12cd832d98763",
+        "Vanguard_Sword": "96c80c05bc96dc40f8d15dc098c676e555a1347a97173ae423c1c977038f4543",
+        "materials": "e1d341691f088a497275f882b0c79b54c68af754d1a028a461cf63585dfc47b9"
+      }
+    },
+    "step0.5.fbx": {
+      "staticEqual": true,
+      "differentEntries": [],
+      "sha256ByEntry": {
+        "Anchor_BladeRoot": "4a1c1af601c7b0caaaa76d63ccc54c0766f6c8b0a95806cda202dfc414255798",
+        "Anchor_Emission": "3d1bd530361db1e42f7c67e069ab8446e2f2b4d4c96e305c0514f9709bdaae54",
+        "Anchor_Grip": "ada008f137cf75a93cdd0bf700e1805eb243fe7d425820077fa01e0a1187982b",
+        "Anchor_Guard": "f815e7a48fa01390421fbb1783b790f74f894664fd0894d7fd0675c25e1a8714",
+        "Anchor_Pommel": "597e459c4d422ec6615b379c558ac32b433ea0515bd8e8c6c72f12990a1e724d",
+        "Anchor_Tip": "3cd3d1924e38183d2bf4b08984681dbb76285018729b54380d3c4d26fa146fcc",
+        "Vanguard_Armor": "d56c583a7d392e7e3ad998f054d05ff93f2f77b0bac5408bc5c92055bacfb4d8",
+        "Vanguard_Back": "d825d07972c2b66bd342db48f62de2fed43e19d3eea0aba88a3863bda0252b76",
+        "Vanguard_Body": "6dfc90c8a270784e3c647bd19aa1c6636bdcf714070550d64d889edcc85c6b6f",
+        "Vanguard_Clothes": "1db37045062442679bd57b0e1a3538bbb0c1621ec5290357a12a4dd5f1a4e2a2",
+        "Vanguard_Head": "f5689fd1a4df3271dbfcc50a947bda2786194351c4dba4c97096c02d4c1cbc23",
+        "Vanguard_Rig": "3d3bba8a0469bdf5aae88444b84101025c7d72e3b619255fbec12cd832d98763",
+        "Vanguard_Sword": "96c80c05bc96dc40f8d15dc098c676e555a1347a97173ae423c1c977038f4543",
+        "materials": "e1d341691f088a497275f882b0c79b54c68af754d1a028a461cf63585dfc47b9"
+      }
+    }
+  },
+  "scope": "Blender reimport static bind/geometry/UV/weights/material wiring/socket parent-local matrices; not Unity"
+}

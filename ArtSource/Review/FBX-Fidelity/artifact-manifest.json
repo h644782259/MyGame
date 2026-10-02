@@ -1,0 +1,169 @@
+{
+  "scope": "Frozen FBX candidate scoped evidence; full198 pending",
+  "files": {
+    "Experiment/EmberfallPilot_Atlas.png": {
+      "bytes": 711012,
+      "sha256": "5f29f01b6022bbd56b329a518309d90745e1bd8c248c246e8c97590792761717"
+    },
+    "Experiment/EmberfallPilot_MetallicSmoothness.png": {
+      "bytes": 20837,
+      "sha256": "eafb0a4e74860da9fde51068bdd036d685d600531e93e6171edbe63eeffbe347"
+    },
+    "Experiment/README.md": {
+      "bytes": 7405,
+      "sha256": "52f67052b8524cb336dce301979e998d17e987b6770fc6fe803cbe505be7426e"
+    },
+    "Experiment/candidate-samples.json": {
+      "bytes": 29939,
+      "sha256": "4f2c774f4bc8ce99179e61d4bbb9c00813ad63b2c6fef4ac9ef8acf63d18d3bd"
+    },
+    "Experiment/candidate-stop-samples.json": {
+      "bytes": 30106,
+      "sha256": "e516635352e55c1a6d7d8e99ba218807e86837c4350b14af2e6f3e6bff3be4f8"
+    },
+    "Experiment/export_vanguard_fbx.py": {
+      "bytes": 3172,
+      "sha256": "969a40a114afb422a897c6ed08303739cd4d61f07045cc99a0fbd46422a2f368"
+    },
+    "Experiment/final-integer-validation.log": {
+      "bytes": 1600,
+      "sha256": "2687264e6ea44c281339dce4bdbb98ead80298cc045348bccb9538549908b5fa"
+    },
+    "Experiment/hardened-mixed.fbx": {
+      "bytes": 1439388,
+      "sha256": "9111f987ab40fabb6c86e9bf7effcede8b8535bea6b92cfc625816e9970475dd"
+    },
+    "Experiment/hardened-report.json": {
+      "bytes": 15015,
+      "sha256": "e0a1f39c2e2f1b44abd10b3197dd60b84eb90bb916ae18a21ba3a8f8caabb121"
+    },
+    "Experiment/hardened-static-invariants.json": {
+      "bytes": 5799,
+      "sha256": "706ab1fb92446d9e063ab7bfcf8b809103ee81c5475326791bc151cfd4561a9a"
+    },
+    "Experiment/hardened-static-invariants.log": {
+      "bytes": 4387,
+      "sha256": "264fa988b48dce48f159a47f30bae11b45ec24314a987b80f620e1457fe5c187"
+    },
+    "Experiment/hardened.log": {
+      "bytes": 5628,
+      "sha256": "2d08e3bb8d0812ef8c7c13945f0d5140b82b97dbb690460f2ba0f94dc2cbba96"
+    },
+    "Experiment/hardened_probe.py": {
+      "bytes": 7663,
+      "sha256": "9dd6544587e3041d9536d4fb503634226c7188c6ffad5115ae191c268fb379c4"
+    },
+    "Experiment/hardened_static_invariants.py": {
+      "bytes": 3817,
+      "sha256": "dd0cbba3d3a19e991e7fa4ee38db7ebccb808611b4f357d5c8324daa2e27a31c"
+    },
+    "Experiment/hashes.json": {
+      "bytes": 4360,
+      "sha256": "d4d6dc42cdb07853e18d12f74c9aa50a886b91e3cba310bfa52bfbe71791a296"
+    },
+    "Experiment/helper-controls.json": {
+      "bytes": 2572,
+      "sha256": "79495abe601c042ee7b683cf91eee87ac01aa64b33da03f8c404997b996aaacb"
+    },
+    "Experiment/helper-controls.log": {
+      "bytes": 3560,
+      "sha256": "e3a4bc133d4b454e6fa4eb09e5abf50b9df785faf4268cf27470aeb643443731"
+    },
+    "Experiment/helper-equivalence.json": {
+      "bytes": 1207,
+      "sha256": "01bda1dda13ac0a349a8d16da5392aa54b2ad75f879df3926ca16a6121bd3465"
+    },
+    "Experiment/helper-equivalence.log": {
+      "bytes": 1150,
+      "sha256": "c600ba2d6194f7725984200492d5658ebf1ac0a76f317eb9a144f44d1cdba76b"
+    },
+    "Experiment/helper-output.fbx": {
+      "bytes": 1439388,
+      "sha256": "0dac3643c78b839a2d42ceee5b605f6e71f91a6addf4c9631a63c62372e5219c"
+    },
+    "Experiment/helper_controls.py": {
+      "bytes": 1611,
+      "sha256": "d7343fbbccd611b6efdcaefd47ebc9b591df1375f5b2d8ea768f129bb63ce6d7"
+    },
+    "Experiment/helper_equivalence.py": {
+      "bytes": 1327,
+      "sha256": "e0d3d74e3eeefe4309a45ddfe7a57e2943ec7fea285dc7f9b7f16df8a77e68af"
+    },
+    "Experiment/layered_pose.py": {
+      "bytes": 1562,
+      "sha256": "f40548d72410dcaf86228f146714d73bf99d147d97e61abe4c95daf171233a25"
+    },
+    "Experiment/mixed-report.json": {
+      "bytes": 9091,
+      "sha256": "c7f33d95467fc13db6a192d49682895da186b5a7343a39ea42cfcb5cc66dde9c"
+    },
+    "Experiment/mixed.log": {
+      "bytes": 3188,
+      "sha256": "3b7d7a160999ad82f14d0a04846182c090246232e4d6ae0d13d44ab03d5b028c"
+    },
+    "Experiment/platform-sync.json": {
+      "bytes": 1715,
+      "sha256": "61a0f227e1366957fd9c8f99bc16266692232e2822a4b8794c24f3c75c42cfbf"
+    },
+    "Experiment/probe.log": {
+      "bytes": 8503,
+      "sha256": "2682d261956982f64dd2b97fb6027849fd6c620d4cdb18d3b3db31a2c0432508"
+    },
+    "Experiment/probe.py": {
+      "bytes": 8175,
+      "sha256": "3da7891ff95f01f2f2fe87f086506191648f61de8a4e49be5508b8fa95b6cb61"
+    },
+    "Experiment/raw-key-counts.json": {
+      "bytes": 1015,
+      "sha256": "5ef5f2d5ce76ed941e2b0b35e252e0f89a4db662fa138bb16451798eb14b177a"
+    },
+    "Experiment/raw_key_counts.py": {
+      "bytes": 780,
+      "sha256": "b0696a2fe97f6fb1ba04ee51be5e6a0eccafa41c68053be75f2d8e8edb07f4ed"
+    },
+    "Experiment/report.json": {
+      "bytes": 20124,
+      "sha256": "6394d64e66fef0d15c67af66ed153a9844648ab7edd93dbe3c9904b3316ef1e6"
+    },
+    "Experiment/static-invariants.json": {
+      "bytes": 5667,
+      "sha256": "38f0554d37644fb9e0e7fc4eec6f2c2e1dbb63a19ac3b410d085fd20bb586a41"
+    },
+    "Experiment/static-invariants.log": {
+      "bytes": 4375,
+      "sha256": "6eaf6c9760272acfad849eb183e34f7637f875fdb3ba960606d1e7195d609bc3"
+    },
+    "Experiment/static_invariants.py": {
+      "bytes": 2204,
+      "sha256": "4d5a8cca768e7b55cda5641b054fa677fce1cf4308319a44210e5bcdf24a65b4"
+    },
+    "Experiment/step-mixed.fbx": {
+      "bytes": 1439388,
+      "sha256": "763d5c15b56fec0705679d502e6d7f3313ae93d8b2bf55abd5d6aa2a4d5e62b2"
+    },
+    "Experiment/step0.25.fbx": {
+      "bytes": 1683004,
+      "sha256": "8e5977f449a4e0d7250b316300745705ea139eab2799d3e23fb091f32df5d130"
+    },
+    "Experiment/step0.5.fbx": {
+      "bytes": 1236716,
+      "sha256": "ac61ba92455a36edfb5ccacd0237c2fb1bd9b251b5aa6f15933aac67d92a6df0"
+    },
+    "Inputs/Baseline-Vanguard.fbx": {
+      "bytes": 1018460,
+      "sha256": "8b89fb808fa4ce4eb65045f6a12cb842df7ab4173977a111f44f60ddb668f529"
+    },
+    "Inputs/candidate-samples.json": {
+      "bytes": 29939,
+      "sha256": "4f2c774f4bc8ce99179e61d4bbb9c00813ad63b2c6fef4ac9ef8acf63d18d3bd"
+    },
+    "Inputs/candidate-stop-samples.json": {
+      "bytes": 30106,
+      "sha256": "e516635352e55c1a6d7d8e99ba218807e86837c4350b14af2e6f3e6bff3be4f8"
+    },
+    "README.md": {
+      "bytes": 1714,
+      "sha256": "bd05e690216ae96194f28ad6b4c4839c6ee0313b13dec75a04cff861241ec92c"
+    }
+  }
+}
