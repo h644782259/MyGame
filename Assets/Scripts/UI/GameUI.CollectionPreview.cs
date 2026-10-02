@@ -15,7 +15,7 @@ namespace Emberfall
         private void ReconcileCollectionPreview()
         {
             if(session!=null&&(session.BackgroundPaused||session.Paused)){ReleaseCollectionModel();return;}
-            if(session==null || !session.HasStarted || session.IsDead || session.ModeFinished || session.DungeonSelectionOpen || session.RunChoices.AwaitingChoice || (panel!=Panel.Fashion&&panel!=Panel.Chests))ReleaseCollectionPreview();
+            if(session==null || !session.HasStarted || session.IsDead || session.ModeFinished || session.DungeonSelectionOpen || session.RunChoices.AwaitingChoice || (panel!=Panel.Fashion&&panel!=Panel.Chests&&!(panel==Panel.Inventory&&equipmentAppearanceOpen)))ReleaseCollectionPreview();
             else if(collectionOwner!=session.Player){ReleaseCollectionPreview();collectionOwner=session.Player;}
         }
         private void OnDisable(){ReleaseCollectionModel();}
@@ -23,7 +23,7 @@ namespace Emberfall
         private void OnApplicationPause(bool paused){if(!paused&&collectionModel!=null)collectionModel.Invalidate();}
         private void ReleaseCollectionModel(){if(collectionModel!=null)collectionModel.Dispose();collectionModel=null;}
         private void ReleaseCollectionPreview()
-        {ReleaseCollectionModel();collectionViewing.Reset();collectionTrial=null;collectionOwner=null;collectionNotice=null;collectionReceiptKey=null;collectionPreviewYaw=20;mobileFashionPreview=true;}
+        {ReleaseCollectionModel();collectionViewing.Reset();collectionTrial=null;collectionOwner=null;collectionNotice=null;collectionReceiptKey=null;collectionPreviewYaw=20;mobileFashionPreview=true;equipmentAppearanceOpen=false;equipmentAppearanceCandidate=false;equipmentAppearanceItem=null;}
         private void TrialFashion(FashionSlot slot,Rarity rarity)
         {collectionTrial=EquipmentComparisonPresentation.Trial(slot,rarity);collectionNotice=null;mobileFashionStatus=null;mobileFashionFailed=false;collectionViewing.TryOn(collectionTrial);}
         private void SetCollectionAngle(FashionSlot slot)
@@ -36,6 +36,7 @@ namespace Emberfall
             if(rotate){wings=collectionViewing.Trial(FashionSlot.Wings)??wings;weapon=collectionViewing.Trial(FashionSlot.Weapon)??weapon;}
             else if(trial!=null){if(trial.slot==FashionSlot.Wings)wings=trial;else weapon=trial;}
             CollectionPreviewComposition composition=rotate?collectionViewing.Mode:trial==null?CollectionPreviewComposition.Full:trial.slot==FashionSlot.Wings?CollectionPreviewComposition.Back:CollectionPreviewComposition.Weapon;
+            collectionModel.SetEquipmentFraming(false,false);
             collectionModel.SetComposition(composition);
             collectionModel.SetYaw(rotate?collectionViewing.Yaw:collectionPreviewYaw);
             CollectionPreviewLayout controls=rotate&&!MobileControls.Active?CollectionPreviewLayout.Desktop(new MobilePanelLayout.Area(area.x,area.y,area.width,area.height)):null;

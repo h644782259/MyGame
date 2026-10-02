@@ -3,7 +3,8 @@ namespace Emberfall
 {
     public sealed partial class GameUI
     {
-        private Vector2 chapterScroll;
+        private Vector2 chapterScroll,chapterResultScroll;
+        private object chapterResultScrollOwner;
         private bool chapterStoryExpanded;
         private GameProfile chapterSelectionOwner;
         private string chapterEntryError;
@@ -147,6 +148,8 @@ namespace Emberfall
         }
         private void DrawChapterResult()
         {
+            if(!ReferenceEquals(chapterResultScrollOwner,session.ChapterRun))
+            {chapterResultScrollOwner=session.ChapterRun;chapterResultScroll=Vector2.zero;CancelMobileScroll();}
             float u=MobileControls.Active?TouchRatio:1;var layout=ChapterPanelGeometry();
             if(!session.ChapterResultReady)
             {
@@ -161,7 +164,7 @@ namespace Emberfall
             string copy=ChapterEntryPresentation.Result(session.ChapterResult);
             if(!string.IsNullOrEmpty(session.Progression.LastError))copy=session.Progression.LastError+"\n\n"+copy;
             float h=Style(Mathf.RoundToInt(16*u),false,true).CalcHeight(new GUIContent(copy),(layout.Body.Width-26)*u)+16*u;
-            chapterScroll=BeginTouchScroll("chapter-result",ChapterRect(layout.Body,u),chapterScroll,new Rect(0,0,(layout.Body.Width-16)*u,Mathf.Max(layout.Body.Height*u,h)));
+            chapterResultScroll=BeginTouchScroll("chapter-result",ChapterRect(layout.Body,u),chapterResultScroll,new Rect(0,0,(layout.Body.Width-16)*u,Mathf.Max(layout.Body.Height*u,h)));
             Text(new Rect(8*u,8*u,(layout.Body.Width-26)*u,h),copy,Mathf.RoundToInt(16*u),pale,false,true);EndTouchScroll();
             if(pending&&Button(ChapterRect(layout.FooterButton(0,2),u),"重试保存结算",gold)){RetryChapterSettlement();return;}
             bool next=!failed&&!pending&&(int)session.ActiveChapterNode<2;

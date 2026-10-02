@@ -912,10 +912,10 @@ namespace Emberfall
                 if (hotbarDragging && !hotbarPointerConfiguring && (slotIndex == hotbarPointerSlot || slot.Contains(Mouse))) Border(slot, gold, 2);
                 if (!empty)
                 {
-                    float identitySize=mobile?44:actionCaption.Length>0?24:32;
-                    Rect identity=new Rect(slot.center.x-identitySize*.5f,slot.y+(actionCaption.Length>0?8:10),identitySize,identitySize);
+                    float identitySize=mobile?44:32;
+                    Rect identity=new Rect(slot.center.x-identitySize*.5f,slot.y+(mobile?8:1),identitySize,identitySize);
                     if(potion)DrawIcon(identity,HotbarIcon(p,skill),locked?new Color(.4f,.4f,.4f):Color.white);
-                    else DrawSkillIdentity(identity,p.heroClass,skill,rank,!locked&&!lacksEnergy,actionCaption.Length>0?24:32);
+                    else DrawSkillIdentity(identity,p.heroClass,skill,rank,!locked&&!lacksEnergy,32);
                 }
                 else Text(new Rect(slot.x, slot.y + 9, slot.width, 32), "+", 20, new Color(.34f, .44f, .53f), false, false, TextAnchor.MiddleCenter);
                 if (cooldown > .01f)
@@ -941,7 +941,7 @@ namespace Emberfall
                 if(actionCaption.Length>0)
                 {
                     if(actionable)Border(slot,jade,2);
-                    Rect caption=new Rect(slot.x+2,slot.yMax-14,slot.width-4,11);
+                    Rect caption=new Rect(slot.x+2,slot.yMax-12,slot.width-4,11);
                     Fill(caption,new Color(.025f,.055f,.06f,.96f));
                     Text(caption,actionCaption,8,actionable?jade:gold,true,false,TextAnchor.MiddleCenter);
                 }
@@ -1428,6 +1428,7 @@ namespace Emberfall
             Fill(new Rect(r.x, r.y, r.width, 3), rarityColor);
             Text(new Rect(r.x + 18, r.y + 17, r.width - 36, 23), GameBalance.RarityName(item.rarity) + " / " + GameBalance.SlotName(item.slot), 13, rarityColor, true);
             Text(new Rect(r.x+18,r.y+45,r.width-36,31),ItemTitle(preview),22,levelLocked?muted*.65f:pale,true);
+            if(DrawEquipmentAppearanceDetail(new Rect(r.x+18,r.y+82,r.width-36,r.height-90),item,1))return;
             ItemData equipped=progression.Equipped(item.slot);
             DrawEquipmentComparison(new Rect(r.x+18,r.y+88,r.width-36,61),equipped,item);
             Text(new Rect(r.x+18,r.y+155,205,22),(levelLocked?"锁 · 需要 "+item.level+"级":"Lv."+item.level)+" · 部位强化 +"+slotRank,14,levelLocked?gold:muted);
@@ -1447,7 +1448,8 @@ namespace Emberfall
             int upgradeCost = progression.UpgradeCost(item);
             if (Button(new Rect(r.x + 219, r.y + 365, 187, 40), maxUpgrade ? "部位已达 +" + ProgressionService.MaximumUpgrade : "强化部位 · " + upgradeCost + " 金", gold, !maxUpgrade && progression.Profile.gold >= upgradeCost, maxUpgrade ? "此部位已达到强化上限，换装仍会自动继承。" : "消耗 " + upgradeCost + " 金币，将" + GameBalance.SlotName(item.slot) + "部位提升至 +" + (slotRank + 1) + "；当前与以后换上的装备均生效，无需穿戴所选装备。"))
                 Feedback(progression.Upgrade(item.id), GameBalance.SlotName(item.slot) + "部位强化 +" + (slotRank + 1) + " · -" + upgradeCost + " 金币");
-            Text(new Rect(r.x + 18, r.y + 409, r.width - 36, 18), "属性已含部位强化 · 机制不计入评分", 11, jade);
+            Text(new Rect(r.x + 18, r.y + 409, 220, 18), "属性含强化 · 机制不计分", 11, jade);
+            if(Button(new Rect(r.x+245,r.y+409,160,24),"外观比较",jade)){equipmentAppearanceOpen=true;collectionOwner=session.Player;BlockUITransition();}
 
         }
 

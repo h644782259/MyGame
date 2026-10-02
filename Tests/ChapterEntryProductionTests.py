@@ -43,7 +43,7 @@ namespace Emberfall {
   void Fill(Rect r,Color c){if(r.width==width&&r.height==height)opaqueFrame=true;}void Text(Rect r,string s,int size,Color c,bool bold=false,bool wrap=false,TextAnchor anchor=TextAnchor.MiddleLeft){texts.Add(s);}
   bool Button(Rect r,string s,Color c,bool enabled=true){buttons.Add((s,r,insideScroll,enabled));if(enabled&&click!=null&&s.StartsWith(click)){click=null;return true;}return false;}
   GUIStyle Style(int n,bool b,bool w)=>new GUIStyle();MobilePanelLayout MobilePanelGeometry()=>new MobilePanelLayout(width/TouchRatio,height/TouchRatio);
-  Vector2 BeginTouchScroll(string key,Rect body,Vector2 p,Rect full){insideScroll=true;viewport=body;content=full;return p;}void EndTouchScroll(){insideScroll=false;}
+  Vector2 observedResultScroll;Vector2 BeginTouchScroll(string key,Rect body,Vector2 p,Rect full){if(key=="chapter-result")observedResultScroll=p;insideScroll=true;viewport=body;content=full;return p;}void EndTouchScroll(){insideScroll=false;}
   bool CloseMobileInventoryDetail()=>false;bool CloseMobileSkillDetail()=>false;bool CloseRouteSkill()=>false;bool CloseProgressionGoalSurface()=>false;bool CloseBuildPlanSurface()=>false;bool CloseTravelMap()=>false;bool CancelSaveDeletion()=>false;bool CancelActiveSaveFlow()=>false;
   void FinishChestReveal(){}void ReturnToInventory(){panel=Panel.Inventory;}
   CLOSE
@@ -118,7 +118,7 @@ namespace Emberfall {
    check(!ui.ConfirmSelectedChapter()&&ui.session.ConfirmCalls==callsBefore,"same character reloaded profile cannot use stale UI owner");
    ui.DrawChapterSelection();check(ui.panel==Panel.None&&ui.chapterSelectionOwner==null&&!ui.session.Blocked,"drawing stale selection closes safely without entry");
    var starProgression=new ProgressionService(Path.Combine(root,"star-ui"));check(starProgression.CreateNewSlot(HeroClass.Vanguard),"fresh star UI profile");starProgression.Profile.chapterCompletedMask=3;starProgression.Profile.chapterHighestDifficulties=new[]{1,1,0};starProgression.Save();
-   var starUI=new GameUI{session=new SessionStub{Progression=starProgression,SelectedChapterNode=ChapterNode.StarPlatform,ActiveChapterNode=ChapterNode.StarPlatform}};check(starUI.OpenChapterSelection()&&starUI.ConfirmSelectedChapter(),"actual star UI confirmation starts eligible receipt");starUI.session.ChapterFinished=true;starUI.session.ChapterRewardPending=true;check(starUI.RetryChapterSettlement()&&starProgression.Profile.pendingFirstClearReward&&starUI.session.ChapterResult.FirstCoreAvailable,"actual Star UI settlement enables shared core after save");starUI.DrawChapterResult();check(starUI.texts.Exists(t=>t.Contains("首通核心已可领取（共享一次）")),"saved Star UI reveals actual new shared entitlement");
+   var starUI=new GameUI{session=new SessionStub{Progression=starProgression,SelectedChapterNode=ChapterNode.StarPlatform,ActiveChapterNode=ChapterNode.StarPlatform}};check(starUI.OpenChapterSelection()&&starUI.ConfirmSelectedChapter(),"actual star UI confirmation starts eligible receipt");starUI.session.ChapterFinished=true;starUI.session.ChapterRewardPending=true;check(starUI.RetryChapterSettlement()&&starProgression.Profile.pendingFirstClearReward&&starUI.session.ChapterResult.FirstCoreAvailable,"actual Star UI settlement enables shared core after save");starUI.chapterScroll=new Vector2(0,99);starUI.DrawChapterResult();check(starUI.observedResultScroll.y==0,"new result starts at top independently from entry");starUI.chapterResultScroll=new Vector2(0,47);starUI.RetryChapterSettlement();starUI.DrawChapterResult();check(starUI.observedResultScroll.y==47,"same result retains scroll through save retry");starUI.session.ChapterRun=new RunStub();starUI.DrawChapterResult();check(starUI.observedResultScroll.y==0,"different run resets result scroll");check(starUI.texts.Exists(t=>t.Contains("首通核心已可领取（共享一次）")),"saved Star UI reveals actual new shared entitlement");
    int starMaterials=starProgression.Profile.mechanicMaterials;check(!starUI.RetryChapterSettlement()&&starProgression.Profile.mechanicMaterials==starMaterials,"Star UI saved retry cannot duplicate reward");
    return n;
   }
@@ -172,3 +172,11 @@ with tempfile.TemporaryDirectory(prefix='chapter-entry-') as folder:
  result=subprocess.run([dotnet,str(project.parent/'bin/Debug/net8.0/Validation.dll'),str(out/'scroll-saves')],env=env,capture_output=True,text=True)
  assert result.returncode and 'System.Exception: FIXED_NODES' in result.stdout+result.stderr,result.stdout+result.stderr
  print('PASS: old node-scroll ownership compiled and failed exact fixed-node oracle')
+
+ # Restore shared entry/result scroll; the actual result view must fail its top-of-new-run oracle.
+ mutated=out/'OldSharedResultScroll.cs';mutated.write_text(current.replace('chapterResultScroll=BeginTouchScroll("chapter-result",ChapterRect(layout.Body,u),chapterResultScroll','chapterScroll=BeginTouchScroll("chapter-result",ChapterRect(layout.Body,u),chapterScroll'))
+ project=cv.write_project(out/'old-shared-result',[mutated if f==chapter else f for f in files],program=shell.replace('CLOSE',close))
+ subprocess.run([dotnet,'build',str(project),'--configfile',str(config),'-v:q'],env=env,check=True,stdout=subprocess.DEVNULL)
+ result=subprocess.run([dotnet,str(project.parent/'bin/Debug/net8.0/Validation.dll'),str(out/'shared-scroll-saves')],env=env,capture_output=True,text=True)
+ assert result.returncode and 'new result starts at top independently from entry' in result.stdout+result.stderr,result.stdout+result.stderr
+ print('PASS: compiled shared entry/result scroll fails exact new-run scroll oracle')
