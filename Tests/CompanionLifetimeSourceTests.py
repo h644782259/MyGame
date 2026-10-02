@@ -49,7 +49,7 @@ check(not any(token in capacity for token in ("Snapshot(", ".ToArray(", ".FindAl
       "Each capacity check avoids the previous temporary companion collection and predicate")
 check("for (int i = 0; i < active.Count;)" in capacity and "pet.Owner != owner" in capacity,
       "Capacity walks owner-filtered entries in oldest-first order")
-check(capacity.count("pet.Dismiss(); continue;") == 2,
+check(capacity.count("pet.Dismiss(CompanionRetirementReason.Replaced); continue;") == 2,
       "Both route-removal branches recheck the shifted current slot")
 starter = body(pet, "public static bool HasStarter")
 check("foreach (SummonedCompanion pet in active)" in starter and "=>" not in starter and ".Exists(" not in starter,
