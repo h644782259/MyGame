@@ -387,7 +387,7 @@ namespace Emberfall
             else cooldown = Mathf.Min(cooldown, CompanionRules.CommandReadyDelay);
         }
 
-        private float AttackMultiplier { get { return CompanionRules.DamageMultiplier(Owner.HasMechanic(EquipmentMechanic.TwinSummonResonance)) * (commandTime > 0 ? commandMultiplier : 1f); } }
+        private float AttackMultiplier { get { return CompanionRules.DamageMultiplier(Owner.HasMechanic(EquipmentMechanic.TwinSummonResonance)) * (commandTime > 0 ? commandMultiplier : 1f) * Owner.RunAttackMultiplier; } }
 
         public void OnConfirmedHit(EnemyController enemy)
         {
@@ -402,7 +402,7 @@ namespace Emberfall
                 { commandedFocus = true; break; }
             if (!CompanionRules.CoordinatedTarget(Owner.FocusTarget == enemy, commandedFocus, ExplicitFocus(Owner) == enemy)) return;
             if (!State(Owner).Cooperation.RegisterHit(enemy, (int)Form, Time.time)) return;
-            enemy.TakeDamage(damage * CompanionRules.DamageMultiplier(true) * CompanionRules.CooperationDamage, Vector3.zero, impact: false);
+            enemy.TakeDamage(damage * CompanionRules.DamageMultiplier(true) * CompanionRules.CooperationDamage * Owner.RunAttackMultiplier, Vector3.zero, impact: false);
             AdvancedSkillVfx.Beam(Owner, transform.position + Vector3.up, enemy.transform.position + Vector3.up, new Color(.5f, 1f, .9f), .3f, .2f);
             session.SpawnMechanismText(enemy.transform.position + Vector3.up * 2f, "异契共鸣", new Color(.5f, 1f, .9f));
             session.RecordCombatAction("双契共鸣");
