@@ -21,10 +21,14 @@ namespace Emberfall
         CollectionPreviewComposition composition;
         CollectionPreviewSurface requested=new CollectionPreviewSurface(384,480,false),allocated;
         int surfaceFrame=-1;
+        bool framingDirty=true;
+        public CollectionPreviewAction PreviewAction {get{return motion.Action;}}
+        public void Play(CollectionPreviewAction action){motion.Play(action);state.Invalidate();}
+
         public void Rotate(float degrees){SetYaw(state.Yaw+degrees);}
-        public void SetYaw(float degrees){state.SetYaw(degrees);}
+        public void SetYaw(float degrees){float old=state.Yaw;state.SetYaw(degrees);if(old!=state.Yaw)framingDirty=true;}
         public void SetComposition(CollectionPreviewComposition value)
-        {if(((int)value<0||(int)value>2)||composition==value)return;composition=value;state.SetYaw(CollectionPreviewFraming.DefaultYaw(value));state.Invalidate();}
+        {if(((int)value<0||(int)value>2)||composition==value)return;composition=value;framingDirty=true;state.SetYaw(CollectionPreviewFraming.DefaultYaw(value));state.Invalidate();}
         public void SetViewport(float pixelWidth,float pixelHeight,bool mobile)
         {requested=new CollectionPreviewSurface(pixelWidth,pixelHeight,mobile);}
         public void Invalidate(){state.Invalidate();sceneLights=null;}
@@ -52,19 +56,20 @@ namespace Emberfall
                 if(avatar!=null){avatar.SetActive(false);UnityEngine.Object.Destroy(avatar);}
                 avatar=new GameObject("Preview mannequin");avatar.transform.SetParent(stage.transform,false);
                 var random=UnityEngine.Random.state;
-                try {model=CombatModel.Hero(avatar.transform,hero);model.ApplyEquipment(weapon,armor,relic);model.ApplyFashion(wings,fashionWeapon);model.Animate(0,0,false);}
+                try {model=CombatModel.Hero(avatar.transform,hero);model.ApplyEquipment(weapon,armor,relic);model.ApplyFashion(wings,fashionWeapon);model.ConfigurePreview();model.SamplePreview(0,CollectionPreviewAction.Idle,1);}
                 finally {UnityEngine.Random.state=random;}
                 foreach(var t in avatar.GetComponentsInChildren<Transform>(true))t.gameObject.layer=PreviewLayer;
                 foreach(var c in avatar.GetComponentsInChildren<Collider>(true))c.enabled=false;
                 foreach(var behaviour in avatar.GetComponentsInChildren<MonoBehaviour>(true))behaviour.enabled=false;
                 renderers=avatar.GetComponentsInChildren<Renderer>(true);
                 foreach(var renderer in renderers){renderer.shadowCastingMode=UnityEngine.Rendering.ShadowCastingMode.Off;renderer.receiveShadows=false;}
-                state.ModelReady();
+                framingDirty=true;state.ModelReady();
             }
             avatar.transform.localRotation=Quaternion.Euler(0,state.Yaw,0);
             avatar.transform.localScale=Vector3.one;
-            FrameModel(); // Stable framing must not zoom in/out with the breathing scale.
-            avatar.transform.localScale=new Vector3(1,motion.BreathScale,1);
+            if(framingDirty){FrameModel();framingDirty=false;}
+            model.SamplePreview(motion.Time,motion.Action,motion.Progress,motion.OrbitYaw);
+
             turnRing.localRotation=Quaternion.Euler(0,motion.RingYaw,0);
             RenderIsolated();state.Rendered(Time.frameCount);
             return texture;
@@ -82,9 +87,15 @@ namespace Emberfall
         void FrameModel()
         {
             bool found=false;Bounds bounds=new Bounds();
-            foreach(var renderer in renderers)
-                if(renderer!=null&&renderer.enabled&&renderer.gameObject.activeInHierarchy&&InComposition(renderer.transform))
-                {if(!found){bounds=renderer.bounds;found=true;}else bounds.Encapsulate(renderer.bounds);}
+            // Cache the envelope of actual idle/attack/cast poses. Camera bounds do not
+            // chase animated limbs, breathing, cloak vertices or orbit angles each frame.
+            for(int action=0;action<3;action++)for(int step=0;step<=4;step++)
+            {
+                model.SamplePreview(0,(CollectionPreviewAction)action,step*.25f);
+                foreach(var renderer in renderers)
+                    if(renderer!=null&&renderer.enabled&&renderer.gameObject.activeInHierarchy&&InComposition(renderer.transform))
+                    {if(!found){bounds=renderer.bounds;found=true;}else bounds.Encapsulate(renderer.bounds);}
+            }
             if(!found)bounds=new Bounds(avatar.transform.position+Vector3.up*1.3f,new Vector3(1.3f,1.6f,1));
             if(composition==CollectionPreviewComposition.Back)
                 bounds.Encapsulate(new Bounds(avatar.transform.position+Vector3.up*1.4f,new Vector3(1,1.3f,.7f)));
@@ -151,7 +162,7 @@ namespace Emberfall
         void CreateTexture()
         {
             if(texture!=null){camera.targetTexture=null;texture.Release();UnityEngine.Object.Destroy(texture);}
-            allocated=requested;surfaceFrame=Time.frameCount;
+            allocated=requested;surfaceFrame=Time.frameCount;framingDirty=true;
             var descriptor=new RenderTextureDescriptor(allocated.Width,allocated.Height,RenderTextureFormat.ARGB32,16){msaaSamples=allocated.Samples};
             descriptor.msaaSamples=Mathf.Clamp(SystemInfo.GetRenderTextureSupportedMSAASampleCount(descriptor),1,allocated.Samples);
             texture=new RenderTexture(descriptor){name="Collection preview",hideFlags=HideFlags.HideAndDontSave};
@@ -164,7 +175,7 @@ namespace Emberfall
             if(texture!=null){texture.Release();UnityEngine.Object.Destroy(texture);}
             if(shadowMaterial!=null)UnityEngine.Object.Destroy(shadowMaterial);if(ringMaterial!=null)UnityEngine.Object.Destroy(ringMaterial);if(shadowTexture!=null)UnityEngine.Object.Destroy(shadowTexture);
             stage=null;avatar=null;model=null;camera=null;texture=null;turnRing=null;shadowMaterial=ringMaterial=null;shadowTexture=null;renderers=null;sceneLights=null;sceneMasks=null;surfaceFrame=-1;
-            state=new CollectionPreviewState();motion=new CollectionPreviewMotion();
+            state=new CollectionPreviewState();motion=new CollectionPreviewMotion();framingDirty=true;
         }
     }
 }

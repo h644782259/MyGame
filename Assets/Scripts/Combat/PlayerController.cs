@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace Emberfall
 {
-    public sealed class PlayerController : MonoBehaviour
+    public sealed partial class PlayerController : MonoBehaviour
     {
         public float Health { get; private set; }
         public float MaxHealth { get; private set; }
@@ -140,6 +140,7 @@ namespace Emberfall
         {
             SummonedCompanion.RefreshBuild(this);
             CombatEpoch++;
+            ClearMobilePinnedTarget();
             perfectDodgeCounterTime = 0;
             CancelCombatPose();
             masteryCore.Reset();coreWardTime=0;
@@ -173,6 +174,7 @@ namespace Emberfall
         {
             SummonedCompanion.RefreshBuild(this);
             CombatEpoch++;
+            ClearMobilePinnedTarget();
             perfectDodgeCounterTime = 0;
             CancelCombatPose();
             if (targeting != null) targeting.Cancel();
@@ -184,6 +186,7 @@ namespace Emberfall
         public void ResetCooldownsForDungeonEntry()
         {
             CombatEpoch++;
+            ClearMobilePinnedTarget();
             perfectDodgeCounterTime = 0;
             CancelCombatPose();
             masteryCore.Reset();coreWardTime=0; // Retire prior-zone delayed impacts as well as stale aim.
@@ -241,6 +244,7 @@ namespace Emberfall
             {
                 if (CombatReviewEvents.Enabled) CombatReviewEvents.Emit("death",CombatReviewObjectId.Get(this));
                 CombatEpoch++;
+            ClearMobilePinnedTarget();
                 perfectDodgeCounterTime = 0;
                 CancelCombatPose();
             masteryCore.Reset();coreWardTime=0;
@@ -409,7 +413,7 @@ namespace Emberfall
                 if (attackCooldown <= 0) BasicAttack();
             }
             model.Animate(movement.magnitude,attackAnimation,hurtTimer > 0);
-            if (charge != null && charge.IsCharging) model.AnimateCharge(charge.Progress);
+            if (charge != null && charge.IsCharging) model.AnimateCharge(charge.Progress,charge.SkillIndex);
         }
 
         // Kept independent of Input so runtime validation can project a known body
@@ -453,6 +457,8 @@ namespace Emberfall
 
         private Vector3 ResolveMobileAim(Vector3 movement)
         {
+            var pinned=MobilePinnedTarget;
+            if(pinned!=null){AimTarget=pinned;return CombatFx.Flat(pinned.transform.position);}
             AimTarget = null;
             Vector3 direction = movement.sqrMagnitude > .01f ? movement.normalized : transform.forward;
             float nearest = 14f;
@@ -477,6 +483,10 @@ namespace Emberfall
         {
             var preview=SkillTargetingController.Describe(HeroClass,skill,session.Progression.Profile.skillRanks[skill]);
             if(preview.shape==SkillTargetingController.Shape.Self){enemy=null;point=transform.position;return;}
+            if(HeroClass==HeroClass.Summoner&&(skill==2||skill==4||skill==9))
+            {var team=SummonedCompanion.ExplicitFocus(this);if(team!=null){enemy=team;point=CombatFx.Flat(team.transform.position);return;}}
+            var pinned=MobilePinnedTarget;
+            if(pinned!=null&&MobilePinAppliesToSkill(skill)){enemy=pinned;point=CombatFx.Flat(pinned.transform.position);return;}
             float range=preview.distance>0?preview.distance:14f;
             mobileAimCandidates.Clear();
             foreach(var candidate in session.Enemies)
@@ -590,6 +600,7 @@ namespace Emberfall
         private void BasicAttack()
         {
             if (TraversalStartedThisFrame || skillBasicRecovery.Blocked) return;
+            if(!MobilePinnedActionAllowed(-1,true))return;
             if (charge != null && (charge.IsCharging || charge.ConsumedThisFrame)) return;
             if ((HeroClass==HeroClass.Arcanist || HeroClass==HeroClass.Summoner) && !ValidAimTarget(AimTarget)) AimTarget=MagicConeTarget();
             FaceAim();
@@ -633,6 +644,9 @@ namespace Emberfall
 
         private bool Melee(float range, float arc, CombatDamage damage, float knockback, float stun, float knockdown = 0, bool basic = false, int skillIndex = -1, int castId = 0)
         {
+            CombatImpactBatch.Begin();
+            try
+            {
             if(castId==0)castId=NewCastId();
             lastMeleeDamagedEnemy = false;
             DestructibleProp.StrikeCone(this,transform.position,transform.forward,range,arc,damage,castId);
@@ -661,6 +675,9 @@ namespace Emberfall
             if (CombatReviewEvents.Enabled && !lastMeleeDamagedEnemy) CombatReviewEvents.Emit(basic ? "basicmiss" : "spellmiss",CombatReviewObjectId.Get(this),skill:skillIndex,detail:"melee_release_no_enemy_damage;props_not_counted");
             if (hit && basic) OnBasicAttackHitTarget(firstHitPosition, firstHit, true);
             return hit;
+
+            }
+            finally {CombatImpactBatch.End();}
         }
 
         // Legacy energy-validation entry point has no confirmed target and does
@@ -816,6 +833,9 @@ namespace Emberfall
         internal void RegisterSkillHit(int castId){if(session!=null&&!session.InputBlocked&&!session.CombatEnded&&!IsDead)masteryCore.SkillHit(castId);}
         internal void ElementalAdvancedArea(Vector3 at, float radius, CombatDamage direct, int castId, bool final)
         {
+            CombatImpactBatch.Begin();
+            try
+            {
             int impactEpoch=CombatEpoch;
             DestructibleProp.StrikeArea(this,at,radius,direct,castId);
             foreach (EnemyController enemy in session.Enemies.ToArray())
@@ -837,8 +857,11 @@ namespace Emberfall
                     else if (status.TryShatter(this, castId)) amount += direct.WithoutCritical().Amount * .6f;
                 }
                 enemy.TakeDamage(amount, Vector3.zero, 0, final?.3f:0, critical:direct.IsCritical);
-                if(burnSettlement!=null)burnSettlement.Apply();
+                if(burnSettlement!=null&&burnSettlement.Apply())RecordBurnCash(castId,impactEpoch,enemy.transform.position);
             }
+
+            }
+            finally {CombatImpactBatch.End();}
         }
 
         internal void ApplyNovaStatus(EnemyController enemy, int rank)
@@ -934,6 +957,9 @@ namespace Emberfall
 
         internal void HitArea(Vector3 at, float radius, CombatDamage damage, float knockback = 0, float stun = 0, int castId = 0, ProjectileVolleyBudget<EnemyController> volley = null)
         {
+            CombatImpactBatch.Begin();
+            try
+            {
             if(castId==0)castId=NewCastId();
             DestructibleProp.StrikeArea(this,at,radius,damage,castId);
             for (int i = session.Enemies.Count - 1; i >= 0; i--)
@@ -943,6 +969,9 @@ namespace Emberfall
                 Vector3 delta = CombatFx.Flat(enemy.transform.position - at);
                 if (delta.magnitude <= radius + (enemy.IsBoss ? .85f : .4f) + enemy.HitFootprintBonus && CombatSight.Area(at,enemy.transform.position)) { var impact=volley==null?damage:volley.Apply(enemy,damage,true);if(impact.Amount<=0)continue;RegisterSkillHit(castId);ApplySpellDodgeBoon(enemy);enemy.TakeDamage(impact.Amount,delta.normalized,knockback,stun,critical:impact.IsCritical); }
             }
+
+            }
+            finally {CombatImpactBatch.End();}
         }
 
         internal void SkillDash(Vector3 direction, float distance, float protection)
@@ -1072,17 +1101,8 @@ namespace Emberfall
         public bool CanShatterNow(int skill=1)
         {
             if(HeroClass!=HeroClass.Arcanist||Specialization==ElementalistSpecialization.Burn||skill!=1||!SkillTargetingReady(skill))return false;
-            Vector3 point=aimPoint;EnemyController selected;
-            if(targeting!=null&&targeting.IsTargeting)
-            {if(targeting.TargetedSkillIndex!=skill)return false;point=targeting.TargetPoint;}
-            else if(MobileControls.Active)ResolveMobileSkillAim(skill,out selected,out point);
-            float range=GameBalance.SkillRangeMultiplier(session.Progression.Profile.skillRanks[skill]);
-            Vector3 center=ResolveSkillGroundTarget(point,range);float radius=3f*range;
-            foreach(var enemy in session.Enemies)
-                if(ValidAimTarget(enemy)&&enemy.StatusEffects!=null&&enemy.StatusEffects.HasFrostMark&&
-                    CombatFx.Flat(enemy.transform.position-center).magnitude<=radius+(enemy.IsBoss?.85f:.4f)+enemy.HitFootprintBonus&&
-                    CombatSight.Area(center,enemy.transform.position))return true;
-            return false;
+            if(!MobilePinnedActionAllowed(skill,false))return false;
+            return ElementalOpportunityRemaining(skill,CombatOpportunityKind.Shatter)>0;
         }
 
         internal bool CanBeginSkillTargeting(int skill)
@@ -1107,7 +1127,7 @@ namespace Emberfall
         internal bool CastImmediateSkill(int skill)
         {
             if (CombatReviewEvents.Enabled) CombatReviewEvents.Emit("skillattempt",CombatReviewObjectId.Get(this),skill:skill);
-            if(SkillTargetingController.RequiresConfirmation(HeroClass,skill) || !CanBeginSkillTargeting(skill)) return false;
+            if(SkillTargetingController.RequiresConfirmation(HeroClass,skill) || !CanBeginSkillTargeting(skill) || !MobilePinnedActionAllowed(skill,true)) return false;
             // Mouse aim is resolved independently of movement. Re-read a selected
             // living target's position here so immediate directional casts face it.
             FaceAim();
@@ -1119,7 +1139,7 @@ namespace Emberfall
         internal bool ConfirmTargetedSkill(int skill,Vector3 worldPoint)
         {
             if (CombatReviewEvents.Enabled) CombatReviewEvents.Emit("skillattempt",CombatReviewObjectId.Get(this),skill:skill);
-            if(!SkillTargetingController.RequiresConfirmation(HeroClass,skill) || !CanBeginSkillTargeting(skill)) return false;
+            if(!SkillTargetingController.RequiresConfirmation(HeroClass,skill) || !CanBeginSkillTargeting(skill) || !MobilePinnedActionAllowed(skill,true)) return false;
             EnemyController selected=AimTarget;
             aimPoint=CombatSight.GroundPoint(transform.position,worldPoint);
             // Ground spell placement normally owns a point. A selected summon

@@ -12,6 +12,14 @@ namespace Emberfall
         public bool HasFrostMark { get { return frozenTime > 0 || frostMarkTime > 0; } }
         public bool IsMarked { get { return markTime > 0; } }
         public bool IsBurning { get { return burnTime > 0; } }
+        public float FrostRemaining {get{return Mathf.Max(frozenTime,frostMarkTime);}}
+        public float OwnPoisonOpportunityRemaining(PlayerController source)
+        {return source!=null&&poisonSource==source&&sourceEpoch==source.CombatEpoch&&PoisonStacks>=3?poisonTime:0;}
+        public float PoisonRemaining {get{return poisonTime;}}
+        public float MarkRemaining {get{return markTime;}}
+        public float BurnRemaining {get{return burnTime;}}
+        public float OwnBurnRemaining(PlayerController source)
+        {return source!=null&&burnSource==source&&burnEpoch==source.CombatEpoch?burnTime:0;}
         public bool KnockedDown { get { return downTime > 0; } }
         public bool IsAirborne { get { return airborneTime > 0; } }
         public float AirborneHeight { get { return airborneTime <= 0 ? 0 : Mathf.Sin(Mathf.Clamp01(1f - airborneTime / airborneDuration) * Mathf.PI) * airborneHeight; } }
@@ -210,18 +218,20 @@ namespace Emberfall
             internal int Ticks {get;private set;}
             internal BurnFinaleSettlement(EnemyStatusEffects status,PlayerController source,int epoch,int ticks,float amount)
             {this.status=status;this.source=source;this.epoch=epoch;this.amount=amount;Ticks=ticks;}
-            internal void Apply()
+            internal bool Apply()
             {
-                if(applied)return;applied=true;
-                if(status==null||status.enemy==null||status.enemy.IsDead||!status.ValidSource(source,epoch))return;
+                if(applied)return false;applied=true;
+                if(status==null||status.enemy==null||status.enemy.IsDead||!status.ValidSource(source,epoch))return false;
                 // Already-claimed DOT budget: never re-enter spell-hit/crit/resource hooks.
+                float before=status.enemy.Health;
                 status.enemy.TakeDamage(amount,Vector3.zero,impact:false);
+                return status.enemy.Health<before;
             }
         }
         internal BurnFinaleSettlement PrepareBurnFinale(PlayerController source,int castId,float refreshedTotalDamage)
         {return !FinitePositive(refreshedTotalDamage)?null:CompleteBurnFinale(BeginBurnFinale(source,castId),refreshedTotalDamage);}
         internal int ResolveBurnFinale(PlayerController source,int castId,float refreshedTotalDamage)
-        {var settlement=PrepareBurnFinale(source,castId,refreshedTotalDamage);if(settlement==null)return 0;settlement.Apply();return settlement.Ticks;}
+        {var settlement=PrepareBurnFinale(source,castId,refreshedTotalDamage);if(settlement==null)return 0;return settlement.Apply()?settlement.Ticks:0;}
         private void AdvanceBurnClock(float delta)
         {
             if(burnSchedule==null||burnSchedule.Complete)return;

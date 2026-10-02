@@ -59,7 +59,7 @@ namespace Emberfall
             long key=unchecked(((long)owner.CombatEpoch+1L)<<32)|(uint)castId;
             PropHitResult result=rules.Hit(key,damage.Amount);if(!result.Applied)return;
             hitAt=Time.time;
-            HitFeedback.Spawn(transform.position+Vector3.up*.6f,transform.position-owner.transform.position,result.Broke?1f:.6f,damage.IsCritical);
+            HitFeedback.Spawn(transform.position+Vector3.up*.6f,transform.position-owner.transform.position,result.Broke?1f:.6f,damage.IsCritical,priority:CombatVisualPriority.RealContact);
             if(!result.Broke)return;
             ReleaseObstacle();visual.gameObject.SetActive(false);
             DestructibleDebrisBurst.Spawn(transform,debrisMaterial,EffectPreferences.ReducedEffects?2:4);

@@ -66,7 +66,7 @@ namespace Emberfall
         public bool Begin(int index)
         {
             if(castFrame==Time.frameCount||owner==null||index<0||index>=GameBalance.SkillCount||GameBalance.IsPassive(index))return false;
-            if(MobileControls.Active)owner.PrepareMobileSkillAim(index);
+            if(MobileControls.Active){if(!owner.MobilePinnedActionAllowed(index,true))return false;owner.PrepareMobileSkillAim(index);}
             if(!owner.CanBeginSkillTargeting(index))return false;
             if(MobileControls.Active&&RequiresConfirmation(owner.HeroClass,index))
             {

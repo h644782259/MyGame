@@ -12,7 +12,10 @@ assert 'private void OpenChapterExchange()' in chapter and 'campTab=1;panel=Pane
 assert 'if(session.NearChapterExit)session.EnterNextChapterRoom();' in mobile,'real touch action advances chapter, not legacy room'
 assert 'session.ChapterObjectiveCompact' in modes and modes.index('if(session.ChapterActive)')<modes.index('if(session.RoomChainRun!=null)'),'chapter mobile state precedes nullable legacy mode access'
 assert ui.index('else if(session.ChapterFinished)DrawChapterResult();')<ui.index('else if(session.ModeFinished)'),'chapter result does not fall into legacy mode reward recap'
-assert 'session.ChapterRewardMaterials' in chapter and 'if(!failed&&!pending)' in chapter,'committed result uses captured actual reward'
+presentation=(r/'ChapterEntryPresentation.cs').read_text()
+assert 'ChapterEntryPresentation.Result(session.ChapterResult)' in chapter and presentation.index('if(!result.Saved)return')<presentation.index('text+="奖励已保存'),'committed result uses saved actual snapshot only'
+assert 'else if (session.IsDead) {if(session.ChapterFinished)DrawChapterResult();else DrawDeath();}' in ui,'chapter failure routes evidence while nonchapter death retains original UI'
+assert 'if(!session.ChapterResultReady)' in chapter and 'session.ContinueChapterResult()' in chapter,'chapter result waits for actual boss visual and explicit continue'
 assert 'if(panel==Panel.Chapter||session.ChapterFinished)return;' in ui,'toast cannot cover fixed chapter actions'
 assert all(name not in chapter for name in ['SelectedArenaMode','SelectedDungeonTier','SelectedChallengeMode']),'chapter choices never change legacy selections'
 print('PASS: chapter NPC/entry/exit/result wiring and old-routing mutation controls')

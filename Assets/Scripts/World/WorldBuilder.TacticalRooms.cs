@@ -19,10 +19,10 @@ namespace Emberfall
                 BuildBridgeWaterContact(parent,r,new Rect((bridge.xMin+bridge.xMax)*.5f-2.7f,-3,5.4f,6),.14f);
             }
         }
-        public static GameObject MakeRoomObjective(Vector3 position)
+        public static GameObject MakeRoomObjective(Vector3 position,bool chapterSeal=false)
         {
             GameObject root=new GameObject("Room capture boundary");root.transform.position=position;
-            WorldResources r=root.AddComponent<WorldResources>();Material gold=r.Material(new Color(1,.8f,.25f),true);
+            WorldResources r=root.AddComponent<WorldResources>();Material gold=r.Material(chapterSeal?new Color(.18f,.25f,.27f):new Color(1,.8f,.25f),!chapterSeal);
             Ring(root.transform,r,"Stand inside",position+Vector3.up*.08f,RoomTacticalRegion.CaptureRadius,.09f,gold,false);
             Crystal(root.transform,r,position+Vector3.up*.6f,.35f,gold);
             return root;

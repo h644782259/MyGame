@@ -7,16 +7,16 @@ def member(file,signature):
  s=(root/file).read_text();a=s.index(signature);b=s.index('{',a)+1;d=1
  while d:d+=(s[b]=='{')-(s[b]=='}');b+=1
  return s[a:b]
-core=['GameTypes','ProgressionService','ProgressionService.Chapter','ProgressionService.Reforge','ReforgeQuote','ChapterProgression','ChapterCombatRun','RoomTactics','RoomTacticalRegion','CombatBalance','HubTravelRules','MasteryCoreRuntime','TierRewardRules','TierRewardBand','ProgressionGoalState','AdventureResultPolicy','GameSession.Chapter','EscapePostPolicy','ApplicationPauseState','SafeSaveFlow','SaveLifecycleGate','RoomChainState','ExpeditionModeState']
+core=['GameTypes','ProgressionService','ProgressionService.Chapter','ProgressionService.Reforge','ReforgeQuote','ChapterProgression','ChapterResultSnapshot','ChapterCombatRun','RoomTactics','RoomTacticalRegion','CombatBalance','HubTravelRules','MasteryCoreRuntime','TierRewardRules','TierRewardBand','ProgressionGoalState','AdventureResultPolicy','GameSession.Chapter','EscapePostPolicy','ApplicationPauseState','SafeSaveFlow','SaveLifecycleGate','RoomChainState','ExpeditionModeState']
 with tempfile.TemporaryDirectory(prefix='chapter-return-clock-') as t:
  p=Path(t)
  for n in core:(p/(n+'.cs')).write_text((root/'Assets/Scripts/Core'/(n+'.cs')).read_text())
- for path in ['Assets/Scripts/World/ChapterRoomGeometry.cs','Tests/ProgressionTests.cs','Tests/ChapterReturnTimeScaleTests.cs']:(p/Path(path).name).write_text((root/path).read_text())
+ for path in ['Assets/Scripts/World/ChapterRoomGeometry.cs','Assets/Scripts/UI/ChapterEntryPresentation.cs','Tests/ProgressionTests.cs','Tests/ChapterReturnTimeScaleTests.cs']:(p/Path(path).name).write_text((root/path).read_text())
  fixture=(root/'Tests/ChapterHostFixture.cs').read_text()
  replacements={
  'deltaTime=.25f,time;':'deltaTime=.25f,time,timeScale=1;',
  'public int CombatEpoch=1,':'public void Initialize(GameSession s,HeroClass h){}public int CombatEpoch=1,',
- 'public class FakeChoices {public void Reset(){}}':'public class FakeChoices {public bool AwaitingChoice;public void Reset(){AwaitingChoice=false;}}',
+ 'public class FakeChoices {public void Reset(){}public void Cancel(){}}':'public class FakeChoices {public bool AwaitingChoice;public void Reset(){AwaitingChoice=false;}public void Cancel(){AwaitingChoice=false;}}',
  'Paused,BackgroundPaused,IsInCamp=true;':'Paused,IsInCamp=true;public bool BackgroundPaused=>pauseState.BackgroundPaused;',
  'public bool InputBlocked=>Paused||BackgroundPaused||IsDead||ChapterFinished;':member('Assets/Scripts/Core/GameSession.cs','public bool InputBlocked'),
  'void UpdateTimeScale(){}':'',
@@ -28,7 +28,7 @@ with tempfile.TemporaryDirectory(prefix='chapter-return-clock-') as t:
   assert a in fixture,a
   fixture=fixture.replace(a,b)
  (p/'Fixture.cs').write_text(fixture)
- methods=[member('Assets/Scripts/Core/GameSession.cs',sig) for sig in ['private bool ContinueAdventure(string slotId, bool discardUnsaved = false, bool alreadySaved = false)','public bool LoadSaveFromPause(','private bool ChangeZone(bool dungeon)','public bool SaveBeforeLeaving()','private void SpawnEnemy(','public void OnEnemyKilled(','public void ReturnToCamp()','private void UpdateTimeScale()','private void BeginAdventure()','private void DiscardTransientAdventureForLoad()','public void Respawn()','public bool QuitToTitle(']]
+ methods=[member('Assets/Scripts/Core/GameSession.cs',sig) for sig in ['private bool ContinueAdventure(string slotId, bool discardUnsaved = false, bool alreadySaved = false)','public bool LoadSaveFromPause(','private bool ChangeZone(bool dungeon)','public bool SaveBeforeLeaving()','private void SpawnEnemy(','public void OnEnemyKilled(','public void OnPlayerDied()','public void ReturnToCamp()','private void UpdateTimeScale()','private void BeginAdventure()','private void DiscardTransientAdventureForLoad()','public void Respawn()','public bool QuitToTitle(']]
  methods.append(member('Assets/Scripts/Core/GameSession.RoomTactics.cs','private static bool LiveRoomEnemy('))
  methods+=[member('Assets/Scripts/Core/GameSession.Expedition.cs','private void ResetExpedition('),member('Assets/Scripts/Core/GameSession.Modes.cs','public bool ModeFinished')]
  (p/'Lifecycle.cs').write_text('using System.Collections.Generic;using UnityEngine;namespace Emberfall{public sealed partial class GameSession{'+''.join(methods)+'}}')

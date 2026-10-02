@@ -19,9 +19,10 @@ namespace Emberfall
             if(previousOwner!=hero||previousEpoch!=hero.CombatEpoch)
             {Hide();previousOwner=hero;previousEpoch=hero.CombatEpoch;return;}
             Ensure();
-            EnemyController target=hero.AimTarget,focus=hero.HeroClass==HeroClass.Summoner?SummonedCompanion.ExplicitFocus(hero):null;
+            EnemyController pinned=hero.MobilePinnedTarget;
+            EnemyController target=pinned!=null?pinned:hero.AimTarget,focus=hero.HeroClass==HeroClass.Summoner?SummonedCompanion.ExplicitFocus(hero):null;
             if(focus==null)focus=hero.FocusTarget;
-            Mark(0,Valid(target)?target.transform.position:Vector3.zero,Valid(target),.72f,new Color(.6f,.9f,1f),0);
+            Mark(0,Valid(target)?target.transform.position:Vector3.zero,Valid(target),.72f,new Color(.6f,.9f,1f),pinned!=null?3:0);
             Mark(1,Valid(focus)?focus.transform.position:Vector3.zero,Valid(focus),1f,new Color(.45f,1f,.55f),1);
             var charge=hero.GetComponent<SkillChargeController>();
             // TargetPoint is the committed aim snapshot, never today's auto-target.
@@ -44,7 +45,13 @@ namespace Emberfall
         {
             var line=marks[index];line.enabled=show;if(!show)return;
             center.y=.16f;line.startColor=line.endColor=color;
-            if(shape==1)
+            if(shape==3)
+            {
+                points[0]=center+new Vector3(-radius,0,-radius);points[1]=center+new Vector3(-radius,0,radius);
+                points[2]=center+new Vector3(radius,0,radius);points[3]=center+new Vector3(radius,0,-radius);points[4]=points[0];
+                line.positionCount=5;for(int i=0;i<5;i++)line.SetPosition(i,points[i]);
+            }
+            else if(shape==1)
             {
                 points[0]=center+Vector3.forward*radius;points[1]=center+Vector3.right*radius;
                 points[2]=center-Vector3.forward*radius;points[3]=center-Vector3.right*radius;points[4]=points[0];

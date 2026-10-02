@@ -30,18 +30,18 @@ namespace Emberfall
             return CombatSight.Area(transform.position,point)&&CombatSight.VisualFootprint(point,point,extent*scale);
         }
 
-        public static ElementalFieldVisual Spawn(Transform parent, ElementalCombatVfx.Element type, float size, bool body)
+        public static ElementalFieldVisual Spawn(Transform parent, ElementalCombatVfx.Element type, float size, bool body,CombatVisualPriority priority=CombatVisualPriority.SustainedBackground)
         {
             if(activeCount>=(MobileControls.Active?12:20))return null;
             GameObject obj = new GameObject(type + " Silhouette");
             obj.transform.SetParent(parent, false);
-            if(CombatVisualLease.Attach(obj,CombatVisualPriority.Sustained)==null)return null;
+            if(CombatVisualLease.Attach(obj,priority)==null)return null;
             ElementalFieldVisual effect = obj.AddComponent<ElementalFieldVisual>();
             effect.Initialize(type, size, body);
             return effect;
         }
 
-        private void Initialize(ElementalCombatVfx.Element type, float size, bool body)
+        private void Initialize(ElementalCombatVfx.Element type, float size, bool body,CombatVisualPriority priority=CombatVisualPriority.SustainedBackground)
         {
             activeCount++;counted=true;
             element = type;

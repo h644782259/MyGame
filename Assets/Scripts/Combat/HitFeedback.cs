@@ -15,7 +15,7 @@ namespace Emberfall
         private Vector3[] directions;
         private Material material;
         private float age, strength, effectsScale;
-        private bool critical;
+        private bool critical,registered;
         private Color coreColor;
         private float Duration { get { return critical ? .27f : .21f; } }
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
@@ -35,10 +35,11 @@ namespace Emberfall
 
         public static void ClearCamera() { cameraStarted = -10f; nextCameraTime = 0; cameraStrength = 0; }
 
-        public static void Spawn(Vector3 point, Vector3 direction, float intensity, bool isCritical = false)
+        public static void Spawn(Vector3 point, Vector3 direction, float intensity, bool isCritical = false,CombatVisualPriority priority=CombatVisualPriority.RealContact)
         {
             if (activeCount >= 24) return;
             var obj = new GameObject(isCritical ? "Critical hit impact" : "Hit impact");
+            if(CombatVisualLease.Attach(obj,priority)==null)return;
             obj.transform.position = point;
             var impact = obj.AddComponent<HitFeedback>();
             impact.critical = isCritical;
@@ -55,7 +56,7 @@ namespace Emberfall
 
         private void Build(Vector3 incoming)
         {
-            activeCount++;
+            registered=true;activeCount++;
             material = CombatFx.NewGlow();
             view = Camera.main;
             rayCount = Mathf.Max(3, Mathf.RoundToInt((critical ? 10 : strength >= 1.5f ? 7 : 5) * effectsScale));
@@ -135,6 +136,8 @@ namespace Emberfall
             UpdateGeometry(t);
         }
 
-        private void OnDestroy() { activeCount = Mathf.Max(0, activeCount - 1); if (material != null) Destroy(material); if(mesh!=null)Destroy(mesh); }
+        private void Release(){if(!registered)return;registered=false;activeCount=Mathf.Max(0,activeCount-1);}
+        private void OnDisable(){Release();}
+        private void OnDestroy() { Release(); if (material != null) Destroy(material); if(mesh!=null)Destroy(mesh); }
     }
 }

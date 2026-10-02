@@ -51,6 +51,6 @@ check('MobileSkillPolicy.ButtonCount' in cast and 'MobileSkillPolicy.SkillAtButt
 release=method(mobile,'private void ContinueMobileCast(')
 check('mobileTap.Release' in release and 'targeting.Begin(skill)' in release,'single committed touch release dispatches the real targeting/cast path')
 pointer=method(controls,'public bool ProcessPointer(')
-check('cameraGesture.Begin(finger,screen.y)' in pointer and 'ui.IsScreenPointOverUI(screen)' in pointer,'camera ownership begins only outside UI')
+check('cameraGesture.Begin(finger,screen.x,screen.y)' in pointer and 'ui.IsScreenPointOverUI(screen)' in pointer,'camera ownership begins only outside UI')
 check('moveFinger == -1000' in pointer and 'Role.Skill' in pointer and 'Role.Attack' in pointer and 'ActivateMobileInteraction(finger)' in pointer,'movement, skill, attack and contextual action keep independent touch ownership')
 print(f'PASS: {checks} mobile interaction/dialog source contracts (not Unity execution)')

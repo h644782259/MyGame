@@ -7,7 +7,7 @@ namespace Emberfall
   static GameSession ClockFixture(string path)
   {
    var s=new GameSession{Progression=new ProgressionService(path)};Clock(s.Progression.CreateNewSlot(HeroClass.Vanguard),"real saved role fixture");s.FixtureUnlock();s.SelectedChapterNode=ChapterNode.StarPlatform;
-   Clock(s.ConfirmChapterEnter(),"real chapter entry");s.Player.transform.position=new Vector3(0,0,14);Clock(s.EnterNextChapterRoom(),"real boss room entry");return s;
+   Clock(s.ConfirmChapterEnter(),"real chapter entry");Clock(s.ChapterRoomIndex==0&&s.ChapterRun.Objective==RoomObjective.Boss,"direct single boss room entry");return s;
   }
   static void FinishForClock(GameSession s){while(s.Enemies.Count>0)s.OnEnemyKilled(s.Enemies[0]);Clock(s.ChapterFinished&&s.ModeFinished&&Time.timeScale==0,"actual finalize freezes terminal chapter");}
   public static string VerifyReturnClock(string root)
@@ -26,7 +26,7 @@ namespace Emberfall
     s=ClockFixture(Path.Combine(root,"pause"+mask));FinishForClock(s);s.Paused=(mask&1)!=0;s.uiBlocking=(mask&2)!=0;s.pauseState.SetFocus((mask&4)==0);s.pauseState.SetSuspended((mask&8)!=0);new GameUI(s).Return();
     Clock(!s.ChapterActive&&Time.timeScale==0&&s.Paused==((mask&1)!=0)&&s.uiBlocking==((mask&2)!=0)&&s.BackgroundPaused==((mask&12)!=0),"return preserves independent manual UI focus and suspend gates");
    }
-   s=ClockFixture(Path.Combine(root,"dead"));s.FailForTest();s.IsDead=true;new GameUI(s).Return();Clock(s.ChapterActive&&Time.timeScale==0,"dead chapter cannot bypass respawn through return");s.Respawn();Clock(!s.ChapterActive&&!s.IsDead&&Time.timeScale==1,"actual respawn restores camp clock");
+   s=ClockFixture(Path.Combine(root,"dead"));s.FailForTest();s.IsDead=true;s.Progression.Profile.gold++;Directory.CreateDirectory(s.Progression.SaveFilePath+".tmp");var failedEvidence=s.ChapterResult;new GameUI(s).Return();Clock(s.ChapterActive&&s.IsDead&&s.ChapterResult==failedEvidence&&Time.timeScale==0,"chapter failure respawn write rejection preserves death evidence and frozen world");Directory.Delete(s.Progression.SaveFilePath+".tmp");new GameUI(s).Return();Clock(!s.ChapterActive&&!s.IsDead&&Time.timeScale==1,"chapter failure UI retries actual respawn and restores camp clock");
    s=ClockFixture(Path.Combine(root,"gates"));FinishForClock(s);new GameUI(s).Return();
    s.DungeonSelectionOpen=true;s.UpdateTimeScale();Clock(Time.timeScale==0,"selection gate remains authoritative");s.DungeonSelectionOpen=false;s.RunChoices.AwaitingChoice=true;s.UpdateTimeScale();Clock(Time.timeScale==0,"choice gate remains authoritative");s.RunChoices.AwaitingChoice=false;s.IsDead=true;s.UpdateTimeScale();Clock(Time.timeScale==0,"death gate remains authoritative");s.IsDead=false;s.UpdateTimeScale();Clock(Time.timeScale==1,"all actual gates released resumes clock");
    // A new role's load can fail after old-world discard; no player/world may keep time advancing.

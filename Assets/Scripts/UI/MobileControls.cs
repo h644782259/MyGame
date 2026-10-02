@@ -10,6 +10,7 @@ namespace Emberfall
         private enum Role { Move, Attack, Skill, Aim, Camera, Consumed }
         private readonly Dictionary<int, Role> fingers = new Dictionary<int, Role>();
         private readonly MobileCameraGesture cameraGesture=new MobileCameraGesture();
+        private PlayerController worldPointerOwner;private EnemyController worldPointerTarget;private int worldPointerEpoch;
         private readonly List<int> staleFingers = new List<int>();
         private static MobileControls instance;
         public static bool SimulationEnabled { get; set; }
@@ -69,7 +70,7 @@ namespace Emberfall
         public static void ResetInput()
         {
             Move = Vector2.zero; AttackHeld = dodge = potion = jump = false;
-            if (instance != null) { instance.fingers.Clear(); instance.cameraGesture.Cancel(); instance.moveFinger = -1000; instance.hasJoystickOrigin=false; if(instance.ui!=null)instance.ui.CancelMobileCast(); }
+            if (instance != null) { instance.fingers.Clear(); instance.cameraGesture.Cancel(); instance.worldPointerOwner=null; instance.worldPointerTarget=null; instance.moveFinger = -1000; instance.hasJoystickOrigin=false; if(instance.ui!=null)instance.ui.CancelMobileCast(); }
         }
         private Vector2 ToUI(Vector2 screen) { return (new Vector2(screen.x, Screen.height - screen.y) - Offset) / Scale; }
         public Vector2 ControlScreenPoint(string name)
@@ -91,7 +92,7 @@ namespace Emberfall
             if(safe!=lastSafe) { ResetInput();lastSafe=safe; }
             if (session.InputBlocked)
             {
-                Move = Vector2.zero; AttackHeld = dodge = potion = jump = false; moveFinger = -1000;cameraGesture.Cancel();
+                Move = Vector2.zero; AttackHeld = dodge = potion = jump = false; moveFinger = -1000;cameraGesture.Cancel();worldPointerOwner=null;worldPointerTarget=null;
                 staleFingers.Clear();
                 foreach (KeyValuePair<int, Role> finger in fingers) if (finger.Value != Role.Skill) staleFingers.Add(finger.Key);
                 foreach (int finger in staleFingers) fingers.Remove(finger);
@@ -154,9 +155,14 @@ namespace Emberfall
                 }
                 else if (Jump.Contains(point)) { jump = true; role = Role.Consumed; }
                 else if (targeting != null && targeting.IsTargeting && (ui == null || !ui.IsScreenPointOverUI(screen))) role = Role.Aim;
-                else if(ui==null||!ui.IsScreenPointOverUI(screen))
-                {role=cameraGesture.Begin(finger,screen.y)?Role.Camera:Role.Consumed;}
-                else return false;
+                else if(SafeArea.Contains(screen)&&(ui==null||!ui.IsScreenPointOverUI(screen)))
+                {
+                    bool available=true;foreach(var existing in fingers.Values)if(existing!=Role.Move){available=false;break;}
+                    role=available&&cameraGesture.Begin(finger,screen.x,screen.y)?Role.Camera:Role.Consumed;
+                    if(role==Role.Camera){worldPointerOwner=session.Player;worldPointerEpoch=worldPointerOwner.CombatEpoch;worldPointerTarget=worldPointerOwner.PickMobileTarget(screen);}
+                }
+                else {cameraGesture.Cancel();return false;}
+                if(role!=Role.Move&&role!=Role.Camera)cameraGesture.Cancel();
                 fingers[finger] = role;
             }
             else if (!fingers.TryGetValue(finger, out role)) return false;
@@ -170,7 +176,14 @@ namespace Emberfall
             }
             else if(role==Role.Camera)
             {
-                float delta=cameraGesture.Move(finger,screen.y,Scale,ended,phase==TouchPhase.Canceled);
+                bool valid=worldPointerOwner!=null&&session.Player==worldPointerOwner&&worldPointerOwner.CombatEpoch==worldPointerEpoch&&!session.InputBlocked;
+                float delta=cameraGesture.Move(finger,screen.x,screen.y,Scale,ended,phase==TouchPhase.Canceled||!valid);
+                if(cameraGesture.TapCompleted&&valid&&(ui==null||!ui.IsScreenPointOverUI(screen))&&!IsScreenPointOverControls(screen)&&SafeArea.Contains(screen))
+                {
+                    var picked=worldPointerOwner.PickMobileTarget(screen);
+                    if(picked==worldPointerTarget)worldPointerOwner.PinMobileTarget(picked);
+                }
+                if(ended){worldPointerOwner=null;worldPointerTarget=null;}
                 if(delta!=0&&Camera.main!=null){var camera=Camera.main.GetComponent<AdventureCamera>();if(camera!=null)camera.ApplyMobilePitch(delta);}
             }
             else if (role == Role.Aim && targeting != null && targeting.IsTargeting)

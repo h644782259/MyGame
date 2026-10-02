@@ -37,14 +37,17 @@ namespace Emberfall
         public static void Slash(Vector3 center, Vector3 forward, float radius, Color color)
         {
             var game=GameSession.Instance;
-            if(game!=null)FilledSkillVfx.Crescent(game.Player,center,forward,radius,color,1);
+            if(game!=null)FilledSkillVfx.Crescent(game.Player,center,forward,radius,color,1,CombatVisualPriority.Decoration);
         }
         public static void WeaponSlash(PlayerController owner,CombatModel model,Vector3 center,Vector3 forward,float radius,Color color)
         {
             if(owner==null||model==null||!model.SwordActionActive)return;
-            FilledSkillVfx.Crescent(owner,center,forward,radius,color,model.WeaponSwingSide);
+            FilledSkillVfx.Crescent(owner,center,forward,radius,color,model.WeaponSwingSide,CombatVisualPriority.ActionBody);
             WeaponSlashRibbon.Spawn(owner,model,color);
         }
+
+        internal static void BurnContact(PlayerController owner,Vector3 point,bool finale=false)
+        {FilledSkillVfx.BurnContact(owner,point,finale);}
 
         public static Material NewGlow()
         {
@@ -141,6 +144,7 @@ namespace Emberfall
         private PlayerController owner;
         private PlayerController playerGeneration;
         private SummonedCompanion companionSource;
+        private bool empoweredCompanionShot;
         private Vector3 direction;
         private float speed, radius, age, lifetime, explosionRadius;
         private CombatDamage damage, explosionDamage;
@@ -175,6 +179,7 @@ namespace Emberfall
             projectile.pierce = piercing;
             projectile.basicAttack = basic;
             projectile.homingTarget = tracking; projectile.companionSource = companionSource;
+            projectile.empoweredCompanionShot=companionSource!=null&&companionSource.EmpoweredAttackActive;
             projectile.arrowShape = arrow;
             projectile.explosionDamage = blastDamage;
             projectile.explosionRadius = blastRadius;
@@ -379,7 +384,7 @@ namespace Emberfall
                         enemy.StatusEffects.Mark(4f, impactMarkStrength);
                     if(impact.Amount>0){if(!basicAttack&&companionSource==null)owner.RegisterSkillHit(castId);enemy.TakeDamage(owner.ResolveSkillImpact(enemy, skillIndex, castId, impact.Amount, impact.IsCritical, impact.CriticalMultiplier), direction, .18f, critical:impact.IsCritical);}
                     if (CombatReviewEvents.Enabled) CombatReviewEvents.Emit("projectilehit",CombatReviewObjectId.Get(owner),CombatReviewObjectId.Get(enemy),Mathf.Max(0,healthBefore-enemy.Health),skillIndex,CombatReviewObjectId.Get(this).ToString());
-                    if (companionSource != null) companionSource.OnConfirmedHit(enemy);
+                    if (companionSource != null) {companionSource.OnConfirmedHit(enemy);companionSource.RecordEmpoweredHit(enemy,Mathf.Max(0,healthBefore-enemy.Health),empoweredCompanionShot);}
                     CombatFx.Ring(hitPosition, .7f, color, .2f);
                     if (basicAttack && !energyAwarded)
                     {
@@ -505,6 +510,8 @@ namespace Emberfall
                 fallingOrb.transform.Rotate(Time.deltaTime*120f,Time.deltaTime*70f,0,Space.Self);
                 if (age >= delay) { Destroy(fallingOrb); fallingOrb = null; }
             }
+            CombatImpactBatch.Begin();try
+            {
             for (int tick = 0; tick < ScheduledTickWindow.MaximumCatchUp; tick++)
             {
                 if (!IsCurrentCast) { Retire(); return; }
@@ -513,7 +520,7 @@ namespace Emberfall
                 {
                     if (ScheduledTickWindow.Collect(ref nextTick, age, delay + duration, interval, 1) == 0) break;
                     pendingTickTargets.Begin(session.Enemies, true);
-                    if(visualRecipe==SkillVisualRecipe.ArrowRain)FilledSkillVfx.ArrowRain(owner,transform.position,radius,color);
+                    if(visualRecipe==SkillVisualRecipe.ArrowRain)FilledSkillVfx.ArrowRain(owner,transform.position,radius,color,priority:CombatVisualPriority.SustainedBackground);
                     if (!solidImpactSpawned)
                     {
                         solidImpactSpawned = true;
@@ -521,11 +528,11 @@ namespace Emberfall
                             ElementalCombatVfx.Area(transform, radius, fireVisual ? ElementalCombatVfx.Element.Fire :
                                 poisonVisual ? ElementalCombatVfx.Element.Poison : ElementalCombatVfx.Element.Lightning);
                         if(poisonVisual)FilledSkillVfx.PoisonVines(owner,transform.position,radius,color);
-                        if (fireVisual) FilledSkillVfx.Impact(owner, transform.position, radius, FilledVfxKind.Fire, new Color(1f,.43f,.12f));
+                        if (fireVisual) FilledSkillVfx.Impact(owner, transform.position, radius, FilledVfxKind.Fire, new Color(1f,.43f,.12f),CombatVisualPriority.ActionBody);
                         else if (visualRecipe == SkillVisualRecipe.Ice)
-                            FilledSkillVfx.Impact(owner, transform.position, radius, FilledVfxKind.Ice, new Color(.2f,.75f,1f));
+                            FilledSkillVfx.Impact(owner, transform.position, radius, FilledVfxKind.Ice, new Color(.2f,.75f,1f),CombatVisualPriority.ActionBody);
                         else if (visualRecipe == SkillVisualRecipe.Spirit || visualRecipe == SkillVisualRecipe.Arcane || visualRecipe == SkillVisualRecipe.Lightning || visualRecipe == SkillVisualRecipe.Steel)
-                            FilledSkillVfx.Impact(owner, transform.position, radius, SkillVisualRecipes.Filled(visualRecipe), color);
+                            FilledSkillVfx.Impact(owner, transform.position, radius, SkillVisualRecipes.Filled(visualRecipe), color,CombatVisualPriority.ActionBody);
                     }
                     if (tick == 0)
                     { DestructibleProp.StrikeArea(owner,transform.position,radius,damage,castId); CombatFx.Ring(transform.position,radius,color,.42f,.15f); }
@@ -574,13 +581,15 @@ namespace Emberfall
                     }
                 }
             }
+            }
+            finally { CombatImpactBatch.End(); }
             if (!IsCurrentCast) { Retire(); return; }
             if (session.InputBlocked) return;
             bool ticksDrained = !pendingTickTargets.Pending && ScheduledTickWindow.Drained(nextTick, delay + duration);
             if (!finished && finalDamage.Amount>0 && age>=delay+duration && ticksDrained)
             {
                 finished=true;
-                if(visualRecipe==SkillVisualRecipe.ArrowRain)FilledSkillVfx.ArrowRain(owner,transform.position,radius*1.1f,color,true);
+                if(visualRecipe==SkillVisualRecipe.ArrowRain)FilledSkillVfx.ArrowRain(owner,transform.position,radius*1.1f,color,true,CombatVisualPriority.Finale);
                 else AdvancedSkillVfx.Rune(owner,transform.position,radius*1.1f,color,.65f,3);
                 owner.HitArea(transform.position,radius*1.1f,finalDamage,.7f,.65f,castId);
             }

@@ -7,10 +7,10 @@ source=(root/'Assets/Scripts/Combat/CombatEffects.cs').read_text()
 start=source.index('        public static void Slash(');end=source.index('        public static Material NewGlow()',start)
 with tempfile.TemporaryDirectory(prefix='weapon-swing-identity-') as temp:
  p=Path(temp)
- for file in ['Assets/Scripts/Combat/WeaponVisualLinks.cs','Assets/Scripts/Core/WeaponStructure.cs','Tests/WeaponVisualLinkTests.cs']:(p/Path(file).name).write_text((root/file).read_text())
+ for file in ['Assets/Scripts/Combat/WeaponVisualLinks.cs','Assets/Scripts/Core/WeaponStructure.cs','Assets/Scripts/Core/CombatVisualBudget.cs','Tests/WeaponVisualLinkTests.cs']:(p/Path(file).name).write_text((root/file).read_text())
  fixture=(root/'Tests/FilledVfxAllocationTests.cs').read_text();fixture=fixture[fixture.index('namespace Emberfall'):]
  (p/'UnityFixture.cs').write_text('using System;using System.Collections.Generic;using System.Linq;using System.Reflection;using UnityEngine;\n'+fixture.replace('public static class CombatFx','public static partial class CombatFx'))
- dispatch=p/'Dispatch.cs';dispatch.write_text('using UnityEngine;namespace Emberfall {public static partial class CombatFx {'+source[start:end]+'}public static class FilledSkillVfx {public static int Crescents;public static void Crescent(PlayerController p,Vector3 at,Vector3 f,float r,Color c,int side){Crescents++;}}}')
+ dispatch=p/'Dispatch.cs';dispatch.write_text('using UnityEngine;namespace Emberfall {public static partial class CombatFx {'+source[start:end]+'}public static class FilledSkillVfx {public static int Crescents;public static void Crescent(PlayerController p,Vector3 at,Vector3 f,float r,Color c,int side,CombatVisualPriority priority){Crescents++;}public static void BurnContact(PlayerController owner,Vector3 point,bool finale){}}}')
  (p/'Program.cs').write_text('''using System;using System.Linq;using Emberfall;using UnityEngine;
 System.Console.WriteLine(WeaponVisualLinkTests.Run());
 Time.deltaTime=.02f;var go=new GameObject("attacker");var owner=go.AddComponent<PlayerController>();var model=go.AddComponent<CombatModel>();model.Root=new Vector3(1,1,0);model.Tip=new Vector3(1,2,0);GameSession.Instance=new GameSession{Player=owner,HasStarted=true};
@@ -28,7 +28,7 @@ System.Console.WriteLine("PASS: production decorative/physical Slash dispatch an
  command=[dotnet,'run','--project',str(project),'--no-restore'];subprocess.run(command,env=env,check=True)
  mutations=[(p/'WeaponVisualLinks.cs','if(!model.TryClaimSwordRibbon(model.WeaponActionId))return;','','one physical swing can create only one endpoint ribbon'),
             (p/'WeaponVisualLinks.cs','if(model.WeaponActionId!=action||!model.SwordActionActive)sampling=false;','','action change stops sampling while the existing afterimage fades'),
-            (dispatch,'if(game!=null)FilledSkillVfx.Crescent(game.Player,center,forward,radius,color,1);','if(game!=null){FilledSkillVfx.Crescent(game.Player,center,forward,radius,color,1);WeaponSlashRibbon.Spawn(game.Player,game.Player.gameObject.GetComponent<CombatModel>(),color);}','remote slash ticks never attach a hand-held sword ribbon')]
+            (dispatch,'if(game!=null)FilledSkillVfx.Crescent(game.Player,center,forward,radius,color,1,CombatVisualPriority.Decoration);','if(game!=null){FilledSkillVfx.Crescent(game.Player,center,forward,radius,color,1,CombatVisualPriority.Decoration);WeaponSlashRibbon.Spawn(game.Player,game.Player.gameObject.GetComponent<CombatModel>(),color);}','remote slash ticks never attach a hand-held sword ribbon')]
  for path,before,after,expected in mutations:
   original=path.read_text()
   if original.count(before)!=1:raise AssertionError('mutation must match exactly once')

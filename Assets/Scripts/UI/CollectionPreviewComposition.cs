@@ -1,6 +1,7 @@
 using System;
 namespace Emberfall
 {
+    public enum CollectionPreviewAction { Idle, Attack, Cast }
     public enum CollectionPreviewComposition { Full, Weapon, Back }
     // Physical pixel request, quantized to avoid native texture churn on tiny GUI reflows.
     public readonly struct CollectionPreviewSurface : IEquatable<CollectionPreviewSurface>
@@ -30,14 +31,23 @@ namespace Emberfall
     public sealed class CollectionPreviewMotion
     {
         private int frame=-1,bucket=-1;
-        private float time;
+        private float time,actionTime,orbitYaw;
+        public float Time {get{return time;}}
+        public float OrbitYaw {get{return orbitYaw;}}
+        public CollectionPreviewAction Action {get;private set;}
+        public float Progress {get{return Action==CollectionPreviewAction.Idle?1:Math.Min(1,actionTime/(Action==CollectionPreviewAction.Attack?.95f:1.25f));}}
+        public void Play(CollectionPreviewAction value)
+        {if((int)value<0||(int)value>2)return;Action=value;actionTime=0;}
+
         public float BreathScale {get{return 1f+.004f*(float)Math.Sin(time*Math.PI*.5);}}
         public float RingYaw {get{return time*12%360;}}
         public bool Advance(float dt,int currentFrame)
         {
             if(currentFrame==frame)return false;frame=currentFrame;
             if(float.IsNaN(dt)||float.IsInfinity(dt)||dt<=0)return false;
-            time=(time+Math.Min(dt,.1f))%120;
+            float step=Math.Min(dt,.1f);time=(time+step)%120;orbitYaw=(orbitYaw+step*16)%360;
+            if(Action!=CollectionPreviewAction.Idle){actionTime+=step;if(Progress>=1){Action=CollectionPreviewAction.Idle;actionTime=0;}}
+
             int next=(int)(time*20);if(next==bucket)return false;bucket=next;return true;
         }
     }

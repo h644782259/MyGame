@@ -9,7 +9,7 @@ namespace Emberfall
         public static void Area(Transform parent, float radius, Element element)
         {
             // The readable field owns its own lease; optional particles must not gate it.
-            ElementalFieldVisual.Spawn(parent, element, radius, false);
+            ElementalFieldVisual.Spawn(parent, element, radius, false,CombatVisualPriority.SustainedBackground);
             ParticleSystem particles = Create(parent, element == Element.Fire ? "Rising Flames" :
                 element == Element.Poison ? "Poison Bubbles" : "Storm Sparks", element,
                 Mathf.Clamp(radius * radius * 1.8f, 8f, 45f), radius);
@@ -105,7 +105,7 @@ namespace Emberfall
             ElementalFieldVisual activeShape = burning ? fireShape : poisonShape;
             if (activeShape == null)
             {
-                activeShape = ElementalFieldVisual.Spawn(transform, element, .48f, true);
+                activeShape = ElementalFieldVisual.Spawn(transform, element, .48f, true,CombatVisualPriority.SustainedBackground);
                 if (activeShape != null) activeShape.transform.localPosition = Vector3.up * height;
                 if (burning) fireShape = activeShape; else poisonShape = activeShape;
             }

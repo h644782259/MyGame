@@ -76,7 +76,7 @@ namespace Emberfall
   GameSession session;PlayerController owner,playerGeneration;int epoch;bool hostile=true;string terminationReason="active",damageSource="enemy bolt";
   float age,lifetime=3,speed=10,radius=.32f,distanceTravelled,impactHeight,launchHeight,aimedDistance=1,dodgeDeadline,impactMarkStrength,explosionRadius;
   EnemyController homingTarget,basicAimTarget;bool basicAttack,arrowShape,bodyHeightFlight,pendingDodge,energyAwarded,pierce;Vector3 direction=Vector3.forward,dodgeOrigin;int dodgeEpoch,castId,skillIndex;
-  Color color;CombatDamage damage=new CombatDamage(7),explosionDamage;Volley volley;SummonedCompanion companionSource;object impactMarkTarget;
+  bool empoweredCompanionShot;Color color;CombatDamage damage=new CombatDamage(7),explosionDamage;Volley volley;SummonedCompanion companionSource;object impactMarkTarget;
   HashSet<EnemyController> hitTargets=new HashSet<EnemyController>();
   void AlignBodyFlight(){}
   public CombatProjectile(GameSession game){session=game;owner=playerGeneration=game.Player;epoch=game.Player.CombatEpoch;transform.position=new Vector3(0,0,-.5f);}
@@ -91,7 +91,7 @@ public void RegisterSkillHit(int cast){}public float ResolveSkillImpact(EnemyCon
 public void OnBasicAttackHitTarget(Vector3 at,EnemyController e,bool b){}public void HitArea(Vector3 at,float radius,CombatDamage d,float a,float b,int cast,Volley volley){}
 }
 public partial class EnemyController {public float Health=100,ProjectileHitRadius=.6f;public void TakeDamage(float d,Vector3 p,float stun,bool critical=false){Health-=d;}}
-public partial class SummonedCompanion{public void OnConfirmedHit(EnemyController e){}}
+public partial class SummonedCompanion{public void OnConfirmedHit(EnemyController e){}public void RecordEmpoweredHit(EnemyController e,float loss,bool empowered){}}
 }
 
 public static class BlockedCombatUpdateProductionTests

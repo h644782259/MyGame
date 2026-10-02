@@ -23,7 +23,7 @@ check('ClassTutorialText' in camp and 'classTutorialCompleted' in camp,'both cam
 for p in ['UI/GameUI.Expedition.cs','UI/GameUI.MobileWorkshop.cs','UI/GameUI.Modes.cs','UI/GameUI.RunRecap.cs']:
  check(('SelectedProgressionGoal(' in read(p) and 'selectedGoal.Title' in read(p)) if p=='UI/GameUI.Modes.cs' else 'ProgressionGoalStatus(' in read(p),'camp, entry and results read shared selected-goal state: '+p)
 check('data.Snapshot.RewardMaterials' in read('UI/GameUI.RunRecap.cs'),'results include actual settled run gains')
-check('SelectProgressionGoal(kind,id,tier)' in selector and 'BeginTouchScroll' in selector,'goal replacement requires an explicit selection in bounded scroll UI')
+check('SelectProgressionGoal(kind,id,tier,kind==ProgressionGoalKind.Reforge?session.Progression.Profile.level:0)' in selector and 'BeginTouchScroll' in selector,'goal replacement requires an explicit selection in bounded scroll UI')
 check('progressionGoalCharacter!=session.Progression.CurrentSlotId' in selector,'goal modal retires on character change')
 check('OpenProgressionGoals' in camp and 'OpenBuildPlans' in camp and 'campTab=1' in camp and 'campTab=0' in camp,'postclear tutorial links to core, class route, saved builds and next chosen goal')
 print(f'PASS: {checks} adventure progression UI/lifecycle contracts (not Unity execution)')
