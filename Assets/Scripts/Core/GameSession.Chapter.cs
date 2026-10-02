@@ -34,6 +34,11 @@ namespace Emberfall
         private EnemyController chapterSupplier;
         private int previousForestLineup=-1;
         private string forestLineupOwner;
+        // Bounded session-only history for the current save owner, like Forest formation.
+        // Restarting the host or admitting another save owner starts with split again.
+        private string redrockRouteOwner;
+        private bool previousRedrockSplit;
+
         public bool SelectedForestLineupB {get{return SelectedChapterNode==ChapterNode.ForestCourt&&SelectedChapterDifficulty==ChapterDifficulty.Hard&&forestLineupOwner==Progression.SaveFilePath&&previousForestLineup==0;}}
         public string SelectedChapterLineupPreview {get{return SelectedChapterNode!=ChapterNode.ForestCourt||SelectedChapterDifficulty!=ChapterDifficulty.Hard?"":SelectedForestLineupB?
             "编队 B · 双坛卫兵，护援者与两名哥布林结伴争夺；黏液游荡。先切断移动护援，再抢任一封印。":
@@ -78,11 +83,16 @@ namespace Emberfall
             chapterEntryPotions=Progression.Profile.potions;chapterFirstSealSeconds=chapterSecondSealSeconds=0;ChapterResult=null;chapterBossDeathFrame=-1;chapterResultSkipped=false;
             int seed=Random.Range(0,1000000);
             if(receipt.Node==ChapterNode.ForestCourt&&receipt.Difficulty==ChapterDifficulty.Hard)seed=(seed&~2)|(SelectedForestLineupB?2:0);
+            bool redrockReplay=receipt.Node==ChapterNode.Redrock&&receipt.Difficulty!=ChapterDifficulty.Normal&&
+                (Progression.Profile.chapterCompletedMask&(1<<(int)ChapterNode.Redrock))!=0;
+            if(redrockReplay)seed=ChapterRoomGeometry.RedrockReplaySeed(seed,redrockRouteOwner!=Progression.SaveFilePath||!previousRedrockSplit);
             chapterReceipt=receipt;ChapterRun=new ChapterCombatRun(receipt.Node,receipt.Difficulty,seed);
             enteringChapter=true;ChallengeRun=SelectedChapterLimitedHealing;
             try {if(!ChangeZone(true)){ResetChapterRun();return false;}}
             catch(System.Exception error){FailChapter("房间 "+(ChapterRoomIndex+1)+" 生成异常："+error.Message);return InDungeon;}
             finally {enteringChapter=false;changingZone=false;}
+            if(redrockReplay&&ChapterRun!=null&&!ChapterRun.Finished&&!ChapterRun.Failed)
+            {redrockRouteOwner=Progression.SaveFilePath;previousRedrockSplit=ChapterRoomGeometry.RedrockSplitRoute(seed);}
             if(receipt.Node==ChapterNode.ForestCourt&&receipt.Difficulty==ChapterDifficulty.Hard){forestLineupOwner=Progression.SaveFilePath;previousForestLineup=(seed&2)==0?0:1;}
             if(ChapterRun!=null&&!ChapterRun.Finished&&!ChapterRun.Failed&&SelectedChapterTactic>=0)RunChoices.ChooseChapterTactic(Progression.Profile,receipt.Node,MobileControls.Active,SelectedChapterTactic);
             UpdateTimeScale();Notify(ChapterDefinition.Get(receipt.Node).Story+" · "+ChapterObjectiveStatus);return true;

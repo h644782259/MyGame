@@ -19,7 +19,7 @@ namespace Emberfall
  public sealed class PlayerController:MonoBehaviour {public int CombatEpoch=1,CooldownResets,Retirements;public float Health=100,MaxHealth=100;public void RetireCombatForWorldTransition(){CombatEpoch++;Retirements++;}public void Teleport(Vector3 p){transform.position=p;}public void RefreshStats(bool full){}public void ResetCooldownsForDungeonEntry(){CooldownResets++;}public void Heal(float n){Health=Math.Min(MaxHealth,Health+n);}}
  public sealed partial class EnemyController:MonoBehaviour {public bool IsBoss,IsDead;public EscapeRole PostRole;public bool isActiveAndEnabled=>gameObject.activeInHierarchy;public EnemyKind Kind;public float NavigationRadius=>IsBoss?1.3f:.65f;public int PostCalls;public void Initialize(GameSession s,EnemyKind k,int l,bool b){Kind=k;IsBoss=b;ApplySpawnStats(s,l,b);}public void ConfigureEscapePost(EscapeRole role,Vector3 p){PostRole=role;PostCalls++;}public void ConfigureMobileSupport(EnemyController supplier,EnemyController first,EnemyController second){}public void BeginDeath(){IsDead=true;}}
  public static class WorldTraversal {public static bool SpawnBlocked,PathBlocked,Occluded;public static int Rays;public static void AddCircle(Vector3 p,float r){}public static void AddBox(Vector3 p,Vector2 s){}public static bool IsWalkable(Vector3 p,float r)=>!SpawnBlocked;public static Vector3 NearestWalkable(Vector3 p,float r)=>p;public static bool CanReach(Vector3 a,Vector3 b,float r)=>!PathBlocked;public static bool HasLineOfSight(Vector3 a,Vector3 b){Rays++;return !Occluded;}}
- public static class WorldBuilder {public static int Builds;public static GameObject Build(ZoneKind z,int layout=0,int tier=0,int hub=0,int chapterSeed=0){Builds++;return new GameObject("World");}public static GameObject MakeLootBeacon(Vector3 p,Color c)=>new GameObject();public static GameObject MakeRoomObjective(Vector3 p,bool chapterSeal=false){var g=new GameObject();g.transform.position=p;return g;}public static void ApplyChapterLandmark(GameObject w,int mask){}}
+ public static class WorldBuilder {public static bool ThrowBuild;public static int Builds;public static GameObject Build(ZoneKind z,int layout=0,int tier=0,int hub=0,int chapterSeed=0){Builds++;if(ThrowBuild)throw new InvalidOperationException("fixture build failed");return new GameObject("World");}public static GameObject MakeLootBeacon(Vector3 p,Color c)=>new GameObject();public static GameObject MakeRoomObjective(Vector3 p,bool chapterSeal=false){var g=new GameObject();g.transform.position=p;return g;}public static void ApplyChapterLandmark(GameObject w,int mask){}}
  // Visual components are separately executed by TacticalLiveVisualTests; host keeps scene boundary doubles.
  public static class LargeBossShutdownVisual {public static GameSession Owner;public static bool Active;public static bool IsPresenting(GameSession s)=>Active&&ReferenceEquals(Owner,s);public static void Skip(GameSession s){if(ReferenceEquals(Owner,s))Active=false;}}
  public static class TacticalCaptureVisual {public static void AttachChapter(GameObject o,GameSession s,int index){}public static void Attach(GameObject objective,GameSession session){}}
@@ -138,6 +138,59 @@ namespace Emberfall
     finally {WorldTraversal.SpawnBlocked=WorldTraversal.PathBlocked=false;}
     s.Camp();check(!s.ChapterActive&&!s.InDungeon,"failed tactic entry can return cleanly to camp");
    }
+   var firstRoute=new GameSession{Progression=new ProgressionService(Path.Combine(folder,"red-first-route"))};
+   check(firstRoute.Progression.CreateNewSlot(HeroClass.Vanguard),"first Redrock save");firstRoute.Progression.Profile.chapterCompletedMask=1;firstRoute.Progression.Save();firstRoute.SelectedChapterNode=ChapterNode.Redrock;
+   foreach(var difficulty in new[]{ChapterDifficulty.Hard,ChapterDifficulty.Heroic})
+   {firstRoute.SelectedChapterDifficulty=difficulty;check(!firstRoute.ConfirmChapterEnter()&&firstRoute.redrockRouteOwner==null,"first-clear Hard Heroic rejected without consuming route history");}
+   firstRoute.SelectedChapterDifficulty=ChapterDifficulty.Normal;
+   check(firstRoute.ConfirmChapterEnter()&&!ChapterRoomGeometry.RedrockSplitRoute(firstRoute.ChapterSeed),"first clear Normal retains legacy geometry seed");firstRoute.FailForTest();firstRoute.Camp();
+   var route=new GameSession{Progression=new ProgressionService(Path.Combine(folder,"red-route"))};
+   check(route.Progression.CreateNewSlot(HeroClass.Vanguard),"route save created");route.FixtureUnlock();route.SelectedChapterNode=ChapterNode.Redrock;
+   route.SelectedChapterDifficulty=ChapterDifficulty.Normal;
+   check(route.ConfirmChapterEnter()&&!ChapterRoomGeometry.RedrockSplitRoute(route.ChapterSeed),"Normal replay keeps original route");route.Camp();
+   for(int admission=0;admission<8;admission++)
+   {
+    route.SelectedChapterDifficulty=admission%2==0?ChapterDifficulty.Hard:ChapterDifficulty.Heroic;
+    // Failed filesystem save, followed by failed spawn, must not advance the admitted sequence.
+    Directory.CreateDirectory(route.Progression.SaveFilePath+".tmp");
+    check(!route.ConfirmChapterEnter(),"route save rejection cannot enter");Directory.Delete(route.Progression.SaveFilePath+".tmp");
+    string ownerBefore=route.redrockRouteOwner;bool splitBefore=route.previousRedrockSplit;
+    WorldTraversal.PathBlocked=true;
+    try{check(route.ConfirmChapterEnter()&&route.ChapterRun.Failed,"route unreachable entry captured");}
+    finally{WorldTraversal.PathBlocked=false;}
+    check(route.redrockRouteOwner==ownerBefore&&route.previousRedrockSplit==splitBefore,"REPLAY_ADMISSION alternates only successfully admitted eligible runs");
+    route.Camp();
+    WorldBuilder.ThrowBuild=true;
+    try{route.ConfirmChapterEnter();check(route.ChapterRun.Failed,"route build exception captured");}
+    finally{WorldBuilder.ThrowBuild=false;}
+    route.Camp();
+    WorldTraversal.SpawnBlocked=true;
+    try{check(route.ConfirmChapterEnter()&&route.ChapterRun.Failed,"route failed spawn captured");}
+    finally{WorldTraversal.SpawnBlocked=false;}
+    check(route.redrockRouteOwner==ownerBefore&&route.previousRedrockSplit==splitBefore,"REPLAY_ADMISSION alternates only successfully admitted eligible runs");
+    route.Camp();
+    check(route.ConfirmChapterEnter()&&ChapterRoomGeometry.RedrockSplitRoute(route.ChapterSeed)==(admission%2==0),"REPLAY_ADMISSION alternates only successfully admitted eligible runs");
+    check(route.chapterPlan.Obstacles.Length==3&&route.Enemies.Count==6,"replay first room unchanged and capped");
+    route.OnEnemyKilled(route.Enemies[0]);route.Player.transform.position=route.chapterPlan.Exit;
+    check(route.EnterNextChapterRoom()&&route.chapterPlan.Obstacles.Length==(admission%2==0?4:3)&&route.Enemies.Count==6,"room two uses seed route within six enemy cap");
+    check(route.ChapterRun.Objective==RoomObjective.Escape&&!route.ChapterRun.DoorUnlocked,"replay retains escape objective");
+    int wisps=0,guards=0,goblins=0,slimes=0;foreach(var enemy in route.Enemies){if(enemy.Kind==EnemyKind.Wisp)wisps++;if(enemy.Kind==EnemyKind.Guardian)guards++;if(enemy.Kind==EnemyKind.Goblin)goblins++;if(enemy.Kind==EnemyKind.Slime)slimes++;}
+    check(wisps==2&&guards==2&&goblins==1&&slimes==1,"replay preserves crossfire roster types");route.FailForTest();route.Camp();
+   }
+   route.SelectedChapterDifficulty=ChapterDifficulty.Normal;
+   check(route.ConfirmChapterEnter()&&!ChapterRoomGeometry.RedrockSplitRoute(route.ChapterSeed),"Normal between eligible runs keeps legacy route");route.FailForTest();route.Camp();route.SelectedChapterDifficulty=ChapterDifficulty.Hard;
+   // Reloading the same owner keeps host history; a new host intentionally resets it.
+   check(route.Progression.LoadSlot(route.Progression.CurrentSlotId),"route same save reload");
+   check(route.ConfirmChapterEnter()&&ChapterRoomGeometry.RedrockSplitRoute(route.ChapterSeed),"same owner session keeps alternating history");route.FailForTest();route.Camp();
+   check(route.Progression.LoadSlot(route.Progression.CurrentSlotId),"route reload after split");
+   check(route.ConfirmChapterEnter()&&!ChapterRoomGeometry.RedrockSplitRoute(route.ChapterSeed),"same save reload does not reset split history");route.FailForTest();route.Camp();
+   var restarted=new GameSession{Progression=route.Progression,SelectedChapterNode=ChapterNode.Redrock,SelectedChapterDifficulty=ChapterDifficulty.Hard};
+   check(restarted.ConfirmChapterEnter()&&ChapterRoomGeometry.RedrockSplitRoute(restarted.ChapterSeed),"new host restarts bounded route history");restarted.FailForTest();restarted.Camp();
+   var oldOwner=route.Progression;
+   route.Progression=new ProgressionService(Path.Combine(folder,"red-route-other-owner"));check(route.Progression.CreateNewSlot(HeroClass.Vanguard),"second route owner save");route.FixtureUnlock();
+   check(route.ConfirmChapterEnter()&&ChapterRoomGeometry.RedrockSplitRoute(route.ChapterSeed),"different owner starts split instead of inheriting route");route.FailForTest();route.Camp();
+   route.Progression=oldOwner;
+   check(route.ConfirmChapterEnter()&&ChapterRoomGeometry.RedrockSplitRoute(route.ChapterSeed),"bounded last-owner policy resets after another owner admitted");route.FailForTest();route.Camp();
    return "PASS: "+n+" actual chapter result persistence, independent seal evidence and boss presentation-gate checks";
   }
   public void FixtureUnlock(){Progression.Profile.chapterCompletedMask=7;Progression.Profile.chapterHighestDifficulties=new[]{3,3,3};Progression.Save();}
