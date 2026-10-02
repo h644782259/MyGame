@@ -21,7 +21,7 @@ with tempfile.TemporaryDirectory(prefix='live-tactics-') as directory:
  unity=unity.replace('public struct Color{','public struct Color{public static Color white=>new Color(1,1,1);').replace('public float sqrMagnitude=>','public static Vector3 operator-(Vector3 a)=>new Vector3(-a.x,-a.y,-a.z);public float sqrMagnitude=>')
  unity=unity.replace('public int positionCount;','public int positionCount{get=>Positions.Length;set=>Array.Resize(ref Positions,value);}') .replace('public readonly Vector3[] Positions=new Vector3[4];','public Vector3[] Positions=new Vector3[0];')
  (path/'Unity.cs').write_text('using System;using System.Linq;using System.Reflection;using System.Collections.Generic;namespace UnityEngine'+unity)
- (path/'Enemy.cs').write_text('using UnityEngine;namespace Emberfall{public partial class EnemyController{'+prop+late+'public void TakeDamagePrefix(float amount,Vector3 direction){'+damage+'}}}')
+ (path/'Enemy.cs').write_text('using UnityEngine;namespace Emberfall{public partial class EnemyController{'+prop+late+'public void TakeDamagePrefix(float amount,Vector3 direction,System.Action<float> actualHealthLoss=null){'+damage+'}}}')
  (path/'Program.cs').write_text('System.Console.WriteLine(TacticalLiveVisualTests.Run());')
  project=path/'Test.csproj';project.write_text('<Project Sdk="Microsoft.NET.Sdk"><PropertyGroup><TargetFramework>net8.0</TargetFramework><OutputType>Exe</OutputType></PropertyGroup></Project>');config=path/'NuGet.Config';config.write_text('<configuration><packageSources><clear /></packageSources></configuration>')
  subprocess.run([dotnet,'restore',str(project),'--configfile',str(config)],check=True)
