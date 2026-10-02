@@ -42,17 +42,18 @@ namespace Emberfall
    blockedRects.Add(r);Box(r,jade,false);float u=TouchRatio;
    if(session.ChapterActive)
    {
-    Text(new Rect(r.x+6*u,r.y+4*u,r.width-12*u,18*u),session.ChapterSealView(0)!=null&&session.ChapterRun.DoorUnlocked?"双印完成 · 前往出口":ChapterDefinition.Get(session.ActiveChapterNode).Name,TouchFont(13),gold,true,false,TextAnchor.MiddleCenter);
-    if(session.ChapterSealView(0)!=null)DrawChapterSeals(new Rect(r.x+6*u,r.y+24*u,r.width-12*u,44*u),u);
+    var firstSeal=session.ChapterSealView(0);
+    Text(new Rect(r.x+6*u,r.y+4*u,r.width-12*u,18*u),firstSeal!=null&&session.ChapterRun.DoorUnlocked?"双印完成 · 前往出口":ChapterDefinition.Get(session.ActiveChapterNode).Name,TouchFont(13),gold,true,false,TextAnchor.MiddleCenter);
+    if(firstSeal!=null)DrawChapterSeals(new Rect(r.x+6*u,r.y+24*u,r.width-12*u,44*u),u,firstSeal,session.ChapterSealView(1));
     else Text(new Rect(r.x+6*u,r.y+24*u,r.width-12*u,r.height-28*u),session.ChapterObjectiveCompact,TouchFont(11),pale,false,true,TextAnchor.UpperCenter);
     return;
    }
    if(session.RoomChainRun!=null)
    {
-    var objective=session.RoomObjectiveView;
-    Text(new Rect(r.x+6*u,r.y+4*u,r.width-12*u,16*u),session.RoomSealView(0)!=null&&session.RoomChainRun.DoorUnlocked?"双印完成 · 前往北门":objective.Title,TouchFont(13),gold,true,false,TextAnchor.MiddleCenter);
-    if(session.RoomSealView(0)!=null)
-    {DrawRoomSeals(new Rect(r.x+6*u,r.y+21*u,r.width-12*u,50*u),u,true);return;}
+    var objective=session.RoomObjectiveView;var firstSeal=session.RoomSealView(0);
+    Text(new Rect(r.x+6*u,r.y+4*u,r.width-12*u,16*u),firstSeal!=null&&session.RoomChainRun.DoorUnlocked?"双印完成 · 前往北门":objective.Title,TouchFont(13),gold,true,false,TextAnchor.MiddleCenter);
+    if(firstSeal!=null)
+    {DrawRoomSeals(new Rect(r.x+6*u,r.y+21*u,r.width-12*u,50*u),u,true,firstSeal,session.RoomSealView(1),objective);return;}
     Text(new Rect(r.x+6*u,r.y+21*u,r.width-12*u,15*u),objective.ProgressText,TouchFont(11),pale,false,false,TextAnchor.MiddleCenter);
     Text(new Rect(r.x+6*u,r.y+37*u,r.width-12*u,14*u),objective.Hint,TouchFont(10),session.RoomCaptureContested?gold:jade,false,false,TextAnchor.MiddleCenter);
     Text(new Rect(r.x+6*u,r.y+52*u,r.width-12*u,14*u),objective.SupportHint,TouchFont(10),muted,false,false,TextAnchor.MiddleCenter);

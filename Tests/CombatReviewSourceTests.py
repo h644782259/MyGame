@@ -4,7 +4,14 @@ read=lambda f:(r/f).read_text()
 s=read('Combat/AdvancedSkillSequence.cs');fx=read('Combat/CombatEffects.cs');p=read('Combat/PlayerController.cs');m=read('Combat/CombatModel.cs');a=read('Core/GameAudio.cs')
 assert '.StatusEffects.Mark(' not in s
 assert 'markTarget:lockedTarget,markStrength:.08f+rank*.04f' in s
-hit=fx[fx.index('hitTargets.Add(enemy);'):fx.index('if (companionSource != null) companionSource.OnConfirmedHit(enemy);')]
+# Brace-delimit the production Update; companion callbacks may legitimately be a block.
+start=fx.index('private void Update()',fx.index('internal sealed class CombatProjectile'))
+end=fx.index('{',start)+1;depth=1
+while depth:
+    depth+=(fx[end]=='{')-(fx[end]=='}');end+=1
+update=fx[start:end]
+hit=update[update.index('hitTargets.Add(enemy);'):]
+assert 'companionSource.OnConfirmedHit(enemy)' in hit
 assert hit.index('LockedImpactMarkPolicy.ShouldApply') < hit.index('enemy.StatusEffects.Mark(4f, impactMarkStrength)') < hit.index('enemy.TakeDamage(')
 assert 'if (!CombatSight.Direct(previous, enemy.transform.position)) continue;' in fx
 assert 'if (TraversalStartedThisFrame || skillBasicRecovery.Blocked) return;' in p and 'CancelCombatPose();' in p[p.index('private bool TryBlinkCore'):p.index('private void AdvanceJump')]
