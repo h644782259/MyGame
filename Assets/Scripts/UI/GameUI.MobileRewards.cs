@@ -115,9 +115,11 @@ namespace Emberfall
             else if (revealed) DrawMobileChestResult(layout, reward, accent, complete);
             else if (DrawMobileChestChoices(layout)) return;
 
-            if (Button(MobilePanelRect(layout.FooterButton(0, 2)), chestDetails ? "返回宝箱" : "概率 / 规则", jade))
+            bool firstTrial=complete&&!chestDetails&&CanTrialChestReward(reward);int footerCount=firstTrial?3:2;
+            if(firstTrial&&Button(MobilePanelRect(layout.FooterButton(1,3)),"收下并试穿",jade)){AcceptChestForTrial();return;}
+            if (Button(MobilePanelRect(layout.FooterButton(0, footerCount)), chestDetails ? "返回宝箱" : "概率 / 规则", jade))
             { chestDetails = !chestDetails; mobileChestScroll = Vector2.zero; BlockUITransition(); return; }
-            if (Button(MobilePanelRect(layout.FooterButton(1, 2)), revealed ? complete ? "收下" : "跳过动画" : "仅选一份", gold, revealed && !chestDetails, null, true))
+            if (Button(MobilePanelRect(layout.FooterButton(footerCount-1, footerCount)), revealed ? complete ? "收下" : "跳过动画" : "仅选一份", gold, revealed && !chestDetails, null, true))
             {
                 if (!complete) chestRevealedAt = Time.unscaledTime - ChestDuration;
                 else
@@ -161,6 +163,8 @@ namespace Emberfall
             }
             else
             {
+                var chosen=MobileCollectionLayout.ChestCard(width,choice);
+                chestRevealOrigin=TouchRect(layout.Body.X+chosen.X+8,layout.Body.Y+chosen.Y+errorHeight+19-mobileChestScroll.y/TouchRatio,chosen.Width-16,100);
                 revealedChest = choice; chestRevealResult = result; chestRevealedAt = Time.unscaledTime;
                 chestDetails = false; rewardSoundPlayed = false; chestReceiptId = session.Progression.LastChestReward.Id;
                 mobileChestError = null; mobileChestScroll = Vector2.zero; GameAudio.Play(SoundCue.Cast);
@@ -171,7 +175,7 @@ namespace Emberfall
         private void DrawMobileChestResult(MobilePanelLayout layout, ChestReward reward, Color accent, bool complete)
         {
             float progress = ChestRevealPresentation.Progress(Time.unscaledTime - chestRevealedAt,ChestDuration);
-            if(!complete){DrawChestRevealTransition(MobilePanelRect(layout.Body),reward);return;}
+            if(!complete){DrawChestRevealTransition(MobilePanelRect(layout.Body),reward,TouchRect(layout.BodyLeft.X+8,layout.BodyLeft.Y+8,layout.BodyLeft.Width-16,layout.BodyLeft.Height-16));return;}
             var art = layout.BodyLeft;
             Fill(MobilePanelRect(art), new Color(.055f, .08f, .11f)); Border(MobilePanelRect(art), accent);
             if(!DrawChestRewardModel(TouchRect(art.X+8,art.Y+8,art.Width-16,art.Height-16),reward))

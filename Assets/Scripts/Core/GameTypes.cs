@@ -118,6 +118,8 @@ namespace Emberfall
     [Serializable]
     public class ChestReward
     {
+        public bool hasCurrencyDeltas;
+        public int goldDelta, threadsDelta;
         public string id;
         public int choice;
         public int gold;

@@ -1379,6 +1379,9 @@ namespace Emberfall
             }
             receipt.summary += " · 星纹 " + candidate.fashionThreads + "/30";
             candidate.gold = (int)Math.Min(MaximumGold, (long)candidate.gold + receipt.gold);
+            receipt.hasCurrencyDeltas = true;
+            receipt.goldDelta = candidate.gold - Profile.gold;
+            receipt.threadsDelta = candidate.fashionThreads - Profile.fashionThreads;
             candidate.lastChestReward = receipt;
             candidate.pendingChestReveal = true;
             string failure;

@@ -4,7 +4,11 @@ namespace Emberfall
 {
     public sealed partial class GameUI
     {
-        private readonly Texture2D[] rewardChestTextures = new Texture2D[13];
+        private readonly uint[][] rewardChestFrames = new uint[13][];
+        private Texture2D rewardChestClosed,rewardChestComposite;
+        private Color32[] chestCompositePixels;
+        private int chestCompositeKey=-1;
+        private Rect chestRevealOrigin;
         private bool chestDetails, chestOpening;
         private int revealedChest = -1;
         private string chestRevealResult;
@@ -33,7 +37,9 @@ namespace Emberfall
 
         private void ReleaseChestTextures()
         {
-            foreach (Texture2D texture in rewardChestTextures) if (texture != null) Destroy(texture);
+            if(rewardChestClosed!=null)Destroy(rewardChestClosed);if(rewardChestComposite!=null)Destroy(rewardChestComposite);
+            rewardChestClosed=rewardChestComposite=null;chestCompositePixels=null;chestCompositeKey=-1;
+            for(int i=0;i<rewardChestFrames.Length;i++)rewardChestFrames[i]=null;
         }
 
         private Vector2 desktopChestResultScroll;
@@ -60,7 +66,7 @@ namespace Emberfall
             Rect body=new Rect(w.x+28,w.y+132,w.width-56,w.height-208);
             if(chestDetails)DrawDesktopChestRules(body);
             else if(complete)DrawDesktopChestResult(body,reward,accent);
-            else if(revealed)DrawChestRevealTransition(body,reward);
+            else if(revealed)DrawChestRevealTransition(body,reward,new Rect(body.x,body.y,ChestRevealPresentation.DesktopArtSize(body.height),ChestRevealPresentation.DesktopArtSize(body.height)));
             else
             {
                 float cardWidth=(body.width-24)/3;
@@ -75,14 +81,15 @@ namespace Emberfall
                     {
                         chestOpening=true;string result=progression.OpenDungeonChest(i);
                         if(result==null){chestOpening=false;Feedback(false,"宝箱暂时无法开启");}
-                        else {revealedChest=i;chestRevealResult=result;chestRevealedAt=Time.unscaledTime;chestDetails=false;rewardSoundPlayed=false;chestReceiptId=progression.LastChestReward.Id;desktopChestResultScroll=Vector2.zero;GameAudio.Play(SoundCue.Cast);}
+                        else {chestRevealOrigin=new Rect(r.x+12,r.y+30,r.width-24,r.height-98);revealedChest=i;chestRevealResult=result;chestRevealedAt=Time.unscaledTime;chestDetails=false;rewardSoundPlayed=false;chestReceiptId=progression.LastChestReward.Id;desktopChestResultScroll=Vector2.zero;GameAudio.Play(SoundCue.Cast);}
                         BlockUITransition();return;
                     }
                 }
             }
             if(revealed)
             {
-                Text(new Rect(w.x+28,w.yMax-55,w.width-250,36),complete?"奖励已保存 · 收下后返回冒险":"未选宝箱逐渐封存，不再参与抽取",13,muted,false,true);
+                Text(new Rect(w.x+28,w.yMax-55,w.width-430,36),complete?"奖励已保存":"未选宝箱逐渐封存，不再参与抽取",13,muted,false,true);
+                if(complete&&CanTrialChestReward(reward)&&Button(new Rect(w.xMax-396,w.yMax-58,180,42),"收下并试穿",jade)){AcceptChestForTrial();return;}
                 if(Button(new Rect(w.xMax-208,w.yMax-58,180,42),complete?"收下":"跳过动画",jade,!chestDetails,null,true))
                 {if(!complete)chestRevealedAt=Time.unscaledTime-ChestDuration;else FinishChestReveal();BlockUITransition();}
             }
@@ -107,29 +114,42 @@ namespace Emberfall
             desktopChestResultScroll=BeginTouchScroll("desktop-chest-result",details,desktopChestResultScroll,new Rect(0,0,details.width-16,total));
             Text(new Rect(4,8,details.width-26,total-16),copy,18,accent,true,true);EndTouchScroll();
         }
-        private void DrawChestRevealTransition(Rect r,ChestReward reward)
+        private void DrawChestRevealTransition(Rect r,ChestReward reward,Rect destination)
         {
             float progress=ChestRevealPresentation.Progress(Time.unscaledTime-chestRevealedAt,ChestDuration);
             float cardWidth=(r.width-16)/3;
             Color accent=reward!=null&&reward.Rarity.HasValue?GameBalance.RarityColor(reward.Rarity.Value):gold;
+            float fading=ChestRevealPresentation.UnselectedOpacity(progress);
             for(int i=0;i<3;i++)
             {
-                bool chosen=i==revealedChest;float opacity=chosen?1:ChestRevealPresentation.UnselectedOpacity(progress);
-                if(opacity<=0)continue;
+                if(i==revealedChest||fading<=0)continue;
                 Rect cardRect=new Rect(r.x+i*(cardWidth+8),r.y,cardWidth,r.height);
-                Color shade=chosen?new Color(.12f,.14f,.18f):new Color(.07f,.09f,.125f);shade.a*=opacity;Fill(cardRect,shade);
-                DrawRewardChest(new Rect(cardRect.x+6,cardRect.y+8,cardRect.width-12,cardRect.height-38),chosen,opacity,chosen?progress:0);
-                if(chosen&&progress>.35f)
-                {Rect clip=new Rect(cardRect.x+6,cardRect.y+8,cardRect.width-12,cardRect.height-38);GUI.BeginGroup(clip);DrawRewardRadiance(new Rect(0,0,clip.width,clip.height),accent,progress);GUI.EndGroup();}
-                Text(new Rect(cardRect.x+4,cardRect.yMax-28,cardRect.width-8,22),chosen?"正在揭晓":"未选 · 封存",12,new Color(muted.r,muted.g,muted.b,opacity),chosen,false,TextAnchor.MiddleCenter);
+                DrawRewardChest(new Rect(cardRect.x+6,cardRect.y+8,cardRect.width-12,cardRect.height-38),false,fading,0);
             }
+            float travel=ChestRevealPresentation.Travel(progress);
+            Rect origin=chestRevealOrigin.width>0?chestRevealOrigin:destination;
+            Rect moving=new Rect(Mathf.Lerp(origin.x,destination.x,travel),Mathf.Lerp(origin.y,destination.y,travel),Mathf.Lerp(origin.width,destination.width,travel),Mathf.Lerp(origin.height,destination.height,travel));
+            DrawRewardChest(moving,true,1,progress);
+            if(progress>.35f){GUI.BeginGroup(moving);DrawRewardRadiance(new Rect(0,0,moving.width,moving.height),accent,progress);GUI.EndGroup();}
         }
+
         private void DrawChestGold(Rect area,Color accent)
         {
             float size=Mathf.Min(area.width,area.height),unit=size/200f;
             for(int i=0;i<3;i++)
             {Rect bar=new Rect(area.center.x-52*unit+(i-1)*8*unit,area.center.y+(1-i)*24*unit,104*unit,28*unit);Fill(bar,accent*(.65f+i*.12f));Border(bar,gold);}
             Text(new Rect(area.x,area.yMax-38*unit,area.width,28*unit),"金币已入账",Mathf.RoundToInt(16*unit),accent,true,false,TextAnchor.MiddleCenter);
+        }
+
+        private static bool CanTrialChestReward(ChestReward reward)
+        {return reward!=null&&reward.Rarity.HasValue&&!reward.Duplicate&&reward.Slot.HasValue;}
+        private bool AcceptChestForTrial()
+        {
+            var reward=session.Progression.LastChestReward;
+            if(!session.Progression.Profile.pendingChestReveal||!ChestAnimationDone||!CanTrialChestReward(reward))return false;
+            if(!session.Progression.AcknowledgeChestReward()){Feedback(false,"无法保存奖励确认");return false;}
+            session.LogSystem(chestRevealResult);ResetChestReveal();panel=Panel.Fashion;session.SetUIBlocking(true);
+            collectionOwner=session.Player;collectionViewing.Reset();TrialFashion(reward.Slot.Value,reward.Rarity.Value);mobileFashionPreview=true;BlockUITransition();return true;
         }
 
         private void FinishChestReveal()
@@ -154,22 +174,31 @@ namespace Emberfall
 
         }
 
-        private void DrawRewardChest(Rect r, bool opened, float opacity, float progress)
+        private void DrawRewardChest(Rect r,bool opened,float opacity,float progress)
         {
-            // Interpolate cached poses at display rate instead of stepping through
-            // thirteen hard frames. The cache stays fixed at thirteen 256px textures.
-            float frame=opened?Mathf.Clamp01((progress-.12f)/.64f)*12:0;
-            int lower=Mathf.Clamp(Mathf.FloorToInt(frame),0,12),upper=Mathf.Min(12,lower+1);
-            if(rewardChestTextures[lower]==null)rewardChestTextures[lower]=BakeRewardChest(lower/12f);
-            if(rewardChestTextures[upper]==null)rewardChestTextures[upper]=BakeRewardChest(upper/12f);
-            Color before=GUI.color;
-            float mix=frame-lower;
-            GUI.color=new Color(1,1,1,opacity*(1-mix));GUI.DrawTexture(r,rewardChestTextures[lower],ScaleMode.ScaleToFit,true);
-            if(mix>0){GUI.color=new Color(1,1,1,opacity*mix);GUI.DrawTexture(r,rewardChestTextures[upper],ScaleMode.ScaleToFit,true);}
-            GUI.color=before;
+            if(Event.current.type!=EventType.Repaint)return;
+            int key=opened?Mathf.Clamp(Mathf.RoundToInt(Mathf.Clamp01((progress-.12f)/.64f)*96),0,96):0;
+            Texture2D texture=key==0?rewardChestClosed:rewardChestComposite;
+            bool created=texture==null;
+            if(created)
+            {
+                texture=new Texture2D(256,256,TextureFormat.RGBA32,false){hideFlags=HideFlags.HideAndDontSave,filterMode=FilterMode.Bilinear,wrapMode=TextureWrapMode.Clamp};
+                if(key==0)rewardChestClosed=texture;else rewardChestComposite=texture;
+            }
+            if(created || key==0&&rewardChestFrames[0]==null || key!=0&&chestCompositeKey!=key)
+            {
+                int lower=key/8,upper=Mathf.Min(12,lower+1),blend=key%8;
+                if(rewardChestFrames[lower]==null)rewardChestFrames[lower]=BakeRewardChest(lower/12f);
+                if(rewardChestFrames[upper]==null)rewardChestFrames[upper]=BakeRewardChest(upper/12f);
+                if(chestCompositePixels==null)chestCompositePixels=new Color32[256*256];
+                for(int i=0;i<chestCompositePixels.Length;i++)
+                {uint c=ChestCompositeRules.Blend(rewardChestFrames[lower][i],rewardChestFrames[upper][i],blend);chestCompositePixels[i]=new Color32((byte)c,(byte)(c>>8),(byte)(c>>16),(byte)(c>>24));}
+                texture.SetPixels32(chestCompositePixels);texture.Apply(false,false);if(key!=0)chestCompositeKey=key;
+            }
+            Color before=GUI.color;GUI.color=new Color(1,1,1,opacity);GUI.DrawTexture(r,texture,ScaleMode.ScaleToFit,true);GUI.color=before;
         }
 
-        private static Texture2D BakeRewardChest(float opening)
+        private static uint[] BakeRewardChest(float opening)
         {
             const int size = 256;
             bool opened = opening > .2f;
@@ -219,8 +248,9 @@ namespace Emberfall
                     CrestStroke(pixels, size, x, y - 2, x, y + 2, light, .8f);
                 }
             }
-            Texture2D texture = new Texture2D(size, size, TextureFormat.RGBA32, false) { hideFlags = HideFlags.HideAndDontSave, filterMode = FilterMode.Bilinear, wrapMode = TextureWrapMode.Clamp };
-            texture.SetPixels(pixels); texture.Apply(false, true); return texture;
+            var result=new uint[pixels.Length];
+            for(int i=0;i<pixels.Length;i++){Color32 c=pixels[i];result[i]=(uint)c.r|((uint)c.g<<8)|((uint)c.b<<16)|((uint)c.a<<24);}
+            return result;
         }
 
         private static void ChestPolygon(Color[] pixels, int size, Color color, params Vector2[] points)

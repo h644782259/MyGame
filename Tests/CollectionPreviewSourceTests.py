@@ -8,7 +8,8 @@ assert 'c.enabled=false' in p and 'behaviour.enabled=false' in p
 assert 'camera.enabled=false' in p and 'camera.cullingMask=1<<PreviewLayer' in p and 'light.cullingMask=1<<PreviewLayer' in p
 assert 'new RenderTextureDescriptor(allocated.Width,allocated.Height' in p and 'state.ShouldRender(true,Time.frameCount)' in p and 'texture.IsCreated()' in p
 assert 'texture.Release()' in p and 'stage.SetActive(false)' in p
-assert 'ReleaseCollectionPreview();' in base and 'private void OnDisable(){ReleaseCollectionPreview();}' in ui
+assert 'ReleaseCollectionPreview();' in base and 'private void OnDisable(){ReleaseCollectionModel();}' in ui
+assert 'ReleaseCollectionModel();collectionViewing.Reset();' in ui and 'collectionViewing.Yaw' in ui
 assert 'EquipmentComparisonPresentation.Receipt(reward)' in ui
 assert 'DrawChestRewardModel(' in read('GameUI.Rewards.cs') and 'DrawChestRewardModel(' in read('GameUI.MobileRewards.cs')
 assert 'EquipmentComparisonPresentation.Changes(' in base and 'EquipmentComparisonPresentation.Changes(' in read('GameUI.MobileInventory.cs')
