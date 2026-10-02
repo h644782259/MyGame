@@ -29,3 +29,7 @@ Native Blender renders and FBX import/export checks are evidence of authoring ou
 Rebuild: `blender -b --factory-startup --threads 4 --python ArtSource/BlenderPilot/build_pilot.py`, then `build_vanguard.py`, then `validate_and_preview.py`. The default render output is `/workspace/scratch/blender-pilot-preview`; override `PILOT_PREVIEW` for authoring render location. Build validation output is intentionally separated from runtime assets.
 
 Validation detail: FBX roundtrip checks topology, UV presence, bone/action counts and finite vertices. The 240-frame deformation and grip-error scan samples the editable Blender source rig, not a roundtripped FBX rig; Unity deformation remains unverified.
+
+Additional roundtrip evidence: `validate_fbx_motion.py` reloads the exported Vanguard.fbx, samples all five imported actions (240 frames), and compares all six deformed mesh groups and six moving sockets against the authored source at matched times. Symmetric vertex-distance maximum is 1.21e-6 m and socket maximum 9.63e-7 m. This now validates the reimported Blender skeleton and skin, while Unity clip bindings, material import and scale remain pending. See `validation-fbx-motion.json` with the exact FBX hash.
+
+Packaging cost: even with the runtime pilot disabled by default, Resources assets remain packaged. Two 1024-square RGBA textures with full mip chains represent approximately 10.67 MiB before platform compression; runtime source files total about 1.897 MB. These are inventory measurements, not Unity build size, resident GPU memory or device performance.
