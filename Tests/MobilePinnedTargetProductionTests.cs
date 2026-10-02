@@ -28,7 +28,7 @@ namespace Emberfall
  public struct MasteryResourceProc{public float Energy,CooldownReduction;}public class Mastery{public MasteryResourceProc SkillSpent(float cost)=>default;}
  public static class WorldTraversal{public static bool CanLeap(Vector3 from,Vector3 to,float radius)=>true;}
  public class ProjectileVolleyBudget<T>{public ProjectileVolleyBudget(float attack,float cap){}}
- public static class CombatArea{public static void Spawn(PlayerController player,GameSession game,Vector3 at,float size,CombatDamage amount,float disable,float startup,float activeTime,float tickInterval,Color tint,bool followPlayer=false,bool fallingMeteor=false,float pulling=0,CombatDamage finisher=default,int statusSkill=-1,int statusRank=1,int castId=0,SkillVisualRecipe visual=SkillVisualRecipe.Neutral){player.RecordEmission(at);}}
+ public static class CombatArea{public static void Spawn(PlayerController player,GameSession game,Vector3 at,float size,CombatDamage amount,float disable,float startup,float activeTime,float tickInterval,Color tint,bool followPlayer=false,bool fallingMeteor=false,float pulling=0,CombatDamage finisher=default,int statusSkill=-1,int statusRank=1,int castId=0,SkillVisualRecipe visual=SkillVisualRecipe.Neutral,int trackedMechanic=-1){player.RecordEmission(at);}}
  public static class SummonerSpell{public static void Cast(PlayerController player,GameSession game,int skill,int rank,Vector3 point,float damage,EnemyController target=null,bool preserve=false,int castId=0){player.RecordEmission(point,target);}}
  public static class AdvancedSkillSequence{public static void Spawn(params object[] a){}}
  public class FakeProgression{public GameProfile Profile=new GameProfile{skillRanks=new int[10]};}

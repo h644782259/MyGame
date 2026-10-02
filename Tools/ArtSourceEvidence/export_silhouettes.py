@@ -5,6 +5,12 @@ p=output/'export';p.mkdir(exist_ok=True)
 for folder,names in [('Core',['WeaponStructure','EquipmentAppearance','EquipmentAttachmentRecipe','CostumeRecipes','CostumeLayers']),('Combat',['CombatModel.Costumes','CombatModel.CostumeLayers','CombatModel.WeaponRig','CostumeMeshLibrary','ProceduralVisuals','VisualMeshRecipes','TailoredCloth'])]:
  for n in names:(p/(n+'.cs')).write_text((root/'Assets/Scripts'/folder/(n+'.cs')).read_text())
 (p/'Model.cs').write_text(ns['body']);(p/'Types.cs').write_text(ns['data'])
+# Match the production extraction harness: the optional adapter boundary is
+# installed inside its with-block, so loading only its prefix does not copy it.
+if 'ConfigureBlenderPilot' in ns['body']:
+ boundary=root/'Tests/EquipmentCompositionPilotBoundary.cs'
+ if not boundary.exists():boundary=Path(__file__).resolve().parents[2]/'Tests/EquipmentCompositionPilotBoundary.cs'
+ (p/'OptionalPilotBoundary.cs').write_text(boundary.read_text())
 f=(root/'Tests/EquipmentCompositionProductionTests.Fixture.cs').read_text().split('public static class EquipmentCompositionProductionTests')[0]
 f=f.replace('public class TailoredCloth:MonoBehaviour{public void Initialize(Material m){}}','').replace('public class TailoredCloth:MonoBehaviour{public void Initialize(Material m,HeroClass hero=HeroClass.Vanguard){}}','')
 f=f.replace('public class TailoredCloth:MonoBehaviour{public HeroClass Profile;public void Initialize(Material m,HeroClass hero=HeroClass.Vanguard){Profile=hero;}}','').replace('public static float deltaTime=.016f;','public static float deltaTime=.016f,time;').replace('public void RecalculateNormals(){}','public void MarkDynamic(){}public void RecalculateNormals(){}').replace('public const float PI=(float)Math.PI,Deg2Rad=PI/180;','public const float PI=(float)Math.PI,Deg2Rad=PI/180;public static float Exp(float a)=>(float)Math.Exp(a);public static float Clamp01(float a)=>Math.Max(0,Math.Min(1,a));public static float Lerp(float a,float b,float t)=>a+(b-a)*Clamp01(t);')

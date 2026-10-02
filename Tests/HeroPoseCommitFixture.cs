@@ -27,6 +27,8 @@ namespace Emberfall
   // Optional imported visual boundary: disabled, always returns to procedural poses.
   // It records arguments only; no Animator, asset importer or render behavior is simulated.
   private bool pilotCharging;
+  // This fixture executes procedural poses only; imported rig sampling has its own suite.
+  private void SetBlenderPilotVisible(bool visible){if(visible)throw new Exception("Procedural pose fixture cannot enable imported visual");}
   public bool PilotCharging=>pilotCharging;public void PretendPilotCharge(){pilotCharging=true;}
   public int PilotSamples;public bool PilotActing,PilotHurt;public float PilotProgress;
   private bool SampleBlenderPilot(bool acting,float progress,bool hurt)

@@ -16,7 +16,7 @@ namespace Emberfall
  public class ItemData{}public class FashionData{public FashionSlot slot;}public static class MobileControls{public static bool Active;}
  public class Profile{public HeroClass heroClass;}public class Progression{public Profile Profile=new Profile();public FashionData EquippedFashion(FashionSlot slot)=>null;public ItemData Equipped(ItemSlot slot)=>null;}
  public class Session{public Progression Progression=new Progression();}
- public class CollectionModelPreview{public float Width,Height;public CollectionPreviewAction PreviewAction;public void SetYaw(float v){}public void SetComposition(CollectionPreviewComposition v){}public void SetViewport(float w,float h,bool mobile){Width=w;Height=h;}public Texture Render(HeroClass h,ItemData w,ItemData a,ItemData r,FashionData f,FashionData g)=>new Texture();public void Play(CollectionPreviewAction a){PreviewAction=a;}}
+ public class CollectionModelPreview{public float Width,Height;public CollectionPreviewAction PreviewAction;public void SetEquipmentFraming(bool enabled,bool detail){if(enabled)throw new Exception("Collection layout must clear equipment framing");}public void SetYaw(float v){}public void SetComposition(CollectionPreviewComposition v){}public void SetViewport(float w,float h,bool mobile){Width=w;Height=h;}public Texture Render(HeroClass h,ItemData w,ItemData a,ItemData r,FashionData f,FashionData g)=>new Texture();public void Play(CollectionPreviewAction a){PreviewAction=a;}}
  public sealed partial class GameUI
  {
   Session session=new Session();CollectionModelPreview collectionModel;CollectionViewingState collectionViewing=new CollectionViewingState();float collectionPreviewYaw;Color gold,jade;public List<Rect> Buttons=new List<Rect>();

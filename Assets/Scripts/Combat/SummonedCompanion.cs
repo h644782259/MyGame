@@ -60,6 +60,14 @@ namespace Emberfall
         private CombatModel model;
         private EnemyController target;
         private float packTargetHoldUntil;
+        private struct PackPathProbe
+        {
+            public Vector3 From, To;
+            public float Until;
+            public int Revision;
+            public bool Reachable;
+        }
+        private readonly Dictionary<EnemyController, PackPathProbe> packPaths = new Dictionary<EnemyController, PackPathProbe>();
         private Transform healthBar;
         private Material healthMaterial;
         private readonly WorldTraversal.Route route = new WorldTraversal.Route();
@@ -539,7 +547,26 @@ namespace Emberfall
         private bool LegalPackTarget(EnemyController enemy)
         {
             return ValidTarget(enemy) && (session.InDungeon || enemy.IsAggro) &&
-                WorldTraversal.HasGroundPath(transform.position, enemy.transform.position, .12f);
+                PackCanReach(enemy);
+        }
+
+        private bool PackCanReach(EnemyController enemy)
+        {
+            Vector3 from = transform.position, to = enemy.transform.position;
+            float radius = NavigationRadius;
+            if (!WorldTraversal.IsWalkable(from, radius) || !WorldTraversal.IsWalkable(to, radius)) return false;
+            // Direct movement is a fast success only, never an occlusion rejection.
+            if (WorldTraversal.HasGroundPath(from, to, radius)) return true;
+            PackPathProbe probe;
+            if (packPaths.TryGetValue(enemy, out probe) && probe.Revision == WorldTraversal.Revision &&
+                Time.time < probe.Until && (from-probe.From).sqrMagnitude < .25f && (to-probe.To).sqrMagnitude < .25f)
+                return probe.Reachable;
+            bool reachable = WorldTraversal.CanReach(from, to, radius);
+            // Bounded per-companion cache: terrain edits invalidate immediately;
+            // moving endpoints or 250ms expire both positive and negative results.
+            if (packPaths.Count >= 32) packPaths.Clear();
+            packPaths[enemy] = new PackPathProbe { From=from, To=to, Until=Time.time+.25f, Revision=WorldTraversal.Revision, Reachable=reachable };
+            return reachable;
         }
 
         private EnemyController AcquirePackTarget()
