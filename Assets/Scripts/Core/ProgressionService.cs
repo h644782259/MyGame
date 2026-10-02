@@ -48,7 +48,7 @@ namespace Emberfall
         public const int PendingLootCapacity = 24;
         public const int RecoveryLootCapacity = 256;
         public const int MechanicExchangeCost = 12;
-        public const int MaximumMasteryRank = 35;
+        public const int MaximumMasteryRank = MasteryProgressionRules.MaximumRank;
         public const int BuildPresetCount = 2;
         public const int FashionChoiceCost = 30;
         public const int AscensionCost = 24;
@@ -943,7 +943,7 @@ namespace Emberfall
         }
 
         public static int MasteryCap(int level)
-        { return level < 30 ? 0 : level < 35 ? 5 : level < 50 ? 10 : level < 65 ? 15 : level < 80 ? 20 : level < 95 ? 30 : MaximumMasteryRank; }
+        { return MasteryProgressionRules.Cap(level); }
 
         public int MasteryCoreTier(MasteryType mastery)
         {
@@ -969,8 +969,8 @@ namespace Emberfall
         {
             if (!Enum.IsDefined(typeof(MasteryType), mastery)) return "无效的精通。";
             int cap = MasteryCap(Profile.level);
-            if (cap == 0) return "30级开放精通；与技能共用点数，营地免费重置。";
-            if (Profile.masteryRanks[(int)mastery] >= cap) return "已达当前等级精通上限 " + cap + "；35/50/65/80/95级继续开放。";
+            if (cap == 0) return MasteryProgressionRules.TierSummary+"；与技能共用点数，营地免费重置。";
+            if (Profile.masteryRanks[(int)mastery] >= cap) return "已达当前等级精通上限 " + cap + "；"+MasteryProgressionRules.TierSummary;
             if (Profile.skillPoints < 1) return "需要1点技能点；可在营地重置精通。";
             return string.Empty;
         }
@@ -988,7 +988,7 @@ namespace Emberfall
         {
             if (!inCamp) return Fail("只能在营地切换精通核心。");
             if (!Enum.IsDefined(typeof(MasteryType), mastery) || Profile.masteryRanks[(int)mastery] < MasteryCoreRules.InitialInvestment)
-                return Fail("该方向投入10点启用初阶核心，20点增强；只能启用一个。");
+                return Fail(MasteryProgressionRules.CoreSummary);
             GameProfile candidate = Snapshot(); candidate.masteryCore = (int)mastery;
             return CommitCandidate(candidate);
         }
@@ -1574,9 +1574,9 @@ namespace Emberfall
                 default:return Fail("请打开对应营地入口继续。");
             }
         }
-        public string ProgressionGoalStatus(int runMaterials=0)
+        public string ProgressionGoalStatus(int runMaterials=0,bool inCamp=false)
         {
-            ProgressionGoalState goal=SelectedProgressionGoal(true);
+            ProgressionGoalState goal=SelectedProgressionGoal(inCamp);
             return goal.Title+(goal.Done?" ✓ 已完成":"")+" · "+goal.Step+
                 (runMaterials>0?" · 本局 +"+runMaterials+"碎片":"");
         }

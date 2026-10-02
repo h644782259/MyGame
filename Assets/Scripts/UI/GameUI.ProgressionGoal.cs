@@ -23,6 +23,8 @@ namespace Emberfall
             if(!progressionGoalsOpen)return false;
             progressionGoalsOpen=false;CancelMobileScroll();BlockUITransition();return true;
         }
+        private string CurrentProgressionGoalStatus(int runMaterials=0)
+        {return session.Progression.ProgressionGoalStatus(runMaterials,session.IsInCamp);}
         private bool DrawProgressionGoalSurface()
         {
             ReconcileProgressionGoalSurface();if(!progressionGoalsOpen)return false;
@@ -32,7 +34,7 @@ namespace Emberfall
             Box(BuildPlanRect(l.Frame,u),jade,false);
             Text(BuildPlanRect(l.Header,u),"成长目标 · 一次追踪一个",Mathf.RoundToInt(21*u),pale,true);
             var p=session.Progression;var current=p.SelectedProgressionGoal(session.IsInCamp);
-            string status=p.ProgressionGoalStatus()+(string.IsNullOrEmpty(p.LastError)?"":"\n"+p.LastError);
+            string status=CurrentProgressionGoalStatus()+(string.IsNullOrEmpty(p.LastError)?"":"\n"+p.LastError);
             float statusHeight=Mathf.Ceil(Style(Mathf.RoundToInt(13*u),false,true).CalcHeight(new GUIContent(status),(l.Body.Width-26)*u)/u)+12;
             var sections=new ProgressionGoalLayout(l.Body,statusHeight,current.Action!=ProgressionGoalAction.None);
             progressionGoalHeaderScroll=BeginTouchScroll("progression-goal-current",BuildPlanRect(sections.Status,u),progressionGoalHeaderScroll,new Rect(0,0,(l.Body.Width-16)*u,statusHeight*u));
@@ -103,7 +105,8 @@ namespace Emberfall
         private void GoalOption(ref float y,float w,float u,string text,ProgressionGoalKind kind,string id,int tier,bool draw)
         {
             bool selected=session.Progression.Profile.progressionGoal==kind && (id==null||session.Progression.Profile.progressionGoalItemId==id) &&
-                (kind!=ProgressionGoalKind.Tier||session.Progression.Profile.progressionGoalTier==tier);
+                (kind!=ProgressionGoalKind.Tier||session.Progression.Profile.progressionGoalTier==tier) &&
+                (kind!=ProgressionGoalKind.Reforge||session.Progression.Profile.progressionGoalLevel==session.Progression.Profile.level);
             if(draw&&Button(new Rect(8*u,y*u,(w-16)*u,48*u),text+(selected?" ✓":""),selected?gold:jade))
             {Feedback(session.Progression.SelectProgressionGoal(kind,id,tier),"成长目标已保存");progressionGoalHeaderScroll=Vector2.zero;CancelMobileScroll();BlockUITransition();}
             y+=56;
