@@ -34,7 +34,7 @@ namespace Emberfall
         private void OnGUI()
         {
             var game=GameSession.Instance;
-            if(CameraOcclusionSurface.LastOccluders==0||viewCamera==null||game==null||game.Player==null||game.IsDead||game.InputBlocked)return;
+            if(CameraOcclusionSurface.LastHeroOccluders==0||viewCamera==null||game==null||game.Player==null||game.IsDead||game.InputBlocked)return;
             Vector3 point=viewCamera.WorldToScreenPoint(game.Player.transform.position+Vector3.up*1.25f);if(point.z<=0)return;
             if(occlusionLabel==null){occlusionFont=GameFont.Shared;occlusionLabel=new GUIStyle(GUI.skin.label){alignment=TextAnchor.MiddleCenter,fontStyle=FontStyle.Bold,fontSize=12,font=occlusionFont};}
             Matrix4x4 old=GUI.matrix;Color color=GUI.color;int depth=GUI.depth;

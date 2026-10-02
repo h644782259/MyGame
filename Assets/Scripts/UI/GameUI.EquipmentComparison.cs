@@ -4,8 +4,6 @@ namespace Emberfall
 {
     public sealed partial class GameUI
     {
-        private Vector2 equipmentMechanismScroll;
-        private string equipmentMechanismItem;
 
         // All inventory comparisons use the attributes the item will have after
         // equipping. A stored per-item rank is not the persistent slot rank.
@@ -21,14 +19,19 @@ namespace Emberfall
 
         private void DrawPersistentMechanismDetail(Rect area,ItemData current,ItemData candidate)
         {
-            if(equipmentMechanismItem!=candidate.id){equipmentMechanismItem=candidate.id;equipmentMechanismScroll=Vector2.zero;}
-            var hero=session.Progression.Profile.heroClass;
-            string text="换装后 · "+EquipmentComparisonPresentation.Description(candidate,hero);
-            if(!EquipmentComparisonPresentation.SameMechanism(current,candidate,hero))text+="\n原机制 · "+EquipmentComparisonPresentation.Description(current,hero);
-            float contentWidth=area.width-16;
-            float h=Style(12,false,true,TextAnchor.UpperLeft).CalcHeight(new GUIContent(text),contentWidth);
-            equipmentMechanismScroll=BeginTouchScroll("equipment-mechanism-detail",area,equipmentMechanismScroll,new Rect(0,0,contentWidth,Mathf.Max(area.height,h+4)));
-            Text(new Rect(0,0,contentWidth,h),text,12,muted,false,true);EndTouchScroll();
+            var hero=session.Progression.Profile.heroClass;float half=(area.width-8)*.5f;
+            bool lost=!EquipmentComparisonPresentation.SameMechanism(current,candidate,hero)&&EquipmentComparisonPresentation.ActiveMechanic(current,hero)!=EquipmentMechanic.None;
+            DrawMechanismTradeoff(new Rect(area.x,area.y,half,area.height),current,hero,lost?"原机制 · 将失去":"当前机制",lost?gold:muted);
+            DrawMechanismTradeoff(new Rect(area.x+half+8,area.y,half,area.height),candidate,hero,"换装后机制",jade);
+            if(area.Contains(Mouse))tooltip=EquipmentComparisonPresentation.Changes(current,candidate,hero)+"\n"+EquipmentComparisonPresentation.Description(candidate,hero);
+        }
+        private void DrawMechanismTradeoff(Rect area,ItemData item,HeroClass hero,string label,Color accent)
+        {
+            Fill(area,new Color(.025f,.05f,.065f));
+            string copy=label+" · "+MechanicBadgePresentation.Title(item,hero)+"\n收益："+MechanicBadgePresentation.Benefit(item,hero)+"\n代价："+MechanicBadgePresentation.Cost(item,hero);
+            int size=11;
+            if(Style(size,false,true).CalcHeight(new GUIContent(copy),area.width-8)>area.height-6)size=10;
+            Text(new Rect(area.x+4,area.y+3,area.width-8,area.height-6),copy,size,accent,false,true);
         }
 
         private void DrawEquipmentComparison(Rect r, ItemData equipped, ItemData candidate)

@@ -21,6 +21,8 @@ namespace Emberfall
                 flow[i]=path[i]+new Vector3(-tangent.z,0,tangent.x)*profile.CurrentOffset;
             }
             Ribbon(parent,r,name+" broad reflected current",flow,profile.CurrentWidth,height+.003f,current);
+            WaterFlowBands.Create(parent,flow,profile.CurrentWidth*.72f,height+.004f,environment,
+                r.Material(new Color(.31f,.55f,.55f)*profile.CurrentBrightness,false,VisualSurface.Water));
         }
         private static void BuildBridgeWaterContact(Transform parent,WorldResources r,Rect footprint,float deckTop)
         {

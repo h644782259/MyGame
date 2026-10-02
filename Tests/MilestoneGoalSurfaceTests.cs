@@ -39,14 +39,14 @@ namespace Emberfall
    ui.click="保存第二套配装";ui.DrawProgressionGoalOptions(520,1,true);
    check(changed==1&&p.Profile.progressionGoal==ProgressionGoalKind.SecondPreset,"only clicked candidate commits selected goal");
    var second=p.SelectedProgressionGoal(true);check(!second.Done&&second.Action==ProgressionGoalAction.OpenPresets,"tier40 never substitutes for both actual presets");
-   ui.click=second.ActionLabel;ui.DrawProgressionGoalOptions(520,1,true);check(ui.presetOpened==1&&changed==1,"existing shared action opens presets without claiming completion");
+   ui.click=second.ActionLabel;ui.DrawProgressionGoalSurface();check(ui.presetOpened==1&&changed==1,"existing shared action opens presets without claiming completion");
    ui.click="自愿挑战 · 通关第40阶";ui.DrawProgressionGoalOptions(520,1,true);
    check(changed==2&&p.SelectedProgressionGoal(true).Done&&p.Profile.progressionGoalTier==40,"explicit tier goal uses actual tier completion");
    p.Profile.highestAdventureTier=20;check(!p.SelectedProgressionGoal(true).Done,"tier progress below target remains unfinished");
    var item=p.CreateMechanicItem(EquipmentMechanic.FrostEcho);check(p.CollectLoot(item),"collect actual variant candidate");p.Profile.mechanicMaterials=0;
    ui.click="解锁变体 · ";ui.DrawProgressionGoalOptions(520,1,true);var target=p.SelectedProgressionGoal(true);
    check(target.ItemId==item.id&&!target.Done&&!target.CanAct&&target.MaterialCost==ProgressionService.VariantCost,"clicked item keeps stable identity and real material eligibility");
-   int before=changed;ui.click=target.ActionLabel;ui.DrawProgressionGoalOptions(520,1,true);check(changed==before&&!p.Profile.inventory.Find(x=>x.id==item.id).mechanicVariantUnlocked,"disabled action cannot execute or fabricate reward");
+   int before=changed;ui.OpenProgressionGoals();ui.click=target.ActionLabel;ui.DrawProgressionGoalSurface();check(changed==before&&!p.Profile.inventory.Find(x=>x.id==item.id).mechanicVariantUnlocked,"disabled action cannot execute or fabricate reward");
    return "PASS: "+n+" actual milestone goal surface/persistence assertions";
   }
  }

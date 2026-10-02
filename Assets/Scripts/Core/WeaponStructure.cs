@@ -21,9 +21,9 @@ namespace Emberfall
             float growth = 1f + Math.Max(0, Tier - 1) * .13f;
             SwordRoot = Tier == 0 ? .2f : .21f;
             SwordTip = SwordRoot + (Tier == 0 ? 1.1f : 1.08f * growth);
-            StaffBottom = -.94f * growth;
-            StaffCollar = 1.02f;
-            StaffCore = 1.33f;
+            StaffBottom = -.94f;
+            StaffCollar = 1.02f + Math.Max(0,Tier-2)*.085f;
+            StaffCore = StaffCollar + .31f;
             StaffCoreDiameter = Tier == 0 ? .34f : .24f + Tier * .065f;
             BowReach = Tier == 0 ? .58f : .59f * growth;
         }
