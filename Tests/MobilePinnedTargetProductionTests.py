@@ -1,4 +1,7 @@
-"""Real pointer, aim, action, targeting and charge methods with managed Unity boundary doubles."""
+"""Real pointer/aim/targeting/charge, full CastSkillCore and SkillRuntime.
+Only engine, optional mechanics and final emission recipients are managed boundaries;
+readiness, cost/cooldown commitment and final emitted intent execute production code.
+"""
 from pathlib import Path
 import os,sys,tempfile,subprocess
 r=Path(__file__).resolve().parents[1];dotnet=sys.argv[1] if len(sys.argv)>1 else 'dotnet'
@@ -8,9 +11,9 @@ def extract(path,signature):
  return s[a:b]
 with tempfile.TemporaryDirectory(prefix='mobile-pin-production-') as t:
  p=Path(t)
- for path in ['Core/GameTypes.cs','Core/CombatBalance.cs','Core/MobileCameraGesture.cs','Core/SkillDamageBudgets.cs','Combat/MobileSkillPolicy.cs','Combat/PlayerController.MobileFocus.cs','Combat/SkillChargeController.cs','UI/MobileControlLayout.cs']:(p/Path(path).name).write_text((r/'Assets/Scripts'/path).read_text())
+ for path in ['Core/SkillRuntime.cs','Core/GameTypes.cs','Core/CombatBalance.cs','Core/MobileCameraGesture.cs','Core/SkillDamageBudgets.cs','Combat/MobileSkillPolicy.cs','Combat/PlayerController.MobileFocus.cs','Combat/SkillChargeController.cs','UI/MobileControlLayout.cs']:(p/Path(path).name).write_text((r/'Assets/Scripts'/path).read_text())
  (p/'Fixture.cs').write_text((r/'Tests/MobilePinnedTargetProductionTests.cs').read_text())
- player=['private Vector3 ResolveMobileAim(','internal void PrepareMobileSkillAim(','internal void ResolveMobileSkillAim(','private static bool ValidAimTarget(','private static bool ProjectedBounds(','private void FaceAim(','private EnemyController MagicConeTarget(','private void BasicAttack(','internal bool CastImmediateSkill(','internal bool ConfirmTargetedSkill(','internal bool ExecuteChargedSkill(']
+ player=['private Vector3 ResolveMobileAim(','internal void PrepareMobileSkillAim(','internal void ResolveMobileSkillAim(','private static bool ValidAimTarget(','private static bool ProjectedBounds(','private void FaceAim(','private EnemyController MagicConeTarget(','private void BasicAttack(','internal bool CastImmediateSkill(','internal bool ConfirmTargetedSkill(','internal bool ExecuteChargedSkill(','private bool CanUseMovementSkill(','internal bool SkillTargetingReady(','internal bool CanBeginSkillTargeting(','internal Vector3 ResolveSkillGroundTarget(','private void CastSkill(','private void CastSkillCore(']
  controls=['public bool ProcessPointer(','public static void ResetInput()','private void Update()']
  target=['public enum Shape','public struct Preview','public static Preview Describe(','public static bool RequiresConfirmation(','public bool Begin(','public void Cancel()']
  (p/'PlayerMethods.cs').write_text('using System.Collections.Generic;using UnityEngine;namespace Emberfall{public sealed partial class PlayerController{'+''.join(extract('Combat/PlayerController.cs',x) for x in player)+'}}')
@@ -31,4 +34,23 @@ with tempfile.TemporaryDirectory(prefix='mobile-pin-production-') as t:
   assert failed.returncode and 'System.Exception: '+oracle in failed.stdout+failed.stderr,failed.stdout+failed.stderr
   file.write_text(original)
   if name=='TargetMethods.cs':playerfile.write_text(playerOriginal)
+ # A pin guard is appropriate for a new action, but putting it inside shared
+ # CanBeginSkillTargeting would reject an already captured charge before its
+ # executingChargedSkill flag is set. Both pin failure classes must detect it.
+ playerfile=p/'PlayerMethods.cs';good=playerfile.read_text()
+ for reason,oracle in [('目标被遮挡','actual readiness and full cast preserve confirmed point after later pin becomes blocked'),('距离不足','actual readiness and full cast preserve confirmed point after later pin exceeds skill range')]:
+  before='if(SkillTargetingReady(skill))return true;';assert before in good
+  playerfile.write_text(good.replace(before,'if(charge!=null&&charge.TargetPoint.sqrMagnitude>0&&MobilePinnedActionReason(skill)=="'+reason+'")return false;'+before))
+  subprocess.run(build,env=env,check=True,stdout=subprocess.DEVNULL)
+  failed=subprocess.run(run,env=env,capture_output=True,text=True)
+  assert failed.returncode and 'System.Exception: '+oracle in failed.stdout+failed.stderr,failed.stdout+failed.stderr
+  playerfile.write_text(good)
+ before='executingChargedSkill ? charge.TargetEnemy : AimTarget';assert before in good
+ playerfile.write_text(good.replace(before,'SummonedCompanion.ExplicitFocus(this)'))
+ subprocess.run(build,env=env,check=True,stdout=subprocess.DEVNULL)
+ failed=subprocess.run(run,env=env,capture_output=True,text=True)
+ assert failed.returncode and 'System.Exception: full contract cast sends captured enemy and point despite later blocked pin and changed team' in failed.stdout+failed.stderr,failed.stdout+failed.stderr
+ playerfile.write_text(good)
+ print('PASS: compiled live-team-at-release mutation fails actual contract emitter identity assertion')
+ print('PASS: two compiled shared-readiness pin guards fail exact blocked/range committed-charge assertions')
  print('PASS: three compiled old gesture/automatic-selection/action-fallback mutations fail exact production assertions')
