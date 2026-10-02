@@ -21,7 +21,7 @@ for case in cases:
   mesh=bpy.data.meshes.new(part['name']);v=[(x,-z,y) for x,y,z in part['vertices']];t=part['triangles'];faces=[t[i:i+3] for i in range(0,len(t),3)];mesh.from_pydata(v,[],faces);mesh.update();obj=bpy.data.objects.new(part['name'],mesh);scene.collection.objects.link(obj);obj.data.materials.append(mat);objects.append(obj)
  if 'hero' not in case:
   points=[Vector((x,-z,y)) for part in case['parts'] for x,y,z in part['vertices']];lo=Vector(tuple(min(v[i] for v in points) for i in range(3)));hi=Vector(tuple(max(v[i] for v in points) for i in range(3)));center=Vector((0,0,4.4 if "roof" in case["name"] else 1.7))
-  cam.location=center+Vector((5,9,5));cam.rotation_euler=(center-cam.location).to_track_quat('-Z','Y').to_euler();cam.data.ortho_scale=10 if "roof" in case["name"] else 5.5
+  cam.location=center+Vector((5,9,5));cam.rotation_euler=(center-cam.location).to_track_quat('-Z','Y').to_euler();cam.data.ortho_scale=11.5 if "roof" in case["name"] else 5.5
   scene.render.filepath=str(out/(case['name'].replace(' ','-')+'.png'))
  else:scene.render.filepath=str(out/f"h{case['hero']}-t{case['tier']}-w{case['wing']}.png")
  bpy.ops.render.render(write_still=True)
