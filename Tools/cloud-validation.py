@@ -233,6 +233,7 @@ def main():
             ("combat-opportunity", "CombatOpportunityTests", ["UI/CombatOpportunityPresentation"]),
             ("large-boss-motion", "LargeBossMotionTests", ["Core/LargeBossMotion", "Core/LargeBossPhaseState"]),
             ("deferred-room-choice", "DeferredRoomChoiceTests", ["Core/DeferredRoomChoice"]),
+            ("guardian-charge-pose", "GuardianChargePoseTests", ["Core/LocomotionPoseState", "Combat/BossAttackPolicy"]),
             ("locomotion-poses", "LocomotionPoseTests", ["Core/LocomotionPoseState"]),
             ("camera-visibility", "CameraVisibilityTests", ["Core/CameraVisibilityRules"]),
             ("companion-directive", "CompanionDirectiveTests", ["Combat/CompanionDirective"]),
