@@ -293,6 +293,7 @@ namespace Emberfall
         {
             if (session == null || session.Player == null || session.Player != playerGeneration || !session.HasStarted || session.IsDead || session.CombatEnded || session.Player.CombatEpoch != epoch || (!hostile && owner == null))
             { terminationReason = "retired"; Destroy(gameObject); return; }
+            if (session.InputBlocked) return;
             float dt = Time.deltaTime;
             if (dt <= 0) return;
             age += dt;

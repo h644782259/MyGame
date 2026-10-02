@@ -242,6 +242,7 @@ namespace Emberfall
         {
             if (session == null || session.Player == null || IsDead || !session.HasStarted || session.Paused || session.IsDead) return;
             if (largeBoss != null && (session.InputBlocked || largeBoss.State.Phase == LargeBossPhase.Finished)) return;
+            if (session.InputBlocked) return;
             float dt = Time.deltaTime;
             if (dt <= 0) return;
             walkingDisplacement = Vector3.zero;
