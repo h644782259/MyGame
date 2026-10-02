@@ -20,7 +20,6 @@ namespace Emberfall
         {return enemy!=null&&!enemy.IsDead&&enemy.isActiveAndEnabled&&enemy.gameObject.activeInHierarchy;}
         private GameObject roomObjectiveMarker;
         private EnemyController roomSupplier;
-        private float nextSupplyVisual;
         public bool RoomSupplyActive {get{return RoomChainRun!=null&&!RoomChainRun.Finished&&LiveRoomEnemy(roomSupplier);}}
         public bool IsRoomSupplier(EnemyController enemy){return RoomSupplyActive&&enemy==roomSupplier;}
         public int RoomRunSeed {get{return RoomChainRun==null?0:RoomChainRun.Room.Seed;}}
@@ -47,7 +46,7 @@ namespace Emberfall
         }
         private void BuildRoomObjective()
         {
-            roomSupplier=null;roomObjectiveMarker=null;nextSupplyVisual=0;
+            roomSupplier=null;roomObjectiveMarker=null;
             var plan=RoomChainRun.Room;
             if(plan.Interlude||plan.Boss)return;
             if(!WorldTraversal.IsWalkable(new Vector3(0,0,14),.65f)||!WorldTraversal.CanReach(TacticalRoomGeometry.Entrance,new Vector3(0,0,14),.65f))
@@ -60,6 +59,7 @@ namespace Emberfall
             roomObjectiveMarker=WorldBuilder.MakeRoomObjective(first);
             roomObjectiveMarker.name="Room objective: stand within 2.4m";
             roomObjectiveMarker.transform.SetParent(world.transform,true);
+            TacticalCaptureVisual.Attach(roomObjectiveMarker,this);
         }
         private void TickRoomTactics()
         {
@@ -71,13 +71,15 @@ namespace Emberfall
                 roomObjectiveMarker.transform.position=RoomObjectivePoint;
                 if(RoomChainRun.DoorUnlocked){roomObjectiveMarker.SetActive(false);OpenRoomGate();}
             }
-            if(roomSupplier!=null&&!roomSupplier.IsDead&&Time.time>=nextSupplyVisual)
-            {
-                nextSupplyVisual=Time.time+.8f;
-                CombatFx.Ring(roomSupplier.transform.position,1.1f,new Color(1,.8f,.25f),.85f,.08f);
-                foreach(var enemy in Enemies)
-                    if(RoomSupportMultiplier(enemy)<1)CombatFx.Ring(enemy.transform.position,.8f,new Color(.25f,.85f,1),.85f,.06f);
-            }
+
+        }
+        public bool TryGetTacticalCapture(out float fraction,out bool contested)
+        {
+            fraction=0;contested=false;
+            if(ChapterActive&&!ChapterFinished&&chapterObjective!=null&&!ChapterRun.DoorUnlocked)
+            {float required=ChapterRun.Objective==RoomObjective.Purify?3f:4f;int total=ChapterRun.Objective==RoomObjective.Purify?2:1;fraction=(ChapterRun.Seals+ChapterRun.Progress/required)/total;foreach(var enemy in Enemies)if(IsChapterContesting(enemy)){contested=true;break;}return true;}
+            if(!RoomCaptureActive)return false;
+            fraction=(RoomChainRun.Seals+RoomChainRun.Progress/(RoomChainRun.Room.Objective==RoomObjective.Purify?3f:4f))/(RoomChainRun.Room.Objective==RoomObjective.Purify?2:1);contested=RoomCaptureContested;return true;
         }
         public float RoomSupportMultiplier(EnemyController enemy)
         {

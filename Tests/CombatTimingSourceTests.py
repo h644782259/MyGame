@@ -16,10 +16,11 @@ check('advanceBudget.Reset();' in prepare,'every real new attack resets its own 
 select=enemy[enemy.index('private BossAttackPolicy.Move SelectBossMove'):enemy.index('private void BeginAttack')]
 check('BossAttackPolicy.LegalFallback(selected, distance, advanceBudget.FallbackActive,' in select and 'CanUseBossAttack(BossAttackPolicy.Move.Fan, target)' in select,'expired chase resolves to an actually visible ranged attack, including the anti-repeat charge band')
 check('AdventureResultPolicy.AcceptsDamage(session.HasStarted,session.CombatEnded)' in enemy,'late ordinary-dungeon and mode damage are terminal guarded')
-check('burnSchedule.Elapse(dt,true)' in status and 'poisonSchedule.Elapse(dt,true)' in status and status.count('TryTakeDueTick(true)')==2,'both damage statuses share finite scheduler')
+statusUpdate=status[status.index('private void Update()'):status.index('private void LateUpdate()')]
+check('AdvanceBurnClock(dt)' in statusUpdate and 'burnSchedule.Elapse(delta,true)' in status and 'poisonSchedule.Elapse(dt,true)' in statusUpdate and statusUpdate.count('TryTakeDueTick(true)')==2,'both damage statuses share finite scheduler')
 check('game.InputBlocked' in status and 'source.CombatEpoch==epoch' in status,'status clocks obey pause and reject stale caster')
 check('burnSchedule.Clear()' in status and 'poisonSchedule.Clear()' in status,'consumption/stale source clears pending schedule')
-check(status.index('poisonSchedule.Elapse(dt,true)')<status.index('burnSchedule.TryTakeDueTick(true)') and status.count('!game.InputBlocked&&!game.CombatEnded')==2,'all status clocks advance before callbacks; pauses retain unclaimed ticks')
+check(statusUpdate.index('poisonSchedule.Elapse(dt,true)')<statusUpdate.index('burnSchedule.TryTakeDueTick(true)') and status.count('!game.InputBlocked&&!game.CombatEnded')==2,'all status clocks advance before callbacks; pauses retain unclaimed ticks')
 check('ScheduledTickWindow.Collect(ref nextTick' in area and '&& ticksDrained' in area,'area lifetime and finisher wait for due ticks to drain')
 check('interval, 1)' in area and 'pendingTickTargets.Begin(session.Enemies, true)' in area and 'pendingTickTargets.TryTake(out enemy)' in area and '!pendingTickTargets.Pending && ScheduledTickWindow.Drained' in area,'an interrupted area pulse retains original unvisited targets and claims later ticks incrementally')
 check('SummonerDamageRules.MarkInterval, 1)' in spell and 'pendingTargets.Begin(session.Enemies)' in spell and 'pendingTargets.TryTake(out enemy)' in spell,'gravity retains an interrupted pulse/finisher and cannot pre-consume the next pulse')

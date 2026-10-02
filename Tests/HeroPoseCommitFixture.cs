@@ -59,6 +59,16 @@ public static class HeroPoseCommitTests
    Check(chained.Identity!=identity&&Same(chained.Arm,cancel),"cancel retires attack identity but starts bounded visual settling");
    chained.Frame(.13f);Check(!Same(chained.Arm,cancel),"cancel settling reaches idle without extending combat recovery");
   }
+  var castArms=new Quaternion[4];var castWeapons=new Quaternion[4];int[] skills={0,1,5,2};
+  for(int i=0;i<skills.Length;i++)
+  {
+   var model=new CombatModel(HeroClass.Summoner);model.PlayAction(skills[i],false);castArms[i]=model.Arm;castWeapons[i]=model.Weapon;
+   Check(model.Duration==SkillDamageBudgets.SkillPoseDuration(HeroClass.Summoner,skills[i],false),"pose family preserves actual shared nominal duration");
+   Check(Math.Abs(model.Age/model.Duration-SkillDamageBudgets.SkillPoseStart(HeroClass.Summoner,skills[i],false))<.00001f,"pose family commits at unchanged gameplay release phase");
+  }
+  for(int i=0;i<4;i++)for(int j=i+1;j<4;j++)Check(!Same(castArms[i],castArms[j])&&!Same(castWeapons[i],castWeapons[j]),"direction/ground/guard/contract alter both real arm and staff pose");
+  Check(CasterPoseRecipe.For(HeroClass.Arcanist,4)==CasterPoseFamily.Directional&&CasterPoseRecipe.For(HeroClass.Arcanist,1)==CasterPoseFamily.Ground&&CasterPoseRecipe.For(HeroClass.Arcanist,5)==CasterPoseFamily.SelfGuard,"elementalist maps chain/meteor/ward explicitly");
+  foreach(int skill in new[]{2,4,9})Check(CasterPoseRecipe.For(HeroClass.Summoner,skill)==CasterPoseFamily.Contract,"wolf/spirit/treant use contract family");
   return "PASS: "+n+" production hero commit/pose/recovery checks (managed transforms, not rendered frames)";
  }
 }

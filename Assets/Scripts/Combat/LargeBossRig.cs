@@ -4,7 +4,7 @@ using UnityEngine;
 namespace Emberfall
 {
     // Original four-legged astrolabe silhouette; no scaled copy of the small-trial giant.
-    internal sealed class LargeBossRig : MonoBehaviour
+    internal sealed partial class LargeBossRig : MonoBehaviour
     {
         private Transform body, core, firstRing, secondRing, beamEmitter;
         private readonly Transform[] legs = new Transform[4], petals = new Transform[4];
@@ -40,6 +40,7 @@ namespace Emberfall
                 Part(petals[i],"Curved shell plate",PrimitiveType.Capsule,new Vector3(0,.6f,.56f),new Vector3(.46f,.61f,.2f),shell).localRotation=Quaternion.Euler(-12,0,0);
                 Part(petals[i],"Armour crest inlay",PrimitiveType.Cube,new Vector3(0,1.02f,.62f),new Vector3(.12f,.32f,.09f),bronze).localRotation=Quaternion.Euler(-12,0,0);
             }
+            BuildPowerChannels(material);
         }
         public void Animate(float speed,float attack)
         {

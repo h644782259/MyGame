@@ -31,6 +31,9 @@ namespace Emberfall
             aura.Refresh(element, duration, enemy.IsBoss ? 1.7f : enemy.Kind == EnemyKind.Slime ? .65f : 1.2f);
         }
 
+        internal static void ClearFire(EnemyController enemy)
+        {var aura=enemy==null?null:enemy.GetComponent<ElementalEnemyAura>();if(aura!=null)aura.ClearFire();}
+
         internal static ParticleSystem Create(Transform parent, string name, Element element, float rate, float radius)
         {
             GameObject obj = new GameObject(name);
@@ -121,6 +124,9 @@ namespace Emberfall
             particles.gameObject.SetActive(true);
             if (particles.gameObject.activeInHierarchy && !particles.isPlaying) particles.Play();
         }
+
+        internal void ClearFire()
+        {fireUntil=Time.time;if(fire!=null){fire.Stop(true,ParticleSystemStopBehavior.StopEmittingAndClear);fire.gameObject.SetActive(false);}if(fireShape!=null)fireShape.gameObject.SetActive(false);}
 
         private void Update()
         {

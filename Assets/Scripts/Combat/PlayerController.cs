@@ -816,22 +816,28 @@ namespace Emberfall
         internal void RegisterSkillHit(int castId){if(session!=null&&!session.InputBlocked&&!session.CombatEnded&&!IsDead)masteryCore.SkillHit(castId);}
         internal void ElementalAdvancedArea(Vector3 at, float radius, CombatDamage direct, int castId, bool final)
         {
+            int impactEpoch=CombatEpoch;
             DestructibleProp.StrikeArea(this,at,radius,direct,castId);
             foreach (EnemyController enemy in session.Enemies.ToArray())
             {
                 if (!ValidAimTarget(enemy) || CombatFx.Flat(enemy.transform.position-at).magnitude > radius + (enemy.IsBoss?.85f:.4f) + enemy.HitFootprintBonus || !CombatSight.Area(at,enemy.transform.position)) continue;
+                EnemyStatusEffects status = enemy.StatusEffects;
+                var burnPlan=Specialization==ElementalistSpecialization.Burn&&final?status.BeginBurnFinale(this,castId):null;
+                EnemyStatusEffects.BurnFinaleSettlement burnSettlement=null;
+                if(IsDead||CombatEpoch!=impactEpoch||session.Player!=this||!session.HasStarted||session.CombatEnded)return;
+                if(!ValidAimTarget(enemy))continue; // A due old burn may have killed it before the direct hit.
                 RegisterSkillHit(castId);
                 ApplySpellDodgeBoon(enemy);
                 float amount = direct.Amount;
-                EnemyStatusEffects status = enemy.StatusEffects;
                 if (Specialization == ElementalistSpecialization.Burn)
-                { amount *= .65f; status.Burn(this, 3f, direct.WithoutCritical().Amount * .55f); }
+                { amount *= .65f;if(final)burnSettlement=status.CompleteBurnFinale(burnPlan,direct.WithoutCritical().Amount*.55f);else status.Burn(this, 3f, direct.WithoutCritical().Amount * .55f); }
                 else if (Specialization == ElementalistSpecialization.Shatter)
                 {
                     if (!final) status.FrostMark(4f);
                     else if (status.TryShatter(this, castId)) amount += direct.WithoutCritical().Amount * .6f;
                 }
                 enemy.TakeDamage(amount, Vector3.zero, 0, final?.3f:0, critical:direct.IsCritical);
+                if(burnSettlement!=null)burnSettlement.Apply();
             }
         }
 

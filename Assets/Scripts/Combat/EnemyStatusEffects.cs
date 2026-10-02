@@ -28,7 +28,8 @@ namespace Emberfall
         private float slowTime, slowStrength, markTime, markStrength, poisonTime, poisonDamage, downTime, frozenTime;
         private float frostMarkTime, burnTime, burnDamage;
         private ScheduledTickWindow poisonSchedule, burnSchedule;
-        private int burnEpoch;
+        private int burnEpoch, burnClockFrame=int.MinValue;
+        private readonly BurnFinaleReceipts burnFinaleCasts=new BurnFinaleReceipts();
         private PlayerController burnSource;
         private readonly RecentCastGate meteorCasts = new RecentCastGate();
         private readonly RecentCastGate poisonCasts = new RecentCastGate();
@@ -114,7 +115,7 @@ namespace Emberfall
         {
             if (castOwner == source && castEpoch == source.CombatEpoch) return;
             castOwner = source; castEpoch = source.CombatEpoch;
-            meteorCasts.Clear(); poisonCasts.Clear();
+            meteorCasts.Clear(); poisonCasts.Clear();burnFinaleCasts.Clear();
         }
 
         public bool BeginMeteorImpact(PlayerController source, int castId)
@@ -149,7 +150,7 @@ namespace Emberfall
             float previousRemaining = refresh ? burnSchedule.Remaining : 0;
             float previousBudget = refresh ? burnDamage * previousRemaining : 0;
             if (burnSchedule == null || burnSchedule.Complete || burnSource != source || burnEpoch != source.CombatEpoch)
-            { burnDamage = 0; burnSchedule = new ScheduledTickWindow(duration,StatusTickRates.Burn,StatusTickRates.Burn); }
+            { burnDamage = 0; burnSchedule = new ScheduledTickWindow(duration,StatusTickRates.Burn,StatusTickRates.Burn);burnClockFrame=Time.frameCount; }
             else burnSchedule.Refresh(duration);
             burnTime = burnSchedule.Remaining;
             burnDamage = Mathf.Max(burnDamage, totalDamage / duration);
@@ -161,6 +162,74 @@ namespace Emberfall
             }
             enemy.Provoke();
             ElementalCombatVfx.OnEnemy(enemy, ElementalCombatVfx.Element.Fire, duration);
+        }
+        internal BurnFinalePlan BeginBurnFinale(PlayerController source,int castId)
+        {
+            var game=GameSession.Instance;
+            if(source==null||source.IsDead||enemy==null||enemy.IsDead||
+                game==null||game.InputBlocked||!ValidSource(source,source.CombatEpoch))return null;
+            int expectedEpoch=source.CombatEpoch;
+            PrepareCastOwner(source);
+            if(!burnFinaleCasts.TryEnter(castId))return null;
+            AdvanceBurnClock(Time.deltaTime);
+            // Existing due events retain their original strength and individual damage/defence callbacks.
+            // No future event is claimed until this finite backlog has been paid.
+            while(burnSchedule!=null&&burnSchedule.HasDueTicks&&!enemy.IsDead&&ValidSource(source,expectedEpoch))
+            {
+                if(!burnSchedule.TryTakeDueTick(true))break;
+                enemy.TakeDamage(burnDamage*StatusTickRates.Burn,Vector3.zero,impact:false);
+            }
+            if(enemy.IsDead||!ValidSource(source,expectedEpoch))return null;
+            bool hadOwnBurn=burnSource==source&&burnEpoch==source.CombatEpoch&&burnSchedule!=null&&!burnSchedule.Complete&&burnSchedule.Remaining>0;
+            return new BurnFinalePlan(this,source,expectedEpoch,hadOwnBurn);
+        }
+        internal sealed class BurnFinalePlan
+        {
+            internal readonly EnemyStatusEffects Status;internal readonly PlayerController Source;internal readonly int Epoch;internal readonly bool HadOwnBurn;internal bool Used;
+            internal BurnFinalePlan(EnemyStatusEffects status,PlayerController source,int epoch,bool hadOwnBurn)
+            {Status=status;Source=source;Epoch=epoch;HadOwnBurn=hadOwnBurn;}
+        }
+        internal BurnFinaleSettlement CompleteBurnFinale(BurnFinalePlan plan,float refreshedTotalDamage)
+        {
+            if(plan==null||plan.Status!=this||plan.Used)return null;plan.Used=true;
+            if(enemy==null||enemy.IsDead||!FinitePositive(refreshedTotalDamage)||!ValidSource(plan.Source,plan.Epoch))return null;
+            // Same-impact boons have now run. Merge them before claiming this impact's future events.
+            var source=plan.Source;int expectedEpoch=plan.Epoch;
+            Burn(source,3f,refreshedTotalDamage);
+            if(!plan.HadOwnBurn)return null;
+            float perTick=burnDamage*StatusTickRates.Burn;
+            int claimed=burnSchedule.ClaimFutureTicks(3f);
+            burnTime=burnSchedule.Remaining;
+            if(burnSchedule.Complete)
+            {burnTime=burnDamage=0;burnSource=null;ElementalCombatVfx.ClearFire(enemy);}
+            return claimed>0?new BurnFinaleSettlement(this,source,expectedEpoch,claimed,perTick*claimed):null;
+        }
+        internal sealed class BurnFinaleSettlement
+        {
+            private readonly EnemyStatusEffects status;private readonly PlayerController source;private readonly int epoch;private readonly float amount;private bool applied;
+            internal int Ticks {get;private set;}
+            internal BurnFinaleSettlement(EnemyStatusEffects status,PlayerController source,int epoch,int ticks,float amount)
+            {this.status=status;this.source=source;this.epoch=epoch;this.amount=amount;Ticks=ticks;}
+            internal void Apply()
+            {
+                if(applied)return;applied=true;
+                if(status==null||status.enemy==null||status.enemy.IsDead||!status.ValidSource(source,epoch))return;
+                // Already-claimed DOT budget: never re-enter spell-hit/crit/resource hooks.
+                status.enemy.TakeDamage(amount,Vector3.zero,impact:false);
+            }
+        }
+        internal BurnFinaleSettlement PrepareBurnFinale(PlayerController source,int castId,float refreshedTotalDamage)
+        {return !FinitePositive(refreshedTotalDamage)?null:CompleteBurnFinale(BeginBurnFinale(source,castId),refreshedTotalDamage);}
+        internal int ResolveBurnFinale(PlayerController source,int castId,float refreshedTotalDamage)
+        {var settlement=PrepareBurnFinale(source,castId,refreshedTotalDamage);if(settlement==null)return 0;settlement.Apply();return settlement.Ticks;}
+        private void AdvanceBurnClock(float delta)
+        {
+            if(burnSchedule==null||burnSchedule.Complete)return;
+            if(!ValidSource(burnSource,burnEpoch))
+            {burnSchedule.Clear();burnTime=burnDamage=0;burnSource=null;return;}
+            if(burnClockFrame==Time.frameCount)return;
+            burnClockFrame=Time.frameCount;
+            if(FinitePositive(delta)){burnSchedule.Elapse(delta,true);burnTime=burnSchedule.Remaining;}
         }
         private static bool FinitePositive(float value)
         { return value > 0 && !float.IsNaN(value) && !float.IsInfinity(value); }
@@ -180,12 +249,7 @@ namespace Emberfall
             frostMarkTime = Mathf.Max(0, frostMarkTime - dt);
             // Both clocks see this frame before a damage callback can open a
             // choice menu. Unclaimed events stay queued until combat resumes.
-            if (burnSchedule != null && !burnSchedule.Complete)
-            {
-                if (!ValidSource(burnSource,burnEpoch))
-                { burnSchedule.Clear(); burnTime = burnDamage = 0; burnSource = null; }
-                else { burnSchedule.Elapse(dt,true); burnTime=burnSchedule.Remaining; }
-            }
+            AdvanceBurnClock(dt);
             if (poisonSchedule != null && !poisonSchedule.Complete)
             {
                 if (!ValidSource(poisonSource,sourceEpoch))
