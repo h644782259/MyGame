@@ -78,7 +78,7 @@ check('MobilePanelOwnsNotification' in method(ui, 'private void DrawNotification
       'responsive feedback stays in reserved header instead of overlapping active tabs')
 check('panel == Panel.Chests && (!chestDetails || session.Paused)' in update,
       'Escape opens or resumes pause without consuming an unresolved chest')
-check('"菜单", jade)' in rewards and 'session.SetPaused(true); BlockUITransition(); return;' in rewards,
+check('"菜单",jade)' in rewards.replace(" ","") and 'session.SetPaused(true);BlockUITransition();return;' in rewards.replace(" ",""),
       'desktop chest has a recovery menu even when storage cannot accept its reward')
 recap = read('Assets/Scripts/UI/GameUI.RunRecap.cs')
 check('RecapStatusHeight(layout,unit)' in recap and 'contentHeight=RecapContentHeight(layout,data)+statusHeight' in recap,
