@@ -145,7 +145,8 @@ namespace Emberfall
 
         private void DrawExpeditionHUD()
         {
-            if(session.NearRoomExit){Rect next=new Rect((width-300)*.5f,height-225,300,48);blockedRects.Add(next);if(Button(next,"北门已开启 · 进入下一间",gold))session.EnterNextRoom();}
+            if(session.NearChapterExit){Rect next=new Rect((width-300)*.5f,height-225,300,48);blockedRects.Add(next);if(Button(next,"沿星路前进",gold))session.EnterNextChapterRoom();}
+            else if(session.NearRoomExit){Rect next=new Rect((width-300)*.5f,height-225,300,48);blockedRects.Add(next);if(Button(next,"北门已开启 · 进入下一间",gold))session.EnterNextRoom();}
             if(session.IsInCamp)
             { Rect r=new Rect(16,AdventureSelectionLayout.WorkshopY(height,session.SystemMessages.Count,systemHistory),212,36);blockedRects.Add(r);if(Button(r,"营地工坊",jade)) {panel=Panel.Camp;session.SetUIBlocking(true);} }
             if(session.SideEventAvailable)

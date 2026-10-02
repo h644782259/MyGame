@@ -40,6 +40,12 @@ namespace Emberfall
   private void DrawMobileModeStatus(Rect r)
   {
    blockedRects.Add(r);Box(r,jade,false);float u=TouchRatio;
+   if(session.ChapterActive)
+   {
+    Text(new Rect(r.x+6*u,r.y+4*u,r.width-12*u,18*u),ChapterDefinition.Get(session.ActiveChapterNode).Name,TouchFont(13),gold,true,false,TextAnchor.MiddleCenter);
+    Text(new Rect(r.x+6*u,r.y+24*u,r.width-12*u,r.height-28*u),session.ChapterObjectiveCompact,TouchFont(11),pale,false,true,TextAnchor.UpperCenter);
+    return;
+   }
    if(session.RoomChainRun!=null)
    {
     var objective=session.RoomObjectiveView;
