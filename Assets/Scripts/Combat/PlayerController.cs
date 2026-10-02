@@ -226,7 +226,7 @@ namespace Emberfall
             session.RecordIncomingDamage(source, Mathf.Min(Health, damage));
             float healthBeforeHit = Health;
             Health = Mathf.Max(0,Health - damage);
-            CombatReviewEvents.Emit("takendamage",CombatReviewObjectId.Get(this),amount:healthBeforeHit-Health,detail:source);
+            if (CombatReviewEvents.Enabled) CombatReviewEvents.Emit("takendamage",CombatReviewObjectId.Get(this),amount:healthBeforeHit-Health,detail:source);
             if(Health>0){float recovery=masteryCore.DamageTaken(Health/MaxHealth);if(recovery>0){Heal(MaxHealth*recovery);session.RecordCombatAction("生机核心");}}
             GameAudio.Play(SoundCue.Hit);
             invulnerability = .2f;
@@ -236,7 +236,7 @@ namespace Emberfall
             if (Health > 0) TryDefensePassive();
             if (Health <= 0)
             {
-                CombatReviewEvents.Emit("death",CombatReviewObjectId.Get(this));
+                if (CombatReviewEvents.Enabled) CombatReviewEvents.Emit("death",CombatReviewObjectId.Get(this));
                 CombatEpoch++;
                 perfectDodgeCounterTime = 0;
                 if (model != null) model.CancelAction();
@@ -586,7 +586,7 @@ namespace Emberfall
             if ((HeroClass==HeroClass.Arcanist || HeroClass==HeroClass.Summoner) && !ValidAimTarget(AimTarget)) AimTarget=MagicConeTarget();
             FaceAim();
             GameAudio.Play(SoundCue.Attack);
-            CombatReviewEvents.Emit("attack",CombatReviewObjectId.Get(this));
+            if (CombatReviewEvents.Enabled) CombatReviewEvents.Emit("attack",CombatReviewObjectId.Get(this));
             attackCooldown = SkillDamageBudgets.BasicInterval(HeroClass);
             if (mobilityTime > 0) attackCooldown *= .8f;
             if (ActiveRunBonuses != null) attackCooldown /= ActiveRunBonuses.AttackSpeedMultiplier;
@@ -650,7 +650,7 @@ namespace Emberfall
                     if (knockdown > 0 && enemy.StatusEffects != null) enemy.StatusEffects.Knockdown(knockdown);
                 }
             }
-            if (!lastMeleeDamagedEnemy) CombatReviewEvents.Emit(basic ? "basicmiss" : "spellmiss",CombatReviewObjectId.Get(this),skill:skillIndex,detail:"melee_release_no_enemy_damage;props_not_counted");
+            if (CombatReviewEvents.Enabled && !lastMeleeDamagedEnemy) CombatReviewEvents.Emit(basic ? "basicmiss" : "spellmiss",CombatReviewObjectId.Get(this),skill:skillIndex,detail:"melee_release_no_enemy_damage;props_not_counted");
             if (hit && basic) OnBasicAttackHitTarget(firstHitPosition, firstHit, true);
             return hit;
         }
@@ -1056,14 +1056,14 @@ namespace Emberfall
             else if(!CanUseMovementSkill(skill,rank)) failure="前方有障碍或没有安全落点，请走桥或调整方向。";
             if(failure==null) return true;
             session.ReportControlFailure("skill"+skill,rank<=0?"未学":skillRuntime.Remaining(skill)>0?"冷却":Energy<GameBalance.SkillEnergyCost(HeroClass,skill)?"缺能":"无落点");
-            if (Energy<GameBalance.SkillEnergyCost(HeroClass,skill)) CombatReviewEvents.Emit("noenergy",CombatReviewObjectId.Get(this),skill:skill);
+            if (CombatReviewEvents.Enabled && Energy<GameBalance.SkillEnergyCost(HeroClass,skill)) CombatReviewEvents.Emit("noenergy",CombatReviewObjectId.Get(this),skill:skill);
             if(skillFeedbackCooldown<=0) { session.Notify(failure); skillFeedbackCooldown=.8f; }
             return false;
         }
 
         internal bool CastImmediateSkill(int skill)
         {
-            CombatReviewEvents.Emit("skillattempt",CombatReviewObjectId.Get(this),skill:skill);
+            if (CombatReviewEvents.Enabled) CombatReviewEvents.Emit("skillattempt",CombatReviewObjectId.Get(this),skill:skill);
             if(SkillTargetingController.RequiresConfirmation(HeroClass,skill) || !CanBeginSkillTargeting(skill)) return false;
             // Mouse aim is resolved independently of movement. Re-read a selected
             // living target's position here so immediate directional casts face it.
@@ -1075,7 +1075,7 @@ namespace Emberfall
 
         internal bool ConfirmTargetedSkill(int skill,Vector3 worldPoint)
         {
-            CombatReviewEvents.Emit("skillattempt",CombatReviewObjectId.Get(this),skill:skill);
+            if (CombatReviewEvents.Enabled) CombatReviewEvents.Emit("skillattempt",CombatReviewObjectId.Get(this),skill:skill);
             if(!SkillTargetingController.RequiresConfirmation(HeroClass,skill) || !CanBeginSkillTargeting(skill)) return false;
             EnemyController selected=AimTarget;
             aimPoint=CombatSight.GroundPoint(transform.position,worldPoint);
@@ -1149,7 +1149,7 @@ namespace Emberfall
             session.RecordCombatAction("职业能力");
             if (executingChargedSkill && session.HasBlessing(RunBlessing.ChargedWard)) chargedWardTime = Mathf.Max(chargedWardTime, 2f);
             GameAudio.Play(SoundCue.Cast);
-            CombatReviewEvents.Emit("skillrelease",CombatReviewObjectId.Get(this),skill:slot);
+            if (CombatReviewEvents.Enabled) CombatReviewEvents.Emit("skillrelease",CombatReviewObjectId.Get(this),skill:slot);
             if ((HeroClass == HeroClass.Vanguard && slot == 5) || (HeroClass == HeroClass.Ranger && slot == 4)) movementSkillLock = .15f;
             if (executingChargedSkill) model.ReleaseCharge(slot);
             else model.PlayAction(slot,false);

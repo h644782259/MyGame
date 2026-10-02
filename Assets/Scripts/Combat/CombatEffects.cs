@@ -172,7 +172,7 @@ namespace Emberfall
         {
             int attackId=player.NewCastId();
             if (!CanLaunchFromMuzzle(player,muzzle,amount,attackId))
-            {CombatReviewEvents.Emit("basicmiss",CombatReviewObjectId.Get(player),detail:"blocked_muzzle;prop_may_have_been_hit");CombatFx.Ring(player.transform.position,.4f,tint,.15f);return;}
+            {if (CombatReviewEvents.Enabled) CombatReviewEvents.Emit("basicmiss",CombatReviewObjectId.Get(player),detail:"blocked_muzzle;prop_may_have_been_hit");CombatFx.Ring(player.transform.position,.4f,tint,.15f);return;}
             Vector3 direction=CombatFx.Flat(target-muzzle);
             if(direction.sqrMagnitude<.0001f) direction=player.transform.forward;
             CombatProjectile projectile=Make(muzzle,direction,tint,arrow);

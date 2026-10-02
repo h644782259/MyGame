@@ -289,6 +289,8 @@ def main():
                         [dotnet, "run", "--project", str(project), "--no-restore", "--configuration", "Release", "--", str(workspace / "saves")]]
             passed = run_check(name, commands, env, output, report)
             failed = failed or not passed
+        passed = run_check("combat-review-instrumentation", [[sys.executable, str(ROOT / "Tests/CombatReviewInstrumentationTests.py"), "--dotnet", dotnet]], env, output, report)
+        failed = failed or not passed
         if args.compile or args.download_references or args.compile_android:
             try:
                 refs = unity_references(args.download_references)
