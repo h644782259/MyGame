@@ -21,7 +21,7 @@ public static class ChapterPresentationTests
                 int repeat=ChapterProgression.MaterialReward(node,tier);
                 Check(first.Contains("完成奖励 "+(repeat+1)+" 碎片")&&first.Contains("首次1"),"first reward follows shared tier bands plus one fixed shard");
                 Check(first.Contains(ChapterDefinition.DifficultyMechanic(node,diff)),"exact production difficulty mechanic described");
-                Check(first.Contains("难度不加乘")&&first.Contains("不发旧副本宝箱")&&first.Contains("节点完成可领取共享一次首通核心"),"actual shared first-core eligibility and no legacy chest");
+                Check(first.Contains("难度不加乘")&&first.Contains("不发旧副本宝箱")&&first.Contains(node==ChapterNode.StarPlatform?"星台通关完成整章，可领取共享一次首通核心":"本节点不授予资格"),"actual shared first-core eligibility and no legacy chest");
                 Check(first.Contains(limited?"初始3次":"携带药剂"),"healing rules are independent");
                 p.chapterFirstRewardMask=1<<(int)node;
                 string replay=ChapterEntryPresentation.Preview(p,node,diff,tier,limited);

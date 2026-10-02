@@ -527,7 +527,7 @@ namespace Emberfall
             IsDead = true;
             if(ModeRun!=null)ModeRun.Fail(ExpeditionModeFailure.PlayerDefeated);
             if(RoomChainRun!=null)RoomChainRun.Fail(RoomFailureReason.Death);
-            if(ChapterActive){ChapterRun.Fail();Progression.CancelChapterRun();}
+            if(ChapterActive)FailChapter("角色倒下：本次章节挑战失败。");
             pendingRoomChoice.Cancel();
             DungeonSelectionOpen = false;
             LastRunSummary = BuildRunSummary(false);
