@@ -32,10 +32,10 @@ namespace Emberfall
             if(state.Length==0&&targetReason.Length==0&&opportunity.Actionable)
             {Fill(caption,new Color(.055f,.16f,.12f,.95f));Text(caption,opportunity.Caption,TouchFont(10),jade,true,false,TextAnchor.MiddleCenter);}
             if(targetReason.Length>0)
-            {Fill(caption,new Color(.08f,.025f,.015f,.92f));Text(caption,targetReason,TouchFont(11),gold,true,false,TextAnchor.MiddleCenter);}
+            {Fill(caption,new Color(.08f,.025f,.015f,.92f));Text(caption,MobileCombatPresentation.SkillRejectionCaption(targetReason),TouchFont(11),gold,true,false,TextAnchor.MiddleCenter);}
             string rejected=session.ControlFailure("skill"+skill);
             if(!string.IsNullOrEmpty(rejected))
-            {Fill(caption,new Color(.08f,.025f,.015f,.92f));Text(caption,rejected,TouchFont(11),gold,true,false,TextAnchor.MiddleCenter);}
+            {Fill(caption,new Color(.08f,.025f,.015f,.92f));Text(caption,MobileCombatPresentation.SkillRejectionCaption(rejected),TouchFont(11),gold,true,false,TextAnchor.MiddleCenter);}
         }
     }
 }
