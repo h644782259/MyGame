@@ -34,7 +34,11 @@ namespace Emberfall
             if(stage==null||camera==null)
             {
                 float yaw=state.Yaw;var mode=composition;var surface=requested;
-                Dispose();composition=mode;requested=surface;state.SetYaw(yaw);CreateStage();
+                Dispose();composition=mode;requested=surface;state.SetYaw(yaw);
+                // A failed contact/material allocation must not cache a partial stage.
+                // Preserve the selected angle, and let the original failure reach the caller.
+                try {CreateStage();}
+                catch {Dispose();state.SetYaw(yaw);throw;}
             }
             state.Observe(new CollectionPreviewAppearance(hero,weapon,armor,relic,wings,fashionWeapon));
             if((texture==null||!allocated.Equals(requested))&&surfaceFrame!=Time.frameCount)CreateTexture();
