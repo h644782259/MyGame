@@ -69,6 +69,18 @@ namespace Emberfall
             else end=Math.Max(end,age+lifetime);
             return true;
         }
+        public bool HasDueTicks {get{return !cleared&&next<=Math.Min(age,end)+Epsilon;}}
+        // Only future, unclaimed discrete events can be converted. Due events must be delivered first.
+        public int ClaimFutureTicks(float horizon)
+        {
+            if(cleared||HasDueTicks||!Finite(horizon)||horizon<=0)return 0;
+            double through=Math.Min(end,age+horizon);
+            if(next>through+Epsilon)return 0;
+            int count=(int)Math.Min(int.MaxValue,Math.Floor((through+Epsilon-next)/interval)+1);
+            next+=count*interval;
+            if(next>end+Epsilon)Clear();
+            return count;
+        }
         public void Clear(){cleared=true;age=end;next=end+interval;}
         public static int Collect(ref float nextTick,float age,float lifetime,float interval,int maximum=MaximumCatchUp)
         {
