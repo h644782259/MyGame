@@ -1,0 +1,22 @@
+{
+  "sourceCommit": "3dc84337950a4fc2adb848a99e4c86a8d6cf867c",
+  "windowsRuntimeCommit": "49e624b3f0729ff44761a262a062dc67b849dd84",
+  "windowsCandidate": "5244a985c71efc8bd7cbb55859e77e891b0720f0",
+  "bytes": 27300064,
+  "sha256": "58fc36463aed7bee077cb0ac4d68475d39109f7648c7a09e18bb2af67e6d453f",
+  "entries": 1133,
+  "fullValidation": {
+    "passed": true,
+    "checks": 189,
+    "testedHead": "bce7b1f4e8ad65e270e78c0e2b9a44484cef9191",
+    "exactWindowsTree": "4a106eb08c61a7c5a2ae8bf03227e444e414e3cd",
+    "sourceChangedDuringRun": [],
+    "reportSha256": "c293612316333de3828ba59a402c33131cda6a4e9eac507f558eb30f858ecf70"
+  },
+  "unityBuild": false,
+  "runtimeSourceCandidate": "a5d78d03ce3ae84c3d90b39cfb72e60661aab0fb",
+  "windowsMain": "c5a734ebe43925eb46fee4c236bb863a1a0d5884",
+  "iosMain": "81ff46e28549b019638e5a190f3677f7cabab97e",
+  "deliveryChange": "Docs/Art-Design-Pilot-Delivery.md only; runtime/assets/platform configuration unchanged",
+  "filename": "Emberfall-Android-Source-3dc8433.zip"
+}
