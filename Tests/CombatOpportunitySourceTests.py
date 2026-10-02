@@ -31,7 +31,7 @@ check('hero.SkillCooldownRemaining(1),hero.Energy,GameBalance.SkillEnergyCost(he
 typed=(root/'Assets/Scripts/Combat/PlayerController.Opportunities.cs').read_text()
 slots=(root/'Assets/Scripts/UI/GameUI.MobileFeedback.cs').read_text()
 actions=(root/'Assets/Scripts/UI/MobileControls.Feedback.cs').read_text()
-check('session.Player.SkillOpportunity(skill)' in slots and 'state.Length==0&&opportunity.Actionable' in slots and 'opportunity.Caption' in slots,'Actual skill slot uses typed observation only when ordinary availability is ready')
+check('session.Player.SkillOpportunity(skill)' in slots and 'state.Length==0&&targetReason.Length==0&&opportunity.Actionable' in slots and 'opportunity.Caption' in slots,'Actual skill slot uses typed observation only when ordinary availability is ready')
 check('hero.BasicOpportunity()' in actions and 'LabelControl(Attack,opportunity.Caption,true)' in actions,'Actual attack control reads typed counter opportunity')
 check('hero.LatestCombatResult()' in ui and 'SummonedCompanion.EmpoweredHitFeedback(this,out sequence,out count,out age)' in typed,'One HUD result reads actual companion event rather than free order')
 check('status.FrostRemaining' in typed and 'status.OwnBurnRemaining(this)' in typed and 'OwnPoisonOpportunityRemaining(this)' in typed,'Opportunity expiry and ownership originate in authoritative status')

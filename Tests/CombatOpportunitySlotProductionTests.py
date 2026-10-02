@@ -39,6 +39,7 @@ namespace Emberfall {
    var minimum=new MobileControlLayout(568,320,163);Check(minimum.Skills[1].Width==48&&minimum.Scale==1,"actual minimum touch layout fixture");n++;
    var area=minimum.Skills[1];var compact=ui.MobileVisualRect(new Rect(area.X,area.Y,area.Width,area.Height));
    Check(Math.Abs(compact.width-41.28f)<.001f,"actual compact visual rectangle uses .86 preference");n++;
+   p.Observation=default;ui.DrawMobileSkillAvailability(r,1);Check(ui.labels.Count==0,"inactive observation cannot draw an opportunity caption");n++;ui.drawn.Clear();ui.labels.Clear();
    foreach(string reason in new[]{"目标被遮挡","距离不足"})foreach(bool explicitFailure in new[]{false,true}) {
     p.Observation=default;p.TargetReason=explicitFailure?"":reason;ui.session.Failure=explicitFailure?reason:"";ui.drawn.Clear();ui.labels.Clear();
     ui.DrawMobileSkillAvailability(compact,1);Check(ui.drawn.Count==1,"each rejection path draws one slot caption");n++;
@@ -77,9 +78,19 @@ with tempfile.TemporaryDirectory(prefix='opportunity-slot-') as t:
  print('PASS: compiled old ready-dot-only slot fails precise caption assertion')
 
  method.write_text(original)
+ for before,after,expected in [
+  ('if(state.Length==0&&targetReason.Length==0&&opportunity.Actionable)','if(state.Length==0&&opportunity.Actionable)','pinned rejection is queried for actual skill and suppresses opportunity'),
+  ('if(state.Length==0&&targetReason.Length==0&&opportunity.Actionable)','if(state.Length==0&&targetReason.Length==0)','inactive observation cannot draw an opportunity caption')]:
+  mutated=original.replace(before,after);assert mutated!=original;method.write_text(mutated);build();r=subprocess.run(command,text=True,capture_output=True)
+  assert r.returncode and 'System.Exception: '+expected in r.stdout+r.stderr,r.stdout+r.stderr
+  print('PASS: compiled missing target/actionability gate rejected:',expected)
+ method.write_text(original)
  presentation=p/'MobileCombatPresentation.cs';current=presentation.read_text()
  for before,after in [('if(reason=="目标被遮挡")return "被遮挡";','if(reason=="目标被遮挡")return reason;'),('if(reason=="距离不足")return "太远";','if(reason=="距离不足")return reason;')]:
   assert before in current;presentation.write_text(current.replace(before,after));build();r=subprocess.run(command,text=True,capture_output=True)
   assert r.returncode!=0 and 'actual rejection caption fits minimum compact CJK width' in r.stdout+r.stderr,r.stdout+r.stderr
   print('PASS: compiled full-reason caption fails actual minimum compact CJK width assertion')
  presentation.write_text(current)
+
+# Retain the complete free-command, lifecycle and ownership wiring contract alongside actual draw tests.
+subprocess.run([sys.executable,str(root/"Tests/CombatOpportunitySourceTests.py")],check=True)
