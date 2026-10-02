@@ -1,0 +1,317 @@
+{
+  "scope": "Scoped integrated journey evidence; full198 pending",
+  "files": {
+    "README.md": {
+      "bytes": 4960,
+      "sha256": "ab635c8c6f9e4fc1160232adc29281ec01dfce140f966ed68f75a628831e27ae"
+    },
+    "Scoped/build.log": {
+      "bytes": 76,
+      "sha256": "3d6301278b88927757d433aa3dc47738af268ae7d0f49aed5d4ffcb7110c5046"
+    },
+    "Scoped/host/AdventureResultPolicy.cs": {
+      "bytes": 400,
+      "sha256": "b20eac65ce9d6a7069a1dde8890b0c8b1f81942472fb589fd56a1d945d02ff52"
+    },
+    "Scoped/host/ApplicationPauseState.cs": {
+      "bytes": 650,
+      "sha256": "b28dbba08b326c480089b6cebac845ccae7955bb790f7905868a3d3feb9d6ef6"
+    },
+    "Scoped/host/ChapterCombatRun.cs": {
+      "bytes": 4470,
+      "sha256": "84620efc850c9923c30f269225bcd3cca5e9ebba615cd2b21ecbbe545a9ea180"
+    },
+    "Scoped/host/ChapterEntryPresentation.cs": {
+      "bytes": 7104,
+      "sha256": "696f81922b4fe5dec360dee54737a79742a71dafdcb483b56a14bd61a994c103"
+    },
+    "Scoped/host/ChapterProgression.cs": {
+      "bytes": 7062,
+      "sha256": "e94a63d0e20a570d7becd7ae3c8a18e9bcdd4c6ffeef442354b889293344dfb4"
+    },
+    "Scoped/host/ChapterResultSnapshot.cs": {
+      "bytes": 2419,
+      "sha256": "ed70be23ce5dbae145dd09c04cde0a655434d672072277d2d58b177e5ca19a71"
+    },
+    "Scoped/host/ChapterReturnTimeScaleTests.cs": {
+      "bytes": 6508,
+      "sha256": "da9936acc8521a18ac93603ea0840ddf214b2f53219e30c7e0b6c718117c81a2"
+    },
+    "Scoped/host/ChapterRoomGeometry.cs": {
+      "bytes": 9426,
+      "sha256": "75878daa72e4ed73129f47b05aaa127bf97bbf0ae7977f705fd317cbb550bca7"
+    },
+    "Scoped/host/ChapterSealPresentation.cs": {
+      "bytes": 811,
+      "sha256": "b1af91428568582477d049002d678e866f30e226bd2fe091170509d37e8f82b0"
+    },
+    "Scoped/host/CombatBalance.cs": {
+      "bytes": 4325,
+      "sha256": "6e1f8ac93dd53bb5c77c0c74a3b9fd05e1350c9d6f05781b465fd21196a73404"
+    },
+    "Scoped/host/EnemyControlPolicy.cs": {
+      "bytes": 4416,
+      "sha256": "155ef9b9782c255ae1912caf43fd5d281ac37a239fa39935d3447bccd701145a"
+    },
+    "Scoped/host/EnemyStats.cs": {
+      "bytes": 657,
+      "sha256": "5475460e366cf7f0e7d9a7a2148daf1853af17e4b3ce445a89af56ae92a100a6"
+    },
+    "Scoped/host/EscapePostPolicy.cs": {
+      "bytes": 1930,
+      "sha256": "738b865a71bbae6b0051133041f63572f1ca273f287d27d2ef0d2c23971377a0"
+    },
+    "Scoped/host/ExpeditionModeState.cs": {
+      "bytes": 14462,
+      "sha256": "15db55cdf8c10ee3b1b587c07334e4548961df29c31d1cdedcf3602ce95cc2ed"
+    },
+    "Scoped/host/Fixture.cs": {
+      "bytes": 44534,
+      "sha256": "c1058f8de6ae739d56f979fd157b3f8ed1f0be5feda6eba826d468f7edb9dd3d"
+    },
+    "Scoped/host/GameSession.Chapter.cs": {
+      "bytes": 25491,
+      "sha256": "24aaab6cec3ca081da0a798aa66620ed9d561b3a01ed4df252a3ab831540a12a"
+    },
+    "Scoped/host/GameSession.ChapterSeals.cs": {
+      "bytes": 618,
+      "sha256": "630c768885a2457c39995eb017e17af05fd7f334ddaede101194c8651fe9d2cd"
+    },
+    "Scoped/host/GameTypes.cs": {
+      "bytes": 34673,
+      "sha256": "f2d4d5c0e04b1808369683504d345730d4e7fc4eafae2bac1d76017311f2466e"
+    },
+    "Scoped/host/HubTravelRules.cs": {
+      "bytes": 916,
+      "sha256": "924f9c04adaad130a9ebf6fec17e58c18cec544c93a69ca2fa1725dd216c80d1"
+    },
+    "Scoped/host/IntegratedBuildJourneyFixture.cs": {
+      "bytes": 8131,
+      "sha256": "037ee261f8ba24db547ed6c92f9fa169c29619e0d8c7c432f3f14cf156cb2017"
+    },
+    "Scoped/host/IntegratedJourneyFixture.cs": {
+      "bytes": 16566,
+      "sha256": "054e12c5e857a2a85c50c3a47e1faa36d08814a42527536916680d71443fe747"
+    },
+    "Scoped/host/Lifecycle.cs": {
+      "bytes": 16035,
+      "sha256": "07d13d34b9187865d8e5fd686324788358495a411206768b42647de3be12241d"
+    },
+    "Scoped/host/MasteryCoreRuntime.cs": {
+      "bytes": 3723,
+      "sha256": "10751c3218ae97d89603fab134b1396bc2cbe92a767cb388f155df519b5e0299"
+    },
+    "Scoped/host/NuGet.Config": {
+      "bytes": 72,
+      "sha256": "e55025a896f8fbe147f99d8f85afe2377f9dc0e65cd4527be17bb2850ac85fdc"
+    },
+    "Scoped/host/Program.cs": {
+      "bytes": 81,
+      "sha256": "2792821c87522e6314818ce1e7112b45351e0e5ead406e5bd32557ca75e24f97"
+    },
+    "Scoped/host/ProgressionGoalState.cs": {
+      "bytes": 2504,
+      "sha256": "1132faafac8f7865c138b4441d48cc1d98552604028aacb460822c20147f2c6c"
+    },
+    "Scoped/host/ProgressionService.Chapter.cs": {
+      "bytes": 7624,
+      "sha256": "21f82d41927e65d0c6f0dd80277f529de6a84398b5f52a2d6f1843781ca547fc"
+    },
+    "Scoped/host/ProgressionService.Reforge.cs": {
+      "bytes": 4143,
+      "sha256": "cae01fc45834d931ed014725d8dc0123a44038c9eb89653b10be6d82ffe1ab4c"
+    },
+    "Scoped/host/ProgressionService.cs": {
+      "bytes": 152434,
+      "sha256": "53c60651fb932b72b6bba107f94dd1e5ac6439cfe844c7eb0e1b3fc7b3dadc77"
+    },
+    "Scoped/host/ProgressionTests.cs": {
+      "bytes": 97042,
+      "sha256": "1174202c49c86dfc4bced65f037eefc76f045c13c8b5f452704f13529d3d9678"
+    },
+    "Scoped/host/ReforgeQuote.cs": {
+      "bytes": 996,
+      "sha256": "fddba3c0c67792ff13a62f4c35d38156c1d58713284e199fe75f04b6cd80816e"
+    },
+    "Scoped/host/RoomChainState.cs": {
+      "bytes": 5197,
+      "sha256": "b28cc6dc41f36ba9fba0678b6f36d2870379c6f8a5bad4dcd7a3a6cee7f9360b"
+    },
+    "Scoped/host/RoomTacticalRegion.cs": {
+      "bytes": 2008,
+      "sha256": "6597402326f5fa5b41b75f317bb9c422aacf1e54dcd8fa4d6b519ff2560143b5"
+    },
+    "Scoped/host/RoomTactics.cs": {
+      "bytes": 1657,
+      "sha256": "f6639acd369783c85b63338c616fe3365d8f54d95d015f46775e58ff98ad7743"
+    },
+    "Scoped/host/RunChoices.Chapter.cs": {
+      "bytes": 1181,
+      "sha256": "c3634ee66cdcfb4f8ced6505507a70bb775122cf1b3b344f1edfbc16570ffa92"
+    },
+    "Scoped/host/RunChoices.Rooms.cs": {
+      "bytes": 7097,
+      "sha256": "7c449d82846c168cd5934ba2f1543d7df2ec4c671e2605ec6a5588d66007d59c"
+    },
+    "Scoped/host/RunChoices.cs": {
+      "bytes": 8356,
+      "sha256": "935aad1aca90198413db2079884d36a84c0cd41f69e8ea2eb628394b0257e3ab"
+    },
+    "Scoped/host/RunMechanismEvidence.cs": {
+      "bytes": 1640,
+      "sha256": "cb98baf2bae611a2cecb573a617b2aabe55ba3224776dec7688fa545c6dcd3a4"
+    },
+    "Scoped/host/SafeSaveFlow.cs": {
+      "bytes": 3996,
+      "sha256": "55ba030f69f9b50651139c46cc1f74c26276652961d9f63b017ca0d232490ee7"
+    },
+    "Scoped/host/SaveLifecycleGate.cs": {
+      "bytes": 411,
+      "sha256": "232ee40b97ac9102e4f539d1bbc4b301c813fa8afb86f4a24f2dac357a63408e"
+    },
+    "Scoped/host/Test.csproj": {
+      "bytes": 199,
+      "sha256": "f62ccd3b3a96fc3f4233abd5fa70e5e446d4850cc2b287e725472f093e655c99"
+    },
+    "Scoped/host/TierRewardBand.cs": {
+      "bytes": 497,
+      "sha256": "0049463f6cfb83d117324670efa94cabefb457b79d8c112b246fedc40f7ad5d1"
+    },
+    "Scoped/host/TierRewardRules.cs": {
+      "bytes": 1390,
+      "sha256": "1b2cba188c54bd3820ba77c3fcb05c6dfd1212fc9e6ff0e8ec8249efb04998f1"
+    },
+    "Scoped/host/UI.cs": {
+      "bytes": 426,
+      "sha256": "48720e6f75fe049abe2fde93ecf73644a0bb0359a295c23177045f4ea03086ad"
+    },
+    "Scoped/journey.log": {
+      "bytes": 39552,
+      "sha256": "fb1e6be2af34aa767fc4355528a2f72a68b37f65dfa1f46f293b6f132a914a53"
+    },
+    "Scoped/manifest.json": {
+      "bytes": 4990,
+      "sha256": "5eb723971fea94bd29253fa0307aa89a9f8c2237b0012e29559531615bb9396e"
+    },
+    "Scoped/negative-controls/completion-earned-shares/build.stderr.log": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "Scoped/negative-controls/completion-earned-shares/build.stdout.log": {
+      "bytes": 76,
+      "sha256": "ff7602bc4dbbe8026722753b7476705a3470d98cde0c89700dfffee283e46ee2"
+    },
+    "Scoped/negative-controls/completion-earned-shares/run.stderr.log": {
+      "bytes": 1059,
+      "sha256": "792ad15caf4b26679b648ab96085b4590faf845eb02f9f1b83663bebc1d6c7c9"
+    },
+    "Scoped/negative-controls/completion-earned-shares/run.stdout.log": {
+      "bytes": 252,
+      "sha256": "356c66bda375aaecbe8a33cac8d6a7ebdac48e64203de801667417b6db978c7e"
+    },
+    "Scoped/negative-controls/failed-stage-discards-world/build.stderr.log": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "Scoped/negative-controls/failed-stage-discards-world/build.stdout.log": {
+      "bytes": 76,
+      "sha256": "0a9869b66203b925449907337a4de6b5d3c085290f5e0a5dba5a43305f295247"
+    },
+    "Scoped/negative-controls/failed-stage-discards-world/run.stderr.log": {
+      "bytes": 1009,
+      "sha256": "1c20e9fe8aa98603e4afa829a9ea3eeeecf5205a8cde3ef2c945154ab07449cd"
+    },
+    "Scoped/negative-controls/failed-stage-discards-world/run.stdout.log": {
+      "bytes": 4018,
+      "sha256": "2e3a60241afa78b60f8d0f39e624a145d1c0bffb85e69192787761ca9ce0b8f6"
+    },
+    "Scoped/negative-controls/manifest.json": {
+      "bytes": 13906,
+      "sha256": "e81fae7847ab982eddeec34f9dbea1342783b62130f0897b9a5f67bfa537a5ac"
+    },
+    "Scoped/negative-controls/missing-l1-migration/build.stderr.log": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "Scoped/negative-controls/missing-l1-migration/build.stdout.log": {
+      "bytes": 76,
+      "sha256": "6dcb24ccdba360759a142fea69876d046b1f71acf3cdd3c0ba36e90b0dd58efc"
+    },
+    "Scoped/negative-controls/missing-l1-migration/run.stderr.log": {
+      "bytes": 760,
+      "sha256": "db1fad58888dc6324c03461eada16e7888ab852da467615f22482bf27b19291b"
+    },
+    "Scoped/negative-controls/missing-l1-migration/run.stdout.log": {
+      "bytes": 4926,
+      "sha256": "ce91af9942df6a8a576440b1c2fee22469c5f968e224cfb8b4a3b2282af26ad8"
+    },
+    "Scoped/negative-controls/preset-resets-slot-upgrade/build.stderr.log": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "Scoped/negative-controls/preset-resets-slot-upgrade/build.stdout.log": {
+      "bytes": 76,
+      "sha256": "b9773398d2444b1e2596963a3d9d5f930d77647cdf63a2f715f95808f01e3045"
+    },
+    "Scoped/negative-controls/preset-resets-slot-upgrade/run.stderr.log": {
+      "bytes": 1041,
+      "sha256": "c2ceed05a00433823bfd6ebf6d8f71a3e0ccccc961a8a7df61ac2a70b0579b1a"
+    },
+    "Scoped/negative-controls/preset-resets-slot-upgrade/run.stdout.log": {
+      "bytes": 3433,
+      "sha256": "393154ac36f4545c93b06b931c68f75e2fc92a9d1871c657b0b13ac5728b74b9"
+    },
+    "Scoped/negative-controls/reforge-free-gold/build.stderr.log": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "Scoped/negative-controls/reforge-free-gold/build.stdout.log": {
+      "bytes": 76,
+      "sha256": "bcadb2cbe8abb9ffb73426a34dfec4694d3a23586fc2bb1e2c4f83dca2a918c4"
+    },
+    "Scoped/negative-controls/reforge-free-gold/run.stderr.log": {
+      "bytes": 981,
+      "sha256": "b1d1e3235be6b03602251ae64a9461f580aad61675b0aac539f20c3961ed1ddc"
+    },
+    "Scoped/negative-controls/reforge-free-gold/run.stdout.log": {
+      "bytes": 3150,
+      "sha256": "13a8752082a724b3786f4578f22bc1a8135c3f14ece1c04f499836f0dd48a425"
+    },
+    "Scoped/negative-controls/respec-forgets-first-ranks/build.stderr.log": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "Scoped/negative-controls/respec-forgets-first-ranks/build.stdout.log": {
+      "bytes": 76,
+      "sha256": "4dde2d582078215e70885ffb2bf9148c9a7be7df12197174e2debf9470d1953e"
+    },
+    "Scoped/negative-controls/respec-forgets-first-ranks/run.stderr.log": {
+      "bytes": 1036,
+      "sha256": "8fa81e67dc2de269e257f82484fda8ff914ce91dda5dcf1ed6f2615ba56fb087"
+    },
+    "Scoped/negative-controls/respec-forgets-first-ranks/run.stdout.log": {
+      "bytes": 3433,
+      "sha256": "393154ac36f4545c93b06b931c68f75e2fc92a9d1871c657b0b13ac5728b74b9"
+    },
+    "android-toolchain-preflight.json": {
+      "bytes": 2368,
+      "sha256": "3ba2d9b8172457969cb59fa9eea986e22af3b1570ab5dc9a06622ea7b6dc7764"
+    },
+    "android-toolchain-preflight.log": {
+      "bytes": 2368,
+      "sha256": "3ba2d9b8172457969cb59fa9eea986e22af3b1570ab5dc9a06622ea7b6dc7764"
+    },
+    "environment-checkpoint-2031.json": {
+      "bytes": 801,
+      "sha256": "6862d99ac3e0b8bc12253313fa4d52620686ea29c4bf093e70c38e8aa82d553e"
+    },
+    "journey-ledger.csv": {
+      "bytes": 10868,
+      "sha256": "d1c062589e30d217b7a962d6b4c1aafa740543e1bc2931f1fa36b1cd6d90e04b"
+    },
+    "journey-ledger.json": {
+      "bytes": 47064,
+      "sha256": "9658a3eed8f08d4c24484ed1029a08008c568b5ebffc2d4b6333c6e1182004cc"
+    }
+  }
+}

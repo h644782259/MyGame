@@ -1,0 +1,137 @@
+scenario,stage,level,xp,totalXp,gold,materials,points,spent,items,coreClaimed,corePending,chapterMask,sequence
+Vanguard-fresh-L1,start,1,0,0,60,0,0,1,3,False,False,0,0
+Vanguard-fresh-L1,chapter-ForestCourt,3,54,204,60,2,1,1,3,False,False,1,1
+Vanguard-fresh-L1,chapter-Redrock,5,32,452,71,4,3,1,3,False,False,3,2
+Vanguard-fresh-L1,chapter-StarPlatform,6,76,676,202,7,4,1,3,False,True,7,3
+Vanguard-fresh-L1,core-claimed,6,76,676,202,7,4,1,4,True,False,7,3
+Vanguard-fresh-L1,first-core equipped and slot upgraded,6,76,676,142,7,4,1,4,True,False,7,3
+Vanguard-fresh-L1,chapter-ForestCourt,7,154,964,142,8,5,1,4,True,False,7,4
+Vanguard-fresh-L1,chapter-ForestCourt,8,226,1276,142,9,6,1,4,True,False,7,5
+Vanguard-fresh-L1,chapter-ForestCourt,9,280,1600,142,10,7,1,4,True,False,7,6
+Vanguard-fresh-L1,chapter-ForestCourt,10,316,1936,142,11,8,1,4,True,False,7,7
+Vanguard-fresh-L1,chapter-ForestCourt,11,346,2296,142,12,9,1,4,True,False,7,8
+Vanguard-fresh-L1,partial gold reforge committed,11,346,2296,34,12,8,2,4,True,False,7,8
+Vanguard-fresh-L1,respec and preset reapplied,11,346,2296,34,12,8,2,4,True,False,7,8
+Vanguard-fresh-L1,fresh service reload verifies complete build journey,11,346,2296,34,12,8,2,4,True,False,7,8
+Vanguard-fresh-L1,actual-session-reload-retried,11,346,2296,34,12,8,2,4,True,False,7,8
+Vanguard-fresh-L1,chapter-ForestCourt,12,358,2668,34,13,9,2,4,True,False,7,9
+Vanguard-fresh-L1,finished,12,358,2668,34,13,9,2,4,True,False,7,9
+Vanguard-legacy-L1,start,1,0,0,60,0,0,1,3,False,False,0,0
+Vanguard-legacy-L1,chapter-ForestCourt,3,54,204,60,2,1,1,3,False,False,1,1
+Vanguard-legacy-L1,chapter-Redrock,5,32,452,71,4,3,1,3,False,False,3,2
+Vanguard-legacy-L1,chapter-StarPlatform,6,76,676,202,7,4,1,3,False,True,7,3
+Vanguard-legacy-L1,core-claimed,6,76,676,202,7,4,1,4,True,False,7,3
+Vanguard-legacy-L1,first-core equipped and slot upgraded,6,76,676,142,7,4,1,4,True,False,7,3
+Vanguard-legacy-L1,chapter-ForestCourt,7,154,964,142,8,5,1,4,True,False,7,4
+Vanguard-legacy-L1,chapter-ForestCourt,8,226,1276,142,9,6,1,4,True,False,7,5
+Vanguard-legacy-L1,chapter-ForestCourt,9,280,1600,142,10,7,1,4,True,False,7,6
+Vanguard-legacy-L1,chapter-ForestCourt,10,316,1936,142,11,8,1,4,True,False,7,7
+Vanguard-legacy-L1,chapter-ForestCourt,11,346,2296,142,12,9,1,4,True,False,7,8
+Vanguard-legacy-L1,partial gold reforge committed,11,346,2296,34,12,8,2,4,True,False,7,8
+Vanguard-legacy-L1,respec and preset reapplied,11,346,2296,34,12,8,2,4,True,False,7,8
+Vanguard-legacy-L1,fresh service reload verifies complete build journey,11,346,2296,34,12,8,2,4,True,False,7,8
+Vanguard-legacy-L1,actual-session-reload-retried,11,346,2296,34,12,8,2,4,True,False,7,8
+Vanguard-legacy-L1,chapter-ForestCourt,12,358,2668,34,13,9,2,4,True,False,7,9
+Vanguard-legacy-L1,finished,12,358,2668,34,13,9,2,4,True,False,7,9
+Arcanist-fresh-L1,start,1,0,0,60,0,0,1,3,False,False,0,0
+Arcanist-fresh-L1,chapter-ForestCourt,3,54,204,60,2,1,1,3,False,False,1,1
+Arcanist-fresh-L1,chapter-Redrock,5,32,452,71,4,3,1,3,False,False,3,2
+Arcanist-fresh-L1,chapter-StarPlatform,6,76,676,202,7,4,1,3,False,True,7,3
+Arcanist-fresh-L1,core-claimed,6,76,676,202,7,4,1,4,True,False,7,3
+Arcanist-fresh-L1,first-core equipped and slot upgraded,6,76,676,157,7,4,1,4,True,False,7,3
+Arcanist-fresh-L1,chapter-ForestCourt,7,154,964,157,8,5,1,4,True,False,7,4
+Arcanist-fresh-L1,chapter-ForestCourt,8,226,1276,157,9,6,1,4,True,False,7,5
+Arcanist-fresh-L1,chapter-ForestCourt,9,280,1600,157,10,7,1,4,True,False,7,6
+Arcanist-fresh-L1,chapter-ForestCourt,10,316,1936,157,11,8,1,4,True,False,7,7
+Arcanist-fresh-L1,chapter-ForestCourt,11,346,2296,157,12,9,1,4,True,False,7,8
+Arcanist-fresh-L1,partial gold reforge committed,11,346,2296,9,12,8,2,4,True,False,7,8
+Arcanist-fresh-L1,respec and preset reapplied,11,346,2296,9,12,8,2,4,True,False,7,8
+Arcanist-fresh-L1,fresh service reload verifies complete build journey,11,346,2296,9,12,8,2,4,True,False,7,8
+Arcanist-fresh-L1,actual-session-reload-retried,11,346,2296,9,12,8,2,4,True,False,7,8
+Arcanist-fresh-L1,chapter-ForestCourt,12,358,2668,9,13,9,2,4,True,False,7,9
+Arcanist-fresh-L1,finished,12,358,2668,9,13,9,2,4,True,False,7,9
+Arcanist-legacy-L1,start,1,0,0,60,0,0,1,3,False,False,0,0
+Arcanist-legacy-L1,chapter-ForestCourt,3,54,204,60,2,1,1,3,False,False,1,1
+Arcanist-legacy-L1,chapter-Redrock,5,32,452,71,4,3,1,3,False,False,3,2
+Arcanist-legacy-L1,chapter-StarPlatform,6,76,676,202,7,4,1,3,False,True,7,3
+Arcanist-legacy-L1,core-claimed,6,76,676,202,7,4,1,4,True,False,7,3
+Arcanist-legacy-L1,first-core equipped and slot upgraded,6,76,676,157,7,4,1,4,True,False,7,3
+Arcanist-legacy-L1,chapter-ForestCourt,7,154,964,157,8,5,1,4,True,False,7,4
+Arcanist-legacy-L1,chapter-ForestCourt,8,226,1276,157,9,6,1,4,True,False,7,5
+Arcanist-legacy-L1,chapter-ForestCourt,9,280,1600,157,10,7,1,4,True,False,7,6
+Arcanist-legacy-L1,chapter-ForestCourt,10,316,1936,157,11,8,1,4,True,False,7,7
+Arcanist-legacy-L1,chapter-ForestCourt,11,346,2296,157,12,9,1,4,True,False,7,8
+Arcanist-legacy-L1,partial gold reforge committed,11,346,2296,9,12,8,2,4,True,False,7,8
+Arcanist-legacy-L1,respec and preset reapplied,11,346,2296,9,12,8,2,4,True,False,7,8
+Arcanist-legacy-L1,fresh service reload verifies complete build journey,11,346,2296,9,12,8,2,4,True,False,7,8
+Arcanist-legacy-L1,actual-session-reload-retried,11,346,2296,9,12,8,2,4,True,False,7,8
+Arcanist-legacy-L1,chapter-ForestCourt,12,358,2668,9,13,9,2,4,True,False,7,9
+Arcanist-legacy-L1,finished,12,358,2668,9,13,9,2,4,True,False,7,9
+Ranger-fresh-L1,start,1,0,0,60,0,0,1,3,False,False,0,0
+Ranger-fresh-L1,chapter-ForestCourt,3,54,204,60,2,1,1,3,False,False,1,1
+Ranger-fresh-L1,chapter-Redrock,5,32,452,71,4,3,1,3,False,False,3,2
+Ranger-fresh-L1,chapter-StarPlatform,6,76,676,202,7,4,1,3,False,True,7,3
+Ranger-fresh-L1,core-claimed,6,76,676,202,7,4,1,4,True,False,7,3
+Ranger-fresh-L1,first-core equipped and slot upgraded,6,76,676,157,7,4,1,4,True,False,7,3
+Ranger-fresh-L1,chapter-ForestCourt,7,154,964,157,8,5,1,4,True,False,7,4
+Ranger-fresh-L1,chapter-ForestCourt,8,226,1276,157,9,6,1,4,True,False,7,5
+Ranger-fresh-L1,chapter-ForestCourt,9,280,1600,157,10,7,1,4,True,False,7,6
+Ranger-fresh-L1,chapter-ForestCourt,10,316,1936,157,11,8,1,4,True,False,7,7
+Ranger-fresh-L1,chapter-ForestCourt,11,346,2296,157,12,9,1,4,True,False,7,8
+Ranger-fresh-L1,partial gold reforge committed,11,346,2296,9,12,8,2,4,True,False,7,8
+Ranger-fresh-L1,respec and preset reapplied,11,346,2296,9,12,8,2,4,True,False,7,8
+Ranger-fresh-L1,fresh service reload verifies complete build journey,11,346,2296,9,12,8,2,4,True,False,7,8
+Ranger-fresh-L1,actual-session-reload-retried,11,346,2296,9,12,8,2,4,True,False,7,8
+Ranger-fresh-L1,chapter-ForestCourt,12,358,2668,9,13,9,2,4,True,False,7,9
+Ranger-fresh-L1,finished,12,358,2668,9,13,9,2,4,True,False,7,9
+Ranger-legacy-L1,start,1,0,0,60,0,0,1,3,False,False,0,0
+Ranger-legacy-L1,chapter-ForestCourt,3,54,204,60,2,1,1,3,False,False,1,1
+Ranger-legacy-L1,chapter-Redrock,5,32,452,71,4,3,1,3,False,False,3,2
+Ranger-legacy-L1,chapter-StarPlatform,6,76,676,202,7,4,1,3,False,True,7,3
+Ranger-legacy-L1,core-claimed,6,76,676,202,7,4,1,4,True,False,7,3
+Ranger-legacy-L1,first-core equipped and slot upgraded,6,76,676,157,7,4,1,4,True,False,7,3
+Ranger-legacy-L1,chapter-ForestCourt,7,154,964,157,8,5,1,4,True,False,7,4
+Ranger-legacy-L1,chapter-ForestCourt,8,226,1276,157,9,6,1,4,True,False,7,5
+Ranger-legacy-L1,chapter-ForestCourt,9,280,1600,157,10,7,1,4,True,False,7,6
+Ranger-legacy-L1,chapter-ForestCourt,10,316,1936,157,11,8,1,4,True,False,7,7
+Ranger-legacy-L1,chapter-ForestCourt,11,346,2296,157,12,9,1,4,True,False,7,8
+Ranger-legacy-L1,partial gold reforge committed,11,346,2296,9,12,8,2,4,True,False,7,8
+Ranger-legacy-L1,respec and preset reapplied,11,346,2296,9,12,8,2,4,True,False,7,8
+Ranger-legacy-L1,fresh service reload verifies complete build journey,11,346,2296,9,12,8,2,4,True,False,7,8
+Ranger-legacy-L1,actual-session-reload-retried,11,346,2296,9,12,8,2,4,True,False,7,8
+Ranger-legacy-L1,chapter-ForestCourt,12,358,2668,9,13,9,2,4,True,False,7,9
+Ranger-legacy-L1,finished,12,358,2668,9,13,9,2,4,True,False,7,9
+Summoner-fresh-L1,start,1,0,0,60,0,0,1,3,False,False,0,0
+Summoner-fresh-L1,chapter-ForestCourt,3,54,204,60,2,1,1,3,False,False,1,1
+Summoner-fresh-L1,chapter-Redrock,5,32,452,71,4,3,1,3,False,False,3,2
+Summoner-fresh-L1,chapter-StarPlatform,6,76,676,202,7,4,1,3,False,True,7,3
+Summoner-fresh-L1,core-claimed,6,76,676,202,7,4,1,4,True,False,7,3
+Summoner-fresh-L1,first-core equipped and slot upgraded,6,76,676,157,7,4,1,4,True,False,7,3
+Summoner-fresh-L1,chapter-ForestCourt,7,154,964,157,8,5,1,4,True,False,7,4
+Summoner-fresh-L1,chapter-ForestCourt,8,226,1276,157,9,6,1,4,True,False,7,5
+Summoner-fresh-L1,chapter-ForestCourt,9,280,1600,157,10,7,1,4,True,False,7,6
+Summoner-fresh-L1,chapter-ForestCourt,10,316,1936,157,11,8,1,4,True,False,7,7
+Summoner-fresh-L1,chapter-ForestCourt,11,346,2296,157,12,9,1,4,True,False,7,8
+Summoner-fresh-L1,partial gold reforge committed,11,346,2296,9,12,8,2,4,True,False,7,8
+Summoner-fresh-L1,respec and preset reapplied,11,346,2296,9,12,8,2,4,True,False,7,8
+Summoner-fresh-L1,fresh service reload verifies complete build journey,11,346,2296,9,12,8,2,4,True,False,7,8
+Summoner-fresh-L1,actual-session-reload-retried,11,346,2296,9,12,8,2,4,True,False,7,8
+Summoner-fresh-L1,chapter-ForestCourt,12,358,2668,9,13,9,2,4,True,False,7,9
+Summoner-fresh-L1,finished,12,358,2668,9,13,9,2,4,True,False,7,9
+Summoner-legacy-L1,start,1,0,0,60,0,0,1,3,False,False,0,0
+Summoner-legacy-L1,chapter-ForestCourt,3,54,204,60,2,1,1,3,False,False,1,1
+Summoner-legacy-L1,chapter-Redrock,5,32,452,71,4,3,1,3,False,False,3,2
+Summoner-legacy-L1,chapter-StarPlatform,6,76,676,202,7,4,1,3,False,True,7,3
+Summoner-legacy-L1,core-claimed,6,76,676,202,7,4,1,4,True,False,7,3
+Summoner-legacy-L1,first-core equipped and slot upgraded,6,76,676,157,7,4,1,4,True,False,7,3
+Summoner-legacy-L1,chapter-ForestCourt,7,154,964,157,8,5,1,4,True,False,7,4
+Summoner-legacy-L1,chapter-ForestCourt,8,226,1276,157,9,6,1,4,True,False,7,5
+Summoner-legacy-L1,chapter-ForestCourt,9,280,1600,157,10,7,1,4,True,False,7,6
+Summoner-legacy-L1,chapter-ForestCourt,10,316,1936,157,11,8,1,4,True,False,7,7
+Summoner-legacy-L1,chapter-ForestCourt,11,346,2296,157,12,9,1,4,True,False,7,8
+Summoner-legacy-L1,partial gold reforge committed,11,346,2296,9,12,8,2,4,True,False,7,8
+Summoner-legacy-L1,respec and preset reapplied,11,346,2296,9,12,8,2,4,True,False,7,8
+Summoner-legacy-L1,fresh service reload verifies complete build journey,11,346,2296,9,12,8,2,4,True,False,7,8
+Summoner-legacy-L1,actual-session-reload-retried,11,346,2296,9,12,8,2,4,True,False,7,8
+Summoner-legacy-L1,chapter-ForestCourt,12,358,2668,9,13,9,2,4,True,False,7,9
+Summoner-legacy-L1,finished,12,358,2668,9,13,9,2,4,True,False,7,9

@@ -1,0 +1,222 @@
+{
+  "projectDir": "/tmp/integrated-player-journey-15i22vq7",
+  "sourceHashes": {
+    "NuGet.Config": "e55025a896f8fbe147f99d8f85afe2377f9dc0e65cd4527be17bb2850ac85fdc",
+    "Test.csproj": "f62ccd3b3a96fc3f4233abd5fa70e5e446d4850cc2b287e725472f093e655c99",
+    "Program.cs": "2792821c87522e6314818ce1e7112b45351e0e5ead406e5bd32557ca75e24f97",
+    "IntegratedBuildJourneyFixture.cs": "037ee261f8ba24db547ed6c92f9fa169c29619e0d8c7c432f3f14cf156cb2017",
+    "IntegratedJourneyFixture.cs": "054e12c5e857a2a85c50c3a47e1faa36d08814a42527536916680d71443fe747",
+    "EnemyStats.cs": "5475460e366cf7f0e7d9a7a2148daf1853af17e4b3ce445a89af56ae92a100a6",
+    "UI.cs": "48720e6f75fe049abe2fde93ecf73644a0bb0359a295c23177045f4ea03086ad",
+    "Lifecycle.cs": "07d13d34b9187865d8e5fd686324788358495a411206768b42647de3be12241d",
+    "Fixture.cs": "c1058f8de6ae739d56f979fd157b3f8ed1f0be5feda6eba826d468f7edb9dd3d",
+    "ChapterReturnTimeScaleTests.cs": "da9936acc8521a18ac93603ea0840ddf214b2f53219e30c7e0b6c718117c81a2",
+    "ProgressionTests.cs": "1174202c49c86dfc4bced65f037eefc76f045c13c8b5f452704f13529d3d9678",
+    "ChapterEntryPresentation.cs": "696f81922b4fe5dec360dee54737a79742a71dafdcb483b56a14bd61a994c103",
+    "ChapterRoomGeometry.cs": "75878daa72e4ed73129f47b05aaa127bf97bbf0ae7977f705fd317cbb550bca7",
+    "ChapterSealPresentation.cs": "b1af91428568582477d049002d678e866f30e226bd2fe091170509d37e8f82b0",
+    "EnemyControlPolicy.cs": "155ef9b9782c255ae1912caf43fd5d281ac37a239fa39935d3447bccd701145a",
+    "ExpeditionModeState.cs": "15db55cdf8c10ee3b1b587c07334e4548961df29c31d1cdedcf3602ce95cc2ed",
+    "RoomChainState.cs": "b28cc6dc41f36ba9fba0678b6f36d2870379c6f8a5bad4dcd7a3a6cee7f9360b",
+    "SaveLifecycleGate.cs": "232ee40b97ac9102e4f539d1bbc4b301c813fa8afb86f4a24f2dac357a63408e",
+    "SafeSaveFlow.cs": "55ba030f69f9b50651139c46cc1f74c26276652961d9f63b017ca0d232490ee7",
+    "ApplicationPauseState.cs": "b28dbba08b326c480089b6cebac845ccae7955bb790f7905868a3d3feb9d6ef6",
+    "EscapePostPolicy.cs": "738b865a71bbae6b0051133041f63572f1ca273f287d27d2ef0d2c23971377a0",
+    "GameSession.ChapterSeals.cs": "630c768885a2457c39995eb017e17af05fd7f334ddaede101194c8651fe9d2cd",
+    "GameSession.Chapter.cs": "24aaab6cec3ca081da0a798aa66620ed9d561b3a01ed4df252a3ab831540a12a",
+    "AdventureResultPolicy.cs": "b20eac65ce9d6a7069a1dde8890b0c8b1f81942472fb589fd56a1d945d02ff52",
+    "ProgressionGoalState.cs": "1132faafac8f7865c138b4441d48cc1d98552604028aacb460822c20147f2c6c",
+    "TierRewardBand.cs": "0049463f6cfb83d117324670efa94cabefb457b79d8c112b246fedc40f7ad5d1",
+    "TierRewardRules.cs": "1b2cba188c54bd3820ba77c3fcb05c6dfd1212fc9e6ff0e8ec8249efb04998f1",
+    "MasteryCoreRuntime.cs": "10751c3218ae97d89603fab134b1396bc2cbe92a767cb388f155df519b5e0299",
+    "HubTravelRules.cs": "924f9c04adaad130a9ebf6fec17e58c18cec544c93a69ca2fa1725dd216c80d1",
+    "CombatBalance.cs": "6e1f8ac93dd53bb5c77c0c74a3b9fd05e1350c9d6f05781b465fd21196a73404",
+    "RoomTacticalRegion.cs": "6597402326f5fa5b41b75f317bb9c422aacf1e54dcd8fa4d6b519ff2560143b5",
+    "RoomTactics.cs": "f6639acd369783c85b63338c616fe3365d8f54d95d015f46775e58ff98ad7743",
+    "ChapterCombatRun.cs": "84620efc850c9923c30f269225bcd3cca5e9ebba615cd2b21ecbbe545a9ea180",
+    "ChapterResultSnapshot.cs": "ed70be23ce5dbae145dd09c04cde0a655434d672072277d2d58b177e5ca19a71",
+    "ChapterProgression.cs": "e94a63d0e20a570d7becd7ae3c8a18e9bcdd4c6ffeef442354b889293344dfb4",
+    "ReforgeQuote.cs": "fddba3c0c67792ff13a62f4c35d38156c1d58713284e199fe75f04b6cd80816e",
+    "ProgressionService.Reforge.cs": "cae01fc45834d931ed014725d8dc0123a44038c9eb89653b10be6d82ffe1ab4c",
+    "ProgressionService.Chapter.cs": "21f82d41927e65d0c6f0dd80277f529de6a84398b5f52a2d6f1843781ca547fc",
+    "ProgressionService.cs": "53c60651fb932b72b6bba107f94dd1e5ac6439cfe844c7eb0e1b3fc7b3dadc77",
+    "GameTypes.cs": "f2d4d5c0e04b1808369683504d345730d4e7fc4eafae2bac1d76017311f2466e",
+    "RunChoices.Chapter.cs": "c3634ee66cdcfb4f8ced6505507a70bb775122cf1b3b344f1edfbc16570ffa92",
+    "RunChoices.Rooms.cs": "7c449d82846c168cd5934ba2f1543d7df2ec4c671e2605ec6a5588d66007d59c",
+    "RunChoices.cs": "935aad1aca90198413db2079884d36a84c0cd41f69e8ea2eb628394b0257e3ab",
+    "RunMechanismEvidence.cs": "cb98baf2bae611a2cecb573a617b2aabe55ba3224776dec7688fa545c6dcd3a4"
+  },
+  "scope": "Actual generated host methods; exact runtime assertion required after successful compilation. Managed JsonUtility/scene boundaries, isolated real filesystem save roots.",
+  "controls": [
+    {
+      "name": "completion-earned-shares",
+      "file": "ProgressionService.Chapter.cs",
+      "method": "public int CompletionExperience",
+      "old": "TotalExperience-registeredDeathShares",
+      "new": "TotalExperience-EarnedKillExperience",
+      "expectedAssertion": "objective completion never redistributes skipped enemy shares",
+      "mutatedSha256": "71cf2905f58706860c23dd5088c0e7478bd36a6fa1bcca57c08c564f50c4478b",
+      "passed": true,
+      "buildCommand": [
+        "/workspace/scratch/dotnet/dotnet",
+        "build",
+        "/workspace/scratch/integrated-journey/registered-runs/20261002T202105627882Z/negative-controls/completion-earned-shares/project/Test.csproj",
+        "--configfile",
+        "/workspace/scratch/integrated-journey/registered-runs/20261002T202105627882Z/negative-controls/completion-earned-shares/project/NuGet.Config",
+        "-v:q"
+      ],
+      "buildExitCode": 0,
+      "runCommand": [
+        "/workspace/scratch/dotnet/dotnet",
+        "/workspace/scratch/integrated-journey/registered-runs/20261002T202105627882Z/negative-controls/completion-earned-shares/project/bin/Debug/net8.0/Test.dll",
+        "/workspace/scratch/integrated-journey/registered-runs/20261002T202105627882Z/negative-controls/completion-earned-shares/saves-9fd710fd8cc84570907124df8893debe"
+      ],
+      "runExitCode": -6,
+      "expectedAssertionObserved": true,
+      "restoredSha256": "21f82d41927e65d0c6f0dd80277f529de6a84398b5f52a2d6f1843781ca547fc",
+      "sourceRestored": true
+    },
+    {
+      "name": "missing-l1-migration",
+      "file": "ProgressionService.cs",
+      "method": null,
+      "old": "if (profile.level == 1 && slot == 0) rank = 1;",
+      "new": "/* deleted L1 starter migration */",
+      "expectedAssertion": "fresh and legacy start with exactly one allocated first skill",
+      "mutatedSha256": "91276bff5c0fedd0990872bba955ee0e4abed95b162ea843d19b5bfd87c8d4b1",
+      "passed": true,
+      "buildCommand": [
+        "/workspace/scratch/dotnet/dotnet",
+        "build",
+        "/workspace/scratch/integrated-journey/registered-runs/20261002T202105627882Z/negative-controls/missing-l1-migration/project/Test.csproj",
+        "--configfile",
+        "/workspace/scratch/integrated-journey/registered-runs/20261002T202105627882Z/negative-controls/missing-l1-migration/project/NuGet.Config",
+        "-v:q"
+      ],
+      "buildExitCode": 0,
+      "runCommand": [
+        "/workspace/scratch/dotnet/dotnet",
+        "/workspace/scratch/integrated-journey/registered-runs/20261002T202105627882Z/negative-controls/missing-l1-migration/project/bin/Debug/net8.0/Test.dll",
+        "/workspace/scratch/integrated-journey/registered-runs/20261002T202105627882Z/negative-controls/missing-l1-migration/saves-99e385bbd8e643f8859d0b514c3dd689"
+      ],
+      "runExitCode": -6,
+      "expectedAssertionObserved": true,
+      "restoredSha256": "53c60651fb932b72b6bba107f94dd1e5ac6439cfe844c7eb0e1b3fc7b3dadc77",
+      "sourceRestored": true
+    },
+    {
+      "name": "reforge-free-gold",
+      "file": "ProgressionService.Reforge.cs",
+      "method": "public bool ReforgeMechanic(ReforgeQuote quote,bool inCamp)",
+      "old": "candidate.gold-=quote.GoldCost;",
+      "new": "/* omitted reforge debit */",
+      "expectedAssertion": "partial reforge charges exact gold once and no fragments",
+      "mutatedSha256": "b91150a9402ed993d5f59b8a8ba340f0835ad098ced11a01197c8ae488ef5d45",
+      "passed": true,
+      "buildCommand": [
+        "/workspace/scratch/dotnet/dotnet",
+        "build",
+        "/workspace/scratch/integrated-journey/registered-runs/20261002T202105627882Z/negative-controls/reforge-free-gold/project/Test.csproj",
+        "--configfile",
+        "/workspace/scratch/integrated-journey/registered-runs/20261002T202105627882Z/negative-controls/reforge-free-gold/project/NuGet.Config",
+        "-v:q"
+      ],
+      "buildExitCode": 0,
+      "runCommand": [
+        "/workspace/scratch/dotnet/dotnet",
+        "/workspace/scratch/integrated-journey/registered-runs/20261002T202105627882Z/negative-controls/reforge-free-gold/project/bin/Debug/net8.0/Test.dll",
+        "/workspace/scratch/integrated-journey/registered-runs/20261002T202105627882Z/negative-controls/reforge-free-gold/saves-c17979cce48546d29e65bd2e86e6dcd4"
+      ],
+      "runExitCode": -6,
+      "expectedAssertionObserved": true,
+      "restoredSha256": "cae01fc45834d931ed014725d8dc0123a44038c9eb89653b10be6d82ffe1ab4c",
+      "sourceRestored": true
+    },
+    {
+      "name": "respec-forgets-first-ranks",
+      "file": "ProgressionService.cs",
+      "method": "public bool ResetBuild(bool inCamp)",
+      "old": "Math.Min(1, candidate.skillRanks[i])",
+      "new": "0",
+      "expectedAssertion": "joint respec refunds exactly advanced ranks and retains learned first ranks",
+      "mutatedSha256": "b826dc6b7e29171564788bcfba6e1f513e3ac7d7f0658103137b8b0de196eb55",
+      "passed": true,
+      "buildCommand": [
+        "/workspace/scratch/dotnet/dotnet",
+        "build",
+        "/workspace/scratch/integrated-journey/registered-runs/20261002T202105627882Z/negative-controls/respec-forgets-first-ranks/project/Test.csproj",
+        "--configfile",
+        "/workspace/scratch/integrated-journey/registered-runs/20261002T202105627882Z/negative-controls/respec-forgets-first-ranks/project/NuGet.Config",
+        "-v:q"
+      ],
+      "buildExitCode": 0,
+      "runCommand": [
+        "/workspace/scratch/dotnet/dotnet",
+        "/workspace/scratch/integrated-journey/registered-runs/20261002T202105627882Z/negative-controls/respec-forgets-first-ranks/project/bin/Debug/net8.0/Test.dll",
+        "/workspace/scratch/integrated-journey/registered-runs/20261002T202105627882Z/negative-controls/respec-forgets-first-ranks/saves-191dde54814d44a18e3b6ac0fcdd7bf2"
+      ],
+      "runExitCode": -6,
+      "expectedAssertionObserved": true,
+      "restoredSha256": "53c60651fb932b72b6bba107f94dd1e5ac6439cfe844c7eb0e1b3fc7b3dadc77",
+      "sourceRestored": true
+    },
+    {
+      "name": "preset-resets-slot-upgrade",
+      "file": "ProgressionService.cs",
+      "method": "public bool ApplyBuildPreset(int slot, bool inCamp)",
+      "old": "GameProfile candidate = Snapshot();",
+      "new": "GameProfile candidate = Snapshot(); candidate.slotUpgradeRanks=new int[3];",
+      "expectedAssertion": "old preset references live item rather than rolling back reforge or slot upgrade",
+      "mutatedSha256": "e2a80fedc603c26df6ceb60b86a7de69b5bdf36f757ce3ceb59fd376e25a7c92",
+      "passed": true,
+      "buildCommand": [
+        "/workspace/scratch/dotnet/dotnet",
+        "build",
+        "/workspace/scratch/integrated-journey/registered-runs/20261002T202105627882Z/negative-controls/preset-resets-slot-upgrade/project/Test.csproj",
+        "--configfile",
+        "/workspace/scratch/integrated-journey/registered-runs/20261002T202105627882Z/negative-controls/preset-resets-slot-upgrade/project/NuGet.Config",
+        "-v:q"
+      ],
+      "buildExitCode": 0,
+      "runCommand": [
+        "/workspace/scratch/dotnet/dotnet",
+        "/workspace/scratch/integrated-journey/registered-runs/20261002T202105627882Z/negative-controls/preset-resets-slot-upgrade/project/bin/Debug/net8.0/Test.dll",
+        "/workspace/scratch/integrated-journey/registered-runs/20261002T202105627882Z/negative-controls/preset-resets-slot-upgrade/saves-6691466b0d1643d69f4ec360de160f37"
+      ],
+      "runExitCode": -6,
+      "expectedAssertionObserved": true,
+      "restoredSha256": "53c60651fb932b72b6bba107f94dd1e5ac6439cfe844c7eb0e1b3fc7b3dadc77",
+      "sourceRestored": true
+    },
+    {
+      "name": "failed-stage-discards-world",
+      "file": "Lifecycle.cs",
+      "method": "private bool ContinueAdventure(string slotId, bool discardUnsaved = false, bool alreadySaved = false)",
+      "old": "{ SaveLoadError = error; Notify(\"\u5b58\u6863\u672a\u80fd\u8bfb\u53d6\uff1a\" + error); return false; }",
+      "new": "{ DiscardTransientAdventureForLoad(); SaveLoadError = error; Notify(\"\u5b58\u6863\u672a\u80fd\u8bfb\u53d6\uff1a\" + error); return false; }",
+      "expectedAssertion": "failed load staging preserves built character and paused world",
+      "mutatedSha256": "9cf37ef975df06adcb59ed4eab5b2ed723eb1a385baa4139ea73bfd4a9610564",
+      "passed": true,
+      "buildCommand": [
+        "/workspace/scratch/dotnet/dotnet",
+        "build",
+        "/workspace/scratch/integrated-journey/registered-runs/20261002T202105627882Z/negative-controls/failed-stage-discards-world/project/Test.csproj",
+        "--configfile",
+        "/workspace/scratch/integrated-journey/registered-runs/20261002T202105627882Z/negative-controls/failed-stage-discards-world/project/NuGet.Config",
+        "-v:q"
+      ],
+      "buildExitCode": 0,
+      "runCommand": [
+        "/workspace/scratch/dotnet/dotnet",
+        "/workspace/scratch/integrated-journey/registered-runs/20261002T202105627882Z/negative-controls/failed-stage-discards-world/project/bin/Debug/net8.0/Test.dll",
+        "/workspace/scratch/integrated-journey/registered-runs/20261002T202105627882Z/negative-controls/failed-stage-discards-world/saves-b852660ec1474a0cae24177e3e63f51d"
+      ],
+      "runExitCode": -6,
+      "expectedAssertionObserved": true,
+      "restoredSha256": "07d13d34b9187865d8e5fd686324788358495a411206768b42647de3be12241d",
+      "sourceRestored": true
+    }
+  ],
+  "originalHostUnchanged": true,
+  "passed": true
+}

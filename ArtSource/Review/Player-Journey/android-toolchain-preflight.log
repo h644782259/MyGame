@@ -1,0 +1,76 @@
+{
+  "utc": "2026-10-02T20:25:46.162103+00:00",
+  "host": "Linux-6.18.44-x86_64-with-glibc2.41",
+  "status": "BLOCKED",
+  "checks": [
+    {
+      "name": "unity_editor",
+      "passed": false,
+      "detail": "Exact Unity 6000.6.3f1 executable required"
+    },
+    {
+      "name": "android_module",
+      "passed": false,
+      "detail": "Bundled dependency or existing licence record required; never installed/accepted here"
+    },
+    {
+      "name": "sdk_platform_36",
+      "passed": false,
+      "detail": "Bundled dependency or existing licence record required; never installed/accepted here"
+    },
+    {
+      "name": "aapt2",
+      "passed": false,
+      "detail": "Bundled dependency or existing licence record required; never installed/accepted here"
+    },
+    {
+      "name": "zipalign",
+      "passed": false,
+      "detail": "Bundled dependency or existing licence record required; never installed/accepted here"
+    },
+    {
+      "name": "apksigner",
+      "passed": false,
+      "detail": "Bundled dependency or existing licence record required; never installed/accepted here"
+    },
+    {
+      "name": "adb",
+      "passed": false,
+      "detail": "Bundled dependency or existing licence record required; never installed/accepted here"
+    },
+    {
+      "name": "bundled_java",
+      "passed": false,
+      "detail": "Bundled dependency or existing licence record required; never installed/accepted here"
+    },
+    {
+      "name": "gradle_9_3_1",
+      "passed": false,
+      "detail": "Bundled dependency or existing licence record required; never installed/accepted here"
+    },
+    {
+      "name": "sdk_licence_record",
+      "passed": false,
+      "detail": "Bundled dependency or existing licence record required; never installed/accepted here"
+    },
+    {
+      "name": "ndk_r27c",
+      "passed": false,
+      "detail": "Exact bundled NDK revision"
+    },
+    {
+      "name": "jdk_17",
+      "passed": false,
+      "detail": "System Java is not a substitute for bundled JDK 17"
+    },
+    {
+      "name": "disk_reserve",
+      "passed": true,
+      "detail": "23.2 GiB free; 12 GiB reserve is a preflight floor, not a build size guarantee"
+    }
+  ],
+  "unity_licence": "Not inspected or activated; valid user-provided Editor entitlement required",
+  "apk_produced": false,
+  "editor_compile_verified": false,
+  "device_verified": false
+}

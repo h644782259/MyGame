@@ -1,0 +1,28 @@
+{
+  "verifiedUtc": "2026-10-02T20:31:54.696768+00:00",
+  "worktrees": [
+    {
+      "path": "/workspace/emberfall_player_journey",
+      "head": "d7dfb66bd1043503c3ae57fd0ef4eb221841546c",
+      "status": ""
+    },
+    {
+      "path": "/workspace/emberfall_ios_player_journey",
+      "head": "7b0a7f17fbd12bc2896d34c0c1f732ceaf0a1a32",
+      "status": ""
+    },
+    {
+      "path": "/workspace/emberfall_android_player_journey",
+      "head": "6ec16d8602e59225ea12987da24c141bf0eb7812",
+      "status": ""
+    }
+  ],
+  "validationProcesses": [
+    {
+      "pid": 1104220,
+      "command": "python3 -u Tools/cloud-validation.py --dotnet /workspace/scratch/dotnet/dotnet --compile "
+    }
+  ],
+  "logBytes": 39938,
+  "scope": "Actual harmless reads after parent disconnect callback; no job restarted"
+}

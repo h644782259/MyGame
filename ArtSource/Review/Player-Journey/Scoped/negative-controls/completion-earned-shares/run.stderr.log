@@ -1,0 +1,5 @@
+Unhandled exception. System.Exception: Vanguard-fresh-L1: objective completion never redistributes skipped enemy shares
+   at Emberfall.GameSession.JourneyCheck(Boolean ok, String why) in /workspace/scratch/integrated-journey/registered-runs/20261002T202105627882Z/negative-controls/completion-earned-shares/project/IntegratedJourneyFixture.cs:line 15
+   at Emberfall.GameSession.JourneyChapter(GameSession s, ChapterNode node, Boolean failSettlement, Boolean failReturn) in /workspace/scratch/integrated-journey/registered-runs/20261002T202105627882Z/negative-controls/completion-earned-shares/project/IntegratedJourneyFixture.cs:line 124
+   at Emberfall.GameSession.VerifyIntegratedJourney(String root) in /workspace/scratch/integrated-journey/registered-runs/20261002T202105627882Z/negative-controls/completion-earned-shares/project/IntegratedJourneyFixture.cs:line 169
+   at Program.<Main>$(String[] args) in /workspace/scratch/integrated-journey/registered-runs/20261002T202105627882Z/negative-controls/completion-earned-shares/project/Program.cs:line 1
