@@ -1,7 +1,7 @@
 {
   "engine": "Blender 4.3.2",
   "sampled_asset": "REIMPORTED Vanguard.fbx",
-  "fbx_sha256": "88136a176af870c782fd0630decf897727fb214a6697ca0751363f7e3a9a5551",
+  "fbx_sha256": "8b89fb808fa4ce4eb65045f6a12cb842df7ab4173977a111f44f60ddb668f529",
   "unity_import_validated": false,
   "clips": {
     "Idle": {
