@@ -221,13 +221,14 @@ namespace Emberfall
             return NewJoint(name, parent, Vector3.zero);
         }
 
-        private void GlowingPart(string name, PrimitiveType shape, Vector3 at, Vector3 size, Color color, Transform parent)
+        private Transform GlowingPart(string name, PrimitiveType shape, Vector3 at, Vector3 size, Color color, Transform parent)
         {
             Transform part = Part(name, shape, at, size, color, parent);
             Material material = Mat(color, VisualSurface.Crystal);
             if (part != null) part.GetComponent<Renderer>().sharedMaterial = material;
             material.EnableKeyword("_EMISSION");
             material.SetColor("_EmissionColor", color * .7f);
+            return part;
         }
 
         private void BuildEquipmentWeapon(EquipmentAppearance look)
