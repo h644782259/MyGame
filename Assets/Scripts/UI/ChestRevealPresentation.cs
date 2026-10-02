@@ -22,8 +22,11 @@ namespace Emberfall
         {
             if(reward==null)return "正在读取已保存的奖励";
             string identity=reward.Rarity.HasValue?GameBalance.RarityName(reward.Rarity.Value)+" · "+reward.Name+"\n":"";
-            return identity+Outcome(reward)+"\n\n+"+reward.Gold+" 金币\n星纹余额 "+threads;
+            string gain=reward.hasCurrencyDeltas?"到账 +"+reward.goldDelta+" 金币 · +"+reward.threadsDelta+" 星纹":"金币奖励 "+reward.Gold+"（旧记录未保存实际增量）";
+            return identity+Outcome(reward)+"\n\n"+gain+"\n星纹余额 "+threads+" / "+ProgressionService.FashionChoiceCost+" · "+(threads>=ProgressionService.FashionChoiceCost?"可在营地自选传说":"攒满可在营地自选传说");
         }
+        public static float Travel(float progress)
+        {float t=Math.Max(0,Math.Min(1,(progress-.15f)/.65f));return t*t*(3-2*t);}
         public static float DesktopArtSize(float bodyHeight){return Math.Max(0,Math.Min(320,bodyHeight));}
     }
 }
