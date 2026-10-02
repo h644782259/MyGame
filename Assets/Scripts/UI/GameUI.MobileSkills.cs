@@ -11,15 +11,20 @@ namespace Emberfall
         private string mobileSkillStatus;
         private bool mobileSkillStatusFailed;
 
-        private void DrawMobileSkills()
+        private void ReconcileMobileSkillOwner()
         {
-            var progression = session.Progression;
+            var progression=session.Progression;
             if (mobileSkillsService != progression || mobileSkillsSlot != progression.CurrentSlotId)
             {
                 mobileSkillsService = progression; mobileSkillsSlot = progression.CurrentSlotId; mobileSkillDetail = false;
                 mobileSkillListScroll = mobileSkillDetailScroll = Vector2.zero;
                 mobileSkillStatus = null;
             }
+        }
+        private void DrawMobileSkills()
+        {
+            var progression = session.Progression;
+            ReconcileMobileSkillOwner();
             GameProfile profile = progression.Profile;
             selectedSkill = Mathf.Clamp(selectedSkill, 0, GameBalance.SkillCount - 1);
             var layout = MobilePanelGeometry();
@@ -47,7 +52,7 @@ namespace Emberfall
                 DrawMobileSkillDescription(detailWidth, true);
                 EndTouchScroll();
             }
-            if (Button(MobilePanelRect(layout.FooterButton(0, showDetail ? 2 : 1)), !split && mobileSkillDetail ? "返回技能列表" : "返回冒险", jade))
+            if (Button(MobilePanelRect(layout.FooterButton(0, showDetail ? 2 : 1)), RouteSkillReturnAvailable?"返回职业路线":!split && mobileSkillDetail ? "返回技能列表" : "返回冒险", jade))
             { ClosePanel(); BlockUITransition(); return; }
             if (!showDetail) return;
             int rank = progression.Profile.skillRanks[selectedSkill];

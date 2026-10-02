@@ -10,6 +10,6 @@ namespace Emberfall
             if (!MobileControls.Active || panel != Panel.Skills || SkillIconPresentation.SideBySide(MobileControls.Layout.Width) || !mobileSkillDetail) return false;
             mobileSkillDetail = false; CancelMobileScroll(); BlockUITransition(); return true;
         }
-        private void ResetMobileSkillNavigation() { mobileSkillDetail = false; CancelMobileScroll(); }
+        private void ResetMobileSkillNavigation() { routeSkillOwner=null;routeSkillSlot=null;mobileSkillDetail = false; CancelMobileScroll(); }
     }
 }

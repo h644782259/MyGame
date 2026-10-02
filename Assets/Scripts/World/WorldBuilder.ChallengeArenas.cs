@@ -31,7 +31,11 @@ namespace Emberfall
     Ribbon(parent,r,"Molten fracture",channel,3.1f,.02f,glow);
     Primitive(parent,"Basalt crossing",PrimitiveType.Cube,new Vector3(0,.05f,0),new Vector3(6.2f,.045f,5.8f),edge);
     for(int side=-1;side<=1;side+=2)
-    {Vector3 p=new Vector3(side*7,0,side*7);Primitive(parent,"Offset quarry cover",PrimitiveType.Cube,p+Vector3.up*.8f,new Vector3(5,1.6f,1.2f),edge);WorldTraversal.AddBox(p,new Vector2(5,1.2f));
+    {Vector3 p=new Vector3(side*7,0,side*7);
+     var cover=new GameObject("Quarry solid cover group");cover.transform.SetParent(parent,false);
+     Primitive(cover.transform,"Offset quarry cover",PrimitiveType.Cube,p+Vector3.up*.8f,new Vector3(5,1.6f,1.2f),edge);
+     Primitive(cover.transform,"Quarry opaque footing",PrimitiveType.Cube,p+Vector3.up*.12f,new Vector3(5,.24f,1.2f),edge);
+     BuildingOcclusionGroup.Configure(cover.transform,p,new Vector2(5,1.2f));WorldTraversal.AddBox(p,new Vector2(5,1.2f));
      Crystal(parent,r,new Vector3(side*13,1,side*7),.9f,glow);}
    }
    else

@@ -4,13 +4,13 @@ namespace Emberfall
     public sealed partial class GameUI
     {
         private bool progressionGoalsOpen;
-        private Vector2 progressionGoalScroll;
+        private Vector2 progressionGoalScroll,progressionGoalHeaderScroll;
         private ProgressionService progressionGoalOwner;
         private string progressionGoalCharacter;
         private void OpenProgressionGoals()
         {
             progressionGoalsOpen=true;progressionGoalOwner=session.Progression;
-            progressionGoalCharacter=session.Progression.CurrentSlotId;progressionGoalScroll=Vector2.zero;
+            progressionGoalCharacter=session.Progression.CurrentSlotId;progressionGoalScroll=progressionGoalHeaderScroll=Vector2.zero;
             CancelMobileScroll();BlockUITransition();
         }
         private void ReconcileProgressionGoalSurface()
@@ -31,25 +31,23 @@ namespace Emberfall
             Fill(new Rect(0,0,width,height),new Color(.018f,.031f,.048f,1));blockedRects.Add(new Rect(0,0,width,height));
             Box(BuildPlanRect(l.Frame,u),jade,false);
             Text(BuildPlanRect(l.Header,u),"成长目标 · 一次追踪一个",Mathf.RoundToInt(21*u),pale,true);
-            float h=DrawProgressionGoalOptions(l.Body.Width-18,u,false);
-            progressionGoalScroll=BeginTouchScroll("progression-goals",BuildPlanRect(l.Body,u),progressionGoalScroll,new Rect(0,0,(l.Body.Width-18)*u,Mathf.Max(l.Body.Height,h)*u));
-            DrawProgressionGoalOptions(l.Body.Width-18,u,true);EndTouchScroll();
+            var p=session.Progression;var current=p.SelectedProgressionGoal(session.IsInCamp);
+            string status=p.ProgressionGoalStatus()+(string.IsNullOrEmpty(p.LastError)?"":"\n"+p.LastError);
+            float statusHeight=Mathf.Ceil(Style(Mathf.RoundToInt(13*u),false,true).CalcHeight(new GUIContent(status),(l.Body.Width-26)*u)/u)+12;
+            var sections=new ProgressionGoalLayout(l.Body,statusHeight,current.Action!=ProgressionGoalAction.None);
+            progressionGoalHeaderScroll=BeginTouchScroll("progression-goal-current",BuildPlanRect(sections.Status,u),progressionGoalHeaderScroll,new Rect(0,0,(l.Body.Width-16)*u,statusHeight*u));
+            Text(new Rect(4*u,4*u,(l.Body.Width-26)*u,(statusHeight-8)*u),status,Mathf.RoundToInt(13*u),jade,false,true);EndTouchScroll();
+            if(current.Action!=ProgressionGoalAction.None&&Button(BuildPlanRect(sections.Action,u),current.ActionLabel,gold,current.CanAct,current.Step))
+            {if(current.Action==ProgressionGoalAction.OpenPresets){progressionGoalsOpen=false;OpenBuildPlans();}else Feedback(p.ExecuteProgressionGoal(current.ActionIdentity,session.IsInCamp),"目标操作已保存");progressionGoalHeaderScroll=Vector2.zero;BlockUITransition();return true;}
+            float h=DrawProgressionGoalOptions(sections.Candidates.Width-18,u,false);
+            progressionGoalScroll=BeginTouchScroll("progression-goals",BuildPlanRect(sections.Candidates,u),progressionGoalScroll,new Rect(0,0,(sections.Candidates.Width-18)*u,Mathf.Max(sections.Candidates.Height,h)*u));
+            DrawProgressionGoalOptions(sections.Candidates.Width-18,u,true);EndTouchScroll();
             if(Button(BuildPlanRect(l.FooterButton(0,1),u),"返回工坊",jade))CloseProgressionGoalSurface();
             return true;
         }
         private float DrawProgressionGoalOptions(float w,float u,bool draw)
         {
             var p=session.Progression;float y=8;
-            string status=string.IsNullOrEmpty(p.LastError)?p.ProgressionGoalStatus():p.LastError;
-            float h=Mathf.Ceil(Style(Mathf.RoundToInt(13*u),false,true).CalcHeight(new GUIContent(status),(w-16)*u)/u)+4;
-            if(draw)Text(new Rect(8*u,y*u,(w-16)*u,h*u),status,Mathf.RoundToInt(13*u),jade,false,true);y+=h+12;
-            var current=p.SelectedProgressionGoal(session.IsInCamp);
-            if(current.Action!=ProgressionGoalAction.None)
-            {
-                if(draw&&Button(new Rect(8*u,y*u,(w-16)*u,48*u),current.ActionLabel,gold,current.CanAct,current.Step))
-                {if(current.Action==ProgressionGoalAction.OpenPresets){progressionGoalsOpen=false;OpenBuildPlans();}else Feedback(p.ExecuteProgressionGoal(current.ActionIdentity,session.IsInCamp),"目标操作已保存");BlockUITransition();}
-                y+=56;
-            }
             GoalNode(ref y,w,u,"10阶节点 · 首套方向（自主选择）","先选具体核心，集中材料建立一条路线；也可先做职业练习，不消耗机制材料。达到10阶不代表装备已成型。",draw);
             foreach(var mechanic in BuildCatalog.MechanicsFor(p.Profile.heroClass))GoalCoreOption(ref y,w,u,mechanic,Rarity.Common,draw);
             GoalOption(ref y,w,u,"职业练习 · "+p.ClassTutorialText,ProgressionGoalKind.ClassTutorial,null,0,draw);
@@ -98,7 +96,7 @@ namespace Emberfall
             var p=session.Progression;bool selected=p.Profile.progressionGoal==ProgressionGoalKind.Core&&p.Profile.progressionGoalMechanic==mechanic&&p.Profile.progressionGoalMinimumRarity==rarity;
             string text=(rarity==Rarity.Epic?"升华前置 · 获取史诗":"获取核心 · ")+BuildCatalog.MechanicName(mechanic);
             if(draw&&Button(new Rect(8*u,y*u,(w-16)*u,48*u),text+(selected?" ✓":""),selected?gold:jade))
-            {Feedback(p.SelectCoreGoal(mechanic,rarity),"具体核心目标已保存");CancelMobileScroll();BlockUITransition();}
+            {Feedback(p.SelectCoreGoal(mechanic,rarity),"具体核心目标已保存");progressionGoalHeaderScroll=Vector2.zero;CancelMobileScroll();BlockUITransition();}
             y+=56;
             GoalParagraph(ref y,w,u,BuildCatalog.MechanicDescription(mechanic),13,muted,false,draw);
         }
@@ -107,7 +105,7 @@ namespace Emberfall
             bool selected=session.Progression.Profile.progressionGoal==kind && (id==null||session.Progression.Profile.progressionGoalItemId==id) &&
                 (kind!=ProgressionGoalKind.Tier||session.Progression.Profile.progressionGoalTier==tier);
             if(draw&&Button(new Rect(8*u,y*u,(w-16)*u,48*u),text+(selected?" ✓":""),selected?gold:jade))
-            {Feedback(session.Progression.SelectProgressionGoal(kind,id,tier),"成长目标已保存");CancelMobileScroll();BlockUITransition();}
+            {Feedback(session.Progression.SelectProgressionGoal(kind,id,tier),"成长目标已保存");progressionGoalHeaderScroll=Vector2.zero;CancelMobileScroll();BlockUITransition();}
             y+=56;
         }
         private void GoalUnavailable(ref float y,float w,float u,string text,bool draw)

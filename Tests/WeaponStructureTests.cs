@@ -13,18 +13,18 @@ public static class WeaponStructureTests
             check(Math.Abs(s.StaffShaftCenter-s.StaffShaftHalfLength-s.StaffBottom)<.00001f,"shaft begins at bottom anchor");
             check(Math.Abs(s.StaffShaftCenter+s.StaffShaftHalfLength-s.StaffCollar)<.00001f,"shaft terminates at collar, not beyond crystal");
             check(s.StaffCollar<s.StaffCore&&s.StaffCore<s.StaffTop,"collar/core/top ordered");
-            check(s.StaffTop<1.6f&&s.StaffBottom>=-1.31f,"staff silhouette bounded at all tiers");
+            check(s.StaffTop<1.76f&&s.StaffBottom>=-.94f,"staff silhouette bounded at all tiers");
             check(s.SwordTip>s.SwordRoot&&s.SwordTip<1.72f,"blade extends from guard with bounded reach");
             check(s.BowReach>=.58f&&s.BowReach<.83f,"bow string and tip reach bounded");
         }
         var high=new WeaponStructure(4);
-        check(.36f+1.3f*1.39f-high.StaffTop>.58f,"regression reproduces old .587 staff overshoot");
+        check(.94f*1.39f>-high.StaffBottom+.36f,"negative control: legacy high-tier lower shaft exceeded new safe grip envelope");
         check(high.StaffShaftCenter+high.StaffShaftHalfLength<high.StaffCore-high.StaffCoreDiameter*.5f,"fixed high staff shaft does not pierce core");
         for(int tier=1;tier<4;tier++)
         {
             var a=new WeaponStructure(tier);var b=new WeaponStructure(tier+1);
             check(b.SwordTip>a.SwordTip&&b.BowReach>a.BowReach,"upgrading retains weapon silhouette growth");
-            check(b.StaffBottom<a.StaffBottom&&b.StaffCoreDiameter>a.StaffCoreDiameter,"staff growth increases lower shaft and core, not an exposed spike");
+            check(b.StaffBottom==a.StaffBottom&&b.StaffCoreDiameter>a.StaffCoreDiameter,"staff growth retains safe lower grip length and enlarges upper focus");
         }
         return "PASS: "+n+" weapon structure relationships (no engine/render validation)";
     }

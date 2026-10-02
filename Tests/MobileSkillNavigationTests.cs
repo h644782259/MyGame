@@ -13,6 +13,7 @@ namespace Emberfall
  public sealed partial class GameUI
  {
   private enum Panel{Skills,Inventory}private Panel panel=Panel.Skills;private bool mobileSkillDetail;private int touchScrollSuppressed=-1,blocks,cancels;private object invisibleButton;
+  private object routeSkillOwner;private string routeSkillSlot;
   private float mobileSkillListScroll=173,mobileSkillDetailScroll=81;
   private void CancelMobileScroll(){cancels++;}private void BlockUITransition(){blocks++;}
   public static int Verify(){int n=0;Action<bool,string> check=(ok,why)=>{n++;if(!ok)throw new Exception(why);};

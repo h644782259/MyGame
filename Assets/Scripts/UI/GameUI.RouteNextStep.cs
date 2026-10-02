@@ -8,7 +8,7 @@ namespace Emberfall
             var p=session.Progression;
             switch(route.NextAction)
             {
-                case CampRouteAction.Skill:panel=Panel.Skills;selectedSkill=route.NextSkill;break;
+                case CampRouteAction.Skill:OpenRouteSkill(route.NextSkill);break;
                 case CampRouteAction.Specialization:Feedback(p.SetSpecialization(index==0?ElementalistSpecialization.Shatter:ElementalistSpecialization.Burn,true),"专精已切换");break;
                 case CampRouteAction.SummonerRoute:Feedback(p.SetSummonerRoute((SummonerRoute)index,true),"契约已切换");break;
                 case CampRouteAction.Inventory:panel=Panel.Inventory;break;
