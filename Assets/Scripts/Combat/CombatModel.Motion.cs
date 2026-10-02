@@ -8,7 +8,7 @@ namespace Emberfall
         private float enemyActionProgress;
         public void SetLocomotion(Vector3 localDisplacement,float delta,float referenceSpeed,bool walking,bool airborne=false,float jumpProgress=0)
         { locomotion.Advance(localDisplacement.x,localDisplacement.z,delta,referenceSpeed,walking,airborne,jumpProgress); }
-        public void ResetLocomotion() { locomotion.Reset(); visualMotion.Reset(); visualYawReady=false; recoveryAge=1; }
+        public void ResetLocomotion() { locomotion.Reset(); visualMotion.Reset(); visualYawReady=false; visualMotionFrame=-1; recoveryAge=1; }
         public void SetEnemyAttackPose(EnemyPosePhase state,float progress)
         { enemyActionPhase=state;enemyActionProgress=Mathf.Clamp01(progress); }
         private void ApplyHeroLocomotion()

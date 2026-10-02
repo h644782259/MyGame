@@ -365,7 +365,10 @@ namespace Emberfall
         private Vector3 WalkForAnimation(Vector3 displacement)
         {
             Vector3 next = WorldTraversal.Move(transform.position,displacement,NavigationRadius);
-            walkingDisplacement += CombatFx.Flat(next-transform.position);
+            Vector3 actual=CombatFx.Flat(next-transform.position);
+            walkingDisplacement += actual;
+            if(escapePost!=null&&!preparing&&chargeTime<=0&&actual.sqrMagnitude>.000001f)
+                escapeChaseMovement+=Mathf.Max(0,Time.deltaTime);
             return next;
         }
         private void AnimateModel(float speedHint,float attack,bool hurt)
@@ -495,7 +498,7 @@ namespace Emberfall
                 }
                 telegraph = EnemyAttackTelegraph.Fan(muzzle, directions, lengths, .78f);
             }
-            else telegraph = EnemyAttackTelegraph.Circle(targetPoint, ImpactRadius);
+            else telegraph = EnemyAttackTelegraph.Circle(targetPoint, ImpactRadius, transform);
             warning = telegraph.gameObject;
             telegraph.SetInterruptible(CanBeSkillInterrupted);
             telegraph.SetProgress(1f - windup / Mathf.Max(.01f, totalWindup));
@@ -587,8 +590,7 @@ namespace Emberfall
 
         private bool InsideImpact(Vector3 point)
         {
-            Vector3 offset = CombatFx.Flat(point - targetPoint);
-            return PlayerUpgradeRules.IsInsideArea(offset.x, offset.z, ImpactRadius, WorldTraversal.HasGroundPath(transform.position, point, .12f));
+            return EnemyImpactRegion.Contains(transform.position,targetPoint,point,ImpactRadius);
         }
 
         /// <summary>Register only a successful blink out of an imminent actual hit. Resolution confirms the reward.</summary>
@@ -685,11 +687,14 @@ namespace Emberfall
         {get{return escapePost==null?"":escapePost.Role==EscapeRole.GateGuard?"守门：短追后返岗；可引离金环。 ":escapePost.Role==EscapeRole.Pursuer?"追击：持续追踪入侵者。 ":escapePost.Role==EscapeRole.GateSupplier?"北门供能：留守门组。 ":"侧线：守住侧路，远离后返回。 ";}}
         private EscapePostPolicy escapePost;
         private Vector3 escapePostPosition;
+        private float escapeChaseMovement;
         internal void ConfigureEscapePost(EscapeRole role,Vector3 position)
         {escapePost=new EscapePostPolicy(role);escapePostPosition=position;}
         private bool ReturnToEscapePost(float dt,float speed,Vector3 target)
         {
-            if(escapePost==null||!escapePost.ReturnToPost(dt,CombatFx.Flat(transform.position-escapePostPosition).magnitude,CombatFx.Flat(target-escapePostPosition).magnitude))return false;
+            float moved=escapeChaseMovement;escapeChaseMovement=0;
+            if(escapePost==null||!escapePost.ReturnToPost(dt,CombatFx.Flat(transform.position-escapePostPosition).magnitude,
+                CombatFx.Flat(target-escapePostPosition).magnitude,moved,preparing||chargeTime>0))return false;
             CancelAttack();companionTarget=null;
             Vector3 towards=CombatFx.Flat(escapePostPosition-transform.position);
             if(towards.magnitude>.18f)

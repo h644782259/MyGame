@@ -15,6 +15,6 @@ building=read('Core/BuildingOcclusionGroup.cs')
 assert 'renderer.bounds.max.y<=center.y+.5f' in building and 'renderer.GetComponent<TextMesh>()!=null' in building
 assert 'size.x*.5f' in building and 'size.y*.5f' in building and 'WorldTraversal.' not in building
 label=read('World/WorldLabelPresentation.cs')
-assert 'visual.localBounds.size.y' in label and 'WorldLabelReadability.Scale(pixels,lines)' in label and 'GameFont.Apply(label)' in label
+assert 'visual.localBounds.size.y' in label and 'WorldLabelReadability.Scale(pixels,lines,density)'  in label and 'GameFont.Apply(label)' in label
 assert 'transform.rotation=camera.transform.rotation' in label
 print('PASS: hazard shared boundary/clock/source glyphs, hold state, camera points/group caps, footprint and label wiring; root owns label/group creation hooks')

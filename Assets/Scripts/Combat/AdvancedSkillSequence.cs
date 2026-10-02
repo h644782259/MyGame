@@ -17,6 +17,7 @@ namespace Emberfall
         private Vector3 target, forward, origin;
         private Color color;
         private EnemyController lockedTarget;
+        private FilledSkillVfx arrowBatch;
 
         public static void Spawn(PlayerController hero, GameSession game, int index, int skillRank, Vector3 aim, Vector3 direction, CombatDamage strength, Color tint, int castId = 0)
         {
@@ -41,6 +42,8 @@ namespace Emberfall
                 AdvancedSkillVfx.Rune(owner,origin,3.2f*range,color,5.3f,rank,true);
                 return;
             }
+            if(heroClass==HeroClass.Ranger&&skill==9)
+            {arrowBatch=FilledSkillVfx.BeginArrowBatch(owner,target,6f*range,color);return;}
             if(heroClass==HeroClass.Ranger&&skill==7)lockedTarget=Nearest(target,10f*range);
             if (skill >= 6)
                 AdvancedSkillVfx.Rune(owner,skill==7 && heroClass==HeroClass.Ranger?origin:target,4.2f*range,color,nextEvent+steps*interval+.5f,rank+1);
@@ -207,17 +210,14 @@ namespace Emberfall
                     if(step<steps-1)
                     {
                         Vector3 rainAt=target+Circle(step*2.4f,1.8f*range);
-                        for(int i=0;i<3+rank;i++)
-                        {
-                            Vector3 landing=rainAt+Circle(i*Mathf.PI*2/(3+rank),.65f*range);
-                            AdvancedSkillVfx.Beam(owner,landing+new Vector3(2,8,1),landing,new Color(.75f,1f,.63f),.4f,.09f);
-                        }
+                        if(arrowBatch!=null)arrowBatch.ArrowBeat(rainAt,3.4f*range,false);
                         owner.HitArea(rainAt,3.4f*range,damage*SkillDamageBudgets.AdvancedImpact(heroClass,skill,rank,step),0,.12f,castId:castId);
                     }
                     else
                     {
-                        AdvancedSkillVfx.Beam(owner,target+Vector3.up*12f,target,new Color(.93f,1f,.65f),.8f,.7f);
-                        Burst(target,6f*range,damage*SkillDamageBudgets.AdvancedImpact(heroClass,skill,rank,step),color,3,SkillVisualRecipe.Neutral);
+                        if(arrowBatch==null||!arrowBatch.gameObject.activeInHierarchy)arrowBatch=FilledSkillVfx.BeginArrowBatch(owner,target,6f*range,color,true);
+                        if(arrowBatch!=null)arrowBatch.ArrowBeat(target,6f*range,true);
+                        owner.HitArea(target,6f*range,damage*SkillDamageBudgets.AdvancedImpact(heroClass,skill,rank,step),1.1f,.7f,castId:castId);
                         if(rank==3) for(int i=0;i<SkillDamageBudgets.RadialArrowCount(heroClass,skill,rank);i++) CombatProjectile.Friendly(owner,session,target,Circle(i*Mathf.PI/6,1),damage*SkillDamageBudgets.RadialArrowCoefficient,color,true,true,false,1.5f,22f,castId:castId);
                     }
                     break;
@@ -316,6 +316,8 @@ namespace Emberfall
             owner.HitArea(at,radius,amount,1.1f,.7f,castId:castId);
         }
 
+        private void OnDisable()
+        {if(step<steps&&arrowBatch!=null)arrowBatch.Retire();}
         private Vector3 Clamp(Vector3 point) { return CombatSight.GroundPoint(origin,Vector3.ClampMagnitude(CombatFx.Flat(point),session.ArenaRadius-.7f)); }
         private static Vector3 Circle(float angle,float radius) { return new Vector3(Mathf.Cos(angle),0,Mathf.Sin(angle))*radius; }
     }

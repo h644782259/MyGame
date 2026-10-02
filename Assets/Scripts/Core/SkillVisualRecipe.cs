@@ -1,7 +1,7 @@
 namespace Emberfall
 {
     // Element and silhouette are gameplay identities, independent of palette/accessibility tint.
-    public enum SkillVisualRecipe { Neutral, Steel, Ice, Fire, Poison, Lightning, Arcane, Spirit }
+    public enum SkillVisualRecipe { Neutral, Steel, Ice, Fire, Poison, Lightning, Arcane, Spirit, ArrowRain }
     public static class SkillVisualRecipes
     {
         public static SkillVisualRecipe Ultimate(ElementalistSpecialization specialization, int step, bool final)

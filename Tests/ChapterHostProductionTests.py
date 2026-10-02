@@ -11,13 +11,14 @@ def method(file,signature):
         elif text[end]=='}':depth-=1
         end+=1
     return text[start:end]
-core=['GameTypes','ProgressionService','ProgressionService.Chapter','ChapterProgression','ChapterCombatRun','RoomTactics','RoomTacticalRegion','CombatBalance','HubTravelRules','MasteryCoreRuntime','TierRewardRules','TierRewardBand','ProgressionGoalState','AdventureResultPolicy','GameSession.Chapter','EscapePostPolicy']
+core=['GameTypes','ProgressionService','ProgressionService.Chapter','ChapterProgression','ChapterCombatRun','RoomTactics','RoomChainState','ExpeditionModeState','RoomTacticalRegion','CombatBalance','HubTravelRules','MasteryCoreRuntime','TierRewardRules','TierRewardBand','ProgressionGoalState','AdventureResultPolicy','GameSession.Chapter','EscapePostPolicy']
 with tempfile.TemporaryDirectory(prefix='chapter-host-production-') as temp:
     folder=Path(temp)
     for name in core:(folder/(name+'.cs')).write_text((root/'Assets/Scripts/Core'/(name+'.cs')).read_text())
     (folder/'ChapterRoomGeometry.cs').write_text((root/'Assets/Scripts/World/ChapterRoomGeometry.cs').read_text())
     for name in ['ProgressionTests','ChapterHostFixture']:(folder/(name+'.cs')).write_text((root/'Tests'/(name+'.cs')).read_text())
     methods=[method('Assets/Scripts/Core/GameSession.cs',signature) for signature in ['private bool ChangeZone(bool dungeon)','public bool SaveBeforeLeaving()','private void SpawnEnemy(','public void OnEnemyKilled(']]
+    methods.append(method('Assets/Scripts/Core/GameSession.Modes.cs','public bool ModeFinished'))
     methods.append(method('Assets/Scripts/Core/GameSession.Expedition.cs','private void ResetExpedition('))
     (folder/'Lifecycle.cs').write_text('using System.Collections.Generic;using UnityEngine;namespace Emberfall {public sealed partial class GameSession {'+'\n'.join(methods)+'}}')
     enemy=(root/'Assets/Scripts/Combat/EnemyController.cs').read_text()

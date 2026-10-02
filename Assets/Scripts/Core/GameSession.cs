@@ -350,6 +350,12 @@ namespace Emberfall
             // Preserve the old adventure before destroying anything. Staged load
             // and committed hub travel already supply a durable target snapshot.
             if (!loadingSaveSnapshot && !enteringChapter && !SaveBeforeLeaving()) return false;
+            if(!dungeon&&InDungeon&&!DungeonCleared&&!IsDead&&!ModeFinished)
+            {
+                if(RoomChainRun!=null)RoomChainRun.Fail(RoomFailureReason.Abandoned);
+                if(ModeRun!=null)ModeRun.Fail(ExpeditionModeFailure.Abandoned);
+                LastRunSummary=BuildRunSummary(false, "Abandoned");
+            }
             changingZone = true;
             int previousCombatEpoch = Player.CombatEpoch;
             if (waveRoutine != null) { StopCoroutine(waveRoutine); waveRoutine = null; }
@@ -517,7 +523,7 @@ namespace Emberfall
             if (IsDead) return;
             IsDead = true;
             if(ModeRun!=null)ModeRun.Fail(ExpeditionModeFailure.PlayerDefeated);
-            if(RoomChainRun!=null)RoomChainRun.Fail();
+            if(RoomChainRun!=null)RoomChainRun.Fail(RoomFailureReason.Death);
             if(ChapterActive){ChapterRun.Fail();Progression.CancelChapterRun();}
             pendingRoomChoice.Cancel();
             DungeonSelectionOpen = false;
