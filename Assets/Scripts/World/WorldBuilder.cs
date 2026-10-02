@@ -37,7 +37,9 @@ namespace Emberfall
             Light rim = fill.AddComponent<Light>(); rim.type = LightType.Directional;
             rim.color = dungeon ? new Color(.34f,.43f,.8f) : new Color(.44f,.65f,.77f);
             rim.intensity = dungeon ? .28f : .32f; rim.shadows = LightShadows.None;
+            ApplyEnvironmentLighting(dungeon,hub,light,rim);
             if (dungeon) { if(dungeonLayout>=20)BuildTacticalRoom(root.transform,resources,dungeonLayout);else if(dungeonLayout>=10)BuildLinkedRoom(root.transform,resources,dungeonLayout-10);else if(dungeonLayout>=2)BuildChallengeArena(root.transform,resources,dungeonLayout-2);else BuildDungeon(root.transform, resources, dungeonLayout); } else { if(hub==0){BuildWilderness(root.transform, resources); BuildCampFacilities(root.transform, resources, campProgress);BuildHubNpcs(root.transform,resources);}else BuildTown(root.transform,resources,hub); }
+            if(!dungeon)BuildHubLightPools(root.transform,hub);
             if(dungeon)BuildBreakablePockets(root.transform,dungeonLayout);
             return root;
         }
@@ -80,12 +82,12 @@ namespace Emberfall
             Vector3[] stream = { new Vector3(-25,0,5), new Vector3(-18,0,4), new Vector3(-11,0,2), new Vector3(-5,0,.5f), new Vector3(0,0,-1), new Vector3(7,0,-2), new Vector3(14,0,-5), new Vector3(22,0,-7), new Vector3(26,0,-10) };
             WorldTraversal.SetRiver(stream, 2.4f, new Rect(-1.9f, -3.9f, 3.8f, 5.8f));
             Ribbon(lowland, r, "Pebble stream banks", stream, 3.4f, .032f, r.Material(new Color(.40f,.46f,.41f)));
-            Ribbon(lowland, r, "Deep flowing water", stream, 2.4f, .038f, r.Material(new Color(.055f,.25f,.33f)));
-            Ribbon(lowland, r, "Brook reflected current", stream, .22f, .041f, r.Material(new Color(.32f,.64f,.62f)));
+            Ribbon(lowland, r, "Deep flowing water", stream, 2.4f, .038f, r.Material(new Color(.055f,.25f,.33f),false,VisualSurface.Water));
+            Ribbon(lowland, r, "Brook reflected current", stream, .22f, .041f, r.Material(new Color(.32f,.64f,.62f),false,VisualSurface.Water));
             BuildWaterBankDetail(lowland,r,stream);
             // The deck is the only ground crossing. Both banks remain reachable
             // by the shared creature route planner; leaps may clear the water.
-            Material timber = r.Material(new Color(.43f,.32f,.215f));
+            Material timber = r.Material(new Color(.43f,.32f,.215f),false,VisualSurface.Wood);
             for (int i = 0; i < 10; i++)
                 Primitive(lowland, "Timber crossing plank", PrimitiveType.Cube, new Vector3(0,.043f,-2.8f+i*.39f), new Vector3(3.8f,.012f,.35f), timber);
             Primitive(lowland, "Bridge edge strip west", PrimitiveType.Cube, new Vector3(-1.85f,.05f,-1.04f), new Vector3(.08f,.008f,4.0f), gold);
@@ -358,8 +360,8 @@ namespace Emberfall
         private static void Tree(Transform parent, WorldResources r, Vector3 p, float size, int seed)
         {
             if (p.sqrMagnitude < 22f*22f) WorldTraversal.AddCircle(p, .22f);
-            Material trunk = r.Material(new Color(.24f,.22f,.21f));
-            Material leaves = r.Material(seed % 2 == 0 ? new Color(.12f,.29f,.29f) : new Color(.2f,.37f,.32f));
+            Material trunk = r.Material(new Color(.24f,.22f,.21f),false,VisualSurface.Wood);
+            Material leaves = r.Material(seed % 2 == 0 ? new Color(.12f,.29f,.29f) : new Color(.2f,.37f,.32f),false,VisualSurface.Foliage);
             Primitive(parent, "Tree trunk", PrimitiveType.Cylinder, p + Vector3.up * size, new Vector3(.34f, size, .34f), trunk);
             for (int j = 0; j < 3; j++)
             {
@@ -410,7 +412,8 @@ namespace Emberfall
                 Crystal(parent,r,point,.23f,glow);
             }
             Crystal(parent,r,p+new Vector3(0,2.2f,0),.6f,glow);
-            PointLight(parent, p + new Vector3(0,2,0), glow.color, 2.5f, 9);
+            PointLight(parent, p + new Vector3(0,2,0), glow.color, 1.6f, EnvironmentLightProfile.PortalRange);
+            BuildPortalFocus(parent,r,p);
             for (int i=0;i<11;i++)
             {
                 float angle=i*2.3999f;
@@ -444,7 +447,7 @@ namespace Emberfall
 
         private static void Tent(Transform parent, WorldResources r, Vector3 p)
         {
-            Material cloth=r.Material(new Color(.29f,.47f,.48f));
+            Material cloth=r.Material(new Color(.29f,.47f,.48f),false,VisualSurface.Cloth);
             for(int i=0;i<2;i++) { GameObject slope=Primitive(parent,"Camp tent",PrimitiveType.Cube,p+new Vector3(i==0?-.62f:.62f,1,0),new Vector3(.08f,2.5f,2.5f),cloth); slope.transform.rotation=Quaternion.Euler(0,0,i==0?-30:30); }
             Vector3 chest = p + new Vector3(2,.45f,0);
             Material wood = r.Material(new Color(.31f,.19f,.115f),false,VisualSurface.Wood);
