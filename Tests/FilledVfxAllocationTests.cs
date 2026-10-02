@@ -91,10 +91,10 @@ namespace Emberfall
     public static class EffectPreferences{public static bool ReducedEffects;public static float EffectsScale=1;}
     public static class CombatSight
     {
-        public static float Wall=float.PositiveInfinity;
+        public static float Wall=float.PositiveInfinity;public static int FootprintCalls;
         public static bool Direct(Vector3 from,Vector3 to)=>Area(from,to);
         public static bool Area(Vector3 from,Vector3 to)=>from.x<=Wall&&to.x<=Wall;
-        public static bool VisualFootprint(Vector3 from,Vector3 to,float radius)=>to.x+radius<=Wall;
+        public static bool VisualFootprint(Vector3 from,Vector3 to,float radius){FootprintCalls++;return from.x+radius<=Wall&&to.x+radius<=Wall;}
     }
 }
 namespace UnityEngine
@@ -102,7 +102,7 @@ namespace UnityEngine
     public enum RuntimeInitializeLoadType{SubsystemRegistration}
     [AttributeUsage(AttributeTargets.Method)]public sealed class RuntimeInitializeOnLoadMethodAttribute:Attribute{public RuntimeInitializeOnLoadMethodAttribute(RuntimeInitializeLoadType value){}}
     public static class Application{public static bool isMobilePlatform;}
-    public static class Time{public static float deltaTime;public static int frameCount;}
+    public static class Time{public static float deltaTime,time;public static int frameCount;}
     public class Object{public string name;public bool Destroyed;public static void Destroy(Object value){value.Destroyed=true;if(value is GameObject go)go.SetActive(false);}}
     public class Component:Object{public GameObject gameObject;public Transform transform=>gameObject.transform;public T GetComponent<T>()where T:Component=>gameObject.GetComponent<T>();}
     public class MonoBehaviour:Component{}
@@ -120,6 +120,7 @@ namespace UnityEngine
     {
         public GameObject gameObject;public Transform parent;public Vector3 localPosition,localScale=Vector3.one;public Quaternion localRotation=Quaternion.identity;
         public Vector3 position{get=>parent==null?localPosition:parent.TransformPoint(localPosition);set=>localPosition=parent==null?value:parent.InverseTransformPoint(value);}
+        public Vector3 lossyScale=>parent==null?localScale:new Vector3(parent.lossyScale.x*localScale.x,parent.lossyScale.y*localScale.y,parent.lossyScale.z*localScale.z);
         public Vector3 right=>localRotation.Rotate(new Vector3(1,0,0));
         public Vector3 InverseTransformPoint(Vector3 value){if(parent!=null)value=parent.InverseTransformPoint(value);value=localRotation.InverseRotate(value-localPosition);return new Vector3(value.x/localScale.x,value.y/localScale.y,value.z/localScale.z);}
         public Quaternion rotation{get=>localRotation;set=>localRotation=value;}
@@ -127,6 +128,10 @@ namespace UnityEngine
         public Vector3 TransformPoint(Vector3 value){var point=localRotation.Rotate(new Vector3(value.x*localScale.x,value.y*localScale.y,value.z*localScale.z))+localPosition;return parent==null?point:parent.TransformPoint(point);}
     }
     public sealed class Mesh:Object{public Vector3[] vertices;public Vector2[] uv;public int[] triangles;public void RecalculateNormals(){}public void RecalculateBounds(){}}
+    public enum PrimitiveType{Sphere}
+    public struct Keyframe{public Keyframe(float time,float value){}}
+    public sealed class AnimationCurve{public AnimationCurve(params Keyframe[] keys){}}
+    public sealed class LineRenderer:Renderer{public bool useWorldSpace;public int positionCount;public float widthMultiplier;public AnimationCurve widthCurve;public Color startColor,endColor;public readonly Vector3[] Positions=new Vector3[4];public void SetPosition(int index,Vector3 value){Positions[index]=value;}}
     public sealed class TrailRenderer:Component{public bool emitting;public int ClearCount;public void Clear(){ClearCount++;}}
     public sealed class MeshFilter:Component{public Mesh sharedMesh;}
     public class Renderer:Component{public bool enabled=true,receiveShadows;public int sortingOrder;public Rendering.ShadowCastingMode shadowCastingMode;public Material sharedMaterial;public float Opacity;public void SetPropertyBlock(MaterialPropertyBlock block){Opacity=block.Opacity;}}
@@ -143,6 +148,7 @@ namespace UnityEngine
         public float x,y,z;public Vector3(float x,float y,float z){this.x=x;this.y=y;this.z=z;}
         public static Vector3 zero=>new Vector3();public static Vector3 one=>new Vector3(1,1,1);public static Vector3 up=>new Vector3(0,1,0);public static Vector3 forward=>new Vector3(0,0,1);
         public float sqrMagnitude=>x*x+y*y+z*z;public float magnitude=>(float)Math.Sqrt(sqrMagnitude);public Vector3 normalized=>this*(1/magnitude);
+        public static Vector3 Lerp(Vector3 a,Vector3 b,float t)=>a+(b-a)*Mathf.Clamp01(t);
         public static Vector3 Cross(Vector3 a,Vector3 b)=>new Vector3(a.y*b.z-a.z*b.y,a.z*b.x-a.x*b.z,a.x*b.y-a.y*b.x);
         public static Vector3 operator+(Vector3 a,Vector3 b)=>new Vector3(a.x+b.x,a.y+b.y,a.z+b.z);
         public static Vector3 operator-(Vector3 a,Vector3 b)=>new Vector3(a.x-b.x,a.y-b.y,a.z-b.z);
@@ -164,6 +170,7 @@ namespace UnityEngine
         public static float Min(float a,float b)=>Math.Min(a,b);public static float Max(float a,float b)=>Math.Max(a,b);public static int Max(int a,int b)=>Math.Max(a,b);
         public static float Clamp01(float value)=>Math.Max(0,Math.Min(1,value));
         public static float Clamp(float value,float low,float high)=>Math.Max(low,Math.Min(high,value));public static float Lerp(float a,float b,float t)=>a+(b-a)*Clamp(t,0,1);
+        public static float Abs(float value)=>Math.Abs(value);public static float Repeat(float value,float length)=>value-(float)Math.Floor(value/length)*length;
         public static float Cos(float value)=>(float)Math.Cos(value);public static float Sin(float value)=>(float)Math.Sin(value);
     }
 }
