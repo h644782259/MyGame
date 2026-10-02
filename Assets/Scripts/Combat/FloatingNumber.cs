@@ -8,6 +8,28 @@ namespace Emberfall
         public static int ActiveCount { get; private set; }
         public static int MechanismCount { get; private set; }
         private static Font sharedFont;
+        private static int fontRevision;
+        private static bool watchingFont;
+        private CombatTextMetrics metrics;
+        private static void WatchFont()
+        {if(watchingFont)return;Font.textureRebuilt+=OnFontTextureRebuilt;watchingFont=true;}
+        private static void UnwatchFont()
+        {if(!watchingFont)return;Font.textureRebuilt-=OnFontTextureRebuilt;watchingFont=false;}
+        private static void OnFontTextureRebuilt(Font font)
+        {if(font==sharedFont)unchecked{fontRevision++;}}
+        private static void SyncSharedFont()
+        {
+            Font resolved=GameFont.Shared;
+            if(object.ReferenceEquals(sharedFont,resolved))return;
+            sharedFont=resolved;unchecked{fontRevision++;}
+            foreach(var number in visible)if(number!=null)number.RefreshFont();
+        }
+        private void RefreshFont()
+        {
+            if(sharedFont==null)return;
+            if(textMesh!=null){textMesh.font=sharedFont;textRenderer.sharedMaterial=sharedFont.material;}
+            foreach(var edge in outline)if(edge!=null){edge.font=sharedFont;edge.GetComponent<MeshRenderer>().sharedMaterial=sharedFont.material;}
+        }
         private static readonly List<FloatingNumber> visible=new List<FloatingNumber>(40);
         private static int reflowFrame=-1;
         private Vector3 originAtSpawn;
@@ -25,17 +47,17 @@ namespace Emberfall
 
         public static bool CanSpawn(Vector3 origin,bool isCritical=false)
         {
-            FloatingNumber replacement;int selectedLane;Camera camera;CombatTextLayout.Box box;
-            return TrySelectAdmission(origin,"1",isCritical,false,out replacement,out selectedLane,out camera,out box);
+            FloatingNumber replacement;int selectedLane;Camera camera;CombatTextLayout.Box box;CombatTextMetrics measured;
+            return TrySelectAdmission(origin,"1",isCritical,false,out replacement,out selectedLane,out camera,out box,out measured);
         }
         public static FloatingNumber Spawn(Vector3 origin,string value,Color tint,bool isCritical=false,string objectName="Combat Text",bool isMechanism=false)
         {
             string shown=Display(value,isCritical);
-            FloatingNumber replacement;int selectedLane;Camera camera;CombatTextLayout.Box box;
-            if(!TrySelectAdmission(origin,shown,isCritical,isMechanism,out replacement,out selectedLane,out camera,out box))return null;
+            FloatingNumber replacement;int selectedLane;Camera camera;CombatTextLayout.Box box;CombatTextMetrics measured;
+            if(!TrySelectAdmission(origin,shown,isCritical,isMechanism,out replacement,out selectedLane,out camera,out box,out measured))return null;
             GameObject root=new GameObject(objectName);root.transform.position=origin;
             FloatingNumber number=root.AddComponent<FloatingNumber>();
-            number.InitializeAdmitted(shown,tint,isCritical,isMechanism,replacement,selectedLane,camera,box);
+            number.InitializeAdmitted(shown,tint,isCritical,isMechanism,replacement,selectedLane,camera,box,measured);
             return number;
         }
         private static string Display(string value,bool critical)
@@ -47,10 +69,10 @@ namespace Emberfall
         }
         private static void FontReady(string value)
         {
-            if(sharedFont==null)sharedFont=Font.CreateDynamicFontFromOSFont(new[]{"Microsoft YaHei","微软雅黑","PingFang SC","PingFangSC-Regular","Heiti SC","SimHei","Arial"},64);
+            SyncSharedFont();
             if(sharedFont!=null)sharedFont.RequestCharactersInTexture(value,64,FontStyle.Bold);
         }
-        private static Vector2 Measure(string value,bool critical)
+        private static float MeasureAspect(string value)
         {
             FontReady(value);float advance=0,min=0,max=0,bottom=float.MaxValue,top=float.MinValue;
             foreach(char c in value)
@@ -60,13 +82,17 @@ namespace Emberfall
                 {min=Mathf.Min(min,advance+info.minX);max=Mathf.Max(max,advance+info.maxX);bottom=Mathf.Min(bottom,info.minY);top=Mathf.Max(top,info.maxY);advance+=info.advance;}
                 else {advance+=64;max=advance;bottom=Mathf.Min(bottom,0);top=Mathf.Max(top,64);}
             }
+            return Mathf.Max(1,max-min)/Mathf.Max(1,top-bottom);
+        }
+        private static Vector2 ScaledSize(float aspect,bool critical)
+        {
             float pixels=CombatTextLayout.PixelHeight(EffectPreferences.CombatTextScale,Density,critical);
-            return new Vector2(Mathf.Max(1,max-min)/Mathf.Max(1,top-bottom)*pixels,pixels);
+            return new Vector2(aspect*pixels,pixels);
         }
         private static bool TrySelectAdmission(Vector3 origin,string value,bool isCritical,bool isMechanism,out FloatingNumber replacement,
-            out int selectedLane,out Camera camera,out CombatTextLayout.Box box)
+            out int selectedLane,out Camera camera,out CombatTextLayout.Box box,out CombatTextMetrics measured)
         {
-            replacement=null;selectedLane=0;camera=Camera.main;box=default(CombatTextLayout.Box);
+            replacement=null;selectedLane=0;camera=Camera.main;box=default(CombatTextLayout.Box);measured=default(CombatTextMetrics);
             int globalLimit=MobileControls.Active?20:36;
             if(isMechanism)
             {
@@ -88,7 +114,8 @@ namespace Emberfall
                 if(close)nearby++;
             }
             if(nearby>=(isMechanism?4:isCritical?6:4))return false;
-            Vector2 size=Measure(value,isCritical);
+            float aspect=MeasureAspect(value);measured=new CombatTextMetrics(aspect,fontRevision);
+            Vector2 size=ScaledSize(aspect,isCritical);
             if(Place(point,size,replacement,null,camera,out selectedLane,out box))return true;
             if(isMechanism)
                 foreach(var number in visible)
@@ -116,15 +143,15 @@ namespace Emberfall
         public void Initialize(string value,Color tint,bool isCritical=false)
         {
             if(counted)return;
-            string shown=Display(value,isCritical);FloatingNumber replacement;Camera camera;int selectedLane;CombatTextLayout.Box box;
-            if(!TrySelectAdmission(transform.position,shown,isCritical,false,out replacement,out selectedLane,out camera,out box)){Destroy(gameObject);return;}
-            InitializeAdmitted(shown,tint,isCritical,false,replacement,selectedLane,camera,box);
+            string shown=Display(value,isCritical);FloatingNumber replacement;Camera camera;int selectedLane;CombatTextLayout.Box box;CombatTextMetrics measured;
+            if(!TrySelectAdmission(transform.position,shown,isCritical,false,out replacement,out selectedLane,out camera,out box,out measured)){Destroy(gameObject);return;}
+            InitializeAdmitted(shown,tint,isCritical,false,replacement,selectedLane,camera,box,measured);
         }
-        private void InitializeAdmitted(string value,Color tint,bool isCritical,bool isMechanism,FloatingNumber replacement,int selectedLane,Camera camera,CombatTextLayout.Box box)
+        private void InitializeAdmitted(string value,Color tint,bool isCritical,bool isMechanism,FloatingNumber replacement,int selectedLane,Camera camera,CombatTextLayout.Box box,CombatTextMetrics measured)
         {
             if(replacement!=null)replacement.Retire();
-            critical=isCritical;mechanism=isMechanism;originAtSpawn=transform.position;lane=selectedLane;display=value;bounds=box;
-            ActiveCount++;if(mechanism)MechanismCount++;counted=true;visible.Add(this);
+            critical=isCritical;mechanism=isMechanism;originAtSpawn=transform.position;lane=selectedLane;display=value;bounds=box;metrics=measured;
+            ActiveCount++;if(mechanism)MechanismCount++;counted=true;visible.Add(this);WatchFont();
             color=critical?new Color(1f,.87f,.18f):tint;
             for(int i=0;i<outline.Length;i++)
             {
@@ -151,14 +178,17 @@ namespace Emberfall
         }
         private void LateUpdate()
         {
-            if(reflowFrame==Time.frameCount)return;reflowFrame=Time.frameCount;Camera camera=Camera.main;if(camera==null)return;
+            if(reflowFrame==Time.frameCount)return;reflowFrame=Time.frameCount;Camera camera=Camera.main;if(camera==null)return;SyncSharedFont();
             // Reproject all text together after camera motion. Old bounds remain
             // reserved until replaced, so no pair can overlap during reflow.
             for(int i=visible.Count-1;i>=0;i--)
             {
                 var number=visible[i];if(number==null)continue;
                 Vector3 point=camera.WorldToScreenPoint(number.originAtSpawn);point.y+=number.life*18*Density*EffectPreferences.EffectsScale;
-                Vector2 size=Measure(number.display,number.critical);
+                float aspect;
+                if(!number.metrics.TryGet(fontRevision,out aspect))
+                {aspect=MeasureAspect(number.display);number.metrics=new CombatTextMetrics(aspect,fontRevision);}
+                Vector2 size=ScaledSize(aspect,number.critical);
                 if(number.textRenderer!=null)
                 {
                     Vector3 actual=number.textRenderer.localBounds.size;
@@ -181,7 +211,7 @@ namespace Emberfall
             float pop=critical?1+Mathf.Max(0,1-life/.16f)*.14f*EffectPreferences.EffectsScale:1;
             transform.localScale=Vector3.one*(pixels*visibleHeight/(camera.pixelHeight*glyphHeight)*pop);
         }
-        private void ReleaseCount(){if(!counted)return;counted=false;ActiveCount=Mathf.Max(0,ActiveCount-1);if(mechanism)MechanismCount=Mathf.Max(0,MechanismCount-1);visible.Remove(this);}
+        private void ReleaseCount(){if(!counted)return;counted=false;ActiveCount=Mathf.Max(0,ActiveCount-1);if(mechanism)MechanismCount=Mathf.Max(0,MechanismCount-1);visible.Remove(this);if(ActiveCount==0)UnwatchFont();}
         private void Retire(){ReleaseCount();gameObject.SetActive(false);Destroy(gameObject);}
         private void OnDisable(){ReleaseCount();}
         private void OnDestroy(){ReleaseCount();}

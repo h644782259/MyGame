@@ -12,8 +12,9 @@ namespace Emberfall.Editor
             bool dungeon = zone == ZoneKind.Dungeon;
             GameObject world = GameObject.Find(dungeon ? "Fallen Star Sanctum" : "Windwhisper Fields");
             check(world != null, "World exists for Chinese label validation");
-            Font bundledFont = Resources.Load<Font>("Fonts/EmberfallWorldLabels");
+            Font bundledFont = Resources.Load<Font>(GameFont.WorldLabelPath);
             check(bundledFont != null && bundledFont.dynamic, "Chinese label font is bundled and dynamic");
+            check(GameFont.WorldLabels == bundledFont, "World-label resolver selects the packaged subset when present");
             var expected = dungeon
                 ? new Dictionary<string, string> { { "THE FALLEN SANCTUM", "沉星遗迹" } }
                 : new Dictionary<string, string>

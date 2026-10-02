@@ -27,13 +27,13 @@ namespace Emberfall
             if(game==null||game.Player==null||!game.HasStarted||game.IsDead){CameraOcclusionSurface.RestoreAll();return;}
             CameraOcclusionSurface.Advance(transform.position,game.Player.transform.position+Vector3.up,Time.unscaledDeltaTime);
         }
-        private void RestoreVisibility(){CameraOcclusionSurface.RestoreAll();if(viewCamera!=null)viewCamera.ResetProjectionMatrix();if(occlusionFont!=null)Destroy(occlusionFont);occlusionFont=null;occlusionLabel=null;}
+        private void RestoreVisibility(){CameraOcclusionSurface.RestoreAll();if(viewCamera!=null)viewCamera.ResetProjectionMatrix();GameFont.Release(ref occlusionFont);occlusionLabel=null;}
         private void OnGUI()
         {
             var game=GameSession.Instance;
             if(CameraOcclusionSurface.LastOccluders==0||viewCamera==null||game==null||game.Player==null||game.IsDead||game.InputBlocked)return;
             Vector3 point=viewCamera.WorldToScreenPoint(game.Player.transform.position+Vector3.up*1.25f);if(point.z<=0)return;
-            if(occlusionLabel==null){occlusionFont=Font.CreateDynamicFontFromOSFont(new[]{"Microsoft YaHei","PingFang SC","Heiti SC","Arial"},18);occlusionLabel=new GUIStyle(GUI.skin.label){alignment=TextAnchor.MiddleCenter,fontStyle=FontStyle.Bold,fontSize=12,font=occlusionFont};}
+            if(occlusionLabel==null){occlusionFont=GameFont.Shared;occlusionLabel=new GUIStyle(GUI.skin.label){alignment=TextAnchor.MiddleCenter,fontStyle=FontStyle.Bold,fontSize=12,font=occlusionFont};}
             Matrix4x4 old=GUI.matrix;Color color=GUI.color;int depth=GUI.depth;
             GUI.matrix=Matrix4x4.identity;GUI.depth=50;float density=MobileControls.Active?MobileControls.Layout.Scale:1;
             Rect marker=new Rect(point.x-18*density,Screen.height-point.y-10*density,36*density,20*density);

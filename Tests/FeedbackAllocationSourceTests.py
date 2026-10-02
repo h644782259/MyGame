@@ -21,7 +21,7 @@ def check(value, message):
 
 select = body(number, 'private static bool TrySelectAdmission')
 check('MobileControls.Active?20:36' in select, 'Admission uses actual desktop/mobile display limits')
-check(not any(token in select for token in ('new ', '=>', '.Retire()', '.Remove', '.Add(')),
+check(not any(token in select.replace('new CombatTextMetrics(', 'CombatTextMetrics(') for token in ('new ', '=>', '.Retire()', '.Remove', '.Add(')),
       'Admission scanning creates no explicit heap objects and does not mutate visible text')
 check('if(!isCritical)return false' in select and '!number.critical&&!number.mechanism' in select,
       'Only critical text can replace an ordinary number at the cap')

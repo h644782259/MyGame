@@ -133,7 +133,7 @@ namespace Emberfall
             // Mobile skills auto-confirm before reaching this state;
             // a joystick finger must never act as a simulated mouse confirmation.
             if (MobileControls.Active) return true;
-            if (AdventureCamera.CancelSkillRequested || Input.GetKeyDown(KeyCode.Escape)) { Cancel(); return true; }
+            if (owner.GameplayCancelAllowed && (AdventureCamera.CancelSkillRequested || Input.GetKeyDown(KeyCode.Escape))) { Cancel(); return true; }
             if (!session.PointerOverUI)
             {
                 Camera camera = Camera.main;

@@ -17,6 +17,8 @@ namespace Emberfall
             else if(collectionOwner!=session.Player){ReleaseCollectionPreview();collectionOwner=session.Player;}
         }
         private void OnDisable(){ReleaseCollectionPreview();}
+        private void OnApplicationFocus(bool focused){if(focused&&collectionModel!=null)collectionModel.Invalidate();}
+        private void OnApplicationPause(bool paused){if(!paused&&collectionModel!=null)collectionModel.Invalidate();}
         private void ReleaseCollectionPreview()
         {if(collectionModel!=null)collectionModel.Dispose();collectionModel=null;collectionTrial=null;collectionOwner=null;collectionNotice=null;collectionReceiptKey=null;collectionPreviewYaw=20;mobileFashionPreview=true;}
         private void TrialFashion(FashionSlot slot,Rarity rarity)
@@ -34,8 +36,8 @@ namespace Emberfall
             if(rotate)
             {
                 float size=MobileControls.Active?48*TouchRatio:42;
-                if(Button(new Rect(area.x+6,area.yMax-size-6,size,size),"↶",jade))collectionModel.Rotate(-45);
-                if(Button(new Rect(area.xMax-size-6,area.yMax-size-6,size,size),"↷",jade))collectionModel.Rotate(45);
+                if(Button(new Rect(area.x+6,area.yMax-size-6,size,size),"左转",jade))collectionModel.Rotate(-45);
+                if(Button(new Rect(area.xMax-size-6,area.yMax-size-6,size,size),"右转",jade))collectionModel.Rotate(45);
             }
         }
         private string CollectionTrialTitle
