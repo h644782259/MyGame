@@ -20,7 +20,12 @@ with tempfile.TemporaryDirectory(prefix='room-failure-evidence-') as temporary:
  config=path/'NuGet.Config';config.write_text('<configuration><packageSources><clear /></packageSources></configuration>')
  subprocess.run([dotnet,'restore',str(project),'--configfile',str(config)],check=True)
  command=[dotnet,'run','--project',str(project),'--no-restore'];subprocess.run(command,check=True)
- original=host.read_text();host.write_text(original.replace('RoomChainRun.Failure.ToString()','(RoomChainRun.Failed?"Abandoned":null)'))
+ original=host.read_text()
+ mutated=original.replace('RoomChainRun.SealProgress(1).ToString', 'RoomChainRun.SealProgress(0).ToString');assert mutated!=original
+ host.write_text(mutated);result=subprocess.run(command,capture_output=True,text=True)
+ assert result.returncode and 'actual failed result preserves independent partial B-first evidence' in result.stdout+result.stderr,result.stdout+result.stderr
+ print('PASS: compiled collapsed B-result evidence mutation fails')
+ host.write_text(original.replace('RoomChainRun.Failure.ToString()','(RoomChainRun.Failed?"Abandoned":null)'))
  failed=subprocess.run(command,capture_output=True,text=True)
  assert failed.returncode and 'actual session snapshot must preserve exact room failure reason' in failed.stdout+failed.stderr,failed.stdout+failed.stderr
  print('PASS: old room-failure-to-Abandoned production snapshot mutation fails')

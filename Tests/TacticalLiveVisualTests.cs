@@ -48,7 +48,16 @@ public static class TacticalLiveVisualTests
   Check(local(bRoot,"Capture contested flag").enabled,"zero-progress contested seal still shows visible flag");
   game.SealCompleted[0]=true;game.SealFractions[0]=1;game.NextObjective=sealB.transform.position;aRoot.Call("LateUpdate");Check(local(aRoot,"Capture segment 0").enabled&&local(aRoot,"Capture segment 0").startColor.r==.16f&&local(aRoot,"Capture next direction").enabled,"completed seal retains dark circle and points toward remaining objective");
   game.SealCompleted[1]=true;game.NextObjective=new Vector3(0,0,14);bRoot.Call("LateUpdate");Check(!local(bRoot,"Capture contested flag").enabled&&local(bRoot,"Capture next direction").enabled,"completed contested seal switches to exit direction without hiding ground record");
-  player.CombatEpoch++;aRoot.Call("LateUpdate");bRoot.Call("LateUpdate");Check(!local(aRoot,"Capture next direction").enabled&&!local(bRoot,"Capture segment 0").enabled,"old epoch hides both retained seal presentations");
+  game.ChapterSeal=false;game.RoomSeal=true;game.RoomChainRun=new RoomChainState();game.SealFractions[0]=0;game.SealFractions[1]=.5f;game.SealCompleted[0]=game.SealCompleted[1]=false;game.SealContested[0]=true;game.SealContested[1]=false;
+  var roomA=new GameObject("room A");var roomB=new GameObject("room B");TacticalCaptureVisual.AttachRoomSeal(roomA,game,0);TacticalCaptureVisual.AttachRoomSeal(roomB,game,1);
+  var roomARoot=GameObject.All.Single(o=>o.transform.parent==roomA.transform&&o.name=="Segmented capture progress");var roomBRoot=GameObject.All.Single(o=>o.transform.parent==roomB.transform&&o.name=="Segmented capture progress");
+  Check(local(roomARoot,"Seal A").enabled&&local(roomBRoot,"Seal B").enabled&&local(roomARoot,"Capture contested flag").enabled&&!local(roomBRoot,"Capture contested flag").enabled,"room owner mode renders stable identities and independent pressure without chapter adapter");
+  Check(GameObject.All.Count(o=>o.transform.parent==roomBRoot.transform&&o.name.StartsWith("Capture segment ")&&o.GetComponent<LineRenderer>().startColor.g==1)==6,"room B first progress renders on B");
+  game.SealCompleted[1]=true;game.SealFractions[1]=1;game.NextObjective=new Vector3(-8,0,-6);roomBRoot.Call("LateUpdate");Check(local(roomBRoot,"Capture next direction").enabled&&local(roomBRoot,"Capture segment 0").startColor.r==.16f,"room completed B retains dark record and points to A");
+  game.Player=new GameObject("replacement same epoch").AddComponent<PlayerController>();game.Player.CombatEpoch=player.CombatEpoch;roomARoot.Call("LateUpdate");roomBRoot.Call("LateUpdate");Check(!local(roomARoot,"Seal A").enabled&&!local(roomBRoot,"Capture segment 0").enabled,"replacement player same epoch cannot revive old room visuals");game.Player=player;
+  var oldRoom=game.RoomChainRun.Room;game.RoomChainRun.Room=new RoomPlan();roomARoot.Call("LateUpdate");Check(!local(roomARoot,"Seal A").enabled,"replacement room same epoch cannot revive old room visuals");game.RoomChainRun.Room=oldRoom;
+  var oldRun=game.RoomChainRun;game.RoomChainRun=new RoomChainState{Room=oldRoom};roomBRoot.Call("LateUpdate");Check(!local(roomBRoot,"Capture segment 0").enabled,"replacement run with same plan cannot revive old room visuals");game.RoomChainRun=oldRun;
+  player.CombatEpoch++;aRoot.Call("LateUpdate");bRoot.Call("LateUpdate");roomARoot.Call("LateUpdate");roomBRoot.Call("LateUpdate");Check(!local(roomARoot,"Seal A").enabled&&!local(roomBRoot,"Capture segment 0").enabled,"room owner old epoch hides both seals");Check(!local(aRoot,"Capture next direction").enabled&&!local(bRoot,"Capture segment 0").enabled,"old epoch hides both retained seal presentations");
   return "PASS: "+checks+" actual tactical/guard/capture component lifecycle and damage assertions";
  }
 }
@@ -59,7 +68,8 @@ namespace Emberfall
  public enum EnemyKind {Guardian,Wisp}
  public class PlayerController:MonoBehaviour {public int CombatEpoch;}
  public class GameSession
- {public RoomChainState RoomChainRun;public PlayerController Player;public bool CombatEnded,HasStarted=true,Supplier,Supported,Contested,Capture,Hunt,ChapterSeal;public float[] SealFractions=new float[2];public bool[] SealContested=new bool[2],SealCompleted=new bool[2];public Vector3 NextObjective;public Vector3 ChapterNextObjectivePoint=>NextObjective;
+ {public RoomChainState RoomChainRun;public PlayerController Player;public bool CombatEnded,HasStarted=true,Supplier,Supported,Contested,Capture,Hunt,ChapterSeal;public float[] SealFractions=new float[2];public bool[] SealContested=new bool[2],SealCompleted=new bool[2];public Vector3 NextObjective;public Vector3 ChapterNextObjectivePoint=>NextObjective;public Vector3 RoomNextObjectivePoint=>NextObjective;public bool RoomSeal;
+ public bool TryGetRoomSeal(int index,out float fraction,out bool contested,out bool complete){fraction=SealFractions[index];contested=SealContested[index];complete=SealCompleted[index];return RoomSeal;}
  public bool TryGetChapterSeal(int index,out float fraction,out bool contested,out bool complete){fraction=SealFractions[index];contested=SealContested[index];complete=SealCompleted[index];return ChapterSeal;}public float Fraction;
  public bool IsRoomSupplier(EnemyController e)=>Supplier;public bool IsChapterSupplier(EnemyController e)=>false;public bool IsChapterHuntTarget(EnemyController e)=>Hunt;
  public float RoomSupportMultiplier(EnemyController e)=>Supported?.7f:1;public float ChapterSupportMultiplier(EnemyController e)=>1;
