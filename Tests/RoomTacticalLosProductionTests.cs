@@ -15,6 +15,10 @@ namespace Emberfall
     public partial class GameSession
     {
         public bool RoomCaptureActive=true;
+        bool RoomPurifyLive=false;FakeRoom RoomChainRun=new FakeRoom();
+        class FakeRoom {public bool SealComplete(int i)=>false;}
+        bool RoomSealInside(int i)=>false;Vector3 RoomSealPoint(int i)=>Vector3.zero;
+        bool IsRoomContestingPoint(EnemyController e,Vector3 p)=>false;
         public Vector3 RoomObjectivePoint=Vector3.zero;
         public EnemyController roomSupplier=new EnemyController();
         public bool RoomSupplyActive {get{return LiveRoomEnemy(roomSupplier);}}
