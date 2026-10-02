@@ -1,0 +1,176 @@
+[
+  {
+    "platform": "windows",
+    "base": "ace3109c23485d7f145d372b8cb3c24bd79abe89",
+    "head": "fcdd97bfbcbeca6b9cf022c86a30766de6c93597",
+    "changedFiles": [
+      "Assets/Scripts/Combat/WeaponVisualLinks.cs.meta",
+      "Assets/Scripts/Core/FilledVfxPlacement.cs.meta",
+      "Docs/Metadata-Guid-Repair.md",
+      "Tests/MetaGuidAuditTests.py",
+      "Tools/cloud-validation.py",
+      "Tools/validate-meta-guids.py"
+    ],
+    "mappingAudit": [
+      {
+        "path": "Assets/Scripts/Combat/WeaponVisualLinks.cs.meta",
+        "old": "68a6e6a74a54417a8f1162a6ff67f5dc4",
+        "new": "e552c6894a804ab59e21b10545f8c637",
+        "baselineOccurrences": [
+          "Assets/Scripts/Combat/WeaponVisualLinks.cs.meta"
+        ],
+        "newCollisionOccurrences": [],
+        "baselineOldOccurrences": [
+          "Assets/Scripts/Combat/WeaponVisualLinks.cs.meta"
+        ],
+        "currentOldOccurrences": [
+          "Docs/Metadata-Guid-Repair.md"
+        ],
+        "baselineNewOccurrences": [],
+        "currentNewOccurrences": [
+          "Assets/Scripts/Combat/WeaponVisualLinks.cs.meta",
+          "Docs/Metadata-Guid-Repair.md"
+        ]
+      },
+      {
+        "path": "Assets/Scripts/Core/FilledVfxPlacement.cs.meta",
+        "old": "a61004eb35a84c3c821b82421b504a5cf",
+        "new": "c0322347832b4025895339bcf3671693",
+        "baselineOccurrences": [
+          "Assets/Scripts/Core/FilledVfxPlacement.cs.meta"
+        ],
+        "newCollisionOccurrences": [],
+        "baselineOldOccurrences": [
+          "Assets/Scripts/Core/FilledVfxPlacement.cs.meta"
+        ],
+        "currentOldOccurrences": [
+          "Docs/Metadata-Guid-Repair.md"
+        ],
+        "baselineNewOccurrences": [],
+        "currentNewOccurrences": [
+          "Assets/Scripts/Core/FilledVfxPlacement.cs.meta",
+          "Docs/Metadata-Guid-Repair.md"
+        ]
+      }
+    ],
+    "allOtherTrackedBlobsUnchanged": true,
+    "unchangedTrackedCount": 1136,
+    "metaFilesOutsideAssets": []
+  },
+  {
+    "platform": "ios",
+    "base": "a9caf3776d80439c7c559202b531dc4a3df4518e",
+    "head": "887cbbe84bac1f9b26d6aa7ee3d725b742453c93",
+    "changedFiles": [
+      "Assets/Scripts/Combat/WeaponVisualLinks.cs.meta",
+      "Assets/Scripts/Core/FilledVfxPlacement.cs.meta",
+      "Docs/Metadata-Guid-Repair.md",
+      "Tests/MetaGuidAuditTests.py",
+      "Tools/cloud-validation.py",
+      "Tools/validate-meta-guids.py"
+    ],
+    "mappingAudit": [
+      {
+        "path": "Assets/Scripts/Combat/WeaponVisualLinks.cs.meta",
+        "old": "68a6e6a74a54417a8f1162a6ff67f5dc4",
+        "new": "e552c6894a804ab59e21b10545f8c637",
+        "baselineOccurrences": [
+          "Assets/Scripts/Combat/WeaponVisualLinks.cs.meta"
+        ],
+        "newCollisionOccurrences": [],
+        "baselineOldOccurrences": [
+          "Assets/Scripts/Combat/WeaponVisualLinks.cs.meta"
+        ],
+        "currentOldOccurrences": [
+          "Docs/Metadata-Guid-Repair.md"
+        ],
+        "baselineNewOccurrences": [],
+        "currentNewOccurrences": [
+          "Assets/Scripts/Combat/WeaponVisualLinks.cs.meta",
+          "Docs/Metadata-Guid-Repair.md"
+        ]
+      },
+      {
+        "path": "Assets/Scripts/Core/FilledVfxPlacement.cs.meta",
+        "old": "a61004eb35a84c3c821b82421b504a5cf",
+        "new": "c0322347832b4025895339bcf3671693",
+        "baselineOccurrences": [
+          "Assets/Scripts/Core/FilledVfxPlacement.cs.meta"
+        ],
+        "newCollisionOccurrences": [],
+        "baselineOldOccurrences": [
+          "Assets/Scripts/Core/FilledVfxPlacement.cs.meta"
+        ],
+        "currentOldOccurrences": [
+          "Docs/Metadata-Guid-Repair.md"
+        ],
+        "baselineNewOccurrences": [],
+        "currentNewOccurrences": [
+          "Assets/Scripts/Core/FilledVfxPlacement.cs.meta",
+          "Docs/Metadata-Guid-Repair.md"
+        ]
+      }
+    ],
+    "allOtherTrackedBlobsUnchanged": true,
+    "unchangedTrackedCount": 1147,
+    "metaFilesOutsideAssets": []
+  },
+  {
+    "platform": "android",
+    "base": "b1104bbd05e4f7f360ace83ec6d8ccc16ed1b0e1",
+    "head": "8654c803eb29b87dea7d69f09678ec21e1955f6d",
+    "changedFiles": [
+      "Assets/Scripts/Combat/WeaponVisualLinks.cs.meta",
+      "Assets/Scripts/Core/FilledVfxPlacement.cs.meta",
+      "Docs/Metadata-Guid-Repair.md",
+      "Tests/MetaGuidAuditTests.py",
+      "Tools/cloud-validation.py",
+      "Tools/validate-meta-guids.py"
+    ],
+    "mappingAudit": [
+      {
+        "path": "Assets/Scripts/Combat/WeaponVisualLinks.cs.meta",
+        "old": "68a6e6a74a54417a8f1162a6ff67f5dc4",
+        "new": "e552c6894a804ab59e21b10545f8c637",
+        "baselineOccurrences": [
+          "Assets/Scripts/Combat/WeaponVisualLinks.cs.meta"
+        ],
+        "newCollisionOccurrences": [],
+        "baselineOldOccurrences": [
+          "Assets/Scripts/Combat/WeaponVisualLinks.cs.meta"
+        ],
+        "currentOldOccurrences": [
+          "Docs/Metadata-Guid-Repair.md"
+        ],
+        "baselineNewOccurrences": [],
+        "currentNewOccurrences": [
+          "Assets/Scripts/Combat/WeaponVisualLinks.cs.meta",
+          "Docs/Metadata-Guid-Repair.md"
+        ]
+      },
+      {
+        "path": "Assets/Scripts/Core/FilledVfxPlacement.cs.meta",
+        "old": "a61004eb35a84c3c821b82421b504a5cf",
+        "new": "c0322347832b4025895339bcf3671693",
+        "baselineOccurrences": [
+          "Assets/Scripts/Core/FilledVfxPlacement.cs.meta"
+        ],
+        "newCollisionOccurrences": [],
+        "baselineOldOccurrences": [
+          "Assets/Scripts/Core/FilledVfxPlacement.cs.meta"
+        ],
+        "currentOldOccurrences": [
+          "Docs/Metadata-Guid-Repair.md"
+        ],
+        "baselineNewOccurrences": [],
+        "currentNewOccurrences": [
+          "Assets/Scripts/Core/FilledVfxPlacement.cs.meta",
+          "Docs/Metadata-Guid-Repair.md"
+        ]
+      }
+    ],
+    "allOtherTrackedBlobsUnchanged": true,
+    "unchangedTrackedCount": 1149,
+    "metaFilesOutsideAssets": []
+  }
+]

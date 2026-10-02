@@ -1,0 +1,70 @@
+{
+  "Independent-Review/Review.md": {
+    "bytes": 2830,
+    "sha256": "58b804403c901beb099e3f551e3a27e8c034e747836ed0b174d602a1702bfe8e"
+  },
+  "Independent-Review/controls.stderr.log": {
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "Independent-Review/controls.stdout.log": {
+    "bytes": 901,
+    "sha256": "17d199a753fbfbd85198a28e4d17e02e2152b3c20ac612054db51b8341d61442"
+  },
+  "Independent-Review/record_review.py": {
+    "bytes": 4412,
+    "sha256": "cc9085d49228491f8eb0793dfe2a8be1e7ce5e8d6c2bc81052315676c5b82b99"
+  },
+  "Independent-Review/review.json": {
+    "bytes": 11347,
+    "sha256": "843d4c09ba451d1b03ec7d371af23bbbc1673acf194aa34462e4e3406a390cfa"
+  },
+  "Independent-Review/review.stderr.log": {
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "Independent-Review/review.stdout.log": {
+    "bytes": 99,
+    "sha256": "3ba8f07c08d94becefeb04658c5da9f3ade6d2f209adaf46b2f1d8caffb42f0a"
+  },
+  "Independent-Review/scanner.stderr.log": {
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "Independent-Review/scanner.stdout.log": {
+    "bytes": 277,
+    "sha256": "3f743d2d2d008e1cd2f1bf1c631f156c86917ead9db4b7b96c30455a0e8c1acf"
+  },
+  "README.md": {
+    "bytes": 1261,
+    "sha256": "a15b57ad292d0ebaba61dfd8613e61b97d3b003f1c3bf94bc0836ad5c0327c69"
+  },
+  "baseline-scan.json": {
+    "bytes": 597,
+    "sha256": "0bcca2313b73ced7bdfbabf23fdaaddc4e64eb43b92783f1b9ff188acbeb3a96"
+  },
+  "full-tracked-reference-and-scope-audit.json": {
+    "bytes": 5969,
+    "sha256": "dd3b3196089c10289f4014dc0957bf3332ed1b1e4fcdd5e56e7ad1c04942573e"
+  },
+  "mapping.json": {
+    "bytes": 587,
+    "sha256": "57671e7fc0d504b68b34ce5fb129185740ee69120f86a64fe209e88ae51a3f72"
+  },
+  "parity-protection.json": {
+    "bytes": 77480,
+    "sha256": "ef5bcaa0119437b63058a9cf65747dc867af0a22864b90ad20ffc57f8ac6bfd1"
+  },
+  "platform-api-report.json": {
+    "bytes": 95125,
+    "sha256": "c4484d6269b6c29bf0647d4be239741a567a518ca130127c8ea94f3be4b028b9"
+  },
+  "platform-api-stdout.log": {
+    "bytes": 170,
+    "sha256": "0153b7935586ef2d3edcfcf8b63251a8a8222bbcc286b780bdb74f7bce71664d"
+  },
+  "windows-scan.json": {
+    "bytes": 277,
+    "sha256": "3f743d2d2d008e1cd2f1bf1c631f156c86917ead9db4b7b96c30455a0e8c1acf"
+  }
+}

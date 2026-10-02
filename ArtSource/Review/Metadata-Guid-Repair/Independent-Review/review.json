@@ -1,0 +1,344 @@
+{
+  "timeUTC": "2026-10-02T22:03:37.001299+00:00",
+  "verdict": "GO",
+  "scope": "Every tracked Git blob at each exact candidate and its first parent, byte-search lowercased for both old GUIDs; all changed paths and candidate six-file bytes across platforms. Working copy hash verified against commit for all changed files. Excludes untracked/external scenes, Unity import, full-schema/package/fileID resolution.",
+  "commands": [
+    [
+      "python3",
+      "/workspace/scratch/guid-fix/independent-review/record_review.py"
+    ]
+  ],
+  "platforms": [
+    {
+      "root": "/workspace/emberfall_guid_fix",
+      "head": "fcdd97bfbcbeca6b9cf022c86a30766de6c93597",
+      "parent": "ace3109c23485d7f145d372b8cb3c24bd79abe89",
+      "changedPaths": [
+        "Assets/Scripts/Combat/WeaponVisualLinks.cs.meta",
+        "Assets/Scripts/Core/FilledVfxPlacement.cs.meta",
+        "Docs/Metadata-Guid-Repair.md",
+        "Tests/MetaGuidAuditTests.py",
+        "Tools/cloud-validation.py",
+        "Tools/validate-meta-guids.py"
+      ],
+      "changedSha256": {
+        "Assets/Scripts/Combat/WeaponVisualLinks.cs.meta": "346790baea9add77889830ed9b845bde90f6ff0cb1a692382449df5e277eb31b",
+        "Assets/Scripts/Core/FilledVfxPlacement.cs.meta": "fe6508e0462f0c8252d2423f8e3009873e8a4d35a7bd02669d2c3e8ccdea05dc",
+        "Docs/Metadata-Guid-Repair.md": "8dfdb67a1093392da0a6fccad55b9a38d9d58dfb5d02b81d38f95fd4f6f35470",
+        "Tests/MetaGuidAuditTests.py": "9d14e14e59262b923ff8836950cab0d50e05431912048cbf3f18f92105766c8e",
+        "Tools/cloud-validation.py": "b0cc9ad996eda1b710d3da822db3786415e47f7da15b9d3c82af7d6ae3597913",
+        "Tools/validate-meta-guids.py": "8058b27a717496a74b8546012d2b5047287f9e828a418b5455a39707d1ddc380"
+      },
+      "oldGuidMatches": {
+        "ace3109c23485d7f145d372b8cb3c24bd79abe89": {
+          "blobCount": 1139,
+          "matches": {
+            "68a6e6a74a54417a8f1162a6ff67f5dc4": [
+              "Assets/Scripts/Combat/WeaponVisualLinks.cs.meta"
+            ],
+            "a61004eb35a84c3c821b82421b504a5cf": [
+              "Assets/Scripts/Core/FilledVfxPlacement.cs.meta"
+            ]
+          }
+        },
+        "fcdd97bfbcbeca6b9cf022c86a30766de6c93597": {
+          "blobCount": 1142,
+          "matches": {
+            "68a6e6a74a54417a8f1162a6ff67f5dc4": [
+              "Docs/Metadata-Guid-Repair.md"
+            ],
+            "a61004eb35a84c3c821b82421b504a5cf": [
+              "Docs/Metadata-Guid-Repair.md"
+            ]
+          }
+        }
+      },
+      "commands": [
+        [
+          "git",
+          "-C",
+          "/workspace/emberfall_guid_fix",
+          "diff-tree",
+          "--no-commit-id",
+          "--name-only",
+          "-r",
+          "fcdd97bfbcbeca6b9cf022c86a30766de6c93597"
+        ],
+        [
+          "git",
+          "-C",
+          "/workspace/emberfall_guid_fix",
+          "ls-tree",
+          "-r",
+          "-z",
+          "ace3109c23485d7f145d372b8cb3c24bd79abe89"
+        ],
+        [
+          "git",
+          "-C",
+          "/workspace/emberfall_guid_fix",
+          "cat-file",
+          "--batch"
+        ],
+        [
+          "git",
+          "-C",
+          "/workspace/emberfall_guid_fix",
+          "ls-tree",
+          "-r",
+          "-z",
+          "fcdd97bfbcbeca6b9cf022c86a30766de6c93597"
+        ],
+        [
+          "git",
+          "-C",
+          "/workspace/emberfall_guid_fix",
+          "cat-file",
+          "--batch"
+        ]
+      ],
+      "newGuids": {
+        "Assets/Scripts/Combat/WeaponVisualLinks.cs.meta": {
+          "value": "e552c6894a804ab59e21b10545f8c637",
+          "uuidVersion": 4
+        },
+        "Assets/Scripts/Core/FilledVfxPlacement.cs.meta": {
+          "value": "c0322347832b4025895339bcf3671693",
+          "uuidVersion": 4
+        }
+      }
+    },
+    {
+      "root": "/workspace/emberfall_ios_guid_fix",
+      "head": "887cbbe84bac1f9b26d6aa7ee3d725b742453c93",
+      "parent": "a9caf3776d80439c7c559202b531dc4a3df4518e",
+      "changedPaths": [
+        "Assets/Scripts/Combat/WeaponVisualLinks.cs.meta",
+        "Assets/Scripts/Core/FilledVfxPlacement.cs.meta",
+        "Docs/Metadata-Guid-Repair.md",
+        "Tests/MetaGuidAuditTests.py",
+        "Tools/cloud-validation.py",
+        "Tools/validate-meta-guids.py"
+      ],
+      "changedSha256": {
+        "Assets/Scripts/Combat/WeaponVisualLinks.cs.meta": "346790baea9add77889830ed9b845bde90f6ff0cb1a692382449df5e277eb31b",
+        "Assets/Scripts/Core/FilledVfxPlacement.cs.meta": "fe6508e0462f0c8252d2423f8e3009873e8a4d35a7bd02669d2c3e8ccdea05dc",
+        "Docs/Metadata-Guid-Repair.md": "8dfdb67a1093392da0a6fccad55b9a38d9d58dfb5d02b81d38f95fd4f6f35470",
+        "Tests/MetaGuidAuditTests.py": "9d14e14e59262b923ff8836950cab0d50e05431912048cbf3f18f92105766c8e",
+        "Tools/cloud-validation.py": "b0cc9ad996eda1b710d3da822db3786415e47f7da15b9d3c82af7d6ae3597913",
+        "Tools/validate-meta-guids.py": "8058b27a717496a74b8546012d2b5047287f9e828a418b5455a39707d1ddc380"
+      },
+      "oldGuidMatches": {
+        "a9caf3776d80439c7c559202b531dc4a3df4518e": {
+          "blobCount": 1150,
+          "matches": {
+            "68a6e6a74a54417a8f1162a6ff67f5dc4": [
+              "Assets/Scripts/Combat/WeaponVisualLinks.cs.meta"
+            ],
+            "a61004eb35a84c3c821b82421b504a5cf": [
+              "Assets/Scripts/Core/FilledVfxPlacement.cs.meta"
+            ]
+          }
+        },
+        "887cbbe84bac1f9b26d6aa7ee3d725b742453c93": {
+          "blobCount": 1153,
+          "matches": {
+            "68a6e6a74a54417a8f1162a6ff67f5dc4": [
+              "Docs/Metadata-Guid-Repair.md"
+            ],
+            "a61004eb35a84c3c821b82421b504a5cf": [
+              "Docs/Metadata-Guid-Repair.md"
+            ]
+          }
+        }
+      },
+      "commands": [
+        [
+          "git",
+          "-C",
+          "/workspace/emberfall_ios_guid_fix",
+          "diff-tree",
+          "--no-commit-id",
+          "--name-only",
+          "-r",
+          "887cbbe84bac1f9b26d6aa7ee3d725b742453c93"
+        ],
+        [
+          "git",
+          "-C",
+          "/workspace/emberfall_ios_guid_fix",
+          "ls-tree",
+          "-r",
+          "-z",
+          "a9caf3776d80439c7c559202b531dc4a3df4518e"
+        ],
+        [
+          "git",
+          "-C",
+          "/workspace/emberfall_ios_guid_fix",
+          "cat-file",
+          "--batch"
+        ],
+        [
+          "git",
+          "-C",
+          "/workspace/emberfall_ios_guid_fix",
+          "ls-tree",
+          "-r",
+          "-z",
+          "887cbbe84bac1f9b26d6aa7ee3d725b742453c93"
+        ],
+        [
+          "git",
+          "-C",
+          "/workspace/emberfall_ios_guid_fix",
+          "cat-file",
+          "--batch"
+        ]
+      ],
+      "newGuids": {
+        "Assets/Scripts/Combat/WeaponVisualLinks.cs.meta": {
+          "value": "e552c6894a804ab59e21b10545f8c637",
+          "uuidVersion": 4
+        },
+        "Assets/Scripts/Core/FilledVfxPlacement.cs.meta": {
+          "value": "c0322347832b4025895339bcf3671693",
+          "uuidVersion": 4
+        }
+      }
+    },
+    {
+      "root": "/workspace/emberfall_android_guid_fix",
+      "head": "8654c803eb29b87dea7d69f09678ec21e1955f6d",
+      "parent": "b1104bbd05e4f7f360ace83ec6d8ccc16ed1b0e1",
+      "changedPaths": [
+        "Assets/Scripts/Combat/WeaponVisualLinks.cs.meta",
+        "Assets/Scripts/Core/FilledVfxPlacement.cs.meta",
+        "Docs/Metadata-Guid-Repair.md",
+        "Tests/MetaGuidAuditTests.py",
+        "Tools/cloud-validation.py",
+        "Tools/validate-meta-guids.py"
+      ],
+      "changedSha256": {
+        "Assets/Scripts/Combat/WeaponVisualLinks.cs.meta": "346790baea9add77889830ed9b845bde90f6ff0cb1a692382449df5e277eb31b",
+        "Assets/Scripts/Core/FilledVfxPlacement.cs.meta": "fe6508e0462f0c8252d2423f8e3009873e8a4d35a7bd02669d2c3e8ccdea05dc",
+        "Docs/Metadata-Guid-Repair.md": "8dfdb67a1093392da0a6fccad55b9a38d9d58dfb5d02b81d38f95fd4f6f35470",
+        "Tests/MetaGuidAuditTests.py": "9d14e14e59262b923ff8836950cab0d50e05431912048cbf3f18f92105766c8e",
+        "Tools/cloud-validation.py": "b0cc9ad996eda1b710d3da822db3786415e47f7da15b9d3c82af7d6ae3597913",
+        "Tools/validate-meta-guids.py": "8058b27a717496a74b8546012d2b5047287f9e828a418b5455a39707d1ddc380"
+      },
+      "oldGuidMatches": {
+        "b1104bbd05e4f7f360ace83ec6d8ccc16ed1b0e1": {
+          "blobCount": 1152,
+          "matches": {
+            "68a6e6a74a54417a8f1162a6ff67f5dc4": [
+              "Assets/Scripts/Combat/WeaponVisualLinks.cs.meta"
+            ],
+            "a61004eb35a84c3c821b82421b504a5cf": [
+              "Assets/Scripts/Core/FilledVfxPlacement.cs.meta"
+            ]
+          }
+        },
+        "8654c803eb29b87dea7d69f09678ec21e1955f6d": {
+          "blobCount": 1155,
+          "matches": {
+            "68a6e6a74a54417a8f1162a6ff67f5dc4": [
+              "Docs/Metadata-Guid-Repair.md"
+            ],
+            "a61004eb35a84c3c821b82421b504a5cf": [
+              "Docs/Metadata-Guid-Repair.md"
+            ]
+          }
+        }
+      },
+      "commands": [
+        [
+          "git",
+          "-C",
+          "/workspace/emberfall_android_guid_fix",
+          "diff-tree",
+          "--no-commit-id",
+          "--name-only",
+          "-r",
+          "8654c803eb29b87dea7d69f09678ec21e1955f6d"
+        ],
+        [
+          "git",
+          "-C",
+          "/workspace/emberfall_android_guid_fix",
+          "ls-tree",
+          "-r",
+          "-z",
+          "b1104bbd05e4f7f360ace83ec6d8ccc16ed1b0e1"
+        ],
+        [
+          "git",
+          "-C",
+          "/workspace/emberfall_android_guid_fix",
+          "cat-file",
+          "--batch"
+        ],
+        [
+          "git",
+          "-C",
+          "/workspace/emberfall_android_guid_fix",
+          "ls-tree",
+          "-r",
+          "-z",
+          "8654c803eb29b87dea7d69f09678ec21e1955f6d"
+        ],
+        [
+          "git",
+          "-C",
+          "/workspace/emberfall_android_guid_fix",
+          "cat-file",
+          "--batch"
+        ]
+      ],
+      "newGuids": {
+        "Assets/Scripts/Combat/WeaponVisualLinks.cs.meta": {
+          "value": "e552c6894a804ab59e21b10545f8c637",
+          "uuidVersion": 4
+        },
+        "Assets/Scripts/Core/FilledVfxPlacement.cs.meta": {
+          "value": "c0322347832b4025895339bcf3671693",
+          "uuidVersion": 4
+        }
+      }
+    }
+  ],
+  "threePlatformChangedBytesEqual": true,
+  "executions": [
+    {
+      "command": [
+        "python3",
+        "Tools/validate-meta-guids.py"
+      ],
+      "cwd": "/workspace/emberfall_guid_fix",
+      "exitCode": 0,
+      "stdout": "scanner.stdout.log",
+      "stderr": "scanner.stderr.log"
+    },
+    {
+      "command": [
+        "python3",
+        "Tests/MetaGuidAuditTests.py"
+      ],
+      "cwd": "/workspace/emberfall_guid_fix",
+      "exitCode": 0,
+      "stdout": "controls.stdout.log",
+      "stderr": "controls.stderr.log"
+    }
+  ],
+  "scannerResult": {
+    "passed": true,
+    "scope": "All authored Assets files/folders and meta identities; no Unity import or external reference resolution",
+    "assetFiles": 294,
+    "assetFolders": 12,
+    "metaFiles": 306,
+    "validUniqueGuidCount": 306,
+    "emptyFolderMetas": [],
+    "failures": []
+  },
+  "scriptSha256": "cc9085d49228491f8eb0793dfe2a8be1e7ce5e8d6c2bc81052315676c5b82b99"
+}

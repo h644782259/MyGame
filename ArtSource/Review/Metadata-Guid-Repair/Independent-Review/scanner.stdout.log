@@ -1,0 +1,10 @@
+{
+  "passed": true,
+  "scope": "All authored Assets files/folders and meta identities; no Unity import or external reference resolution",
+  "assetFiles": 294,
+  "assetFolders": 12,
+  "metaFiles": 306,
+  "validUniqueGuidCount": 306,
+  "emptyFolderMetas": [],
+  "failures": []
+}

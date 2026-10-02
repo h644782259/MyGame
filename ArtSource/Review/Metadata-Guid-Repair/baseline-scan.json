@@ -1,0 +1,21 @@
+{
+  "passed": false,
+  "scope": "All authored Assets files/folders and meta identities; no Unity import or external reference resolution",
+  "assetFiles": 294,
+  "assetFolders": 12,
+  "metaFiles": 306,
+  "validUniqueGuidCount": 304,
+  "emptyFolderMetas": [],
+  "failures": [
+    {
+      "kind": "invalid_guid",
+      "path": "Assets/Scripts/Combat/WeaponVisualLinks.cs.meta",
+      "value": "68a6e6a74a54417a8f1162a6ff67f5dc4"
+    },
+    {
+      "kind": "invalid_guid",
+      "path": "Assets/Scripts/Core/FilledVfxPlacement.cs.meta",
+      "value": "a61004eb35a84c3c821b82421b504a5cf"
+    }
+  ]
+}
