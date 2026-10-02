@@ -1,0 +1,79 @@
+{
+  "head": "e325c904ab5ee1a45aaf354cbaf3556677b407d9",
+  "tree": "cf3c9a75e7052672fc80607ac90c62d1a00cacd9",
+  "defaultJIT": true,
+  "fullSuite": {
+    "passed": true,
+    "passedCount": 189,
+    "totalCount": 189,
+    "startedUtc": "20261002T170254256556Z",
+    "completedUtc": "2026-10-02T17:18:19.963755+00:00",
+    "report": "/workspace/scratch/refinement-validation/e325c90/final-report/report.json",
+    "reportSha256": "ad23b50a1ecee64a83179fd08fb12b7802f664457253f3a99bf8423bd6566e6e",
+    "log": "/workspace/scratch/refinement-validation/e325c90/full.log",
+    "sourceChangedDuringRun": [],
+    "runtimeSourceCount": 256,
+    "allSourceManifestSha256": "b8cda617c3045b223fe94a444a76985aeeceea22f64cf77006e1f58de8d2c9ec"
+  },
+  "explicitRedrock": {
+    "passed": true,
+    "registeredInAggregate": false,
+    "spawnIsolationChecks": 3232,
+    "geometryNavigationSpawnChecks": 51209,
+    "formationNavigationChecks": 780,
+    "compiledNegativeControls": [
+      "wall",
+      "low-bit"
+    ],
+    "log": "/workspace/scratch/refinement-validation/e325c90/redrock-explicit.log",
+    "logSha256": "b69b37b5932d8d8b648505c81896c8823ca2dc21d37107a96c7308253060f00a"
+  },
+  "platformAPI": {
+    "passed": true,
+    "report": "/workspace/scratch/refinement-validation/e325c90/platform-api-report.json",
+    "runtimeParity": true,
+    "runtimeManifestSha256": "aa7c7c8fd810e63eaffd735aced449efc7edaa1d67a5014d5cc61715848a846f",
+    "platformHeadsAfterRun": [
+      {
+        "head": "e325c904ab5ee1a45aaf354cbaf3556677b407d9",
+        "tree": "cf3c9a75e7052672fc80607ac90c62d1a00cacd9",
+        "sourceUnchanged": true,
+        "trackedStatus": ""
+      },
+      {
+        "head": "44d24269470076010c626465c75630da18a58b51",
+        "tree": "10a5fffa613afa13f8db6be4467bdd732f1b62cf",
+        "sourceUnchanged": true,
+        "trackedStatus": ""
+      },
+      {
+        "head": "57445429957bbc2c65a471e7ae5affeb9df841c3",
+        "tree": "4092b3d4a50cd703f6d9f8fb042f8996fcf5aa4c",
+        "sourceUnchanged": true,
+        "trackedStatus": ""
+      }
+    ]
+  },
+  "platformProtection": {
+    "sourceHead": "e325c904ab5ee1a45aaf354cbaf3556677b407d9",
+    "platforms": [
+      {
+        "path": "/workspace/emberfall_ios_refinement",
+        "head": "44d24269470076010c626465c75630da18a58b51",
+        "protectedVerified": 24,
+        "syncedFilesVerified": 33,
+        "errors": []
+      },
+      {
+        "path": "/workspace/emberfall_android_refinement",
+        "head": "57445429957bbc2c65a471e7ae5affeb9df841c3",
+        "protectedVerified": 24,
+        "syncedFilesVerified": 33,
+        "errors": []
+      }
+    ],
+    "passed": true
+  },
+  "historicalFailedReport": "/workspace/scratch/refinement-validation/951800d/frozen-report/report.json",
+  "scope": "Standalone production logic, Unity API doubles, cached Unity 2021 reference API compile. No Unity Editor, Unity 6 import/render, real JsonUtility, device gameplay or platform package build."
+}

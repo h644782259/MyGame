@@ -1,0 +1,20 @@
+{
+  "sourceHead": "e325c904ab5ee1a45aaf354cbaf3556677b407d9",
+  "platforms": [
+    {
+      "path": "/workspace/emberfall_ios_refinement",
+      "head": "44d24269470076010c626465c75630da18a58b51",
+      "protectedVerified": 24,
+      "syncedFilesVerified": 33,
+      "errors": []
+    },
+    {
+      "path": "/workspace/emberfall_android_refinement",
+      "head": "57445429957bbc2c65a471e7ae5affeb9df841c3",
+      "protectedVerified": 24,
+      "syncedFilesVerified": 33,
+      "errors": []
+    }
+  ],
+  "passed": true
+}

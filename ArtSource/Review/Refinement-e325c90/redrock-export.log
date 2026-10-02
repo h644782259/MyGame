@@ -1,0 +1,12 @@
+/workspace/emberfall_refinement/Assets/Scripts/Core/ChapterProgression.cs(66,23): warning CS0649: Field 'ChapterRunReceipt.MasteryEligible' is never assigned to, and will always have its default value false [/tmp/redrock-evidence-kjyd1m2g/build/Validation.csproj]
+/workspace/emberfall_refinement/Assets/Scripts/Core/ChapterProgression.cs(65,22): warning CS0649: Field 'ChapterRunReceipt.MasteryEvidence' is never assigned to, and will always have its default value 0 [/tmp/redrock-evidence-kjyd1m2g/build/Validation.csproj]
+
+Build succeeded.
+
+/workspace/emberfall_refinement/Assets/Scripts/Core/ChapterProgression.cs(66,23): warning CS0649: Field 'ChapterRunReceipt.MasteryEligible' is never assigned to, and will always have its default value false [/tmp/redrock-evidence-kjyd1m2g/build/Validation.csproj]
+/workspace/emberfall_refinement/Assets/Scripts/Core/ChapterProgression.cs(65,22): warning CS0649: Field 'ChapterRunReceipt.MasteryEvidence' is never assigned to, and will always have its default value 0 [/tmp/redrock-evidence-kjyd1m2g/build/Validation.csproj]
+    2 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:01.93
+Exported routes.json + routes.svg from production Plan, TryChapterSpawn and WorldTraversal.
