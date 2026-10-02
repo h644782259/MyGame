@@ -854,6 +854,7 @@ namespace Emberfall
         public void PlayAction(int skill, bool basic, float basicInterval = 0)
         {
             if (!isHero) return;
+            if (actionDuration > 0 && actionAge < actionDuration) BeginVisualRecovery();
             actionSkill = skill;
             actionBasic = basic;
             actionAge = 0;
@@ -865,7 +866,7 @@ namespace Emberfall
         }
 
         public bool BasicActionBlocked { get { return BasicActionTimeline.BlocksBasic(actionBasic, actionAge, actionDuration); } }
-        public void CancelAction() { actionAge = actionDuration = 0; }
+        public void CancelAction() { BeginVisualRecovery(); actionAge = actionDuration = 0; }
 
         public void ReleaseCharge(int skill)
         {
@@ -887,6 +888,7 @@ namespace Emberfall
         private void AnimateHero(float speed, float attack, bool hurt)
         {
             float dt = Time.deltaTime;
+            AdvanceVisualMotion(dt);
             speed = smoothedSpeed = locomotion.Speed;
             if (tailoredCloth != null) tailoredCloth.SetMotion(speed, actionDuration > 0 && actionAge < actionDuration ? 1 : 0);
             gaitPhase = locomotion.Phase;
@@ -969,6 +971,7 @@ namespace Emberfall
                 AimArm(rightArm, rightElbow, stringHand, new Vector3(1, -.2f, -.2f));
                 arrowRig.gameObject.SetActive(actionBasic ? BasicActionTimeline.ArrowVisible(t, acting) : !acting || t < .44f || t > .83f);
             }
+            ApplyVisualRecovery(dt);
             if (decoration != null) decoration.Rotate(0, dt * (acting ? 145f : 42f), 0, Space.Self);
         }
 

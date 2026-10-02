@@ -30,8 +30,7 @@ namespace Emberfall
         {
             // Called on the real hit: the descending streak and ground rupture are
             // immediate. There is no cosmetic delayed arrival after damage has landed.
-            FilledSkillVfx.Impact(hero,at,1.6f*scale,FilledVfxKind.Ice,color);
-            FilledSkillVfx.Thrust(hero,at+Vector3.up*6f*scale,at,color,.4f,.22f*scale);
+            FilledSkillVfx.Impact(hero,at,1.6f*scale,FilledVfxKind.Sword,color);
         }
         private void Update()
         {

@@ -35,7 +35,12 @@ namespace Emberfall
         public static void Slash(Vector3 center, Vector3 forward, float radius, Color color)
         {
             var game = GameSession.Instance;
-            if (game != null) FilledSkillVfx.Crescent(game.Player, center, forward, radius, color);
+            if (game != null)
+            {
+                var model=game.Player!=null?game.Player.GetComponentInChildren<CombatModel>():null;
+                FilledSkillVfx.Crescent(game.Player, center, forward, radius, color,model!=null?model.WeaponSwingSide:1);
+                WeaponSlashRibbon.Spawn(game.Player,model,color);
+            }
         }
 
         public static Material NewGlow()
@@ -147,6 +152,8 @@ namespace Emberfall
         private int epoch;
         private readonly HashSet<EnemyController> hitTargets = new HashSet<EnemyController>();
         private Material bodyMaterial, trailMaterial;
+        private Transform visualBody;
+        private TrailRenderer visualTrail;
         private Color color;
 
         public static void Friendly(PlayerController player, GameSession game, Vector3 at, Vector3 forward, CombatDamage amount, Color tint, bool piercing = false, bool arrow = false, bool basic = false, float size = 1f, float velocity = 0f, EnemyController tracking = null, CombatDamage blastDamage = default(CombatDamage), float blastRadius = 0f, int skillIndex = -1, int castId = 0, SummonedCompanion companionSource = null, ProjectileVolleyBudget<EnemyController> volley = null, EnemyController markTarget = null, float markStrength = 0)
@@ -171,6 +178,7 @@ namespace Emberfall
             projectile.skillIndex = skillIndex; projectile.castId = castId==0?player.NewCastId():castId;
             projectile.transform.localScale *= size;
             projectile.radius *= Mathf.Min(2f,size);
+            projectile.BindVisualOrigin(companionSource==null?player:null);
             if (velocity > 0) projectile.speed = velocity;
             if (tracking != null) projectile.lifetime = 2.5f;
             if (CombatReviewEvents.Enabled) CombatReviewEvents.Emit("projectilelaunch",CombatReviewObjectId.Get(player),tracking==null?"0":CombatReviewObjectId.Get(tracking),skill:skillIndex,detail:CombatReviewObjectId.Get(projectile).ToString());
@@ -214,6 +222,7 @@ namespace Emberfall
             projectile.aimedDistance=Mathf.Max(.25f,CombatFx.Flat(target-muzzle).magnitude);
             projectile.transform.position=muzzle;
             projectile.AlignBodyFlight();
+            projectile.BindVisualOrigin(player);
             if (CombatReviewEvents.Enabled) CombatReviewEvents.Emit("projectilelaunch",CombatReviewObjectId.Get(player),selected==null?"0":CombatReviewObjectId.Get(selected),detail:CombatReviewObjectId.Get(projectile).ToString());
         }
 
@@ -229,6 +238,7 @@ namespace Emberfall
             projectile.speed = velocity;
             projectile.lifetime = 3f;
             projectile.radius = .32f;
+            projectile.BindVisualOrigin(null);
             hostileProjectiles.Add(projectile);
         }
 
@@ -253,7 +263,9 @@ namespace Emberfall
         {
             Material surface = new Material(Shader.Find("Standard")) { color = tint };
             ProceduralVisuals.ApplySurface(surface,arrow ? VisualSurface.Metal : VisualSurface.Crystal);
-            GameObject obj = ProceduralVisuals.Create(arrow ? "Spectral Arrow" : "Arcane Bolt",arrow ? PrimitiveType.Capsule : PrimitiveType.Sphere,surface);
+            GameObject obj = new GameObject("Projectile simulation root");
+            GameObject body = ProceduralVisuals.Create(arrow ? "Spectral Arrow" : "Arcane Bolt",arrow ? PrimitiveType.Capsule : PrimitiveType.Sphere,surface);
+            body.transform.SetParent(obj.transform,false);
             obj.transform.position = new Vector3(at.x, 1f, at.z);
             Vector3 normalized = CombatFx.Flat(forward).normalized;
             if (normalized.sqrMagnitude < .1f) normalized = Vector3.forward;
@@ -263,7 +275,8 @@ namespace Emberfall
             projectile.direction = normalized;
             projectile.color = tint;
             projectile.bodyMaterial = surface;
-            TrailRenderer trail = obj.AddComponent<TrailRenderer>();
+            projectile.visualBody=body.transform;
+            TrailRenderer trail = body.AddComponent<TrailRenderer>();projectile.visualTrail=trail;trail.emitting=false;
             projectile.trailMaterial = CombatFx.NewGlow();
             trail.sharedMaterial = projectile.trailMaterial;
             trail.time = EffectPreferences.ReducedEffects ? .08f : .16f;
@@ -398,6 +411,12 @@ namespace Emberfall
             if (trailMaterial != null) Destroy(trailMaterial);
         }
 
+        private void BindVisualOrigin(PlayerController source)
+        {
+            var model=source!=null?source.GetComponentInChildren<CombatModel>():null;
+            ProjectileVisualBridge.Bind(visualBody,transform,model,arrowShape,visualTrail);
+        }
+
         private void AlignBodyFlight()
         {
             Vector3 visibleDirection=direction;
@@ -499,10 +518,8 @@ namespace Emberfall
                         if (fireVisual) FilledSkillVfx.Impact(owner, transform.position, radius, FilledVfxKind.Fire, new Color(1f,.43f,.12f));
                         else if (visualRecipe == SkillVisualRecipe.Ice)
                             FilledSkillVfx.Impact(owner, transform.position, radius, FilledVfxKind.Ice, new Color(.2f,.75f,1f));
-                        else if (visualRecipe == SkillVisualRecipe.Spirit || visualRecipe == SkillVisualRecipe.Arcane)
-                            FilledSkillVfx.Impact(owner, transform.position, radius, FilledVfxKind.Summon, color);
-                        else if (visualRecipe == SkillVisualRecipe.Steel)
-                            FilledSkillVfx.Crescent(owner, transform.position, owner.transform.forward, radius, color);
+                        else if (visualRecipe == SkillVisualRecipe.Spirit || visualRecipe == SkillVisualRecipe.Arcane || visualRecipe == SkillVisualRecipe.Lightning || visualRecipe == SkillVisualRecipe.Steel)
+                            FilledSkillVfx.Impact(owner, transform.position, radius, SkillVisualRecipes.Filled(visualRecipe), color);
                     }
                     if (tick == 0)
                     { DestructibleProp.StrikeArea(owner,transform.position,radius,damage,castId); CombatFx.Ring(transform.position,radius,color,.42f,.15f); }

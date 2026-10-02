@@ -1,0 +1,26 @@
+using System;
+using Emberfall;
+namespace UnityEngine
+{
+ public class Object{public static int Destroyed;public static void Destroy(Object value){Destroyed++;}}
+ public enum TextureFormat{RGBA32}public enum FilterMode{Bilinear}public enum TextureWrapMode{Clamp}public enum HideFlags{HideAndDontSave}
+ public class Texture2D:Object{public readonly int width,height;public string name;public FilterMode filterMode;public TextureWrapMode wrapMode;public HideFlags hideFlags;public Color[] CapturedPixels;public bool ReleasedCpu;
+ public Texture2D(int w,int h,TextureFormat f,bool m){width=w;height=h;}public void SetPixels(Color[] p){CapturedPixels=p;}public void Apply(bool m,bool release){ReleasedCpu=release;}}
+ public struct Color{public float r,g,b,a;public Color(float x,float y,float z,float alpha=1){r=x;g=y;b=z;a=alpha;}public static Color clear=>new Color(0,0,0,0);public static Color white=>new Color(1,1,1);public static Color operator+(Color a,Color b)=>new Color(a.r+b.r,a.g+b.g,a.b+b.b,a.a+b.a);public static Color operator/(Color a,float v)=>new Color(a.r/v,a.g/v,a.b/v,a.a/v);}
+ public struct Vector2{public float x,y;public Vector2(float a,float b){x=a;y=b;}public float sqrMagnitude=>x*x+y*y;public Vector2 normalized=>this/(float)Math.Sqrt(sqrMagnitude);public static Vector2 operator+(Vector2 a,Vector2 b)=>new Vector2(a.x+b.x,a.y+b.y);public static Vector2 operator-(Vector2 a,Vector2 b)=>new Vector2(a.x-b.x,a.y-b.y);public static Vector2 operator*(Vector2 a,float v)=>new Vector2(a.x*v,a.y*v);public static Vector2 operator/(Vector2 a,float v)=>new Vector2(a.x/v,a.y/v);public static float Dot(Vector2 a,Vector2 b)=>a.x*b.x+a.y*b.y;public static float Distance(Vector2 a,Vector2 b)=>(float)Math.Sqrt((a-b).sqrMagnitude);}
+ public static class Mathf{public const float Deg2Rad=(float)Math.PI/180;public static float Clamp01(float v)=>Math.Max(0,Math.Min(1,v));public static float Max(float a,float b)=>Math.Max(a,b);public static float Cos(float a)=>(float)Math.Cos(a);public static float Sin(float a)=>(float)Math.Sin(a);public static float Lerp(float a,float b,float t)=>a+(b-a)*t;}
+}
+public static class SkillIconAtlasTests
+{
+ public static string Run(){int n=0;Action<bool,string> check=(ok,why)=>{n++;if(!ok)throw new Exception(why);};
+  for(int hero=0;hero<4;hero++)for(int skill=0;skill<10;skill++)foreach(int size in new[]{24,32,48}){
+   var icon=UIIconAtlas.Skill((HeroClass)hero,skill,size);check(icon.width==size&&icon.height==size,"exact requested icon tier");
+   check(ReferenceEquals(icon,UIIconAtlas.Skill((HeroClass)hero,skill,size)),"bounded cache reuses identity");
+   int visible=0;foreach(var pixel in icon.CapturedPixels){check(pixel.a>=0&&pixel.a<=1,"finite bounded alpha");if(pixel.a>.2f)visible++;}
+   check(visible>size&&visible<size*size,"glyph has visible structure and transparent background");check(icon.ReleasedCpu,"finished textures release CPU pixel storage");
+  }
+  check(ReferenceEquals(UIIconAtlas.Skill(HeroClass.Vanguard,0,27),UIIconAtlas.Skill(HeroClass.Vanguard,0,32)),"arbitrary sizes use three bounded tiers");
+  var utility=UIIconAtlas.Utility("potion");check(utility.width==64,"utility cache keeps existing format");int before=UnityEngine.Object.Destroyed;UIIconAtlas.Clear();check(UnityEngine.Object.Destroyed-before==121,"all120skill variants and utility are released");
+  return "PASS: "+n+" production skill icon raster/cache assertions (not rendered readability)";
+ }
+}

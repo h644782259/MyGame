@@ -15,6 +15,7 @@ public static class SkillVisualRecipeTests
         foreach(SkillVisualRecipe recipe in Enum.GetValues(typeof(SkillVisualRecipe)))
         {
             var kind=SkillVisualRecipes.Filled(recipe);
+            if(recipe==SkillVisualRecipe.Steel&&kind!=FilledVfxKind.Sword||recipe==SkillVisualRecipe.Lightning&&kind!=FilledVfxKind.Lightning||recipe==SkillVisualRecipe.Arcane&&kind!=FilledVfxKind.Arcane)throw new Exception("distinct primary identity");checks++;
             if((kind==FilledVfxKind.Fire)!=(recipe==SkillVisualRecipe.Fire))throw new Exception("only fire makes flame");checks++;
             if((kind==FilledVfxKind.Ice)!=(recipe==SkillVisualRecipe.Ice))throw new Exception("only ice makes crystal");checks++;
         }

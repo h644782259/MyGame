@@ -45,7 +45,7 @@ public static class RoomBlessingRouteTests
         check(CampRouteCards.Describe(ranger,false,1).Requirements.Contains("装入"),"desktop learned but unequipped requires equip");
         check(CampRouteCards.Describe(ranger,true,1).Ready,"mobile learned fixed buttons need no desktop equip");
         var vanguard=new GameProfile{heroClass=HeroClass.Vanguard};
-        check(CampRouteCards.Describe(vanguard,true,0).Requirements.Contains("回刃长剑"),"missing mechanism shown");
+        check(CampRouteCards.Describe(vanguard,true,0).Ready&&CampRouteCards.Describe(vanguard,true,0).Stage==CampRouteStage.BasicReady&&CampRouteCards.Describe(vanguard,true,0).Enhancement.Contains("回刃长剑"),"base route works while optional enhancement remains visible");
         vanguard.inventory.Add(new ItemData{id="sword",slot=ItemSlot.Weapon,mechanic=EquipmentMechanic.ReturningBlade});vanguard.weaponId="sword";
         check(CampRouteCards.Describe(vanguard,true,0).Ready,"equipped route mechanism recognized");
         var seen=new HashSet<RunBlessing>();
@@ -56,7 +56,7 @@ public static class RoomBlessingRouteTests
         {
             // Legal level-50 all-first-rank build: eight active buttons equipped,
             // ordinary class choices only; no impossible mechanic prerequisites.
-            var p=new GameProfile{heroClass=(HeroClass)hero,level=50,equippedSkills=new[]{0,1,2,3,4,6,7,9,-1,-1}};
+            var p=new GameProfile{heroClass=(HeroClass)hero,level=50,equippedSkills=new[]{0,1,2,4,5,6,7,9,-1,-1}};
             for(int skill=0;skill<10;skill++)p.skillRanks[skill]=1;
             var opening=new RunChoices();opening.PrepareRoomChoice(1,p,mobile,seed);
             var cards=opening.Offer;

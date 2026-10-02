@@ -24,5 +24,5 @@ for path in ['Combat/CombatEffects.cs','Combat/AdvancedSkillSequence.cs']:
  source=read(path)
  check(not re.search(r'(?:tint|element)\.[rgb]\s*[<>]',source),'no palette inferred recipe '+path)
 for path in ['UI/GameUI.cs','UI/GameUI.Mobile.cs']:
- check('UIIconAtlas.Skill' in read(path),'shared skill icon atlas '+path)
+ check('UIIconAtlas.Skill' in read(path) or ('DrawSkillIdentity' in read(path) and 'UIIconAtlas.Skill' in read('UI/GameUI.SkillIcons.cs')),'shared skill icon atlas '+path)
 print('PASS:',checks,'visual identity source contracts (no rendered validation)')

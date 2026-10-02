@@ -5,6 +5,7 @@ root = Path(__file__).resolve().parents[1]
 skills = (root / 'Assets/Scripts/UI/GameUI.MobileSkills.cs').read_text()
 camp = (root / 'Assets/Scripts/UI/GameUI.MobileWorkshop.cs').read_text()
 shared = (root / 'Assets/Scripts/UI/GameUI.MobilePanels.cs').read_text()
+route = (root / 'Assets/Scripts/UI/GameUI.RouteNextStep.cs').read_text()
 checks = 0
 
 def check(value, message):
@@ -39,8 +40,8 @@ check('layout.FooterButton(1, 2)' in skills and skills.index('EndTouchScroll();'
       'learn action remains fixed outside detail scrolling')
 check('new Vector2[4]' in camp and 'layout.Tab(i, tabs.Length)' in camp and 'layout.TabbedBody' in camp, 'four camp tabs retain separate scroll state and fixed navigation')
 check('TouchRect(8, y, width - 16, 48)' in camp, 'workshop actions use 48 touch units rather than desktop pixel rows')
-check('ElementalistSpecialization.Shatter:ElementalistSpecialization.Burn' in camp and 'SetSpecialization(spec,session.IsInCamp)' in camp and 'SetSpecialization(ElementalistSpecialization.None,session.IsInCamp)' in camp, 'all three valid element specializations route to the real service')
-check('SetSummonerRoute(route, session.IsInCamp)' in camp, 'both summoner routes use the existing camp gate')
+check('SetSpecialization(index==0?ElementalistSpecialization.Shatter:ElementalistSpecialization.Burn,true)' in route and 'if(!session.IsInCamp)return;' in route and 'SetSpecialization(ElementalistSpecialization.None,session.IsInCamp)' in camp, 'all three valid element specializations route to the real service')
+check('SetSummonerRoute((SummonerRoute)index,true)' in route and 'if(!session.IsInCamp)return;' in route, 'both summoner routes use the existing camp gate')
 for call in ['MasteryLockReason(mastery)', 'LearnMastery(mastery)', 'SelectMasteryCore(mastery, session.IsInCamp)', 'RefundSkillRanks(session.IsInCamp)', 'ResetMastery(session.IsInCamp)']:
     check(call in camp, 'camp preserves ' + call)
 check('MasteryCoreRules.InitialInvestment' in camp and 'MasteryCoreRules.EnhancedInvestment' in camp and 'MasteryCoreTier(mastery)' in camp, 'core actions use shared initial and enhanced thresholds')

@@ -1,0 +1,99 @@
+#!/usr/bin/env python3
+"""Actual companion order/contract/hit paths; Unity effects and physics are shells."""
+from pathlib import Path
+import importlib.util,os,subprocess,sys,tempfile
+root=Path(__file__).resolve().parents[1]
+def member(signature):
+ s=(root/'Assets/Scripts/Combat/SummonedCompanion.cs').read_text();start=s.index(signature);end=s.index('{',start)+1;depth=1
+ while depth:depth+=(s[end]=='{')-(s[end]=='}');end+=1
+ return s[start:end]
+methods='\n'.join(member(x) for x in ['private sealed class BondState','private static BondState State(', 'public static SummonedCompanion[] Snapshot(', 'public static bool SetFreeFocus(', 'public static bool FreeRecall(', 'public static EnemyController ExplicitFocus(', 'public static SummonedCompanion CastContract(', 'private bool ValidTarget(', 'private void Command(', 'private EnemyController AcquireTarget()', 'private void AdvanceCommand(', 'public void OnConfirmedHit('])
+if '--legacy-clear' in sys.argv:methods=methods.replace('BondState state = State(owner);','BondState state = State(owner); state.Directive.Clear();')
+shell=r'''
+using System;using System.Collections.Generic;using UnityEngine;
+namespace UnityEngine {
+ public static class Time {public static float time;}
+ public struct Vector3 {public float x,y,z;public Vector3(float a,float b,float c){x=a;y=b;z=c;}public static Vector3 ClampMagnitude(Vector3 v,float max)=>v.magnitude>max?v.normalized*max:v;public static Vector3 one=>new Vector3(1,1,1);public static Vector3 zero=>new Vector3();public static Vector3 up=>new Vector3(0,1,0);public float sqrMagnitude=>x*x+y*y+z*z;public float magnitude=>(float)Math.Sqrt(sqrMagnitude);public Vector3 normalized=>magnitude>0?this*(1/magnitude):zero;public static Vector3 operator+(Vector3 a,Vector3 b)=>new Vector3(a.x+b.x,a.y+b.y,a.z+b.z);public static Vector3 operator-(Vector3 a,Vector3 b)=>new Vector3(a.x-b.x,a.y-b.y,a.z-b.z);public static Vector3 operator*(Vector3 a,float b)=>new Vector3(a.x*b,a.y*b,a.z*b);}
+ public struct Color {public Color(float r,float g,float b){}}
+ public class GameObject {public bool activeInHierarchy=true;}
+ public class Transform {public Vector3 position,localScale,forward=new Vector3(0,0,1), right=new Vector3(1,0,0);}
+ public static class Mathf {public static float Clamp01(float v)=>Math.Max(0,Math.Min(1,v));public static float Lerp(float a,float b,float t)=>a+(b-a)*t;public static float Max(float a,float b)=>Math.Max(a,b);public static float Min(float a,float b)=>Math.Min(a,b);}
+}
+namespace Emberfall {
+ public enum HeroClass{Summoner}public enum EquipmentMechanic{TwinSummonResonance}
+ public static class GameBalance {public static float SkillRangeMultiplier(int rank)=>1;public static Color ClassColor(HeroClass h)=>new Color();}
+ public class PlayerController {public bool IsDead,Twin;public HeroClass HeroClass;public int CombatEpoch;public EnemyController FocusTarget;public object Targeting;public Vector3 AimPoint;public EnemyController AimTarget;public bool Ready=true;public Func<int,Vector3,bool> ConfirmCast;public Func<int,bool> ExecuteCast;public T GetComponent<T>() where T:class=>Targeting as T;public bool CanBeginSkillTargeting(int skill)=>Ready;public bool ConfirmTargetedSkill(int skill,Vector3 point)=>ConfirmCast(skill,point);public bool ExecuteChargedSkill(int skill)=>ExecuteCast(skill);public void CancelCombatPose(){}public Transform transform=new Transform();public bool HasMechanic(EquipmentMechanic m)=>Twin;}
+ public class EnemyController {public bool IsDead,IsAggro=true;public GameObject gameObject=new GameObject();public Transform transform=new Transform();public int DamageCalls;public void TakeDamage(float d,Vector3 v,float a=0,float b=0,bool impact=true){DamageCalls++;}}
+ public class GameSession {public static GameSession Instance;public class ProfileStub{public int[] skillRanks={1,1,1,1,1,1,1,1,1,1};}public class ProgressionStub{public ProfileStub Profile=new ProfileStub();}public ProgressionStub Progression=new ProgressionStub();public float ArenaRadius=30;public PlayerController Player;public bool HasStarted=true,InputBlocked,CombatEnded,InDungeon=true;public List<EnemyController> Enemies=new List<EnemyController>();public int Procs;public void RecordCombatAction(string s){if(s=="双契共鸣")Procs++;}public void RecordClassTutorial(HeroClass h){}public void SpawnMechanismText(Vector3 p,string s,Color c){}}
+ public static class CombatFx {public static Vector3 Flat(Vector3 v)=>new Vector3(v.x,0,v.z);}
+ public static class CombatSight {public static Vector3 GroundPoint(Vector3 a,Vector3 b)=>b;}
+ public static class WorldTraversal {public static Vector3 NearestWalkable(Vector3 v,float n)=>v;public static Vector3 Move(Vector3 a,Vector3 b,float n)=>a+b;}
+ public static class AdvancedSkillVfx {public static void Beam(PlayerController p,Vector3 a,Vector3 b,Color c,float t,float w){}}
+ public sealed class SummonedCompanion {
+  public enum Kind{Wolf,Spirit,Treant}
+  private static List<SummonedCompanion> active=new List<SummonedCompanion>();private static Dictionary<PlayerController,BondState> bonds=new Dictionary<PlayerController,BondState>();private static List<PlayerController> staleOwners=new List<PlayerController>();
+  public PlayerController Owner;public Kind Form;public bool IsStarter,IsPermanent=true,IsAlive=true;public float RemainingLifetime=100;
+  private GameSession session;private Transform transform=new Transform();private int rank=1;private float cooldown=2,attackPose,recallTime,commandTime,commandMultiplier=1,damage=10;private bool commandEmpowered,hasCommandPoint,commandHadTarget;private EnemyController commandedTarget,target;private Vector3 commandedPoint;
+  private float NavigationRadius=>.3f;private float AttackMultiplier=>commandMultiplier;
+  private bool CanReachTarget(Vector3 p)=>false;
+  private void RefreshContractPower(int r){rank=r;}
+  private static int Count(PlayerController p)=>active.Count;
+  private static SummonedCompanion SummonStarter(PlayerController p,GameSession g,float strength)=>Summon(p,g,Kind.Wolf,1,p.transform.position,strength,true);
+  private static SummonedCompanion Summon(PlayerController p,GameSession g,Kind k,int r,Vector3 at,float strength,bool permanent=false){var pet=new SummonedCompanion{Owner=p,session=g,Form=k,rank=r,IsStarter=k==Kind.Wolf,IsPermanent=permanent};active.Add(pet);return pet;}
+  METHODS
+  public static int Verify(){int n=0;Action<bool,string> check=(ok,why)=>{n++;if(!ok)throw new Exception(why);};
+   active.Clear();bonds.Clear();Time.time=0;var owner=new PlayerController{Twin=true};var game=new GameSession{Player=owner};GameSession.Instance=game;
+   var a=new EnemyController();a.transform.position=new Vector3(5,0,0);var b=new EnemyController();b.transform.position=new Vector3(7,0,0);game.Enemies.Add(a);game.Enemies.Add(b);
+   var wolf=Summon(owner,game,Kind.Wolf,1,Vector3.zero,10,true);var spirit=Summon(owner,game,Kind.Spirit,1,Vector3.zero,10,true);
+   State(owner).Commands.Grant(Time.time);
+   check(SetFreeFocus(owner,a),"free focus accepted");
+   float wolfLife=wolf.RemainingLifetime,spiritLife=spirit.RemainingLifetime;
+   for(int i=0;i<1000;i++)SetFreeFocus(owner,a);
+   check(a.DamageCalls==0&&wolf.cooldown==2&&spirit.cooldown==2&&wolf.attackPose==0&&spirit.attackPose==0&&wolf.target==null&&spirit.target==null&&wolf.RemainingLifetime==wolfLife&&spirit.RemainingLifetime==spiritLife,"repeated free focus neither hits nor resets attack recovery");
+   check(wolf.AcquireTarget()==a&&spirit.AcquireTarget()==a&&State(owner).Commands.Remaining(Time.time)==16,"both follow explicit team A without consuming dodge-command opportunity");
+   CastContract(owner,game,Kind.Spirit,1,b.transform.position,10,false,b,false);
+   check(ExplicitFocus(owner)==a,"ordinary contract must not clear shared directive");
+   check(spirit.commandedTarget==a&&spirit.AcquireTarget()==a&&wolf.AcquireTarget()==a,"ordinary contract defaults to team A despite incidental B");
+   CastContract(owner,game,Kind.Spirit,1,b.transform.position,10,false,b,true);
+   check(ExplicitFocus(owner)==a&&spirit.AcquireTarget()==b&&wolf.AcquireTarget()==a,"captured B temporarily overrides only its partner");
+   float recovery=spirit.cooldown;SetFreeFocus(owner,a);
+   check(spirit.AcquireTarget()==b&&spirit.cooldown==recovery,"repeated team orders cannot overwrite temporary intent or recovery");
+   var c=new EnemyController();c.transform.position=new Vector3(6,0,0);game.Enemies.Add(c);SetFreeFocus(owner,c);
+   check(spirit.AcquireTarget()==b&&wolf.AcquireTarget()==c,"new team C does not erase temporary B");
+   spirit.AdvanceCommand(100);check(spirit.AcquireTarget()==c&&spirit.commandedTarget==null&&!spirit.hasCommandPoint,"expiry resolves latest team C and clears override");SetFreeFocus(owner,a);
+   CastContract(owner,game,Kind.Spirit,1,b.transform.position,10,false,b,true);b.IsDead=true;spirit.AdvanceCommand(0);
+   check(spirit.AcquireTarget()==a&&!spirit.hasCommandPoint,"dead enemy override immediately returns to team");b.IsDead=false;
+   CastContract(owner,game,Kind.Spirit,1,b.transform.position,10,false,b,true);b.transform.position=new Vector3(15,0,0);spirit.AdvanceCommand(0);
+   check(spirit.AcquireTarget()==a&&!spirit.hasCommandPoint,"out-of-range enemy override immediately returns to team");b.transform.position=new Vector3(7,0,0);
+   CastContract(owner,game,Kind.Spirit,1,b.transform.position,10,false,null,true);spirit.AdvanceCommand(.1f);
+   check(spirit.AcquireTarget()==null&&spirit.hasCommandPoint,"explicit empty-ground command persists until expiry");spirit.AdvanceCommand(100);
+   wolf.OnConfirmedHit(a);check(game.Procs==0,"one confirmed species cannot cooperate alone");
+   Time.time=1.5f;spirit.OnConfirmedHit(a);check(game.Procs==1,"explicit free focus qualifies only after different real hits within1.5s");
+   Time.time=2;wolf.OnConfirmedHit(a);spirit.OnConfirmedHit(a);check(game.Procs==1,"three-second proc cooldown remains");
+   Time.time=5;wolf.OnConfirmedHit(a);Time.time=6.6f;spirit.OnConfirmedHit(a);check(game.Procs==1,"expired1.5s pairing rejected");
+   Time.time=7;wolf.OnConfirmedHit(a);check(game.Procs==2,"new distinct real pair after cooldown triggers");
+   owner.Twin=false;Time.time=11;wolf.OnConfirmedHit(a);spirit.OnConfirmedHit(a);check(game.Procs==2,"equipment remains mandatory");owner.Twin=true;
+   Time.time=15;wolf.OnConfirmedHit(a);wolf.OnConfirmedHit(a);check(game.Procs==2,"same species cannot pair with itself");
+   SetFreeFocus(owner,b);spirit.OnConfirmedHit(b);check(game.Procs==2,"different target does not complete A's marks");
+   b.IsDead=true;check(ExplicitFocus(owner)==null,"dead team target cleared");b.IsDead=false;SetFreeFocus(owner,b);b.transform.position=new Vector3(15,0,0);check(ExplicitFocus(owner)==null,"out of range team target cleared");
+   b.transform.position=new Vector3(7,0,0);SetFreeFocus(owner,b);game.Enemies.Remove(b);check(ExplicitFocus(owner)==null&&!SetFreeFocus(owner,b),"removed encounter target cannot persist or be ordered");game.Enemies.Add(b);
+   SetFreeFocus(owner,a);owner.CombatEpoch++;check(ExplicitFocus(owner)==null,"new room epoch clears team and cooperation state");
+   SetFreeFocus(owner,a);CastContract(owner,game,Kind.Spirit,1,b.transform.position,10,false,b,true);float cd=spirit.cooldown;
+   check(FreeRecall(owner)&&spirit.AcquireTarget()==null&&wolf.AcquireTarget()==null,"free recall cancels local navigation without casting");
+   int damageCalls=a.DamageCalls+b.DamageCalls+c.DamageCalls;float remaining=spirit.RemainingLifetime,commandRemaining=spirit.commandTime;
+   for(int i=0;i<1000;i++)FreeRecall(owner);
+   check(spirit.cooldown==cd&&spirit.RemainingLifetime==remaining&&spirit.commandTime==commandRemaining&&damageCalls==a.DamageCalls+b.DamageCalls+c.DamageCalls,"1000 free recalls do not deal damage or reset cooldown/lifetime/command timer");
+   SetFreeFocus(owner,a);check(spirit.AcquireTarget()==a,"new explicit focus exits recall");
+   return n;
+  }
+ }
+}
+class Program{static void Main(){Console.WriteLine("PASS: "+Emberfall.SummonedCompanion.Verify()+" production companion intent assertions");}}
+'''.replace('METHODS',methods)
+if __name__ == '__main__':
+ spec=importlib.util.spec_from_file_location('cv',root/'Tools/cloud-validation.py');cv=importlib.util.module_from_spec(spec);spec.loader.exec_module(cv)
+ with tempfile.TemporaryDirectory(prefix='companion-intent-') as folder:
+  out=Path(folder);(out/'Replay.cs').write_text(shell);p=cv.write_project(out/'project',[out/'Replay.cs',root/'Assets/Scripts/Combat/CompanionDirective.cs',root/'Assets/Scripts/Combat/CompanionRules.cs'],program='')
+  p.write_text(p.read_text().replace('<OutputType>Library</OutputType>','<OutputType>Exe</OutputType>'))
+  config=out/'NuGet.Config';config.write_text('<configuration><packageSources><clear /></packageSources></configuration>');env=os.environ.copy();env.update(DOTNET_CLI_HOME=str(out/'cli'),DOTNET_NOLOGO='1',DOTNET_CLI_TELEMETRY_OPTOUT='1')
+  dotnet=sys.argv[1] if len(sys.argv)>1 else 'dotnet';subprocess.run([dotnet,'build',str(p),'--configfile',str(config),'-v:q'],env=env,check=True);subprocess.run([dotnet,str(p.parent/'bin/Debug/net8.0/Validation.dll')],env=env,check=True)

@@ -13,7 +13,7 @@ namespace Emberfall
         private LineRenderer clock,interruptMark;
         private Vector3 timingCenter;
         private readonly Vector3[] timingPoints=new Vector3[33];
-        private static readonly Color Danger=new Color(1f,.22f,.1f,.95f);
+        private static readonly Color Danger=ThreatVisualStyle.Danger;
 
         public static EnemyAttackTelegraph Circle(Vector3 center, float radius)
         {
@@ -50,9 +50,7 @@ namespace Emberfall
         {
             var root = new GameObject(title);
             var warning = root.AddComponent<EnemyAttackTelegraph>();
-            Shader shader = Resources.Load<Shader>("ThreatBoundary");
-            warning.material = shader == null ? CombatFx.NewGlow() : new Material(shader);
-            warning.material.renderQueue = 3900;
+            warning.material = ThreatVisualStyle.Material();
             return warning;
         }
 

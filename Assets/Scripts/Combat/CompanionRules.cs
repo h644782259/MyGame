@@ -15,8 +15,8 @@ namespace Emberfall
         public const float CommandOpportunityDuration = 16f;
         public const float EmpoweredCommandMultiplier = 1.5f, WolfCommandCoefficient = 1.2f, WolfCommandRecovery = .6f, CommandReadyDelay = .1f;
         public const float RestThreatRadius = 16f; // Covers the boss's full ranged engagement distance.
-        public static bool CoordinatedTarget(bool playerFocusMatches, bool livingCommandMatches)
-        { return playerFocusMatches || livingCommandMatches; }
+        public static bool CoordinatedTarget(bool playerFocusMatches, bool livingCommandMatches, bool explicitFocusMatches = false)
+        { return playerFocusMatches || livingCommandMatches || explicitFocusMatches; }
         public static bool CanTransfer(bool permanent, float health, bool active)
         { return permanent && active && health > 0 && !float.IsNaN(health) && !float.IsInfinity(health); }
         public static bool ShouldCreatePartner(bool livingPartner) { return !livingPartner; }

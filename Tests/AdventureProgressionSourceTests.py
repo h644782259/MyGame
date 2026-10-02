@@ -21,7 +21,7 @@ check('key=="职业能力"?4' not in exp and 'Progression.RecordTutorialEvidence
 check('SummonedCompanion.Count(Player)' in exp and 'session.ClassTutorialVisible' in camp,'starter commanded pets and learned-skill availability gate lesson display')
 check('ClassTutorialText' in camp and 'classTutorialCompleted' in camp,'both camp UIs render actual mechanic lesson independently of legacy mask')
 for p in ['UI/GameUI.Expedition.cs','UI/GameUI.MobileWorkshop.cs','UI/GameUI.Modes.cs','UI/GameUI.RunRecap.cs']:
- check('ProgressionGoalStatus(' in read(p),'camp, entry and results read shared selected-goal state: '+p)
+ check(('SelectedProgressionGoal(' in read(p) and 'selectedGoal.Title' in read(p)) if p=='UI/GameUI.Modes.cs' else 'ProgressionGoalStatus(' in read(p),'camp, entry and results read shared selected-goal state: '+p)
 check('data.Snapshot.RewardMaterials' in read('UI/GameUI.RunRecap.cs'),'results include actual settled run gains')
 check('SelectProgressionGoal(kind,id,tier)' in selector and 'BeginTouchScroll' in selector,'goal replacement requires an explicit selection in bounded scroll UI')
 check('progressionGoalCharacter!=session.Progression.CurrentSlotId' in selector,'goal modal retires on character change')

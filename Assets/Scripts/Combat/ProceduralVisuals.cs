@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace Emberfall
 {
-    internal enum VisualSurface { Cloth, Skin, Metal, Crystal, Stone, Wood, Foliage }
+    internal enum VisualSurface { Cloth, Skin, Metal, Crystal, Stone, Wood, Foliage, Water }
 
     // Original, texture-free meshes. A fixed cache is shared by every actor and room;
     // visual meshes never create colliders or change the traversal/collision model.
@@ -76,7 +76,7 @@ namespace Emberfall
         public static void ApplySurface(Material material, VisualSurface surface)
         {
             bool metal = surface == VisualSurface.Metal, crystal = surface == VisualSurface.Crystal;
-            float smoothness = metal ? .62f : crystal ? .76f : surface == VisualSurface.Skin ? .34f :
+            float smoothness = surface == VisualSurface.Water ? .82f : metal ? .62f : crystal ? .76f : surface == VisualSurface.Skin ? .34f :
                 surface == VisualSurface.Wood ? .23f : surface == VisualSurface.Stone ? .18f : .1f;
             if (material.HasProperty("_Glossiness")) material.SetFloat("_Glossiness", smoothness);
             if (material.HasProperty("_Metallic")) material.SetFloat("_Metallic", metal ? .58f : crystal ? .12f : 0f);

@@ -109,7 +109,7 @@ namespace Emberfall
             }
             var layout = MobilePanelGeometry();
             string title = chestDetails ? "奖励规则" : revealed ? complete ? "星光已归你所有" : "封印正在苏醒" : "遗迹馈赠";
-            string subtitle = chestDetails ? "三份宝箱机会相同" : revealed ? "其余宝箱已封存" : "选一个开启 · 开启后其余关闭";
+            string subtitle = chestDetails ? "三份宝箱机会相同" : revealed ? complete ? ChestRevealPresentation.Outcome(reward) : "已保存奖励 · 未选宝箱逐渐封存" : "选一个开启 · 开启后其余关闭";
             if (DrawMobilePanelChrome(layout, title, subtitle, true, true)) return;
             if (chestDetails) DrawMobileChestDetails(layout);
             else if (revealed) DrawMobileChestResult(layout, reward, accent, complete);
@@ -170,11 +170,12 @@ namespace Emberfall
 
         private void DrawMobileChestResult(MobilePanelLayout layout, ChestReward reward, Color accent, bool complete)
         {
-            float progress = Mathf.Clamp01((Time.unscaledTime - chestRevealedAt) / ChestDuration);
+            float progress = ChestRevealPresentation.Progress(Time.unscaledTime - chestRevealedAt,ChestDuration);
+            if(!complete){DrawChestRevealTransition(MobilePanelRect(layout.Body),reward);return;}
             var art = layout.BodyLeft;
             Fill(MobilePanelRect(art), new Color(.055f, .08f, .11f)); Border(MobilePanelRect(art), accent);
-            if(progress<.76f||!DrawChestRewardModel(TouchRect(art.X+8,art.Y+8,art.Width-16,art.Height-16),reward))
-                DrawRewardChest(TouchRect(art.X + 8, art.Y + 8, art.Width - 16, art.Height - 16), true, 1, progress);
+            if(!DrawChestRewardModel(TouchRect(art.X+8,art.Y+8,art.Width-16,art.Height-16),reward))
+                DrawChestGold(TouchRect(art.X+8,art.Y+8,art.Width-16,art.Height-16),accent);
             if (progress > .35f)
             {
                 Rect clip = TouchRect(art.X + 8, art.Y + 8, art.Width - 16, art.Height - 16);
@@ -182,9 +183,7 @@ namespace Emberfall
                 DrawRewardRadiance(new Rect(0, 0, clip.width, clip.height), accent, progress);
                 GUI.EndGroup();
             }
-            string result = !complete || reward == null ? "开启中…" :
-                (reward.Rarity.HasValue ? GameBalance.RarityName(reward.Rarity.Value) + " · " + reward.Name + (reward.Duplicate ? "\n重复收藏已转金币" : "\n新外观已收藏") + "\n\n" : "") +
-                "+" + reward.Gold + " 金币\n星纹 " + session.Progression.Profile.fashionThreads;
+            string result = ChestRevealPresentation.Result(reward,session.Progression.Profile.fashionThreads);
             var viewport = layout.BodyRight;
             float width = viewport.Width - 34;
             string error = string.IsNullOrEmpty(mobileChestError) ? session.Progression.LastError : mobileChestError;
