@@ -48,6 +48,45 @@ namespace Emberfall
     {
         private AnimationClip idle, move, basic, hit, skill;
         private Transform[] sockets;
+        // Explicit ownership: Root and lower body [0..9], upper body [10..18].
+        private static readonly string[] BoneNames = { "Root", "Pelvis", "Thigh.L", "Shin.L", "Foot.L", "Thigh.R", "Shin.R", "Foot.R", "Tabard.L", "Tabard.R", "Spine", "Head", "Mantle", "UpperArm.L", "Forearm.L", "Hand.L", "UpperArm.R", "Forearm.R", "Hand.R" };
+        private static readonly int[] BoneParents = { -1, 0, 1, 2, 3, 1, 5, 6, 1, 1, 1, 10, 10, 10, 13, 14, 10, 16, 17 };
+        private Transform[] bones;
+        private LocalPose[] basePose;
+        private struct LocalPose
+        {
+            public Vector3 Position, Scale;
+            public Quaternion Rotation;
+            public LocalPose(Transform bone) { Position=bone.localPosition; Rotation=bone.localRotation; Scale=bone.localScale; }
+            public void Apply(Transform bone) { bone.localPosition=Position; bone.localRotation=Rotation; bone.localScale=Scale; }
+            public static LocalPose Blend(LocalPose a, LocalPose b, float weight)
+            {
+                if(weight<=0)return a;
+                if(weight>=1)return b;
+                return new LocalPose { Position=Vector3.Lerp(a.Position,b.Position,weight), Rotation=Quaternion.Slerp(a.Rotation,b.Rotation,weight), Scale=Vector3.Lerp(a.Scale,b.Scale,weight) };
+            }
+        }
+        private bool BindLayers()
+        {
+            Transform[] parts=GetComponentsInChildren<Transform>(true);
+            bones=new Transform[BoneNames.Length];basePose=new LocalPose[BoneNames.Length];
+            for(int i=0;i<BoneNames.Length;i++)
+            {
+                foreach(Transform part in parts)if(part.name==BoneNames[i])
+                { if(bones[i]!=null)return false; bones[i]=part; }
+                if(bones[i]==null)return false;
+                if(BoneParents[i]>=0 && bones[i].parent!=bones[BoneParents[i]])return false;
+            }
+            string[] names={ "Anchor_Pommel", "Anchor_Grip", "Anchor_Guard", "Anchor_BladeRoot", "Anchor_Tip" };
+            sockets=new Transform[names.Length];
+            for(int i=0;i<names.Length;i++)
+            {
+                foreach(Transform part in parts)if(part.name==names[i])
+                { if(sockets[i]!=null)return false; sockets[i]=part; }
+                if(sockets[i]==null || sockets[i].parent!=bones[18])return false;
+            }
+            return true;
+        }
         public bool Ready { get; private set; }
         public static BlenderPilotVisual Create(Transform parent)
         {
@@ -74,13 +113,8 @@ namespace Emberfall
                 else if (clip.name.EndsWith("Pilot_Hit", StringComparison.Ordinal)) view.hit = clip;
                 else if (clip.name.EndsWith("Pilot_Skill", StringComparison.Ordinal)) view.skill = clip;
             }
-            view.sockets = new Transform[5];
-            string[] names = { "Anchor_Pommel", "Anchor_Grip", "Anchor_Guard", "Anchor_BladeRoot", "Anchor_Tip" };
-            foreach (Transform child in root.GetComponentsInChildren<Transform>(true))
-                for (int i = 0; i < names.Length; i++) if (child.name == names[i]) view.sockets[i] = child;
-            view.Ready = ValidClip(view.idle) && ValidClip(view.move) && ValidClip(view.basic) && ValidClip(view.hit) && ValidClip(view.skill);
+            view.Ready = view.BindLayers() && ValidClip(view.idle) && ValidClip(view.move) && ValidClip(view.basic) && ValidClip(view.hit) && ValidClip(view.skill);
             if(view.Ready)view.Ready=BindingsMove(root,new[]{view.idle,view.move,view.basic,view.hit,view.skill});
-            foreach (Transform socket in view.sockets) view.Ready &= socket != null;
             if (!view.Ready) { root.SetActive(false); Destroy(root); return null; }
             root.SetActive(false); // first visible frame must already have a sampled pose
             return view;
@@ -116,10 +150,32 @@ namespace Emberfall
         public void Sample(float time, float phase, float speed, bool acting, bool isBasic, float actionProgress, float hurtAge)
         {
             BlenderPilotSample sample=BlenderPilotPosePolicy.Select(time,idle.length,phase,speed,acting,isBasic,actionProgress,hurtAge);
-            AnimationClip clip=sample.Clip==BlenderPilotClip.Basic?basic:sample.Clip==BlenderPilotClip.Skill?skill:
-                sample.Clip==BlenderPilotClip.Hit?hit:sample.Clip==BlenderPilotClip.Move?move:idle;
-            clip.SampleAnimation(gameObject, sample.NormalizedTime * clip.length);
+            if(sample.Clip==BlenderPilotClip.Hit || sample.Clip==BlenderPilotClip.Skill)
+            {
+                AnimationClip fullBody=sample.Clip==BlenderPilotClip.Hit?hit:skill;
+                fullBody.SampleAnimation(gameObject,sample.NormalizedTime*fullBody.length);
+                return;
+            }
+            // Use existing preview/world time and accepted gait phase, never a new animation clock.
+            var layer=BlenderPilotPosePolicy.Layers(time,idle.length,phase,speed,sample.NormalizedTime);
+            idle.SampleAnimation(gameObject,layer.IdleTime*idle.length);
+            for(int i=0;i<bones.Length;i++)basePose[i]=new LocalPose(bones[i]);
+            move.SampleAnimation(gameObject,layer.MoveTime*move.length);
+            float velocity=layer.SpeedWeight;
+            for(int i=0;i<bones.Length;i++)
+                basePose[i]=LocalPose.Blend(basePose[i],new LocalPose(bones[i]),velocity);
+            if(sample.Clip==BlenderPilotClip.Basic)
+            {
+                basic.SampleAnimation(gameObject,sample.NormalizedTime*basic.length);
+                // Contact is already committed at .52: preserve it exactly, then settle only late in recovery.
+                float weight=layer.UpperWeight;
+                for(int i=10;i<bones.Length;i++)
+                    LocalPose.Blend(basePose[i],new LocalPose(bones[i]),weight).Apply(bones[i]);
+                for(int i=0;i<10;i++)basePose[i].Apply(bones[i]);
+            }
+            else for(int i=0;i<bones.Length;i++)basePose[i].Apply(bones[i]);
         }
+
         public bool Anchor(WeaponVisualAnchor anchor, out Vector3 position)
         {
             int index = (int)anchor - (int)WeaponVisualAnchor.SwordPommel;

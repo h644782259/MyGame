@@ -5,7 +5,7 @@ static class BlenderPilotReadinessTests
  static void Ready()
  {
   Resources.Items.Clear();var root=new GameObject("asset");root.AddComponent<Renderer>();root.AddComponent<MeshFilter>().sharedMesh=new Mesh();
-  foreach(string name in new[]{"Anchor_Pommel","Anchor_Grip","Anchor_Guard","Anchor_BladeRoot","Anchor_Tip"}){var child=new GameObject(name);child.transform.SetParent(root.transform);}
+  LayerFixture.Build(root);
   Resources.Items["BlenderPilot/Vanguard"]=root;Resources.Items["BlenderPilot/SupplyCrate"]=root;Resources.Items["BlenderPilot/Pilot_Atlas_Standard"]=new Material();
   Resources.Clips=new[]{"Pilot_Idle","Pilot_Move","Pilot_Basic","Pilot_Hit","Pilot_Skill"}.Select(x=>new AnimationClip{name=x}).ToArray();BlenderPilotArt.Enabled=true;
  }
