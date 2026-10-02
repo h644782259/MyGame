@@ -53,7 +53,7 @@ namespace Emberfall
         private SummonedCompanion companionTarget;
         private float sidestepTime;
         private Vector3 sidestepDirection;
-        private bool preparing, aggro, deathReported, chargeHit;
+        private bool preparing, aggro, deathReported, chargeHit, activeChargePose;
         private AttackType attackType;
         private GameObject warning;
         private Transform healthRoot, healthFill;
@@ -367,7 +367,7 @@ namespace Emberfall
         private void AnimateModel(float speedHint,float attack,bool hurt)
         {
             model.SetLocomotion(transform.InverseTransformDirection(walkingDisplacement),Time.deltaTime,Mathf.Max(.1f,speed),true);
-            model.SetEnemyAttackPose(preparing?EnemyPosePhase.Windup:attackAnimation>0?EnemyPosePhase.Recovery:EnemyPosePhase.Idle,
+            model.SetEnemyAttackPose(EnemyActionPose.Select(preparing,activeChargePose,attackAnimation),
                 preparing?1-windup/Mathf.Max(.01f,totalWindup):1-attackAnimation);
             model.Animate(speedHint,attack,hurt);
         }
@@ -522,6 +522,9 @@ namespace Emberfall
             {
                 chargeHit = false;
                 chargeTime = CombatFx.Flat(chargeEnd - transform.position).magnitude / BossAttackPolicy.ChargeSpeed;
+                // Own the whole swept attack, including its final damage frame.
+                // The short contact/recovery animation is not the charge lifetime.
+                activeChargePose = chargeTime > .001f;
                 if (chargeTime <= .001f) { dodgePending = false; FinishAttack(); }
                 return;
             }
@@ -572,6 +575,7 @@ namespace Emberfall
 
         private void FinishAttack()
         {
+            activeChargePose = false;
             if (IsBoss && attackType == AttackType.Charge && !chargeHit) { comboRemaining = 0; attackCooldown = 2.1f; return; }
             if (IsBoss && comboRemaining > 0) { comboDelay = BossAttackPolicy.ComboGap; attackCooldown = 0; }
             else attackCooldown = IsBoss ? BossAttackPolicy.Recovery(IsEnraged) : Kind == EnemyKind.Wisp ? 1.55f : 1.3f;
@@ -656,6 +660,7 @@ namespace Emberfall
         {
             bool activeAttack = preparing || chargeTime > 0 || largeBoss != null && largeBoss.State.Interruptible;
             preparing = false;
+            activeChargePose = false;
             windup = chargeTime = comboDelay = sidestepTime = 0;
             comboRemaining = 0;
             StopAllCoroutines();
