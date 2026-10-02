@@ -44,6 +44,8 @@ with tempfile.TemporaryDirectory(prefix='chapter-host-production-') as temp:
              ('GameSession.Chapter.cs','if(!SaveBeforeLeaving())return false;','', 'entry save failure leaves old world and epoch intact'),
              ('Lifecycle.cs','InDungeon && !ChapterActive && ModeRun==null','InDungeon && ModeRun==null','chapter clear never schedules legacy NextWave or skips capture'),
              ('EnemyStats.cs','Health = MaxHealth;','MaxHealth*=ChapterDefinition.HealthMultiplier(game.ActiveChapterDifficulty);Health = MaxHealth;','chapter difficulty multiplies already tier-scaled stats exactly once')]
+    mutants.append(('GameSession.Chapter.cs','if(redrockReplay&&ChapterRun!=null&&!ChapterRun.Finished&&!ChapterRun.Failed)','if(redrockReplay)','REPLAY_ADMISSION alternates only successfully admitted eligible runs'))
+    mutants.append(('GameSession.Chapter.cs','redrockRouteOwner!=Progression.SaveFilePath||!previousRedrockSplit','true','REPLAY_ADMISSION alternates only successfully admitted eligible runs'))
     for name,before,after,expected in mutants:
         path=folder/name;original=path.read_text()
         if before not in original:raise AssertionError('mutation anchor missing: '+name)

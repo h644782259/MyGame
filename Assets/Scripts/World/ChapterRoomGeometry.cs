@@ -40,6 +40,13 @@ namespace Emberfall
     public static class ChapterRoomGeometry
     {
         public const int MaximumEnemies=6;
+        // Versioned replay marker: old generated seeds (0..999999) stay legacy.
+        // Bit 0 is mirror, bit 1 is Forest formation, bit 2 is this route choice.
+        public static int RedrockReplaySeed(int seed,bool split)
+        {return (((seed&0x00ffffff)|0x24000000)&~4)|(split?4:0);}
+        public static bool RedrockSplitRoute(int seed)
+        {return (seed&0x7f000000)==0x24000000&&(seed&4)!=0;}
+
         public static ChapterStarMapPiece[] StarMapPieces(int mask)
         {
             var pieces=new List<ChapterStarMapPiece>();mask&=7;
@@ -85,7 +92,13 @@ namespace Emberfall
             }
             else if(node==ChapterNode.Redrock)
             {
-                obstacles.Add(new ChapterObstacle(new Vector3(0,0,-1),new Vector2(4,12),1.8f));
+                if(room==1&&RedrockSplitRoute(seed))
+                {
+                    // Four-metre cross passage; both hoist supports remain on solid wall.
+                    obstacles.Add(new ChapterObstacle(new Vector3(0,0,-5),new Vector2(4,4),1.8f));
+                    obstacles.Add(new ChapterObstacle(new Vector3(0,0,3),new Vector2(4,4),1.8f));
+                }
+                else obstacles.Add(new ChapterObstacle(new Vector3(0,0,-1),new Vector2(4,12),1.8f));
                 obstacles.Add(new ChapterObstacle(new Vector3(-mirror*8,0,3),new Vector2(5,1.4f),1.45f));
                 obstacles.Add(new ChapterObstacle(new Vector3(mirror*8,0,-4),new Vector2(5,1.4f),1.45f));
             }
