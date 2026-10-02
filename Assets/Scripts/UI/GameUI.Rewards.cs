@@ -22,6 +22,7 @@ namespace Emberfall
             chestRevealResult = null;
             chestReceiptId = null;
             rewardSoundPlayed = false;
+            desktopChestResultScroll=Vector2.zero;
             if (session.Progression.Profile.pendingChestReveal && session.Progression.LastChestReward != null)
             {
                 var reward=session.Progression.LastChestReward;
@@ -35,95 +36,100 @@ namespace Emberfall
             foreach (Texture2D texture in rewardChestTextures) if (texture != null) Destroy(texture);
         }
 
+        private Vector2 desktopChestResultScroll;
         private void DrawChests()
         {
             if(MobileControls.Active){DrawMobileChests();return;}
-            // Keep this modal independent of the victory panel and combat input.
-            // The save-backed service consumes the offer before the reveal begins.
-            bool revealed = chestRevealResult != null;
-            bool complete = ChestAnimationDone;
-            var reward = revealed ? session.Progression.LastChestReward : null;
-            Color rewardColor = reward != null && reward.Rarity.HasValue ? GameBalance.RarityColor(reward.Rarity.Value) : gold;
-            if (revealed && complete && !rewardSoundPlayed)
+            var progression=session.Progression;var savedReward=progression.LastChestReward;
+            if(progression.Profile.pendingChestReveal&&savedReward!=null&&chestReceiptId!=savedReward.Id)ResetChestReveal();
+            if(!progression.Profile.pendingChestReveal&&chestRevealResult!=null)ResetChestReveal();
+            bool revealed=chestRevealResult!=null&&progression.Profile.pendingChestReveal,complete=revealed&&ChestAnimationDone;
+            var reward=revealed?savedReward:null;
+            Color accent=reward!=null&&reward.Rarity.HasValue?GameBalance.RarityColor(reward.Rarity.Value):gold;
+            if(revealed&&complete&&!rewardSoundPlayed)
+            {rewardSoundPlayed=true;GameAudio.Play(reward==null||!reward.Rarity.HasValue?SoundCue.UI:reward.Rarity.Value==Rarity.Legendary?SoundCue.Victory:reward.Rarity.Value==Rarity.Epic?SoundCue.LevelUp:reward.Rarity.Value==Rarity.Rare?SoundCue.Loot:SoundCue.Cast);}
+            Fill(new Rect(0,0,width,height),new Color(.018f,.025f,.045f,.9f));
+            float ww=Mathf.Min(860,width-32),wh=Mathf.Min(550,height-24);
+            Rect w=new Rect((width-ww)*.5f,(height-wh)*.5f,ww,wh);
+            Fill(w,new Color(.045f,.064f,.095f,.99f));Border(w,new Color(.52f,.60f,.67f,.3f));
+            Text(new Rect(w.x+28,w.y+20,w.width-56,18),"F A L L E N   S T A R",10,gold,true);
+            Text(new Rect(w.x+28,w.y+45,w.width-248,42),revealed?(complete?"星光已归你所有":"封印正在苏醒"):"遗迹馈赠",28,pale,true);
+            Text(new Rect(w.x+28,w.y+92,w.width-56,24),revealed?(complete?ChestRevealPresentation.Outcome(reward):"已保存奖励 · 可以跳过揭晓动画"):"三份机会相同 · 只开启你选中的一份",14,muted);
+            if(Button(new Rect(w.xMax-200,w.y+43,78,36),"菜单",jade)){session.SetPaused(true);BlockUITransition();return;}
+            if(Button(new Rect(w.xMax-110,w.y+43,82,36),chestDetails?"收起规则":"奖励规则",muted))chestDetails=!chestDetails;
+            Rect body=new Rect(w.x+28,w.y+132,w.width-56,w.height-208);
+            if(chestDetails)DrawDesktopChestRules(body);
+            else if(complete)DrawDesktopChestResult(body,reward,accent);
+            else if(revealed)DrawChestRevealTransition(body,reward);
+            else
             {
-                rewardSoundPlayed=true;
-                GameAudio.Play(reward == null || !reward.Rarity.HasValue ? SoundCue.UI : reward.Rarity.Value == Rarity.Legendary ? SoundCue.Victory : reward.Rarity.Value == Rarity.Epic ? SoundCue.LevelUp : reward.Rarity.Value == Rarity.Rare ? SoundCue.Loot : SoundCue.Cast);
-            }
-            Fill(new Rect(0, 0, width, height), new Color(.018f, .025f, .045f, .84f));
-            Rect w = new Rect((width - 790) * .5f, (height - 470) * .5f, 790, 470);
-            Fill(new Rect(w.x + 8, w.y + 12, w.width, w.height), new Color(0, 0, 0, .3f));
-            Fill(w, new Color(.045f, .064f, .095f, .99f));
-            Border(w, new Color(.52f, .60f, .67f, .25f));
-            Fill(new Rect(w.center.x - 32, w.y, 64, 2), gold);
-            Text(new Rect(w.x + 36, w.y + 24, 610, 18), "F A L L E N   S T A R", 10, gold, true);
-            Text(new Rect(w.x + 36, w.y + 49, 520, 41), revealed ? (complete ? "星光已归你所有" : "封印正在苏醒") : "遗迹馈赠", 29, pale, true);
-            Text(new Rect(w.x + 37, w.y + 96, 620, 25), revealed ? (complete ? "已收入行囊" : "轻触跳过动画") : "选一个开启", 15, muted);
-            if (Button(new Rect(w.xMax - 207, w.y + 39, 84, 34), "菜单", jade))
-            { session.SetPaused(true); BlockUITransition(); return; }
-            if (Button(new Rect(w.xMax - 111, w.y + 39, 73, 34), chestDetails ? "收起" : "ⓘ 详情", muted)) chestDetails = !chestDetails;
-
-            for (int i = 0; i < 3; i++)
-            {
-                Rect r = new Rect(w.x + 35 + i * 244, w.y + 140, 232, 240);
-                bool chosen = revealed && i == revealedChest;
-                bool closed = revealed && !chosen;
-                bool hover = !revealed && r.Contains(Mouse) && GUI.enabled;
-                Color edge = chosen && complete ? rewardColor : hover ? gold : new Color(.32f, .42f, .49f, .65f);
-                Fill(new Rect(r.x, r.y + (hover ? -3 : 0), r.width, r.height), chosen ? new Color(.13f, .14f, .16f) : new Color(.07f, .09f, .125f));
-                Border(new Rect(r.x, r.y + (hover ? -3 : 0), r.width, r.height), edge);
-                Fill(new Rect(r.x + 15, r.y + 16, 18, 1), closed ? muted * .35f : edge);
-                Text(new Rect(r.x + 17, r.y + 21, 30, 17), new[] { "I", "II", "III" }[i], 11, closed ? muted * .35f : muted);
-                float progress=chosen ? Mathf.Clamp01((Time.unscaledTime-chestRevealedAt)/ChestDuration) : 0;
-                if(!chosen||progress<.76f||!DrawChestRewardModel(new Rect(r.x+18,r.y+16,196,167),reward))
-                    DrawRewardChest(new Rect(r.x + 18, r.y + 16 + (hover ? -3 : 0), 196, 167), chosen, closed ? .22f : 1f, progress);
-                if(chosen && progress>.35f) DrawRewardRadiance(new Rect(r.x+17,r.y+18,198,154), rewardColor, progress);
-                if (chosen)
+                float cardWidth=(body.width-24)/3;
+                for(int i=0;i<3;i++)
                 {
-                    float glow = Mathf.Clamp01((Time.unscaledTime - chestRevealedAt) * 3);
-                    Text(new Rect(r.x + 20, r.y + 187, 192, 30), complete ? (reward != null && reward.Rarity.HasValue ? GameBalance.RarityName(reward.Rarity.Value) : "金币") : "开启中", 19, complete ? rewardColor : gold, true, false, TextAnchor.MiddleCenter);
-                }
-                else if (closed) Text(new Rect(r.x + 20, r.y + 187, 192, 30), "已封存", 13, muted * .55f, false, false, TextAnchor.MiddleCenter);
-                else if (Button(new Rect(r.x + 22, r.y + 183, 188, 40), "开启", gold, !chestDetails && !chestOpening && session.Progression.Profile.pendingFashionChest, null, hover))
-                {
-                    chestOpening = true;
-                    string result = session.Progression.OpenDungeonChest(i);
-                    if (result == null) { chestOpening = false; Feedback(false, "宝箱暂时无法开启"); }
-                    else
+                    Rect r=new Rect(body.x+i*(cardWidth+12),body.y,cardWidth,body.height);
+                    bool hover=r.Contains(Mouse)&&GUI.enabled;
+                    Fill(r,new Color(.07f,.09f,.125f));Border(r,hover?gold:new Color(.32f,.42f,.49f,.65f));
+                    Text(new Rect(r.x+14,r.y+12,r.width-28,20),i==0?"I":i==1?"II":"III",12,muted);
+                    DrawRewardChest(new Rect(r.x+12,r.y+30,r.width-24,r.height-98),false,1,0);
+                    if(Button(new Rect(r.x+12,r.yMax-54,r.width-24,42),"开启",gold,!chestOpening&&progression.Profile.pendingFashionChest&&!progression.Profile.pendingChestReveal,null,hover))
                     {
-                        revealedChest = i;
-                        chestRevealResult = result;
-                        chestRevealedAt = Time.unscaledTime;
-                        chestDetails = false;
-                        rewardSoundPlayed=false;
-                        chestReceiptId=session.Progression.LastChestReward.Id;
-                        GameAudio.Play(SoundCue.Cast);
+                        chestOpening=true;string result=progression.OpenDungeonChest(i);
+                        if(result==null){chestOpening=false;Feedback(false,"宝箱暂时无法开启");}
+                        else {revealedChest=i;chestRevealResult=result;chestRevealedAt=Time.unscaledTime;chestDetails=false;rewardSoundPlayed=false;chestReceiptId=progression.LastChestReward.Id;desktopChestResultScroll=Vector2.zero;GameAudio.Play(SoundCue.Cast);}
+                        BlockUITransition();return;
                     }
-                    // Do not let this same GUI event operate another card or the world.
-                    return;
                 }
             }
-            if (revealed)
+            if(revealed)
             {
-                Text(new Rect(w.x + 35, w.y + 393, 500, 57), complete && reward != null ? (reward.Rarity.HasValue ? reward.Name + (reward.Duplicate ? " · 重复已转金币" : "") + "\n" : "") + "+" + reward.Gold + " 金币" : "", 17, rewardColor, true, true);
-                if (Button(new Rect(w.xMax - 206, w.y + 402, 170, 39), complete ? "收下" : "跳过动画", jade, !chestDetails, null, true))
-                {
-                    if (!complete) chestRevealedAt=Time.unscaledTime-ChestDuration;
-                    else FinishChestReveal();
-                }
+                Text(new Rect(w.x+28,w.yMax-55,w.width-250,36),complete?"奖励已保存 · 收下后返回冒险":"未选宝箱逐渐封存，不再参与抽取",13,muted,false,true);
+                if(Button(new Rect(w.xMax-208,w.yMax-58,180,42),complete?"收下":"跳过动画",jade,!chestDetails,null,true))
+                {if(!complete)chestRevealedAt=Time.unscaledTime-ChestDuration;else FinishChestReveal();BlockUITransition();}
             }
-            else Text(new Rect(w.x + 35, w.y + 407, 720, 25), "仅选一份 · 开启后其余关闭", 12, muted, false, false, TextAnchor.MiddleCenter);
-
-            if (chestDetails)
+            else Text(new Rect(w.x+28,w.yMax-50,w.width-56,36),string.IsNullOrEmpty(progression.LastError)?"开启后奖励先保存，再展示结果":progression.LastError,13,muted,false,true);
+        }
+        private void DrawDesktopChestRules(Rect r)
+        {
+            int minimum=TierRewardRules.ChestGoldMinimum(session.Progression.Profile.pendingChestTier);
+            string rules="三份宝箱机会完全相同，每次只可开启一份。\n\n金币 "+minimum+"～"+(minimum+40)+"，另有机会获得时装。\n普通22% · 稀有12% · 史诗5% · 传说1% · 无时装60%\n\n重复时装转金币并额外增加星纹，每次开启均增加星纹。\n奖励先保存再展示；跳过动画不会重新抽取。";
+            Text(new Rect(r.x+10,r.y+8,r.width-20,r.height-16),rules,15,pale,false,true);
+        }
+        private void DrawDesktopChestResult(Rect r,ChestReward reward,Color accent)
+        {
+            float size=ChestRevealPresentation.DesktopArtSize(r.height);
+            Rect art=new Rect(r.x,r.y,size,size);Fill(art,new Color(.025f,.045f,.07f));Border(art,accent);
+            if(!DrawChestRewardModel(art,reward))DrawChestGold(art,accent);
+            Rect details=new Rect(art.xMax+24,r.y,r.width-size-24,r.height);
+            string result=ChestRevealPresentation.Result(reward,session.Progression.Profile.fashionThreads);
+            string error=session.Progression.LastError;
+            string copy=(string.IsNullOrEmpty(error)?"":error+"\n\n")+result;
+            float total=Mathf.Max(details.height,Style(18,true,true).CalcHeight(new GUIContent(copy),details.width-26)+20);
+            desktopChestResultScroll=BeginTouchScroll("desktop-chest-result",details,desktopChestResultScroll,new Rect(0,0,details.width-16,total));
+            Text(new Rect(4,8,details.width-26,total-16),copy,18,accent,true,true);EndTouchScroll();
+        }
+        private void DrawChestRevealTransition(Rect r,ChestReward reward)
+        {
+            float progress=ChestRevealPresentation.Progress(Time.unscaledTime-chestRevealedAt,ChestDuration);
+            float cardWidth=(r.width-16)/3;
+            Color accent=reward!=null&&reward.Rarity.HasValue?GameBalance.RarityColor(reward.Rarity.Value):gold;
+            for(int i=0;i<3;i++)
             {
-                Rect details = new Rect(w.x + 30, w.y + 132, w.width - 60, 251);
-                Fill(details, new Color(.055f, .078f, .11f, .995f));
-                Border(details, new Color(.4f, .56f, .62f));
-                Text(new Rect(details.x + 24, details.y + 21, details.width - 48, 24), "奖励规则", 18, gold, true);
-                Text(new Rect(details.x + 24, details.y + 61, details.width - 48, 149),
-                    "三份宝箱机会完全相同，每次只可开启一份。\n\n保底 "+TierRewardRules.ChestGoldMinimum(session.Progression.Profile.pendingChestTier)+"～"+(TierRewardRules.ChestGoldMinimum(session.Progression.Profile.pendingChestTier)+40)+" 金币，时装总概率 40%。\n普通 22% · 稀有 12% · 史诗 5% · 传说 1% · 无时装 60%\n以上均为每次开箱的绝对概率；重复时装转化金币。\n未开启的宝箱会随角色存档保留。", 14, pale, false, true);
-                // Full overlay blocks the cards underneath, including touch events.
-                if (GUI.Button(new Rect(details.x + details.width - 108, details.y + 204, 88, 31), "知道了", Style(14, true, false, TextAnchor.MiddleCenter))) chestDetails = false;
+                bool chosen=i==revealedChest;float opacity=chosen?1:ChestRevealPresentation.UnselectedOpacity(progress);
+                if(opacity<=0)continue;
+                Rect cardRect=new Rect(r.x+i*(cardWidth+8),r.y,cardWidth,r.height);
+                Color shade=chosen?new Color(.12f,.14f,.18f):new Color(.07f,.09f,.125f);shade.a*=opacity;Fill(cardRect,shade);
+                DrawRewardChest(new Rect(cardRect.x+6,cardRect.y+8,cardRect.width-12,cardRect.height-38),chosen,opacity,chosen?progress:0);
+                if(chosen&&progress>.35f)
+                {Rect clip=new Rect(cardRect.x+6,cardRect.y+8,cardRect.width-12,cardRect.height-38);GUI.BeginGroup(clip);DrawRewardRadiance(new Rect(0,0,clip.width,clip.height),accent,progress);GUI.EndGroup();}
+                Text(new Rect(cardRect.x+4,cardRect.yMax-28,cardRect.width-8,22),chosen?"正在揭晓":"未选 · 封存",12,new Color(muted.r,muted.g,muted.b,opacity),chosen,false,TextAnchor.MiddleCenter);
             }
+        }
+        private void DrawChestGold(Rect area,Color accent)
+        {
+            float size=Mathf.Min(area.width,area.height),unit=size/200f;
+            for(int i=0;i<3;i++)
+            {Rect bar=new Rect(area.center.x-52*unit+(i-1)*8*unit,area.center.y+(1-i)*24*unit,104*unit,28*unit);Fill(bar,accent*(.65f+i*.12f));Border(bar,gold);}
+            Text(new Rect(area.x,area.yMax-38*unit,area.width,28*unit),"金币已入账",Mathf.RoundToInt(16*unit),accent,true,false,TextAnchor.MiddleCenter);
         }
 
         private void FinishChestReveal()
