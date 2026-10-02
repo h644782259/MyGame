@@ -479,7 +479,7 @@ namespace Emberfall
             Health = Mathf.Max(0, Health - amount);
             if (Health <= 0 && IsStarter && Owner != null) Owner.OnStarterCompanionDefeated();
             model.Recoil(-transform.forward, .7f);
-            HitFeedback.Spawn(transform.position + Vector3.up, -transform.forward, .6f);
+            HitFeedback.Spawn(transform.position + Vector3.up, -transform.forward, .6f, priority:CombatVisualPriority.RealContact);
             if (Health <= 0) Dismiss(CompanionRetirementReason.Defeated);
         }
 
