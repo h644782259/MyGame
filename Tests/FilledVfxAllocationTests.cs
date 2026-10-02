@@ -13,6 +13,7 @@ public static class FilledVfxAllocationTests
     static List<GameObject> Spawn(FilledVfxKind kind,bool mobile,bool reduced,float wall=float.PositiveInfinity)
     {
         typeof(FilledSkillVfx).GetMethod("ResetAssets",BindingFlags.Static|BindingFlags.NonPublic).Invoke(null,null);
+        foreach(var old in GameObject.All.ToArray())UnityEngine.Object.Destroy(old);
         GameObject.All.Clear();Application.isMobilePlatform=mobile;EffectPreferences.ReducedEffects=reduced;CombatSight.Wall=wall;
         var hero=new GameObject("Hero").AddComponent<PlayerController>();GameSession.Instance=new GameSession{Player=hero,HasStarted=true};
         FilledSkillVfx.Impact(hero,Vector3.zero,4,kind,new Color(1,1,1,1));
@@ -89,9 +90,12 @@ namespace Emberfall
     public sealed class PlayerController:MonoBehaviour{public bool IsDead;public int CombatEpoch;}
     public sealed class GameSession{public static GameSession Instance;public PlayerController Player;public bool HasStarted,ModeFinished,InputBlocked;}
     public static class EffectPreferences{public static bool ReducedEffects;public static float EffectsScale=1;}
+    public enum CombatSightKind { Area }
+    public static class CombatFx{public static Vector3 Flat(Vector3 value){value.y=0;return value;}public static Material NewGlow()=>new Material(new Shader());}
     public static class CombatSight
     {
         public static float Wall=float.PositiveInfinity;public static int FootprintCalls;
+        public static Vector3 BoundaryPoint(CombatSightKind kind,Vector3 from,Vector3 to){float t=to.x<=Wall?1:(Wall-from.x)/Mathf.Max(.000001f,to.x-from.x);var v=Vector3.Lerp(from,to,Mathf.Clamp01(t));v.y=0;return v;}
         public static bool Direct(Vector3 from,Vector3 to)=>Area(from,to);
         public static bool Area(Vector3 from,Vector3 to)=>from.x<=Wall&&to.x<=Wall;
         public static bool VisualFootprint(Vector3 from,Vector3 to,float radius){FootprintCalls++;return from.x+radius<=Wall&&to.x+radius<=Wall;}
@@ -103,7 +107,7 @@ namespace UnityEngine
     [AttributeUsage(AttributeTargets.Method)]public sealed class RuntimeInitializeOnLoadMethodAttribute:Attribute{public RuntimeInitializeOnLoadMethodAttribute(RuntimeInitializeLoadType value){}}
     public static class Application{public static bool isMobilePlatform;}
     public static class Time{public static float deltaTime,time;public static int frameCount;}
-    public class Object{public string name;public bool Destroyed;public static void Destroy(Object value){value.Destroyed=true;if(value is GameObject go)go.SetActive(false);}}
+    public class Object{public string name;public bool Destroyed;public static void Destroy(Object value){if(value==null||value.Destroyed)return;value.Destroyed=true;if(value is GameObject go){go.SetActive(false);go.Call("OnDestroy");foreach(var child in GameObject.All.Where(x=>x.transform.parent==go.transform).ToArray())Destroy(child);}}}
     public class Component:Object{public GameObject gameObject;public Transform transform=>gameObject.transform;public T GetComponent<T>()where T:Component=>gameObject.GetComponent<T>();}
     public class MonoBehaviour:Component{}
     public class GameObject:Object
@@ -113,7 +117,8 @@ namespace UnityEngine
         public GameObject(string name=""){this.name=name;transform=new Transform{gameObject=this};All.Add(this);}
         public T AddComponent<T>()where T:Component,new(){var c=new T{gameObject=this};components.Add(c);return c;}
         public T GetComponent<T>()where T:Component=>components.OfType<T>().FirstOrDefault();
-        public void SetActive(bool value){activeSelf=value;}
+        public bool activeInHierarchy=>activeSelf&&(transform.parent==null||transform.parent.gameObject.activeInHierarchy);
+        public void SetActive(bool value){if(activeSelf==value)return;activeSelf=value;Call(value?"OnEnable":"OnDisable");}
         public void Call(string name){foreach(var c in components)c.GetType().GetMethod(name,BindingFlags.NonPublic|BindingFlags.Instance)?.Invoke(c,null);}
     }
     public sealed class Transform
@@ -127,7 +132,7 @@ namespace UnityEngine
         public void SetParent(Transform value,bool worldPositionStays){parent=value;}
         public Vector3 TransformPoint(Vector3 value){var point=localRotation.Rotate(new Vector3(value.x*localScale.x,value.y*localScale.y,value.z*localScale.z))+localPosition;return parent==null?point:parent.TransformPoint(point);}
     }
-    public sealed class Mesh:Object{public Vector3[] vertices;public Vector2[] uv;public int[] triangles;public void RecalculateNormals(){}public void RecalculateBounds(){}}
+    public sealed class Mesh:Object{public Vector3[] vertices;public Color[] colors;public Vector2[] uv;public int[] triangles;public void RecalculateNormals(){}public void RecalculateBounds(){}}
     public enum PrimitiveType{Sphere}
     public struct Keyframe{public Keyframe(float time,float value){}}
     public sealed class AnimationCurve{public AnimationCurve(params Keyframe[] keys){}}
@@ -149,6 +154,8 @@ namespace UnityEngine
         public static Vector3 zero=>new Vector3();public static Vector3 one=>new Vector3(1,1,1);public static Vector3 up=>new Vector3(0,1,0);public static Vector3 forward=>new Vector3(0,0,1);
         public float sqrMagnitude=>x*x+y*y+z*z;public float magnitude=>(float)Math.Sqrt(sqrMagnitude);public Vector3 normalized=>this*(1/magnitude);
         public static Vector3 Lerp(Vector3 a,Vector3 b,float t)=>a+(b-a)*Mathf.Clamp01(t);
+        public static Vector3 Scale(Vector3 a,Vector3 b)=>new Vector3(a.x*b.x,a.y*b.y,a.z*b.z);
+        public static Vector3 operator/(Vector3 a,float b)=>a*(1/b);
         public static Vector3 Cross(Vector3 a,Vector3 b)=>new Vector3(a.y*b.z-a.z*b.y,a.z*b.x-a.x*b.z,a.x*b.y-a.y*b.x);
         public static Vector3 operator+(Vector3 a,Vector3 b)=>new Vector3(a.x+b.x,a.y+b.y,a.z+b.z);
         public static Vector3 operator-(Vector3 a,Vector3 b)=>new Vector3(a.x-b.x,a.y-b.y,a.z-b.z);
@@ -160,6 +167,7 @@ namespace UnityEngine
         public static Quaternion identity=>new Quaternion{value=System.Numerics.Quaternion.Identity};
         public static Quaternion Euler(float x,float y,float z)=>new Quaternion{value=System.Numerics.Quaternion.CreateFromYawPitchRoll(y*Mathf.PI/180,x*Mathf.PI/180,z*Mathf.PI/180)};
         public static Quaternion LookRotation(Vector3 forward)=>identity;public static Quaternion FromToRotation(Vector3 from,Vector3 to)=>identity;
+        public static Vector3 operator*(Quaternion q,Vector3 v)=>q.Rotate(v);
         public static Quaternion operator*(Quaternion a,Quaternion b)=>new Quaternion{value=a.value*b.value};
         public Vector3 InverseRotate(Vector3 vector){var r=System.Numerics.Vector3.Transform(new System.Numerics.Vector3(vector.x,vector.y,vector.z),System.Numerics.Quaternion.Inverse(value));return new Vector3(r.X,r.Y,r.Z);}
         public Vector3 Rotate(Vector3 vector){var r=System.Numerics.Vector3.Transform(new System.Numerics.Vector3(vector.x,vector.y,vector.z),value);return new Vector3(r.X,r.Y,r.Z);}

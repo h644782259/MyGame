@@ -498,7 +498,7 @@ namespace Emberfall
                 }
                 telegraph = EnemyAttackTelegraph.Fan(muzzle, directions, lengths, .78f);
             }
-            else telegraph = EnemyAttackTelegraph.Circle(targetPoint, ImpactRadius);
+            else telegraph = EnemyAttackTelegraph.Circle(targetPoint, ImpactRadius, transform);
             warning = telegraph.gameObject;
             telegraph.SetInterruptible(CanBeSkillInterrupted);
             telegraph.SetProgress(1f - windup / Mathf.Max(.01f, totalWindup));
@@ -590,8 +590,7 @@ namespace Emberfall
 
         private bool InsideImpact(Vector3 point)
         {
-            Vector3 offset = CombatFx.Flat(point - targetPoint);
-            return PlayerUpgradeRules.IsInsideArea(offset.x, offset.z, ImpactRadius, WorldTraversal.HasGroundPath(transform.position, point, .12f));
+            return EnemyImpactRegion.Contains(transform.position,targetPoint,point,ImpactRadius);
         }
 
         /// <summary>Register only a successful blink out of an imminent actual hit. Resolution confirms the reward.</summary>

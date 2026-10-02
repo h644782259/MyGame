@@ -1318,7 +1318,7 @@ namespace Emberfall
                     CombatArea.Spawn(this,session,target,3f*range,Damage(SkillDamageBudgets.OpeningImpact(HeroClass,slot,rank)),2.3f+(rank-1)*.4f,.4f,0,1f,color,false,false,rank==3?5f:0,statusSkill:1,statusRank:rank,castId:castId,visual:SkillVisualRecipe.Neutral);
                     if(rank>=2) CombatArea.Spawn(this,session,target,3f*range,Damage(SkillDamageBudgets.OpeningImpact(HeroClass,slot,rank,1)),.5f,.8f,0,1,color,castId:castId,visual:SkillVisualRecipe.Neutral);
                 }
-                else {var field=SkillDamageBudgets.EarlyField(HeroClass,rank);CombatArea.Spawn(this,session,target,4.3f*range,Damage(field.TickCoefficient),.08f,field.Startup,field.Duration,field.Interval,new Color(.7f,1f,.59f),false,false,0,Damage(field.FinisherCoefficient),castId:castId,visual:SkillVisualRecipe.Poison);}
+                else {var field=SkillDamageBudgets.EarlyField(HeroClass,rank);CombatArea.Spawn(this,session,target,4.3f*range,Damage(field.TickCoefficient),.08f,field.Startup,field.Duration,field.Interval,new Color(.7f,1f,.59f),false,false,0,Damage(field.FinisherCoefficient),castId:castId,visual:SkillVisualRecipe.ArrowRain);}
             }
         }
 

@@ -10,6 +10,7 @@ namespace Emberfall
             if (expand && FadingCombatEffect.ActiveCount >= (Application.isMobilePlatform ? 32 : 48)) return null;
             GameObject obj = new GameObject("Combat Ring");
             obj.transform.position = center + Vector3.up * .065f;
+            if(expand&&CombatVisualLease.Attach(obj,CombatVisualPriority.Decoration)==null)return null;
             LineRenderer line = obj.AddComponent<LineRenderer>();
             line.useWorldSpace = false;
             line.loop = true;
@@ -512,12 +513,14 @@ namespace Emberfall
                 {
                     if (ScheduledTickWindow.Collect(ref nextTick, age, delay + duration, interval, 1) == 0) break;
                     pendingTickTargets.Begin(session.Enemies, true);
+                    if(visualRecipe==SkillVisualRecipe.ArrowRain)FilledSkillVfx.ArrowRain(owner,transform.position,radius,color);
                     if (!solidImpactSpawned)
                     {
                         solidImpactSpawned = true;
                         if (fireVisual || poisonVisual || lightningVisual)
                             ElementalCombatVfx.Area(transform, radius, fireVisual ? ElementalCombatVfx.Element.Fire :
                                 poisonVisual ? ElementalCombatVfx.Element.Poison : ElementalCombatVfx.Element.Lightning);
+                        if(poisonVisual)FilledSkillVfx.PoisonVines(owner,transform.position,radius,color);
                         if (fireVisual) FilledSkillVfx.Impact(owner, transform.position, radius, FilledVfxKind.Fire, new Color(1f,.43f,.12f));
                         else if (visualRecipe == SkillVisualRecipe.Ice)
                             FilledSkillVfx.Impact(owner, transform.position, radius, FilledVfxKind.Ice, new Color(.2f,.75f,1f));
@@ -577,7 +580,8 @@ namespace Emberfall
             if (!finished && finalDamage.Amount>0 && age>=delay+duration && ticksDrained)
             {
                 finished=true;
-                AdvancedSkillVfx.Rune(owner,transform.position,radius*1.1f,color,.65f,3);
+                if(visualRecipe==SkillVisualRecipe.ArrowRain)FilledSkillVfx.ArrowRain(owner,transform.position,radius*1.1f,color,true);
+                else AdvancedSkillVfx.Rune(owner,transform.position,radius*1.1f,color,.65f,3);
                 owner.HitArea(transform.position,radius*1.1f,finalDamage,.7f,.65f,castId);
             }
             if (age > delay + duration + .1f && ticksDrained) Retire();
