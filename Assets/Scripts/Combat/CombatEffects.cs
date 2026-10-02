@@ -37,14 +37,17 @@ namespace Emberfall
         public static void Slash(Vector3 center, Vector3 forward, float radius, Color color)
         {
             var game=GameSession.Instance;
-            if(game!=null)FilledSkillVfx.Crescent(game.Player,center,forward,radius,color,1);
+            if(game!=null)FilledSkillVfx.Crescent(game.Player,center,forward,radius,color,1,CombatVisualPriority.Decoration);
         }
         public static void WeaponSlash(PlayerController owner,CombatModel model,Vector3 center,Vector3 forward,float radius,Color color)
         {
             if(owner==null||model==null||!model.SwordActionActive)return;
-            FilledSkillVfx.Crescent(owner,center,forward,radius,color,model.WeaponSwingSide);
+            FilledSkillVfx.Crescent(owner,center,forward,radius,color,model.WeaponSwingSide,CombatVisualPriority.ActionBody);
             WeaponSlashRibbon.Spawn(owner,model,color);
         }
+
+        internal static void BurnContact(PlayerController owner,Vector3 point,bool finale=false)
+        {FilledSkillVfx.BurnContact(owner,point,finale);}
 
         public static Material NewGlow()
         {
@@ -513,7 +516,7 @@ namespace Emberfall
                 {
                     if (ScheduledTickWindow.Collect(ref nextTick, age, delay + duration, interval, 1) == 0) break;
                     pendingTickTargets.Begin(session.Enemies, true);
-                    if(visualRecipe==SkillVisualRecipe.ArrowRain)FilledSkillVfx.ArrowRain(owner,transform.position,radius,color);
+                    if(visualRecipe==SkillVisualRecipe.ArrowRain)FilledSkillVfx.ArrowRain(owner,transform.position,radius,color,priority:CombatVisualPriority.SustainedBackground);
                     if (!solidImpactSpawned)
                     {
                         solidImpactSpawned = true;
@@ -521,11 +524,11 @@ namespace Emberfall
                             ElementalCombatVfx.Area(transform, radius, fireVisual ? ElementalCombatVfx.Element.Fire :
                                 poisonVisual ? ElementalCombatVfx.Element.Poison : ElementalCombatVfx.Element.Lightning);
                         if(poisonVisual)FilledSkillVfx.PoisonVines(owner,transform.position,radius,color);
-                        if (fireVisual) FilledSkillVfx.Impact(owner, transform.position, radius, FilledVfxKind.Fire, new Color(1f,.43f,.12f));
+                        if (fireVisual) FilledSkillVfx.Impact(owner, transform.position, radius, FilledVfxKind.Fire, new Color(1f,.43f,.12f),CombatVisualPriority.RealContact);
                         else if (visualRecipe == SkillVisualRecipe.Ice)
-                            FilledSkillVfx.Impact(owner, transform.position, radius, FilledVfxKind.Ice, new Color(.2f,.75f,1f));
+                            FilledSkillVfx.Impact(owner, transform.position, radius, FilledVfxKind.Ice, new Color(.2f,.75f,1f),CombatVisualPriority.RealContact);
                         else if (visualRecipe == SkillVisualRecipe.Spirit || visualRecipe == SkillVisualRecipe.Arcane || visualRecipe == SkillVisualRecipe.Lightning || visualRecipe == SkillVisualRecipe.Steel)
-                            FilledSkillVfx.Impact(owner, transform.position, radius, SkillVisualRecipes.Filled(visualRecipe), color);
+                            FilledSkillVfx.Impact(owner, transform.position, radius, SkillVisualRecipes.Filled(visualRecipe), color,CombatVisualPriority.RealContact);
                     }
                     if (tick == 0)
                     { DestructibleProp.StrikeArea(owner,transform.position,radius,damage,castId); CombatFx.Ring(transform.position,radius,color,.42f,.15f); }
@@ -580,7 +583,7 @@ namespace Emberfall
             if (!finished && finalDamage.Amount>0 && age>=delay+duration && ticksDrained)
             {
                 finished=true;
-                if(visualRecipe==SkillVisualRecipe.ArrowRain)FilledSkillVfx.ArrowRain(owner,transform.position,radius*1.1f,color,true);
+                if(visualRecipe==SkillVisualRecipe.ArrowRain)FilledSkillVfx.ArrowRain(owner,transform.position,radius*1.1f,color,true,CombatVisualPriority.Finale);
                 else AdvancedSkillVfx.Rune(owner,transform.position,radius*1.1f,color,.65f,3);
                 owner.HitArea(transform.position,radius*1.1f,finalDamage,.7f,.65f,castId);
             }

@@ -180,7 +180,7 @@ namespace Emberfall
                     flinchUntil = Time.time + (IsBoss ? .018f : Mathf.Lerp(.035f, .065f, strength / 2f));
                     nextFlinchAllowed = Time.time + (IsBoss ? .8f : Tier == ThreatTier.Elite ? .35f : .22f);
                 }
-                HitFeedback.Spawn(transform.position + Vector3.up * (IsBoss ? 2f : Kind == EnemyKind.Slime ? .65f : 1.25f), push, strength, critical);
+                HitFeedback.Spawn(transform.position + Vector3.up * (IsBoss ? 2f : Kind == EnemyKind.Slime ? .65f : 1.25f), push, strength, critical, priority:CombatVisualPriority.RealContact);
                 GameAudio.Play(critical ? SoundCue.CriticalHit : SoundCue.Hit);
             }
             float impulse = chargeTime > 0 || largeBoss != null && largeBoss.State.OwnsAttacks ? 0 : controlPolicy.ApplyKnockback(knockback);

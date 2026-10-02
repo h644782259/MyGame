@@ -25,12 +25,12 @@ namespace Emberfall
             return fx;
         }
         public static void Beam(PlayerController hero,Vector3 start,Vector3 end,Color color,float lifetime,float width=.18f)
-        {FilledSkillVfx.Thrust(hero,start,end,color,lifetime,width);}
+        {FilledSkillVfx.Thrust(hero,start,end,color,lifetime,width,CombatVisualPriority.ActionBody);}
         public static void FallingBlade(PlayerController hero,Vector3 at,Color color,float scale=1f)
         {
             // Called on the real hit: the descending streak and ground rupture are
             // immediate. There is no cosmetic delayed arrival after damage has landed.
-            FilledSkillVfx.Impact(hero,at,1.6f*scale,FilledVfxKind.Sword,color);
+            FilledSkillVfx.Impact(hero,at,1.6f*scale,FilledVfxKind.Sword,color,CombatVisualPriority.RealContact);
         }
         private void Update()
         {

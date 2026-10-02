@@ -20,8 +20,8 @@ with tempfile.TemporaryDirectory(prefix='elemental-priority-') as temp:
   for file in files:(d/(Path(file).name+'.cs')).write_text((ROOT/('Assets/Scripts/'+file+'.cs')).read_text())
   code=source
   if name=='old-area-particle-gate':
-   code=once(code,'            ElementalFieldVisual.Spawn(parent, element, radius, false);','')
-   code=once(code,'            particles.Play();','            particles.Play();\n            ElementalFieldVisual.Spawn(parent, element, radius, false);')
+   code=once(code,'            ElementalFieldVisual.Spawn(parent, element, radius, false,CombatVisualPriority.SustainedBackground);','')
+   code=once(code,'            particles.Play();','            particles.Play();\n            ElementalFieldVisual.Spawn(parent, element, radius, false,CombatVisualPriority.SustainedBackground);')
   if name=='old-aura-parent-ownership':
    code=once(code,'            particles.gameObject.SetActive(true);','            if(activeShape!=null)activeShape.transform.SetParent(particles.transform,false);\n            particles.gameObject.SetActive(true);')
   (d/'ElementalCombatVfx.cs').write_text(code);(d/'Tests.cs').write_text((ROOT/'Tests/ElementalPriorityProductionTests.cs').read_text());(d/'Program.cs').write_text('System.Console.WriteLine(ElementalPriorityProductionTests.Run());')
