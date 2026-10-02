@@ -290,7 +290,7 @@ namespace Emberfall
         {
             int count = back ? 3 : 2, first = back ? 1 : 0;
             if (back && Button(MobilePanelRect(layout.FooterButton(0, count)), "返回列表", jade))
-            { mobileInventoryDetail = false; BlockUITransition(); return; }
+            { ClosePanel(); return; }
             bool canEquip = item != null && !IsEquipped(item) && ProgressionAttention.LevelEligible(session.Progression.Profile, item);
             string equip = item == null ? "选择装备" : IsEquipped(item) ? "已穿戴" : canEquip ? "穿戴" : "需要 " + item.level + " 级";
             if (Button(MobilePanelRect(layout.FooterButton(first, count)), equip, jade, canEquip, null, true))

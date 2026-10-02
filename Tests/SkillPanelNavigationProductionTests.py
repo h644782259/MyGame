@@ -18,7 +18,7 @@ public class Progression{public Profile Profile=new Profile();}public class Prof
 public partial class GameUI {
 enum Panel{None,Skills,Inventory,SaveSelection,Chests,Fashion,PotionAssignment,Bindings,SaveLocation,Controls}
 Panel panel=Panel.Skills,bindingReturnPanel;Session session=new Session();bool mobileSkillDetail=true,saveSelectionFromPause,chestDetails,bindingReturnPause,saveReturnPause,controlsReturnPause;int rebindingSlot,blocks,cancels;float chestRevealedAt,ChestDuration=1;bool ChestAnimationDone=true;float listScroll=173,detailScroll=81;
-bool CloseProgressionGoalSurface()=>false;bool CloseBuildPlanSurface()=>false;bool CloseTravelMap()=>false;bool CancelSaveDeletion()=>false;bool CancelActiveSaveFlow()=>false;
+bool CloseMobileInventoryDetail()=>false;bool CloseProgressionGoalSurface()=>false;bool CloseBuildPlanSurface()=>false;bool CloseTravelMap()=>false;bool CancelSaveDeletion()=>false;bool CancelActiveSaveFlow()=>false;
 void CancelMobileScroll(){cancels++;}void BlockUITransition(){blocks++;}void FinishChestReveal(){}void ReturnToInventory(){}
 METHODS
 public static int Verify(){int n=0;Action<bool,string> check=(b,w)=>{n++;if(!b)throw new Exception(w);};
