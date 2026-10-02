@@ -272,6 +272,8 @@ def main():
             'using System; internal static class Program { static void Main() { Console.WriteLine(SkillVisualRecipeTests.Run()); } }'))
         checks.append(("hold-point-state",[ROOT/"Assets/Scripts/Core/ExpeditionModeState.cs",ROOT/"Assets/Scripts/Core/TierRewardBand.cs",ROOT/"Tests/HoldPointStateTests.cs"],
             'using System; internal static class Program { static void Main() { Console.WriteLine(HoldPointStateTests.Run()); } }'))
+        checks.append(("room-blessing-usability",[ROOT/("Assets/Scripts/"+f+".cs") for f in ["Core/GameTypes","Core/RunChoices","Core/SkillRuntime","Core/SkillDamageBudgets","Combat/EnemyControlPolicy"]]+[ROOT/"Tests/SkillRuntimeTests.cs",ROOT/"Tests/RoomBlessingUsabilityTests.cs"],
+            'using System; internal static class Program { static void Main() { Console.WriteLine(RoomBlessingUsabilityTests.Run()); } }'))
         checks.append(("room-blessing-routes",[ROOT/"Assets/Scripts/Core/GameTypes.cs",ROOT/"Assets/Scripts/Core/RunChoices.cs",ROOT/"Assets/Scripts/Core/CampRouteCards.cs",ROOT/"Assets/Scripts/Core/SkillRuntime.cs",ROOT/"Tests/SkillRuntimeTests.cs",ROOT/"Tests/RoomBlessingRouteTests.cs"],
             'using System; internal static class Program { static void Main() { Console.WriteLine(RoomBlessingRouteTests.Run()); } }'))
         checks.append(("mobile-pause-navigation",[ROOT/"Assets/Scripts/UI/GameUI.PauseNavigation.cs",ROOT/"Tests/MobilePauseNavigationTests.cs"],
@@ -326,7 +328,7 @@ def main():
         failed = failed or not passed
         passed = run_check("chest-pause-back-production", [[sys.executable, str(ROOT / "Tests/ChestPauseBackProductionTests.py"), dotnet]], env, output, report)
         failed = failed or not passed
-        for name, script in [("companion-intent-production","CompanionIntentProductionTests.py"),("contract-snapshot-production","ContractSnapshotProductionTests.py"),("filled-vfx-allocation","FilledVfxAllocationTests.py"),("side-event-production","SideEventProductionTests.py"),("skill-readability-production","SkillReadabilityProductionTests.py"),("milestone-goal-surface","MilestoneGoalSurfaceTests.py"),("skill-panel-navigation","SkillPanelNavigationProductionTests.py")]:
+        for name, script in [("companion-intent-production","CompanionIntentProductionTests.py"),("contract-snapshot-production","ContractSnapshotProductionTests.py"),("filled-vfx-allocation","FilledVfxAllocationTests.py"),("side-event-production","SideEventProductionTests.py"),("skill-readability-production","SkillReadabilityProductionTests.py"),("milestone-goal-surface","MilestoneGoalSurfaceTests.py"),("skill-panel-navigation","SkillPanelNavigationProductionTests.py"),("room-blessing-usability-negative","RoomBlessingUsabilityNegativeTests.py")]:
             passed = run_check(name, [[sys.executable,str(ROOT/"Tests"/script),dotnet]], dict(env,DOTNET=dotnet), output, report)
             failed = failed or not passed
         if args.compile or args.download_references or args.compile_android:
