@@ -16,11 +16,11 @@ with tempfile.TemporaryDirectory(prefix='chapter-transactions-') as folder:
     command=[dotnet,'run','--project',str(project),'--no-restore','--',str(folder/'saves')]
     subprocess.run(command,check=True)
     p=folder/'ProgressionService.cs';original=p.read_text()
-    old='(profile.clearedRuns > 0 || profile.chapterCompletedMask!=0 || profile.chapterPriorAdventureTier>0 || profile.highestAdventureTier>profile.chapterHighestAdventureTier)'
+    old='(profile.clearedRuns > 0 || (profile.chapterCompletedMask&(1<<(int)ChapterNode.StarPlatform))!=0 || profile.chapterPriorAdventureTier>0 || profile.highestAdventureTier>profile.chapterHighestAdventureTier)'
     assert old in original
     p.write_text(original.replace(old,'(profile.clearedRuns > 0 || profile.chapterPriorAdventureTier>0 || profile.highestAdventureTier>profile.chapterHighestAdventureTier)'))
     result=subprocess.run(command,capture_output=True,text=True)
-    assert result.returncode and 'chapter-only clear persists shared first-core eligibility' in result.stdout+result.stderr,result.stdout+result.stderr
+    assert result.returncode and 'only star advances shared tier without legacy chest' in result.stdout+result.stderr,result.stdout+result.stderr
     p.write_text(original)
     p=folder/'ProgressionService.Chapter.cs';original=p.read_text()
     old='receipt.Sequence!=Profile.chapterRewardSequence+1'
