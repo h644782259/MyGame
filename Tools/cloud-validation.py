@@ -253,6 +253,10 @@ def main():
             'using System; internal static class Program { static void Main() { Console.WriteLine(HoldPointStateTests.Run()); } }'))
         checks.append(("room-blessing-routes",[ROOT/"Assets/Scripts/Core/GameTypes.cs",ROOT/"Assets/Scripts/Core/RunChoices.cs",ROOT/"Assets/Scripts/Core/CampRouteCards.cs",ROOT/"Assets/Scripts/Core/SkillRuntime.cs",ROOT/"Tests/SkillRuntimeTests.cs",ROOT/"Tests/RoomBlessingRouteTests.cs"],
             'using System; internal static class Program { static void Main() { Console.WriteLine(RoomBlessingRouteTests.Run()); } }'))
+        checks.append(("ui-render-cache",[ROOT/"Assets/Scripts/Core/GameTypes.cs",ROOT/"Assets/Scripts/Core/ProgressionService.cs",ROOT/"Tests/ProgressionTests.cs",ROOT/"Assets/Scripts/UI/CollectionPreviewState.cs",ROOT/"Assets/Scripts/Combat/CombatTextMetrics.cs",ROOT/"Assets/Scripts/Combat/CombatTextLayout.cs",ROOT/"Tests/UiRenderCacheTests.cs"],
+            'using System; internal static class Program { static void Main() { Console.WriteLine(UiRenderCacheTests.Run()); } }'))
+        checks.append(("ui-render-cache-lifecycle",[ROOT/"Assets/Scripts/Combat/FloatingNumber.cs",ROOT/"Assets/Scripts/Combat/CombatTextMetrics.cs",ROOT/"Assets/Scripts/Combat/CombatTextLayout.cs",ROOT/"Tests/UiRenderCacheLifecycleTests.cs"],
+            'using System; internal static class Program { static void Main() { Console.WriteLine(UiRenderCacheLifecycleTests.Run()); } }'))
         for variant in ("desktop", "android", "ios"):
             checks.append(("game-font-"+variant,[ROOT/"Assets/Scripts/UI/GameFont.cs",ROOT/"Tests/GameFontTests.cs"],
                 'using System; internal static class Program { static void Main() { Console.WriteLine(GameFontTests.Run()); } }'))
