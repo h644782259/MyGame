@@ -19,6 +19,7 @@ assert '选择一项 · 仅本局生效' in helper and 'session.DungeonWave' in 
 spawn=read('Core/GameSession.RoomChain.cs')
 assert 'index<plan.EnemyCount' in spawn and 'bool boss=plan.Boss&&index==0' in spawn,'boss plan is spawned as one boss with remaining guards'
 assert 'Boss ? 3 : 6' in read('Core/RoomChainState.cs'),'two guard caption matches current authoritative plan count'
-assert '"星烬祝福",BlessingSubtitle(true),false,true' in mobile,'mobile preview stays in existing header slot'
+assert 'preview=BlessingSubtitle(true)' in mobile and 'layout.Body.Y+previewHeight' in mobile,'mobile preview owns measured fixed space above scrolling choices'
+assert 'string notice=PlatformText(session.Notification)' in mobile and 'noticeHeight+cardHeight+8' in mobile,'complete notification retains separately measured scroll space'
 assert 'TouchFont(12)' in read('UI/GameUI.MobilePanels.cs'),'existing small header typography retained'
 print('PASS: room preview two-entry hooks and both old-subtitle mutation controls (not rendering)')
