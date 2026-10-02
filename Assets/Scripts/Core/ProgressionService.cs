@@ -1574,9 +1574,9 @@ namespace Emberfall
                 default:return Fail("请打开对应营地入口继续。");
             }
         }
-        public string ProgressionGoalStatus(int runMaterials=0)
+        public string ProgressionGoalStatus(int runMaterials=0,bool inCamp=false)
         {
-            ProgressionGoalState goal=SelectedProgressionGoal(true);
+            ProgressionGoalState goal=SelectedProgressionGoal(inCamp);
             return goal.Title+(goal.Done?" ✓ 已完成":"")+" · "+goal.Step+
                 (runMaterials>0?" · 本局 +"+runMaterials+"碎片":"");
         }

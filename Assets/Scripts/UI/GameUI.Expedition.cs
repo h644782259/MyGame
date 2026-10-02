@@ -49,7 +49,7 @@ namespace Emberfall
             if(DrawProgressionGoalSurface())return;
             if(DrawBuildPlanSurface())return;
             if(MobileControls.Active){DrawMobileCampWorkshop();return;}
-            Rect w=Modal(980,620,"营地工坊",session.Progression.ProgressionGoalStatus());
+            Rect w=Modal(980,620,"营地工坊",CurrentProgressionGoalStatus());
             if(Button(new Rect(w.xMax-255,w.y+20,170,36),"成长目标",jade))OpenProgressionGoals();
             if(Button(new Rect(w.xMax-69,w.y+20,44,32),"×",jade))ClosePanel();
             string[] tabs={"战技","机制图鉴","待领取","实战试炼"};

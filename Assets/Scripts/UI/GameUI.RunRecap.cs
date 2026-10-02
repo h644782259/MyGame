@@ -76,7 +76,7 @@ namespace Emberfall
         private void DrawRecapCards(RunRecapLayout layout,RunRecapPresentation data,float unit,float top=0)
         {
             float y=top,w=layout.ContentWidth;
-            string goal=session.Progression.ProgressionGoalStatus(data.Snapshot.RewardMaterials);
+            string goal=CurrentProgressionGoalStatus(data.Snapshot.RewardMaterials);
             float goalHeight=RecapGoalHeight(layout,unit,data);
             Fill(new Rect(0,y*unit,w*unit,(goalHeight-10)*unit),card);
             Text(new Rect(12*unit,(y+8)*unit,(w-24)*unit,(goalHeight-26)*unit),goal,Mathf.RoundToInt(13*unit),jade,false,true);
@@ -185,7 +185,7 @@ namespace Emberfall
         private static float ProgressCardHeight(RunRecapSnapshot data)
         { return 24+(data.RewardGold>0||data.RewardExperience>0||data.RewardMaterials>0?72:0)+(data.Materials>0?72:0)+(data.GoldLost>0?34:0)+(data.PendingChest||data.FirstClearChoice?28:0); }
         private float RecapGoalHeight(RunRecapLayout layout,float unit,RunRecapPresentation data)
-        {return Mathf.Ceil(Style(Mathf.RoundToInt(13*unit),false,true).CalcHeight(new GUIContent(session.Progression.ProgressionGoalStatus(data.Snapshot.RewardMaterials)),(layout.ContentWidth-24)*unit)/unit)+26;}
+        {return Mathf.Ceil(Style(Mathf.RoundToInt(13*unit),false,true).CalcHeight(new GUIContent(CurrentProgressionGoalStatus(data.Snapshot.RewardMaterials)),(layout.ContentWidth-24)*unit)/unit)+26;}
         private float RecapContentHeight(RunRecapLayout layout,RunRecapPresentation data)
         {
             if(data==null)return 110;

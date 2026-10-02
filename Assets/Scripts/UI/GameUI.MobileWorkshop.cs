@@ -22,7 +22,7 @@ namespace Emberfall
             }
             var layout = MobilePanelGeometry();
             campTab = Mathf.Clamp(campTab, 0, 3);
-            if (DrawMobilePanelChrome(layout, "营地工坊", p.ProgressionGoalStatus())) return;
+            if (DrawMobilePanelChrome(layout, "营地工坊", CurrentProgressionGoalStatus())) return;
             string[] tabs = { "战技", "机制图鉴", "待领取", "实战试炼" };
             for (int i = 0; i < tabs.Length; i++)
             {
