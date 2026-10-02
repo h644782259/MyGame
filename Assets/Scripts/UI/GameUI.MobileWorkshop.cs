@@ -22,7 +22,7 @@ namespace Emberfall
             }
             var layout = MobilePanelGeometry();
             campTab = Mathf.Clamp(campTab, 0, 3);
-            if (DrawMobilePanelChrome(layout, "营地工坊", p.ProgressionGoalStatus())) return;
+            if (DrawMobilePanelChrome(layout, "营地工坊", CurrentProgressionGoalStatus())) return;
             string[] tabs = { "战技", "机制图鉴", "待领取", "实战试炼" };
             for (int i = 0; i < tabs.Length; i++)
             {
@@ -103,7 +103,7 @@ namespace Emberfall
             if(p.Profile.heroClass==HeroClass.Arcanist)
                 MobileWorkshopAction(ref y,width,"恢复均衡专精",jade,session.IsInCamp&&p.Profile.specialization!=ElementalistSpecialization.None,draw,
                     ()=>MobileWorkshopResult(p.SetSpecialization(ElementalistSpecialization.None,session.IsInCamp),"已恢复均衡专精"));
-            MobileWorkshopParagraph(ref y, width, "精通与技能共用点数；30级起开放。每个方向10点启用初阶核心，20点自动增强；只能启用一个核心。", jade, draw);
+            MobileWorkshopParagraph(ref y, width, "精通与技能共用点数；"+MasteryProgressionRules.TierSummary+"；"+MasteryProgressionRules.CoreSummary, jade, draw);
             for (int i = 0; i < 4; i++)
             {
                 var mastery = (MasteryType)i;
@@ -114,7 +114,7 @@ namespace Emberfall
                 MobileWorkshopAction(ref y, width, "投入 1 技能点", jade, string.IsNullOrEmpty(reason), draw,
                     () => MobileWorkshopResult(p.LearnMastery(mastery), "精通已提高"));
                 string core = p.HasMasteryCore(mastery) ? (p.MasteryCoreTier(mastery) == 2 ? "增强核心 · 已启用" : "初阶核心 · 已启用") :
-                    (p.Profile.masteryRanks[i] >= MasteryCoreRules.EnhancedInvestment ? "切换增强核心" : "启用初阶核心 · 需10点");
+                    (p.Profile.masteryRanks[i] >= MasteryCoreRules.EnhancedInvestment ? "切换增强核心" : "启用初阶核心 · 需"+MasteryCoreRules.InitialInvestment+"点");
                 MobileWorkshopAction(ref y, width, core, gold, session.IsInCamp && p.Profile.masteryRanks[i] >= MasteryCoreRules.InitialInvestment && !p.HasMasteryCore(mastery), draw,
                     () => MobileWorkshopResult(p.SelectMasteryCore(mastery, session.IsInCamp), "唯一精通核心已切换"));
             }
