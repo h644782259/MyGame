@@ -77,6 +77,14 @@ namespace Emberfall
         public static bool IsCompatible(RunBlessing blessing, HeroClass hero, int[] ranks)
         {
             if (!Enum.IsDefined(typeof(RunBlessing), blessing)) return false;
+            if (blessing == RunBlessing.FlowingEssence || blessing == RunBlessing.QuickRecovery)
+            {
+                if(ranks==null||(int)hero<0||(int)hero>=GameBalance.ClassNames.Length)return false;
+                for(int skill=0;skill<ranks.Length&&skill<GameBalance.SkillCount;skill++)
+                    if(ranks[skill]>=1&&ranks[skill]<=3&&!GameBalance.IsPassive(skill)&&
+                        (blessing==RunBlessing.FlowingEssence?GameBalance.SkillEnergyCost(hero,skill)>0:GameBalance.EffectiveCooldown(hero,skill,ranks[skill])>1))return true;
+                return false;
+            }
             if ((int)blessing >= (int)RunBlessing.KeenSight || blessing == RunBlessing.DodgeShock || blessing == RunBlessing.ExecutionMend || blessing == RunBlessing.RiskContract) return true;
             if (ranks == null) return false;
             if (blessing == RunBlessing.MarkedPursuit) return hero == HeroClass.Ranger && ranks.Length > 7 && ranks[7] > 0;
