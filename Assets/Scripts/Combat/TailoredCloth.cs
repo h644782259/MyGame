@@ -9,8 +9,8 @@ namespace Emberfall
         private const int Columns = 7, Rows = 7, SideCount = Columns * Rows;
         private Mesh mesh;
         private Vector3[] vertices;
-        private float motion, targetMotion, phase, inertiaPitch, inertiaSide;
-        public void SetInertia(float pitch,float side) { inertiaPitch=Mathf.Clamp(pitch,-14,22);inertiaSide=Mathf.Clamp(side,-12,12); }
+        private float motion, targetMotion, phase, inertiaPitch, inertiaSide, targetPitch, targetSide;
+        public void SetInertia(float pitch,float side) { targetPitch=Mathf.Clamp(pitch,-14,22);targetSide=Mathf.Clamp(side,-12,12); }
         public void SetMotion(float speed, float action) { targetMotion = Mathf.Clamp01(speed * .7f + action * .4f); }
         public void Initialize(Material material)
         {
@@ -39,6 +39,9 @@ namespace Emberfall
         {
             if (mesh == null || Time.deltaTime <= 0) return;
             motion = Mathf.Lerp(motion, targetMotion, 1f - Mathf.Exp(-Time.deltaTime * 9f));
+            float inertiaBlend=1f-Mathf.Exp(-Time.deltaTime*7f);
+            inertiaPitch=Mathf.Lerp(inertiaPitch,targetPitch,inertiaBlend);
+            inertiaSide=Mathf.Lerp(inertiaSide,targetSide,inertiaBlend);
             Deform(Time.time);
             mesh.vertices = vertices; mesh.RecalculateNormals(); mesh.RecalculateBounds();
         }
