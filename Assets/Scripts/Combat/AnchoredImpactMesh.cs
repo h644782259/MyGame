@@ -6,9 +6,6 @@ namespace Emberfall
     internal static class AnchoredImpactMesh
     {
         private const int MaximumDepth=6,MaximumTriangles=4096,MaximumChecks=4096;
-        // WorldTraversal samples every <= .18m. Inflation covers its half-step gap plus
-        // the .04m damage LOS radius, so a passing swept disk encloses every face ray.
-        private const float VisibilityMargin=.131f;
         internal static Mesh Create(Mesh source,Transform root,Vector3 offset,Vector3 scale,Quaternion rotation)
         {
             Vector3 origin=CombatFx.Flat(root.position);Vector3[] points=(Vector3[])source.vertices.Clone();
@@ -36,9 +33,7 @@ namespace Emberfall
         {
             if(triangles.Count>=MaximumTriangles*3||remainingChecks<=0)return;
             remainingChecks--;
-            Vector3 center=(a+b+c)/3;
-            float extent=Mathf.Max(CombatFx.Flat(a-center).magnitude,Mathf.Max(CombatFx.Flat(b-center).magnitude,CombatFx.Flat(c-center).magnitude));
-            if(CombatSight.VisualFootprint(origin,center,extent+VisibilityMargin))
+            if(CombatSight.VisualTriangle(origin,a,b,c))
             {
                 int first=vertices.Count;vertices.Add(root.InverseTransformPoint(a));vertices.Add(root.InverseTransformPoint(b));vertices.Add(root.InverseTransformPoint(c));uv.Add(ua);uv.Add(ub);uv.Add(uc);
                 triangles.Add(first);triangles.Add(first+1);triangles.Add(first+2);return;
