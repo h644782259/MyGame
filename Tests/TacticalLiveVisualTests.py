@@ -45,7 +45,17 @@ with tempfile.TemporaryDirectory(prefix='live-tactics-') as directory:
   capture.write_text(mutation);result=subprocess.run(command,capture_output=True,text=True)
   assert result.returncode and expected in result.stdout+result.stderr,result.stdout+result.stderr
  capture.write_text(original)
- print('PASS: compiled stale support/closed armor/duplicate ring/shared seal/zero contention controls rejected')
+ mutation=original.replace('ownerMode==OwnerMode.RoomSeal?session.TryGetRoomSeal(', 'ownerMode==OwnerMode.RoomSeal?session.TryGetChapterSeal(')
+ assert mutation!=original
+ capture.write_text(mutation);result=subprocess.run(command,capture_output=True,text=True)
+ assert result.returncode and 'room owner mode renders stable identities and independent pressure without chapter adapter' in result.stdout+result.stderr,result.stdout+result.stderr
+ capture.write_text(original)
+ mutation=original.replace('&&object.ReferenceEquals(session.Player,roomOwner)', '')
+ assert mutation!=original
+ capture.write_text(mutation);result=subprocess.run(command,capture_output=True,text=True)
+ assert result.returncode and 'replacement player same epoch cannot revive old room visuals' in result.stdout+result.stderr,result.stdout+result.stderr
+ capture.write_text(original)
+ print('PASS: compiled stale support/closed armor/duplicate ring/shared seal/zero contention/wrong room adapter/owner controls rejected')
 for file in ['GameSession.RoomTactics.cs','GameSession.Chapter.cs']:
  body=(root/'Assets/Scripts/Core'/file).read_text();assert 'CombatFx.Ring(' not in body
 assert 'guardArmorVisual=GuardArmorVisual.Attach(this)' in source
