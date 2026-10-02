@@ -189,6 +189,7 @@ namespace Emberfall
             Progression.LeveledUp -= OnLevelUp;
             ProgressionService previous = Progression;
             Progression = candidate;
+            DiscardForeignSideEventRewards();
             if (ui != null) ui.RebindProgressionNotifications(previous, candidate);
             Progression.Changed += OnProgressChanged;
             Progression.LeveledUp += OnLevelUp;
