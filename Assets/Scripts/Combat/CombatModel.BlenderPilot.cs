@@ -29,7 +29,7 @@ namespace Emberfall
             if (!supported) return false;
             transform.localPosition = Vector3.zero;
             transform.localRotation = Quaternion.identity;
-            blenderPilot.Sample(isolatedPreview?previewTime:Time.time, locomotion.Phase, locomotion.Speed, acting, actionBasic, progress, Time.time-pilotHurtStarted);
+            blenderPilot.Sample(isolatedPreview?previewTime:Time.time, locomotion.Phase, locomotion.Speed, acting, actionBasic, progress, isolatedPreview?1:Time.time-pilotHurtStarted);
             return true;
         }
         private void SetBlenderPilotVisible(bool visible)

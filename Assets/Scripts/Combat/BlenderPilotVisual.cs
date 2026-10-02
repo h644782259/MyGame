@@ -7,6 +7,8 @@ namespace Emberfall
     public static class BlenderPilotArt
     {
         public static bool Enabled;
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetForPlayerStartup() { Enabled=false; }
         internal static void ApplyMaterial(GameObject root)
         {
             Material material=Resources.Load<Material>("BlenderPilot/Pilot_Atlas_Standard");

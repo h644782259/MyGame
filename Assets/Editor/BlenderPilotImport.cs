@@ -46,7 +46,9 @@ namespace Emberfall.EditorTools
     public static class BlenderPilotMenu
     {
         private const string Key="Emberfall.BlenderPilot.Enabled";
-        static BlenderPilotMenu() { BlenderPilotArt.Enabled=SessionState.GetBool(Key,false); }
+        static BlenderPilotMenu() { ApplySessionChoice(); }
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
+        private static void ApplySessionChoice() { BlenderPilotArt.Enabled=SessionState.GetBool(Key,false); }
         [MenuItem("Emberfall/Art Pilot/Enable for Play (base outfit only)")]
         private static void Enable() { SessionState.SetBool(Key,true); BlenderPilotArt.Enabled=true; }
         [MenuItem("Emberfall/Art Pilot/Disable (procedural default)")]

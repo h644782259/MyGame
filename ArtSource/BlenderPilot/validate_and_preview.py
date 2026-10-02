@@ -21,15 +21,17 @@ bpy.ops.wm.open_mainfile(filepath=str(SOURCE/'Emberfall-Pilot-Vanguard.blend'))
 rig=bpy.data.objects['Vanguard_Rig'];skins=[bpy.data.objects['Vanguard_'+g] for g in ('Body','Clothes','Armor','Head','Back')];sw=bpy.data.objects['Vanguard_Sword'];sc=bpy.context.scene;sc.render.threads_mode='FIXED';sc.render.threads=4
 report['deformation']={};clipactions={n:bpy.data.actions['Pilot_'+n] for n in ('Idle','Move','Basic','Hit','Skill')}
 for name,act in clipactions.items():
- rig.animation_data.action=act;bounds=[];grips=[]
+ rig.animation_data.action=act;bounds=[];grips=[];grip_errors=[]
  for frame in range(int(act.frame_range.y)+1):
   sc.frame_set(frame);dg=bpy.context.evaluated_depsgraph_get();coords=[]
   for skin in skins:
    ev=skin.evaluated_get(dg);me=ev.to_mesh();coords.extend(ev.matrix_world@v.co for v in me.vertices);ev.to_mesh_clear()
   assert all(math.isfinite(c) for v in coords for c in v)
   bounds.append([min(v.z for v in coords),max(v.z for v in coords)])
-  grips.append(list(bpy.data.objects['Anchor_Grip'].matrix_world.translation))
- report['deformation'][name]={'frames_sampled':len(bounds),'min_z':min(b[0] for b in bounds),'max_z':max(b[1] for b in bounds),'grip_at_first':grips[0],'grip_at_mid':grips[len(grips)//2]}
+  grip=bpy.data.objects['Anchor_Grip'].matrix_world.translation.copy();grips.append(list(grip))
+  expected=rig.matrix_world@rig.pose.bones['Hand.R'].matrix@rig.data.bones['Hand.R'].matrix_local.inverted()@Vector((.57,-.075,1.075))
+  grip_errors.append((grip-expected).length);assert grip_errors[-1]<.00001
+ report['deformation'][name]={'max_grip_error_m':max(grip_errors),'frames_sampled':len(bounds),'min_z':min(b[0] for b in bounds),'max_z':max(b[1] for b in bounds),'grip_at_first':grips[0],'grip_at_mid':grips[len(grips)//2]}
  if os.environ.get('PILOT_RENDER_CLIPS') and name not in os.environ['PILOT_RENDER_CLIPS'].split(','):continue
  # Original native Blender frames, assembled into animation only after rendering.
  sc.render.resolution_x=384;sc.render.resolution_y=384;sc.cycles.samples=6
