@@ -710,12 +710,8 @@ namespace Emberfall
             }
             AnimateModel(towards.magnitude>.18f?1:0,0,hurtTime>0);ClampPosition();return true;
         }
-        private GameObject roomContestMarker;
         private void LateUpdate()
         {
-            bool contesting=session!=null&&session.IsRoomContesting(this);
-            if(contesting&&roomContestMarker==null)roomContestMarker=WorldBuilder.MakeRoomContestMarker(transform,NavigationRadius);
-            if(roomContestMarker!=null)roomContestMarker.SetActive(contesting);
             if(healthRoot==null) return;
             healthRoot.gameObject.SetActive(!IsDead && (aggro || Health<MaxHealth || IsBoss));
             Camera camera=Camera.main;
@@ -726,7 +722,7 @@ namespace Emberfall
             healthFill.localPosition=new Vector3((fraction-1)*width*.5f,0,-.012f);
         }
 
-        private void OnDisable() { CancelAttack(); if (roomContestMarker != null) roomContestMarker.SetActive(false); if (largeBoss != null) largeBoss.StopEncounter(); }
+        private void OnDisable() { CancelAttack(); if (largeBoss != null) largeBoss.StopEncounter(); }
 
         private void OnDestroy()
         {
