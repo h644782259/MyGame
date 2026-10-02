@@ -1,0 +1,5 @@
+COMPLETE ['hardened_probe.py']
+COMPLETE ['helper_controls.py']
+COMPLETE ['hardened_static_invariants.py']
+COMPLETE ['helper_equivalence.py', 'raw_key_counts.py']
+PASS: portable archive reproduction, baseline FAIL / candidate PASS,4923 samples

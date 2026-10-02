@@ -1,0 +1,200 @@
+{
+  "completed": true,
+  "pass": true,
+  "sourceRoot": "/workspace/emberfall_fbx_fidelity",
+  "evidenceRoot": "/workspace/emberfall_fbx_fidelity_evidence/ArtSource/Review/FBX-Fidelity",
+  "output": "/workspace/scratch/fbx-portable-repro/actual-run",
+  "blender": "/usr/bin/blender",
+  "commands": [
+    {
+      "argv": [
+        "/usr/bin/blender",
+        "-b",
+        "--threads",
+        "1",
+        "--python-exit-code",
+        "1",
+        "--python",
+        "/workspace/scratch/fbx-portable-repro/actual-run/Stage/hardened_probe.py"
+      ],
+      "exitCode": 0,
+      "elapsedSeconds": 155.2037234719901,
+      "log": "00-hardened_probe.log"
+    },
+    {
+      "argv": [
+        "/usr/bin/blender",
+        "-b",
+        "--threads",
+        "1",
+        "--python-exit-code",
+        "1",
+        "--python",
+        "/workspace/scratch/fbx-portable-repro/actual-run/Stage/helper_controls.py"
+      ],
+      "exitCode": 0,
+      "elapsedSeconds": 3.667944037995767,
+      "log": "01-helper_controls.log"
+    },
+    {
+      "argv": [
+        "/usr/bin/blender",
+        "-b",
+        "--threads",
+        "1",
+        "--python-exit-code",
+        "1",
+        "--python",
+        "/workspace/scratch/fbx-portable-repro/actual-run/Stage/hardened_static_invariants.py"
+      ],
+      "exitCode": 0,
+      "elapsedSeconds": 3.5066832110023824,
+      "log": "02-hardened_static_invariants.log"
+    },
+    {
+      "argv": [
+        "/usr/bin/blender",
+        "-b",
+        "--threads",
+        "1",
+        "--python-exit-code",
+        "1",
+        "--python",
+        "/workspace/scratch/fbx-portable-repro/actual-run/Stage/helper_equivalence.py",
+        "--python",
+        "/workspace/scratch/fbx-portable-repro/actual-run/Stage/raw_key_counts.py"
+      ],
+      "exitCode": 0,
+      "elapsedSeconds": 8.071661545007373,
+      "log": "03-helper_equivalence.log"
+    }
+  ],
+  "replacements": {
+    "hardened_probe.py": {
+      "originalSHA256": "9dd6544587e3041d9536d4fb503634226c7188c6ffad5115ae191c268fb379c4",
+      "stagedSHA256": "cecf86e606f44638cf5705cdf0938b88d0ea354c2c809a24045e459bf89910fa",
+      "changes": [
+        {
+          "from": "repo=Path('/workspace/emberfall_android_player_journey')",
+          "to": "repo=Path('/workspace/scratch/fbx-portable-repro/actual-run/Stage/Source')"
+        },
+        {
+          "from": "original=repo/'Assets/Resources/BlenderPilot/Vanguard.fbx'",
+          "to": "original=Path('/workspace/scratch/fbx-portable-repro/actual-run/Stage/Baseline/Vanguard.fbx')"
+        }
+      ]
+    },
+    "helper_controls.py": {
+      "originalSHA256": "d7343fbbccd611b6efdcaefd47ebc9b591df1375f5b2d8ea768f129bb63ce6d7",
+      "stagedSHA256": "003a40a39c4f426b40c9b7bceb65da7c9bbdbfe6ba339de9b9163aafe9c6ea21",
+      "changes": [
+        {
+          "from": "Path('/workspace/emberfall_android_player_journey/ArtSource/BlenderPilot/Emberfall-Pilot-Vanguard.blend')",
+          "to": "Path('/workspace/scratch/fbx-portable-repro/actual-run/Stage/Source/ArtSource/BlenderPilot/Emberfall-Pilot-Vanguard.blend')"
+        }
+      ]
+    },
+    "hardened_static_invariants.py": {
+      "originalSHA256": "dd0cbba3d3a19e991e7fa4ee38db7ebccb808611b4f357d5c8324daa2e27a31c",
+      "stagedSHA256": "05ac6b9b73d37e677319c47b6d5121e9c01155a7b29a598f46c28907617c0f7a",
+      "changes": [
+        {
+          "from": "Path('/workspace/emberfall_android_player_journey/Assets/Resources/BlenderPilot/Vanguard.fbx')",
+          "to": "Path('/workspace/scratch/fbx-portable-repro/actual-run/Stage/Baseline/Vanguard.fbx')"
+        }
+      ]
+    },
+    "helper_equivalence.py": {
+      "originalSHA256": "e0d3d74e3eeefe4309a45ddfe7a57e2943ec7fea285dc7f9b7f16df8a77e68af",
+      "stagedSHA256": "e0d3d74e3eeefe4309a45ddfe7a57e2943ec7fea285dc7f9b7f16df8a77e68af",
+      "changes": []
+    },
+    "raw_key_counts.py": {
+      "originalSHA256": "b0696a2fe97f6fb1ba04ee51be5e6a0eccafa41c68053be75f2d8e8edb07f4ed",
+      "stagedSHA256": "8f7913a6704050254794fa77d641f5496a884d4f9c43b3e81d30e622db8061ba",
+      "changes": [
+        {
+          "from": "Path('/workspace/emberfall_android_player_journey/Assets/Resources/BlenderPilot/Vanguard.fbx')",
+          "to": "Path('/workspace/scratch/fbx-portable-repro/actual-run/Stage/Baseline/Vanguard.fbx')"
+        }
+      ]
+    },
+    "export_vanguard_fbx.py": {
+      "originalSHA256": "969a40a114afb422a897c6ed08303739cd4d61f07045cc99a0fbd46422a2f368",
+      "stagedSHA256": "969a40a114afb422a897c6ed08303739cd4d61f07045cc99a0fbd46422a2f368",
+      "changes": []
+    },
+    "layered_pose.py": {
+      "originalSHA256": "f40548d72410dcaf86228f146714d73bf99d147d97e61abe4c95daf171233a25",
+      "stagedSHA256": "f40548d72410dcaf86228f146714d73bf99d147d97e61abe4c95daf171233a25",
+      "changes": []
+    }
+  },
+  "archiveFilesVerified": 41,
+  "archiveManifestSHA256": "e042dec1aa3c7f74ad8eaf1cca56f8802414aad98cc035fe3061865071071c9f",
+  "candidateInputHashes": {
+    "blend": "40cd32d40e0f715c953fba556623e2c62e409724721f5b954a84ab98818d7c6b",
+    "candidateFBX": "0dac3643c78b839a2d42ceee5b605f6e71f91a6addf4c9631a63c62372e5219c",
+    "helper": "969a40a114afb422a897c6ed08303739cd4d61f07045cc99a0fbd46422a2f368",
+    "EmberfallPilot_Atlas.png": "5f29f01b6022bbd56b329a518309d90745e1bd8c248c246e8c97590792761717",
+    "EmberfallPilot_MetallicSmoothness.png": "eafb0a4e74860da9fde51068bdd036d685d600531e93e6171edbe63eeffbe347"
+  },
+  "stagedInputHashes": {
+    "blend": "40cd32d40e0f715c953fba556623e2c62e409724721f5b954a84ab98818d7c6b",
+    "baselineFBX": "8b89fb808fa4ce4eb65045f6a12cb842df7ab4173977a111f44f60ddb668f529"
+  },
+  "baselineStrictPass": false,
+  "candidateStrictPass": true,
+  "samples": 4923,
+  "finiteNegativeControls": 3,
+  "helperNegativeControls": 3,
+  "candidateInputsUnchanged": true,
+  "archiveUnchanged": true,
+  "reproducedFBXSHA256": "4e128bbc8eca8c87a62cd71f10343c71a922d9ebc0323a869489c44f31f246ad",
+  "inputCandidateFBXSHA256": "0dac3643c78b839a2d42ceee5b605f6e71f91a6addf4c9631a63c62372e5219c",
+  "exportByteIdentical": false,
+  "curvesAndStaticDataExactlyMatchArchivedCandidate": true,
+  "timestampBoundary": "FBX exporter headers may include timestamps. If file bytes differ, exact imported animation curves and all verified static data above remain the acceptance comparison; this wrapper does not label the binary byte-deterministic.",
+  "UnityValidated": false,
+  "resultHashes": {
+    "00-hardened_probe.log": "61d48c866843ae1068035874f5ae18bbba33de10d7c519ed45ba9ecc73f92193",
+    "01-helper_controls.log": "0a5344d678296653bd2cd567debe69fb07bcc229750a3e826109880fb551cff0",
+    "02-hardened_static_invariants.log": "a1a1540824934d14eb08cfc2897cc4caaa6fc17f2f1329e090909840f76aadf2",
+    "03-helper_equivalence.log": "759d558b03b7624800945fe4352c97ebe96503adb00a14933765cd748503c1f2",
+    "OriginalScripts/export_vanguard_fbx.py": "969a40a114afb422a897c6ed08303739cd4d61f07045cc99a0fbd46422a2f368",
+    "OriginalScripts/hardened_probe.py": "9dd6544587e3041d9536d4fb503634226c7188c6ffad5115ae191c268fb379c4",
+    "OriginalScripts/hardened_static_invariants.py": "dd0cbba3d3a19e991e7fa4ee38db7ebccb808611b4f357d5c8324daa2e27a31c",
+    "OriginalScripts/helper_controls.py": "d7343fbbccd611b6efdcaefd47ebc9b591df1375f5b2d8ea768f129bb63ce6d7",
+    "OriginalScripts/helper_equivalence.py": "e0d3d74e3eeefe4309a45ddfe7a57e2943ec7fea285dc7f9b7f16df8a77e68af",
+    "OriginalScripts/layered_pose.py": "f40548d72410dcaf86228f146714d73bf99d147d97e61abe4c95daf171233a25",
+    "OriginalScripts/probe.py": "3da7891ff95f01f2f2fe87f086506191648f61de8a4e49be5508b8fa95b6cb61",
+    "OriginalScripts/raw_key_counts.py": "b0696a2fe97f6fb1ba04ee51be5e6a0eccafa41c68053be75f2d8e8edb07f4ed",
+    "OriginalScripts/static_invariants.py": "4d5a8cca768e7b55cda5641b054fa677fce1cf4308319a44210e5bcdf24a65b4",
+    "Stage/Baseline/EmberfallPilot_Atlas.png": "5f29f01b6022bbd56b329a518309d90745e1bd8c248c246e8c97590792761717",
+    "Stage/Baseline/EmberfallPilot_MetallicSmoothness.png": "eafb0a4e74860da9fde51068bdd036d685d600531e93e6171edbe63eeffbe347",
+    "Stage/Baseline/Vanguard.fbx": "8b89fb808fa4ce4eb65045f6a12cb842df7ab4173977a111f44f60ddb668f529",
+    "Stage/EmberfallPilot_Atlas.png": "5f29f01b6022bbd56b329a518309d90745e1bd8c248c246e8c97590792761717",
+    "Stage/EmberfallPilot_MetallicSmoothness.png": "eafb0a4e74860da9fde51068bdd036d685d600531e93e6171edbe63eeffbe347",
+    "Stage/Source/ArtSource/BlenderPilot/Emberfall-Pilot-Vanguard.blend": "40cd32d40e0f715c953fba556623e2c62e409724721f5b954a84ab98818d7c6b",
+    "Stage/Source/Assets/Resources/BlenderPilot/EmberfallPilot_Atlas.png": "5f29f01b6022bbd56b329a518309d90745e1bd8c248c246e8c97590792761717",
+    "Stage/Source/Assets/Resources/BlenderPilot/EmberfallPilot_MetallicSmoothness.png": "eafb0a4e74860da9fde51068bdd036d685d600531e93e6171edbe63eeffbe347",
+    "Stage/__pycache__/export_vanguard_fbx.cpython-313.pyc": "91a5315d6fa611ccf308b1b70d91c78a4bcc29fea8ea6d89a4d9121ebfcef1e1",
+    "Stage/__pycache__/layered_pose.cpython-313.pyc": "00939cb3260a4214f055de1c17c7468b5029b8429040d4b45c49a0c3d2b4b5a8",
+    "Stage/candidate-samples.json": "4f2c774f4bc8ce99179e61d4bbb9c00813ad63b2c6fef4ac9ef8acf63d18d3bd",
+    "Stage/candidate-stop-samples.json": "e516635352e55c1a6d7d8e99ba218807e86837c4350b14af2e6f3e6bff3be4f8",
+    "Stage/export_vanguard_fbx.py": "969a40a114afb422a897c6ed08303739cd4d61f07045cc99a0fbd46422a2f368",
+    "Stage/hardened-mixed.fbx": "26e277f912b7edd3e797eaa7baac1da7d74c1c9a832bd59a3aa29be81d6ac43e",
+    "Stage/hardened-report.json": "a7128a6a1c52242880e5c42711ddde547b244c4f403a9ea894548c35807c6403",
+    "Stage/hardened-static-invariants.json": "388f990bd19794d11ee6ad0d96b5ae51e7f871bee9db3768e28ab34e4b5f99c2",
+    "Stage/hardened_probe.py": "cecf86e606f44638cf5705cdf0938b88d0ea354c2c809a24045e459bf89910fa",
+    "Stage/hardened_static_invariants.py": "05ac6b9b73d37e677319c47b6d5121e9c01155a7b29a598f46c28907617c0f7a",
+    "Stage/helper-controls.json": "5d7af9b86fc0223bae9d7cf5782a9c6ec14b73619167f2eb8f774f60e20da933",
+    "Stage/helper-equivalence.json": "8958779cca4dfe88e61d0ad26e5abdcf4e8eda40603130e8897eb7b015019be0",
+    "Stage/helper-output.fbx": "4e128bbc8eca8c87a62cd71f10343c71a922d9ebc0323a869489c44f31f246ad",
+    "Stage/helper_controls.py": "003a40a39c4f426b40c9b7bceb65da7c9bbdbfe6ba339de9b9163aafe9c6ea21",
+    "Stage/helper_equivalence.py": "e0d3d74e3eeefe4309a45ddfe7a57e2943ec7fea285dc7f9b7f16df8a77e68af",
+    "Stage/layered_pose.py": "f40548d72410dcaf86228f146714d73bf99d147d97e61abe4c95daf171233a25",
+    "Stage/raw-key-counts.json": "7d3a47d749c8f39831f10fad1c4e0342bfe79d0e2ee0093a707cbb4a858a0e4f",
+    "Stage/raw_key_counts.py": "8f7913a6704050254794fa77d641f5496a884d4f9c43b3e81d30e622db8061ba"
+  }
+}

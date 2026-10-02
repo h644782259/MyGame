@@ -1,0 +1,54 @@
+Traceback (most recent call last):
+  File "/usr/share/blender/scripts/addons_core/io_scene_fbx/__init__.py", line 596, in execute
+    return export_fbx_bin.save(self, context, **keywords)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/share/blender/scripts/addons_core/io_scene_fbx/export_fbx_bin.py", line 3657, in save
+    ret = save_single(operator, context.scene, depsgraph, filepath, **kwargs_mod)
+  File "/usr/share/blender/scripts/addons_core/io_scene_fbx/export_fbx_bin.py", line 3507, in save_single
+    scene_data = fbx_data_from_scene(scene, depsgraph, settings)
+  File "/usr/share/blender/scripts/addons_core/io_scene_fbx/export_fbx_bin.py", line 2879, in fbx_data_from_scene
+    animations, animated, frame_start, frame_end = fbx_animations(tmp_scdata)
+                                                   ~~~~~~~~~~~~~~^^^^^^^^^^^^
+  File "/usr/share/blender/scripts/addons_core/io_scene_fbx/export_fbx_bin.py", line 2537, in fbx_animations
+    fbx_animations_do(scene_data, (ob, act), frame_start, frame_end, True,
+    ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                      objects={ob_obj}, force_keep=True))
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/scratch/fbx-portable-repro/actual-run/Stage/export_vanguard_fbx.py", line 20, in sample_clip
+    if name not in SCHEDULE or act.name!='Pilot_'+name:raise RuntimeError('Unexpected Vanguard action: '+act.name)
+                                                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+RuntimeError: Unexpected Vanguard action: Pilot_Unexpected
+
+FBX export starting... '/workspace/scratch/fbx-portable-repro/actual-run/Stage/helper-output.fbx'
+(bpy.data.armatures['Vanguard_Rig'], 'POSE')
+(bpy.data.armatures['Vanguard_Rig'], 'POSE')
+(bpy.data.armatures['Vanguard_Rig'], 'POSE')
+(bpy.data.armatures['Vanguard_Rig'], 'POSE')
+(bpy.data.armatures['Vanguard_Rig'], 'POSE')
+(bpy.data.armatures['Vanguard_Rig'], 'POSE')
+export finished in 0.5270 sec.
+
+FBX export starting... '/workspace/scratch/fbx-portable-repro/actual-run/Stage/reject.fbx'
+(bpy.data.armatures['Vanguard_Rig'], 'POSE')
+(bpy.data.armatures['Vanguard_Rig'], 'POSE')
+(bpy.data.armatures['Vanguard_Rig'], 'POSE')
+(bpy.data.armatures['Vanguard_Rig'], 'POSE')
+(bpy.data.armatures['Vanguard_Rig'], 'POSE')
+(bpy.data.armatures['Vanguard_Rig'], 'POSE')
+Error: Python: Traceback (most recent call last):
+  File "/usr/share/blender/scripts/addons_core/io_scene_fbx/__init__.py", line 596, in execute
+    return export_fbx_bin.save(self, context, **keywords)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/share/blender/scripts/addons_core/io_scene_fbx/export_fbx_bin.py", line 3657, in save
+    ret = save_single(operator, context.scene, depsgraph, filepath, **kwargs_mod)
+  File "/usr/share/blender/scripts/addons_core/io_scene_fbx/export_fbx_bin.py", line 3507, in save_single
+    scene_data = fbx_data_from_scene(scene, depsgraph, settings)
+  File "/usr/share/blender/scripts/addons_core/io_scene_fbx/export_fbx_bin.py", line 2879, in fbx_data_from_scene
+    animations, animated, frame_start, frame_end = fbx_animations(tmp_scdata)
+                                                   ~~~~~~~~~~~~~~^^^^^^^^^^^^
+  File "/usr/share/blender/scripts/addons_core/io_scene_fbx/export_fbx_bin.py", line 2537, in fbx_animations
+    fbx_... truncatedPASS helper final export and three fail-closed controls
+Blender 4.3.2
+Read blend: "/workspace/scratch/fbx-portable-repro/actual-run/Stage/Source/ArtSource/BlenderPilot/Emberfall-Pilot-Vanguard.blend"
+
+Blender quit

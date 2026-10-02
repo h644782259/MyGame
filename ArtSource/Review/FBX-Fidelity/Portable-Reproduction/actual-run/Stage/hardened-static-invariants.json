@@ -1,0 +1,61 @@
+{
+  "baseline": {
+    "Anchor_BladeRoot": "022247eee130f99770fe7975e3458f2be885628afaba0eb58473809eca6f2aba",
+    "Anchor_Emission": "d6739265b780f5da1ab4fe95c76781d922503ea552ac362be0306c5a5f0e8622",
+    "Anchor_Grip": "5ed778d09ff3cd94aa5dc3d9d46a708f93f3da6192b1795d1f8e3264140e92dc",
+    "Anchor_Guard": "80002af987d08117d20447258890388d1e577a7e8b12bc994f279ebf2b393b7b",
+    "Anchor_Pommel": "a5a6b138243c7607c1cbd525c3eec96ca6a74f5bfe3fc7f95a7d6cde14bcde81",
+    "Anchor_Tip": "8bc74fd7bca1eff3fda8dff1ca498d346c2ea2667fd34c5cf0b05da62f061a46",
+    "Vanguard_Armor": "cc94434bd97cfacd7431c1223963685cdb585060b33d4a0b2f95c7d572d5ffa3",
+    "Vanguard_Back": "eaebac8f4e33e88c4e0b0488b5fc15db7d7f1e742bc90e2b25ebad0972cbcf10",
+    "Vanguard_Body": "f1d5a42b002b302a748981920ece16bc32b1396d4655ee1455e818f5a5670d25",
+    "Vanguard_Clothes": "066bde304e99f981ad50ab8f5b7a95e6c4f353242962cccc1d64e7861ea58968",
+    "Vanguard_Head": "51076d397931f9ebe3f0d2304823c6714313b36794b663376f82089cfd73d939",
+    "Vanguard_Rig": "3d3bba8a0469bdf5aae88444b84101025c7d72e3b619255fbec12cd832d98763",
+    "Vanguard_Sword": "7104747a4877919010efe48f010179fb701f8d7d022a6249b6fdd608a71ab49d",
+    "materials": "c07a50daedfd0269493917b6af21530a6fd0f1e9809f419009c34ca159641a71"
+  },
+  "candidates": {
+    "hardened-mixed.fbx": {
+      "staticEqual": true,
+      "differentEntries": [],
+      "sha256ByEntry": {
+        "Anchor_BladeRoot": "022247eee130f99770fe7975e3458f2be885628afaba0eb58473809eca6f2aba",
+        "Anchor_Emission": "d6739265b780f5da1ab4fe95c76781d922503ea552ac362be0306c5a5f0e8622",
+        "Anchor_Grip": "5ed778d09ff3cd94aa5dc3d9d46a708f93f3da6192b1795d1f8e3264140e92dc",
+        "Anchor_Guard": "80002af987d08117d20447258890388d1e577a7e8b12bc994f279ebf2b393b7b",
+        "Anchor_Pommel": "a5a6b138243c7607c1cbd525c3eec96ca6a74f5bfe3fc7f95a7d6cde14bcde81",
+        "Anchor_Tip": "8bc74fd7bca1eff3fda8dff1ca498d346c2ea2667fd34c5cf0b05da62f061a46",
+        "Vanguard_Armor": "cc94434bd97cfacd7431c1223963685cdb585060b33d4a0b2f95c7d572d5ffa3",
+        "Vanguard_Back": "eaebac8f4e33e88c4e0b0488b5fc15db7d7f1e742bc90e2b25ebad0972cbcf10",
+        "Vanguard_Body": "f1d5a42b002b302a748981920ece16bc32b1396d4655ee1455e818f5a5670d25",
+        "Vanguard_Clothes": "066bde304e99f981ad50ab8f5b7a95e6c4f353242962cccc1d64e7861ea58968",
+        "Vanguard_Head": "51076d397931f9ebe3f0d2304823c6714313b36794b663376f82089cfd73d939",
+        "Vanguard_Rig": "3d3bba8a0469bdf5aae88444b84101025c7d72e3b619255fbec12cd832d98763",
+        "Vanguard_Sword": "7104747a4877919010efe48f010179fb701f8d7d022a6249b6fdd608a71ab49d",
+        "materials": "c07a50daedfd0269493917b6af21530a6fd0f1e9809f419009c34ca159641a71"
+      }
+    },
+    "helper-output.fbx": {
+      "staticEqual": true,
+      "differentEntries": [],
+      "sha256ByEntry": {
+        "Anchor_BladeRoot": "022247eee130f99770fe7975e3458f2be885628afaba0eb58473809eca6f2aba",
+        "Anchor_Emission": "d6739265b780f5da1ab4fe95c76781d922503ea552ac362be0306c5a5f0e8622",
+        "Anchor_Grip": "5ed778d09ff3cd94aa5dc3d9d46a708f93f3da6192b1795d1f8e3264140e92dc",
+        "Anchor_Guard": "80002af987d08117d20447258890388d1e577a7e8b12bc994f279ebf2b393b7b",
+        "Anchor_Pommel": "a5a6b138243c7607c1cbd525c3eec96ca6a74f5bfe3fc7f95a7d6cde14bcde81",
+        "Anchor_Tip": "8bc74fd7bca1eff3fda8dff1ca498d346c2ea2667fd34c5cf0b05da62f061a46",
+        "Vanguard_Armor": "cc94434bd97cfacd7431c1223963685cdb585060b33d4a0b2f95c7d572d5ffa3",
+        "Vanguard_Back": "eaebac8f4e33e88c4e0b0488b5fc15db7d7f1e742bc90e2b25ebad0972cbcf10",
+        "Vanguard_Body": "f1d5a42b002b302a748981920ece16bc32b1396d4655ee1455e818f5a5670d25",
+        "Vanguard_Clothes": "066bde304e99f981ad50ab8f5b7a95e6c4f353242962cccc1d64e7861ea58968",
+        "Vanguard_Head": "51076d397931f9ebe3f0d2304823c6714313b36794b663376f82089cfd73d939",
+        "Vanguard_Rig": "3d3bba8a0469bdf5aae88444b84101025c7d72e3b619255fbec12cd832d98763",
+        "Vanguard_Sword": "7104747a4877919010efe48f010179fb701f8d7d022a6249b6fdd608a71ab49d",
+        "materials": "c07a50daedfd0269493917b6af21530a6fd0f1e9809f419009c34ca159641a71"
+      }
+    }
+  },
+  "scope": "Blender reimport exact static geometry/topology/UV/weights/vertex+corner+polygon normals/face material index; bind bones; socket transform defaults; full material input defaults and linked texture bytes/colorspace; not Unity"
+}

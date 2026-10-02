@@ -1,0 +1,590 @@
+{
+  "blender": "4.3.2",
+  "sourceBlendSha256": "40cd32d40e0f715c953fba556623e2c62e409724721f5b954a84ab98818d7c6b",
+  "baselineFBXSha256": "8b89fb808fa4ce4eb65045f6a12cb842df7ab4173977a111f44f60ddb668f529",
+  "thresholdM": 0.0001,
+  "UnityValidated": false,
+  "steps": {
+    "baseline": {
+      "bytes": 1018460,
+      "byteRatio": 1.0,
+      "sha256": "8b89fb808fa4ce4eb65045f6a12cb842df7ab4173977a111f44f60ddb668f529",
+      "inventory": {
+        "bones": {
+          "Root": null,
+          "Pelvis": "Root",
+          "Spine": "Pelvis",
+          "Head": "Spine",
+          "Mantle": "Spine",
+          "UpperArm.L": "Spine",
+          "Forearm.L": "UpperArm.L",
+          "Hand.L": "Forearm.L",
+          "UpperArm.R": "Spine",
+          "Forearm.R": "UpperArm.R",
+          "Hand.R": "Forearm.R",
+          "Thigh.L": "Pelvis",
+          "Shin.L": "Thigh.L",
+          "Foot.L": "Shin.L",
+          "Tabard.L": "Pelvis",
+          "Thigh.R": "Pelvis",
+          "Shin.R": "Thigh.R",
+          "Foot.R": "Shin.R",
+          "Tabard.R": "Pelvis"
+        },
+        "actions": {
+          "Idle": {
+            "range": [
+              1.0,
+              101.0
+            ],
+            "channels": 199,
+            "keys": 20099
+          },
+          "Move": {
+            "range": [
+              1.0,
+              41.0
+            ],
+            "channels": 199,
+            "keys": 8159
+          },
+          "Basic": {
+            "range": [
+              1.0,
+              26.0
+            ],
+            "channels": 199,
+            "keys": 5174
+          },
+          "Hit": {
+            "range": [
+              1.0,
+              21.0
+            ],
+            "channels": 199,
+            "keys": 4179
+          },
+          "Skill": {
+            "range": [
+              1.0,
+              51.0
+            ],
+            "channels": 199,
+            "keys": 10149
+          }
+        },
+        "meshVertices": {
+          "Body": 176,
+          "Clothes": 292,
+          "Armor": 450,
+          "Head": 220,
+          "Back": 108,
+          "Sword": 226
+        },
+        "anchors": {
+          "Grip": {
+            "parent": "Vanguard_Rig",
+            "parentBone": "Hand.R"
+          },
+          "Guard": {
+            "parent": "Vanguard_Rig",
+            "parentBone": "Hand.R"
+          },
+          "BladeRoot": {
+            "parent": "Vanguard_Rig",
+            "parentBone": "Hand.R"
+          },
+          "Tip": {
+            "parent": "Vanguard_Rig",
+            "parentBone": "Hand.R"
+          },
+          "Pommel": {
+            "parent": "Vanguard_Rig",
+            "parentBone": "Hand.R"
+          },
+          "Emission": {
+            "parent": "Vanguard_Rig",
+            "parentBone": "Hand.R"
+          }
+        }
+      },
+      "maxima": {
+        "Idle": {
+          "vertexM": 1.2345501545496518e-06,
+          "socketM": 9.684608464999152e-07,
+          "integerVertexM": 1.0062422006740235e-06,
+          "integerSocketM": 7.372687385590661e-07,
+          "samples": 1801,
+          "vertexAt": {
+            "frame": 67.6875,
+            "domain": "fractional",
+            "mesh": "Sword"
+          },
+          "socketAt": {
+            "frame": 79.137,
+            "domain": "fractional",
+            "anchor": "Tip"
+          }
+        },
+        "Move": {
+          "vertexM": 1.2516975402832031e-06,
+          "socketM": 1.2302260065406736e-06,
+          "integerVertexM": 9.991558727051597e-07,
+          "integerSocketM": 9.629425061585611e-07,
+          "samples": 721,
+          "vertexAt": {
+            "frame": 5.9375,
+            "domain": "fractional",
+            "mesh": "Sword"
+          },
+          "socketAt": {
+            "frame": 25.125,
+            "domain": "fractional",
+            "anchor": "Tip"
+          }
+        },
+        "Basic": {
+          "vertexM": 0.01558282133191824,
+          "socketM": 0.015582523962304865,
+          "integerVertexM": 9.005036645248765e-07,
+          "integerSocketM": 8.724499445143013e-07,
+          "samples": 851,
+          "vertexAt": {
+            "frame": 9.5,
+            "domain": "fractional",
+            "mesh": "Sword"
+          },
+          "socketAt": {
+            "frame": 9.5,
+            "domain": "fractional",
+            "anchor": "Tip"
+          }
+        },
+        "Hit": {
+          "vertexM": 0.00015146270743571222,
+          "socketM": 0.00015160540700313174,
+          "integerVertexM": 1.2057977301083156e-06,
+          "integerSocketM": 8.134450950596441e-07,
+          "samples": 361,
+          "vertexAt": {
+            "frame": 0.5,
+            "domain": "fractional",
+            "mesh": "Sword"
+          },
+          "socketAt": {
+            "frame": 0.5,
+            "domain": "fractional",
+            "anchor": "Tip"
+          }
+        },
+        "Skill": {
+          "vertexM": 0.0003250865265727043,
+          "socketM": 0.00032492548058367236,
+          "integerVertexM": 1.0994593822033494e-06,
+          "integerSocketM": 8.36591055847299e-07,
+          "samples": 901,
+          "vertexAt": {
+            "frame": 0.5,
+            "domain": "fractional",
+            "mesh": "Sword"
+          },
+          "socketAt": {
+            "frame": 0.5,
+            "domain": "fractional",
+            "anchor": "Tip"
+          }
+        },
+        "layered": {
+          "vertexM": 0.0006716488860547543,
+          "socketM": 0.000671748953137516,
+          "integerVertexM": 0,
+          "integerSocketM": 0,
+          "samples": 288,
+          "vertexAt": {
+            "scenario": "continuous-forward",
+            "index": 30,
+            "time": 1.2500001,
+            "progress": 0.7808693,
+            "mesh": "Sword"
+          },
+          "socketAt": {
+            "scenario": "continuous-forward",
+            "index": 30,
+            "time": 1.2500001,
+            "progress": 0.7808693,
+            "anchor": "Tip"
+          }
+        }
+      },
+      "completed": true,
+      "strictPass": false,
+      "elapsedSeconds": 74.103028292011
+    },
+    "hardened-mixed": {
+      "bytes": 1439516,
+      "byteRatio": 1.413424189462522,
+      "sha256": "26e277f912b7edd3e797eaa7baac1da7d74c1c9a832bd59a3aa29be81d6ac43e",
+      "inventory": {
+        "bones": {
+          "Root": null,
+          "Pelvis": "Root",
+          "Spine": "Pelvis",
+          "Head": "Spine",
+          "Mantle": "Spine",
+          "UpperArm.L": "Spine",
+          "Forearm.L": "UpperArm.L",
+          "Hand.L": "Forearm.L",
+          "UpperArm.R": "Spine",
+          "Forearm.R": "UpperArm.R",
+          "Hand.R": "Forearm.R",
+          "Thigh.L": "Pelvis",
+          "Shin.L": "Thigh.L",
+          "Foot.L": "Shin.L",
+          "Tabard.L": "Pelvis",
+          "Thigh.R": "Pelvis",
+          "Shin.R": "Thigh.R",
+          "Foot.R": "Shin.R",
+          "Tabard.R": "Pelvis"
+        },
+        "actions": {
+          "Idle": {
+            "range": [
+              1.0,
+              101.0
+            ],
+            "channels": 199,
+            "keys": 20099
+          },
+          "Move": {
+            "range": [
+              1.0,
+              41.0
+            ],
+            "channels": 199,
+            "keys": 8159
+          },
+          "Basic": {
+            "range": [
+              1.0,
+              26.0
+            ],
+            "channels": 199,
+            "keys": 79799
+          },
+          "Hit": {
+            "range": [
+              1.0,
+              21.0
+            ],
+            "channels": 199,
+            "keys": 8159
+          },
+          "Skill": {
+            "range": [
+              1.0,
+              51.0
+            ],
+            "channels": 199,
+            "keys": 20099
+          }
+        },
+        "meshVertices": {
+          "Body": 176,
+          "Clothes": 292,
+          "Armor": 450,
+          "Head": 220,
+          "Back": 108,
+          "Sword": 226
+        },
+        "anchors": {
+          "Grip": {
+            "parent": "Vanguard_Rig",
+            "parentBone": "Hand.R"
+          },
+          "Guard": {
+            "parent": "Vanguard_Rig",
+            "parentBone": "Hand.R"
+          },
+          "BladeRoot": {
+            "parent": "Vanguard_Rig",
+            "parentBone": "Hand.R"
+          },
+          "Tip": {
+            "parent": "Vanguard_Rig",
+            "parentBone": "Hand.R"
+          },
+          "Pommel": {
+            "parent": "Vanguard_Rig",
+            "parentBone": "Hand.R"
+          },
+          "Emission": {
+            "parent": "Vanguard_Rig",
+            "parentBone": "Hand.R"
+          }
+        }
+      },
+      "maxima": {
+        "Idle": {
+          "vertexM": 1.2345501545496518e-06,
+          "socketM": 9.684608464999152e-07,
+          "integerVertexM": 1.0062422006740235e-06,
+          "integerSocketM": 7.372687385590661e-07,
+          "samples": 1801,
+          "vertexAt": {
+            "frame": 67.6875,
+            "domain": "fractional",
+            "mesh": "Sword"
+          },
+          "socketAt": {
+            "frame": 79.137,
+            "domain": "fractional",
+            "anchor": "Tip"
+          }
+        },
+        "Move": {
+          "vertexM": 1.2516975402832031e-06,
+          "socketM": 1.2302260065406736e-06,
+          "integerVertexM": 9.991558727051597e-07,
+          "integerSocketM": 9.629425061585611e-07,
+          "samples": 721,
+          "vertexAt": {
+            "frame": 5.9375,
+            "domain": "fractional",
+            "mesh": "Sword"
+          },
+          "socketAt": {
+            "frame": 25.125,
+            "domain": "fractional",
+            "anchor": "Tip"
+          }
+        },
+        "Basic": {
+          "vertexM": 6.164451770018786e-05,
+          "socketM": 6.146808284190299e-05,
+          "integerVertexM": 9.005036645248765e-07,
+          "integerSocketM": 8.724499445143013e-07,
+          "samples": 851,
+          "vertexAt": {
+            "frame": 9.84375,
+            "domain": "fractional",
+            "mesh": "Sword"
+          },
+          "socketAt": {
+            "frame": 9.84375,
+            "domain": "fractional",
+            "anchor": "Tip"
+          }
+        },
+        "Hit": {
+          "vertexM": 3.84247068723198e-05,
+          "socketM": 3.8661366396683726e-05,
+          "integerVertexM": 1.2057977301083156e-06,
+          "integerSocketM": 8.134450950596441e-07,
+          "samples": 361,
+          "vertexAt": {
+            "frame": 0.25,
+            "domain": "fractional",
+            "mesh": "Sword"
+          },
+          "socketAt": {
+            "frame": 0.25,
+            "domain": "fractional",
+            "anchor": "Tip"
+          }
+        },
+        "Skill": {
+          "vertexM": 8.23729278636165e-05,
+          "socketM": 8.222833942441841e-05,
+          "integerVertexM": 1.0994593822033494e-06,
+          "integerSocketM": 8.36591055847299e-07,
+          "samples": 901,
+          "vertexAt": {
+            "frame": 0.25,
+            "domain": "fractional",
+            "mesh": "Sword"
+          },
+          "socketAt": {
+            "frame": 0.25,
+            "domain": "fractional",
+            "anchor": "Tip"
+          }
+        },
+        "layered": {
+          "vertexM": 2.9520851967390627e-06,
+          "socketM": 2.7988807873425235e-06,
+          "integerVertexM": 0,
+          "integerSocketM": 0,
+          "samples": 288,
+          "vertexAt": {
+            "scenario": "stop1.4-restart2.4",
+            "index": 52,
+            "time": 2.1666667,
+            "progress": 0.76347804,
+            "mesh": "Sword"
+          },
+          "socketAt": {
+            "scenario": "continuous-forward",
+            "index": 108,
+            "time": 4.5,
+            "progress": 0.76347804,
+            "anchor": "Tip"
+          }
+        }
+      },
+      "completed": true,
+      "strictPass": true,
+      "elapsedSeconds": 68.3459088330128
+    }
+  },
+  "completed": true,
+  "finiteGuardNegativeControls": [
+    {
+      "case": "meshNaN",
+      "rejected": true
+    },
+    {
+      "case": "meshInfinity",
+      "rejected": true
+    },
+    {
+      "case": "socketNaN",
+      "rejected": true
+    }
+  ],
+  "sourceInventory": {
+    "bones": {
+      "Root": null,
+      "Pelvis": "Root",
+      "Spine": "Pelvis",
+      "Head": "Spine",
+      "Mantle": "Spine",
+      "UpperArm.L": "Spine",
+      "Forearm.L": "UpperArm.L",
+      "Hand.L": "Forearm.L",
+      "UpperArm.R": "Spine",
+      "Forearm.R": "UpperArm.R",
+      "Hand.R": "Forearm.R",
+      "Thigh.L": "Pelvis",
+      "Shin.L": "Thigh.L",
+      "Foot.L": "Shin.L",
+      "Tabard.L": "Pelvis",
+      "Thigh.R": "Pelvis",
+      "Shin.R": "Thigh.R",
+      "Foot.R": "Shin.R",
+      "Tabard.R": "Pelvis"
+    },
+    "actions": {
+      "Idle": {
+        "range": [
+          0.0,
+          100.0
+        ],
+        "channels": 171,
+        "keys": 8721
+      },
+      "Move": {
+        "range": [
+          0.0,
+          40.0
+        ],
+        "channels": 171,
+        "keys": 3591
+      },
+      "Basic": {
+        "range": [
+          0.0,
+          25.0
+        ],
+        "channels": 171,
+        "keys": 2565
+      },
+      "Hit": {
+        "range": [
+          0.0,
+          20.0
+        ],
+        "channels": 171,
+        "keys": 1881
+      },
+      "Skill": {
+        "range": [
+          0.0,
+          50.0
+        ],
+        "channels": 171,
+        "keys": 4446
+      }
+    },
+    "meshVertices": {
+      "Body": 176,
+      "Clothes": 292,
+      "Armor": 450,
+      "Head": 220,
+      "Back": 108,
+      "Sword": 226
+    },
+    "anchors": {
+      "Grip": {
+        "parent": "Vanguard_Rig",
+        "parentBone": "Hand.R"
+      },
+      "Guard": {
+        "parent": "Vanguard_Rig",
+        "parentBone": "Hand.R"
+      },
+      "BladeRoot": {
+        "parent": "Vanguard_Rig",
+        "parentBone": "Hand.R"
+      },
+      "Tip": {
+        "parent": "Vanguard_Rig",
+        "parentBone": "Hand.R"
+      },
+      "Pommel": {
+        "parent": "Vanguard_Rig",
+        "parentBone": "Hand.R"
+      },
+      "Emission": {
+        "parent": "Vanguard_Rig",
+        "parentBone": "Hand.R"
+      }
+    }
+  },
+  "inputs": {
+    "candidate-samples.json": "4f2c774f4bc8ce99179e61d4bbb9c00813ad63b2c6fef4ac9ef8acf63d18d3bd",
+    "candidate-stop-samples.json": "e516635352e55c1a6d7d8e99ba218807e86837c4350b14af2e6f3e6bff3be4f8"
+  },
+  "sampleCounts": {
+    "Idle": 1801,
+    "Move": 721,
+    "Basic": 851,
+    "Hit": 361,
+    "Skill": 901,
+    "layered": 288
+  },
+  "denseDomain": "Each clip every 1/16 source frame plus .137 and .731 offsets within every integer interval; endpoints included. Layered exact prior 288 policy samples.",
+  "perClipExportCalls": [
+    {
+      "action": "Pilot_Basic",
+      "step": 0.0625
+    },
+    {
+      "action": "Pilot_Hit",
+      "step": 0.5
+    },
+    {
+      "action": "Pilot_Idle",
+      "step": 1.0
+    },
+    {
+      "action": "Pilot_Move",
+      "step": 1.0
+    },
+    {
+      "action": "Pilot_Skill",
+      "step": 0.5
+    }
+  ],
+  "additionalBasicDomain": "Every1/32 frame; all original4523 samples retained (4923 total).",
+  "sourceFilesUnchanged": true
+}

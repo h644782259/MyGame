@@ -1,0 +1,29 @@
+{
+  "Vanguard.fbx": {
+    "fbxVersion": 7400,
+    "rawAnimationCurveCount": 900,
+    "rawKeyTimeCount": 43200,
+    "curvesMinMaxKeys": [
+      21,
+      101
+    ]
+  },
+  "hardened-mixed.fbx": {
+    "fbxVersion": 7400,
+    "rawAnimationCurveCount": 900,
+    "rawKeyTimeCount": 123300,
+    "curvesMinMaxKeys": [
+      41,
+      401
+    ]
+  },
+  "helper-output.fbx": {
+    "fbxVersion": 7400,
+    "rawAnimationCurveCount": 900,
+    "rawKeyTimeCount": 123300,
+    "curvesMinMaxKeys": [
+      41,
+      401
+    ]
+  }
+}

@@ -1,0 +1,45 @@
+{
+  "exportCalls": [
+    {
+      "action": "Pilot_Basic",
+      "step": 0.0625
+    },
+    {
+      "action": "Pilot_Hit",
+      "step": 0.5
+    },
+    {
+      "action": "Pilot_Idle",
+      "step": 1.0
+    },
+    {
+      "action": "Pilot_Move",
+      "step": 1.0
+    },
+    {
+      "action": "Pilot_Skill",
+      "step": 0.5
+    }
+  ],
+  "negativeControls": [
+    {
+      "case": "wrong-suffix",
+      "rejected": true,
+      "message": "Output must have .fbx suffix",
+      "exportFunctionRestored": true
+    },
+    {
+      "case": "wrong-selection",
+      "rejected": true,
+      "message": "Select only Vanguard rig, six meshes and six anchors",
+      "exportFunctionRestored": true
+    },
+    {
+      "case": "unknown-action",
+      "rejected": true,
+      "message": "Error: Python: Traceback (most recent call last):\n  File \"/usr/share/blender/scripts/addons_core/io_scene_fbx/__init__.py\", line 596, in execute\n    return export_fbx_bin.save(self, context, **keywords)\n           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/usr/share/blender/scripts/addons_core/io_scene_fbx/export_fbx_bin.py\", line 3657, in save\n    ret = save_single(operator, context.scene, depsgraph, filepath, **kwargs_mod)\n  File \"/usr/share/blender/scripts/addons_core/io_scene_fbx/export_fbx_bin.py\", line 3507, in save_single\n    scene_data = fbx_data_from_scene(scene, depsgraph, settings)\n  File \"/usr/share/blender/scripts/addons_core/io_scene_fbx/export_fbx_bin.py\", line 2879, in fbx_data_from_scene\n    animations, animated, frame_start, frame_end = fbx_animations(tmp_scdata)\n                                                   ~~~~~~~~~~~~~~^^^^^^^^^^^^\n  File \"/usr/share/blender/scripts/addons_core/io_scene_fbx/export_fbx_bin.py\", line 2537, in fbx_animations\n    fbx_animations_do(scene_data, (ob, act), frame_start, frame_end, True,\n    ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n                      objects={ob_obj}, force_keep=True))\n                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/workspace/scratch/fbx-portable-repro/actual-run/Stage/export_vanguard_fbx.py\", line 20, in sample_clip\n    if name not in SCHEDULE or act.name!='Pilot_'+name:raise RuntimeError('Unexpected Vanguard action: '+act.name)\n                                                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nRuntimeError: Unexpected Vanguard action: Pilot_Unexpected\nLocation: /usr/share/blender/scripts/modules/bpy/ops.py:109\n",
+      "exportFunctionRestored": true
+    }
+  ],
+  "pass": true
+}

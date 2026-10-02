@@ -1,0 +1,22 @@
+{
+  "/workspace/emberfall_fbx_fidelity/Assets/Resources/BlenderPilot/Vanguard.fbx": {
+    "Version": 1000,
+    "Year": 2026,
+    "Month": 10,
+    "Day": 2,
+    "Hour": 21,
+    "Minute": 2,
+    "Second": 4,
+    "Millisecond": 874
+  },
+  "/workspace/scratch/fbx-portable-repro/actual-run/Stage/helper-output.fbx": {
+    "Version": 1000,
+    "Year": 2026,
+    "Month": 10,
+    "Day": 2,
+    "Hour": 21,
+    "Minute": 14,
+    "Second": 21,
+    "Millisecond": 956
+  }
+}

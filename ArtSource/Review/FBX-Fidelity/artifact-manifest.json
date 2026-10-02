@@ -1,5 +1,5 @@
 {
-  "scope": "Frozen FBX candidate scoped evidence; full198 pending",
+  "scope": "Frozen FBX candidate scoped and independent portable reproduction evidence; full198 pending",
   "files": {
     "Experiment/EmberfallPilot_Atlas.png": {
       "bytes": 711012,
@@ -161,9 +161,145 @@
       "bytes": 30106,
       "sha256": "e516635352e55c1a6d7d8e99ba218807e86837c4350b14af2e6f3e6bff3be4f8"
     },
+    "Portable-Reproduction/README.md": {
+      "bytes": 2635,
+      "sha256": "ea5a99c2281220564df3b63bb6819b599fdeb3725be787a34012ebf5c7f3edc6"
+    },
+    "Portable-Reproduction/actual-run/00-hardened_probe.log": {
+      "bytes": 5678,
+      "sha256": "61d48c866843ae1068035874f5ae18bbba33de10d7c519ed45ba9ecc73f92193"
+    },
+    "Portable-Reproduction/actual-run/01-helper_controls.log": {
+      "bytes": 3632,
+      "sha256": "0a5344d678296653bd2cd567debe69fb07bcc229750a3e826109880fb551cff0"
+    },
+    "Portable-Reproduction/actual-run/02-hardened_static_invariants.log": {
+      "bytes": 2981,
+      "sha256": "a1a1540824934d14eb08cfc2897cc4caaa6fc17f2f1329e090909840f76aadf2"
+    },
+    "Portable-Reproduction/actual-run/03-helper_equivalence.log": {
+      "bytes": 769,
+      "sha256": "759d558b03b7624800945fe4352c97ebe96503adb00a14933765cd748503c1f2"
+    },
+    "Portable-Reproduction/actual-run/OriginalScripts/export_vanguard_fbx.py": {
+      "bytes": 3172,
+      "sha256": "969a40a114afb422a897c6ed08303739cd4d61f07045cc99a0fbd46422a2f368"
+    },
+    "Portable-Reproduction/actual-run/OriginalScripts/hardened_probe.py": {
+      "bytes": 7663,
+      "sha256": "9dd6544587e3041d9536d4fb503634226c7188c6ffad5115ae191c268fb379c4"
+    },
+    "Portable-Reproduction/actual-run/OriginalScripts/hardened_static_invariants.py": {
+      "bytes": 3817,
+      "sha256": "dd0cbba3d3a19e991e7fa4ee38db7ebccb808611b4f357d5c8324daa2e27a31c"
+    },
+    "Portable-Reproduction/actual-run/OriginalScripts/helper_controls.py": {
+      "bytes": 1611,
+      "sha256": "d7343fbbccd611b6efdcaefd47ebc9b591df1375f5b2d8ea768f129bb63ce6d7"
+    },
+    "Portable-Reproduction/actual-run/OriginalScripts/helper_equivalence.py": {
+      "bytes": 1327,
+      "sha256": "e0d3d74e3eeefe4309a45ddfe7a57e2943ec7fea285dc7f9b7f16df8a77e68af"
+    },
+    "Portable-Reproduction/actual-run/OriginalScripts/layered_pose.py": {
+      "bytes": 1562,
+      "sha256": "f40548d72410dcaf86228f146714d73bf99d147d97e61abe4c95daf171233a25"
+    },
+    "Portable-Reproduction/actual-run/OriginalScripts/probe.py": {
+      "bytes": 8175,
+      "sha256": "3da7891ff95f01f2f2fe87f086506191648f61de8a4e49be5508b8fa95b6cb61"
+    },
+    "Portable-Reproduction/actual-run/OriginalScripts/raw_key_counts.py": {
+      "bytes": 780,
+      "sha256": "b0696a2fe97f6fb1ba04ee51be5e6a0eccafa41c68053be75f2d8e8edb07f4ed"
+    },
+    "Portable-Reproduction/actual-run/OriginalScripts/static_invariants.py": {
+      "bytes": 2204,
+      "sha256": "4d5a8cca768e7b55cda5641b054fa677fce1cf4308319a44210e5bcdf24a65b4"
+    },
+    "Portable-Reproduction/actual-run/Stage/candidate-samples.json": {
+      "bytes": 29939,
+      "sha256": "4f2c774f4bc8ce99179e61d4bbb9c00813ad63b2c6fef4ac9ef8acf63d18d3bd"
+    },
+    "Portable-Reproduction/actual-run/Stage/candidate-stop-samples.json": {
+      "bytes": 30106,
+      "sha256": "e516635352e55c1a6d7d8e99ba218807e86837c4350b14af2e6f3e6bff3be4f8"
+    },
+    "Portable-Reproduction/actual-run/Stage/export_vanguard_fbx.py": {
+      "bytes": 3172,
+      "sha256": "969a40a114afb422a897c6ed08303739cd4d61f07045cc99a0fbd46422a2f368"
+    },
+    "Portable-Reproduction/actual-run/Stage/hardened-report.json": {
+      "bytes": 15011,
+      "sha256": "a7128a6a1c52242880e5c42711ddde547b244c4f403a9ea894548c35807c6403"
+    },
+    "Portable-Reproduction/actual-run/Stage/hardened-static-invariants.json": {
+      "bytes": 4378,
+      "sha256": "388f990bd19794d11ee6ad0d96b5ae51e7f871bee9db3768e28ab34e4b5f99c2"
+    },
+    "Portable-Reproduction/actual-run/Stage/hardened_probe.py": {
+      "bytes": 7716,
+      "sha256": "cecf86e606f44638cf5705cdf0938b88d0ea354c2c809a24045e459bf89910fa"
+    },
+    "Portable-Reproduction/actual-run/Stage/hardened_static_invariants.py": {
+      "bytes": 3807,
+      "sha256": "05ac6b9b73d37e677319c47b6d5121e9c01155a7b29a598f46c28907617c0f7a"
+    },
+    "Portable-Reproduction/actual-run/Stage/helper-controls.json": {
+      "bytes": 2590,
+      "sha256": "5d7af9b86fc0223bae9d7cf5782a9c6ec14b73619167f2eb8f774f60e20da933"
+    },
+    "Portable-Reproduction/actual-run/Stage/helper-equivalence.json": {
+      "bytes": 1207,
+      "sha256": "8958779cca4dfe88e61d0ad26e5abdcf4e8eda40603130e8897eb7b015019be0"
+    },
+    "Portable-Reproduction/actual-run/Stage/helper_controls.py": {
+      "bytes": 1629,
+      "sha256": "003a40a39c4f426b40c9b7bceb65da7c9bbdbfe6ba339de9b9163aafe9c6ea21"
+    },
+    "Portable-Reproduction/actual-run/Stage/helper_equivalence.py": {
+      "bytes": 1327,
+      "sha256": "e0d3d74e3eeefe4309a45ddfe7a57e2943ec7fea285dc7f9b7f16df8a77e68af"
+    },
+    "Portable-Reproduction/actual-run/Stage/layered_pose.py": {
+      "bytes": 1562,
+      "sha256": "f40548d72410dcaf86228f146714d73bf99d147d97e61abe4c95daf171233a25"
+    },
+    "Portable-Reproduction/actual-run/Stage/raw-key-counts.json": {
+      "bytes": 514,
+      "sha256": "7d3a47d749c8f39831f10fad1c4e0342bfe79d0e2ee0093a707cbb4a858a0e4f"
+    },
+    "Portable-Reproduction/actual-run/Stage/raw_key_counts.py": {
+      "bytes": 770,
+      "sha256": "8f7913a6704050254794fa77d641f5496a884d4f9c43b3e81d30e622db8061ba"
+    },
+    "Portable-Reproduction/actual-run/run-summary.json": {
+      "bytes": 10704,
+      "sha256": "ba2f96d48c0278bec789229ef9ea69f68ec4e0e39293e9264164d955caa52a64"
+    },
+    "Portable-Reproduction/export-timestamps.json": {
+      "bytes": 465,
+      "sha256": "77d8adf4c36461ca540ebd77056aa6c9addb1aead94d2a7bbc6e9019459626c8"
+    },
+    "Portable-Reproduction/handoff-hashes.json": {
+      "bytes": 541,
+      "sha256": "43fa58ab439bfcaadf5e5790c44a9f6496dc9fe192d50ee19a1ba5ea16e46461"
+    },
+    "Portable-Reproduction/reproduce.py": {
+      "bytes": 9462,
+      "sha256": "7f59b12f7123bd62626fd78cf299aa431175b0a409cd90531b95c211264ba7f4"
+    },
+    "Portable-Reproduction/timestamps.py": {
+      "bytes": 1076,
+      "sha256": "b8297744db09681a7ee62bbfc033ddb89bfd87f312c296cbcf67681a0650b3f7"
+    },
+    "Portable-Reproduction/wrapper.log": {
+      "bytes": 243,
+      "sha256": "ba99fa78bcfc9b3cb2cb5823150018b3abdae27df7a3afac19d4b0bc50b5f2db"
+    },
     "README.md": {
-      "bytes": 1714,
-      "sha256": "bd05e690216ae96194f28ad6b4c4839c6ee0313b13dec75a04cff861241ec92c"
+      "bytes": 2705,
+      "sha256": "bca4e4d9d6d37bbf572c207f19c73f6bb6cb2cd2d7d2c73a99371d31f47dbe67"
     }
   }
 }

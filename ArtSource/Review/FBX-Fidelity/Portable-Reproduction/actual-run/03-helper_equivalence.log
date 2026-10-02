@@ -1,0 +1,9 @@
+Extensions: writing cache failed ([Errno 30] Read-only file system: '/home/agent/.config/blender/4.3/extensions').
+FBX version: 7400
+Extensions: writing cache failed ([Errno 30] Read-only file system: '/home/agent/.config/blender/4.3/extensions').
+FBX version: 7400
+PASS final helper output imported curves exactly equal dense-tested hardened-mixed
+{"Vanguard.fbx": {"fbxVersion": 7400, "rawAnimationCurveCount": 900, "rawKeyTimeCount": 43200, "curvesMinMaxKeys": [21, 101]}, "hardened-mixed.fbx": {"fbxVersion": 7400, "rawAnimationCurveCount": 900, "rawKeyTimeCount": 123300, "curvesMinMaxKeys": [41, 401]}, "helper-output.fbx": {"fbxVersion": 7400, "rawAnimationCurveCount": 900, "rawKeyTimeCount": 123300, "curvesMinMaxKeys": [41, 401]}}
+Blender 4.3.2
+
+Blender quit
