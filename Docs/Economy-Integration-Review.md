@@ -16,3 +16,9 @@ Executed checks:
 - Cached Unity 2021.3.33-reference runtime compilation for Windows, Android and iOS symbols: each zero warnings/errors. This is older API compatibility, not Unity 6000.6.x editor, build or device validation.
 
 Logs are retained locally under /workspace/scratch/economy-review-evidence. The PowerShell entry's source dependencies were updated but it was not executed. No full aggregate or push was performed. Environment B05's final matrix commit still needs to be inherited; run the full aggregate once after that final integration, then perform exact Unity API validation in the authorized parent environment.
+
+## Final environment candidate inherited
+
+The environment candidate 45ff870 (including the B05 composition matrix and default entry) is merged as eadb5f2. Alignment 82fe8df and 158707e are inherited as e0fd08b and 6adb268; the chapter-host alignment was already present as 0f5dc80 and was not duplicated. The long runner-list conflict retains the union of both parents: economic growth and equipment composition each occur exactly once, with every prior entry preserved.
+
+After integration, all 65 source checks passed again. The dependency audit confirms 108 managed groups, all 38 entries in the shared Python registration list, 27 service groups with the reforge partial, and 28 goal groups with the quote; no missing paths or duplicate sources/names. Runner syntax and git whitespace checks passed. Previously passed economic groups were not rerun. No full aggregate or push occurred; the parent is awaiting the independent VFX review before the next complete run.
