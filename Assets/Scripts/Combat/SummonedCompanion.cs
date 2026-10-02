@@ -51,6 +51,8 @@ namespace Emberfall
         private float damage, cooldown, attackPose, baseMaxHealth, statRefresh;
         private float recallTime, commandTime, commandMultiplier = 1, idleTime;
         private bool commandEmpowered;
+        private bool recallVisualPending;
+        private float recallVisualTime;
         private EnemyController commandedTarget;
         private Vector3 commandedPoint;
         private bool hasCommandPoint, commandHadTarget;
@@ -123,7 +125,7 @@ namespace Emberfall
                     ? active.Find(pet => pet != null && pet.IsAlive && pet.Owner == owner && pet.Form == Kind.Treant)
                     : EvictionCandidate(owner, form);
                 if (oldest == null) return null;
-                oldest.Dismiss();
+                oldest.Dismiss(CompanionRetirementReason.Replaced);
             }
             var obj = new GameObject(form == Kind.Wolf ? "灵狼" : form == Kind.Spirit ? "星灵" : "远古树灵");
             obj.transform.position = WorldTraversal.NearestWalkable(at, RadiusFor(form));
@@ -134,6 +136,7 @@ namespace Emberfall
             companion.RefreshPower(true);
             companion.RemainingLifetime = CompanionRules.ContractLifetime((int)form,rank,permanent);
             companion.model = CombatModel.Companion(obj.transform, form);
+            companion.model.SetCompanionAppearance(form,companion.rank,companion.IsPermanent);
             companion.BuildHealthBar();
             active.Add(companion);
             AdvancedSkillVfx.Rune(owner, obj.transform.position, form == Kind.Treant ? 2.6f : 1.3f, GameBalance.ClassColor(HeroClass.Summoner), .7f, Mathf.Max(1, rank));
@@ -176,7 +179,7 @@ namespace Emberfall
                 if (pet == null || !pet.IsAlive || pet.Owner != owner) { i++; continue; }
                 if (bonded && pet.Form == Kind.Spirit)
                 {
-                    if (keptSpirit) { pet.Dismiss(); continue; }
+                    if (keptSpirit) { pet.Dismiss(CompanionRetirementReason.Replaced); continue; }
                     keptSpirit = true;
                 }
                 if (pet.Form == Kind.Spirit && bonded && !pet.IsPermanent)
@@ -188,7 +191,8 @@ namespace Emberfall
                     pet.RefreshPower(false);
                     pet.IsPermanent = false; pet.RemainingLifetime = CompanionRules.ContractLifetime((int)pet.Form,pet.rank,false);
                 }
-                if (bonded && pet.Form == Kind.Wolf && !pet.IsStarter) { pet.Dismiss(); continue; }
+                if (bonded && pet.Form == Kind.Wolf && !pet.IsStarter) { pet.Dismiss(CompanionRetirementReason.Replaced); continue; }
+                if(pet.model!=null)pet.model.SetCompanionAppearance(pet.Form,pet.rank,pet.IsPermanent);
                 i++;
             }
             int cap = CompanionRules.NormalCapacity(owner.HasMechanic(EquipmentMechanic.TwinSummonResonance));
@@ -196,7 +200,7 @@ namespace Emberfall
             {
                 SummonedCompanion oldest = EvictionCandidate(owner, Kind.Wolf);
                 if (oldest == null) break;
-                oldest.Dismiss();
+                oldest.Dismiss(CompanionRetirementReason.Replaced);
             }
         }
 
@@ -221,6 +225,7 @@ namespace Emberfall
                 pet.epoch = owner.CombatEpoch;
                 pet.commandedTarget = pet.target = null; pet.hasCommandPoint = pet.commandHadTarget = false;
                 pet.commandTime = pet.recallTime = pet.idleTime = pet.attackPose = 0;
+                pet.recallVisualPending=false;pet.recallVisualTime=0;
                 pet.commandMultiplier = 1;
                 pet.commandEmpowered = false;
                 pet.cooldown = Mathf.Max(.35f, pet.cooldown);
@@ -257,7 +262,7 @@ namespace Emberfall
             if (owner == null || owner.IsDead || owner.HeroClass != HeroClass.Summoner || game == null || game.Player != owner || !game.HasStarted || game.InputBlocked || game.CombatEnded || enemy == null || enemy.IsDead || !enemy.gameObject.activeInHierarchy || !game.Enemies.Contains(enemy) ||
                 CombatFx.Flat(enemy.transform.position - owner.transform.position).sqrMagnitude > 196f) return false;
             State(owner).Directive.Focus(enemy);
-            foreach (var pet in Snapshot(owner)) { pet.target = null; pet.recallTime = 0; }
+            foreach (var pet in Snapshot(owner)) { pet.target = null; pet.recallTime = 0; pet.recallVisualPending=false; }
             return true;
         }
         public static bool FreeRecall(PlayerController owner)
@@ -265,7 +270,7 @@ namespace Emberfall
             var game = GameSession.Instance;
             if (owner == null || owner.IsDead || owner.HeroClass != HeroClass.Summoner || game == null || game.Player != owner || !game.HasStarted || game.InputBlocked || game.CombatEnded) return false;
             State(owner).Directive.Recall();
-            foreach (var pet in Snapshot(owner)) { pet.commandedTarget = pet.target = null; pet.hasCommandPoint = pet.commandHadTarget = false; }
+            foreach (var pet in Snapshot(owner)) { pet.commandedTarget = pet.target = null; pet.hasCommandPoint = pet.commandHadTarget = false; pet.recallVisualPending=true; }
             return true;
         }
         public static EnemyController ExplicitFocus(PlayerController owner)
@@ -282,6 +287,7 @@ namespace Emberfall
             foreach (SummonedCompanion pet in Snapshot(owner))
             {
                 pet.recallTime = CompanionRules.RecallDuration;
+                pet.recallVisualPending=true;
                 pet.commandedTarget = null; pet.hasCommandPoint = pet.commandHadTarget = false;
                 pet.target = null;
             }
@@ -346,6 +352,7 @@ namespace Emberfall
             // also makes repeated preset application and transfers idempotent.
             Health = fill ? maximum : CompanionRules.PreserveRecastHealth(Health, maximum);
             MaxHealth = maximum;
+            if(model!=null)model.SetCompanionAppearance(Form,rank,IsPermanent);
             if (commandTime > 0) commandMultiplier = CompanionRules.ActiveCommandMultiplier(rank, commandEmpowered);
         }
 
@@ -357,6 +364,7 @@ namespace Emberfall
 
         private void Command(EnemyController focus, bool empowered, Vector3 point, bool preservePoint)
         {
+            recallVisualPending=false;
             recallTime = 0;
             hasCommandPoint = false;
             commandedTarget = ValidTarget(focus) ? focus : preservePoint ? null : Owner.FocusTarget;
@@ -455,7 +463,7 @@ namespace Emberfall
             if (Health <= 0 && IsStarter && Owner != null) Owner.OnStarterCompanionDefeated();
             model.Recoil(-transform.forward, .7f);
             HitFeedback.Spawn(transform.position + Vector3.up, -transform.forward, .6f);
-            if (Health <= 0) Dismiss();
+            if (Health <= 0) Dismiss(CompanionRetirementReason.Defeated);
         }
 
         private void BuildHealthBar()
@@ -514,7 +522,7 @@ namespace Emberfall
             statRefresh -= dt;
             if (statRefresh <= 0) { statRefresh = .5f; RefreshPower(false); }
             RemainingLifetime -= dt;
-            if (RemainingLifetime <= 0) { Dismiss(); return; }
+            if (RemainingLifetime <= 0) { Dismiss(CompanionRetirementReason.Expired); return; }
             cooldown -= dt;
             attackPose = Mathf.Max(0, attackPose - dt * 3);
             target = AcquireTarget();
@@ -577,6 +585,10 @@ namespace Emberfall
             // release event so projectile/damage and contact pose share a frame.
             float locomotion = CombatFx.Flat(transform.position - previous).magnitude / Mathf.Max(.0001f, dt * (Form == Kind.Treant ? 4.2f : 7f));
             model.Animate(Mathf.Clamp01(locomotion), attackPose, false);
+            if(recallVisualPending&&target==null&&CombatFx.Flat(transform.position-followAnchor).sqrMagnitude<=.64f)
+            {recallVisualPending=false;recallVisualTime=.4f;}
+            recallVisualTime=Mathf.Max(0,recallVisualTime-dt);
+            model.SetCompanionRecall(recallVisualTime>0?1-recallVisualTime/.4f:0);
         }
 
         private bool CanReachTarget(Vector3 position)
@@ -593,10 +605,12 @@ namespace Emberfall
             if (Camera.main != null) healthBar.rotation = Camera.main.transform.rotation;
         }
 
-        public void Dismiss()
+        public void Dismiss(){Dismiss(CompanionRetirementReason.ContextEnded);}
+        private void Dismiss(CompanionRetirementReason reason)
         {
             active.Remove(this);
             if (!gameObject.activeSelf) return;
+            CompanionRetirementVisual.Detach(model,Owner,session,reason);
             gameObject.SetActive(false);
             Destroy(gameObject);
         }

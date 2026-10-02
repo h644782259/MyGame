@@ -29,6 +29,7 @@ with tempfile.TemporaryDirectory(prefix='chapter-return-clock-') as t:
   fixture=fixture.replace(a,b)
  (p/'Fixture.cs').write_text(fixture)
  methods=[member('Assets/Scripts/Core/GameSession.cs',sig) for sig in ['private bool ContinueAdventure(string slotId, bool discardUnsaved = false, bool alreadySaved = false)','public bool LoadSaveFromPause(','private bool ChangeZone(bool dungeon)','public bool SaveBeforeLeaving()','private void SpawnEnemy(','public void OnEnemyKilled(','public void ReturnToCamp()','private void UpdateTimeScale()','private void BeginAdventure()','private void DiscardTransientAdventureForLoad()','public void Respawn()','public bool QuitToTitle(']]
+ methods.append(member('Assets/Scripts/Core/GameSession.RoomTactics.cs','private static bool LiveRoomEnemy('))
  methods+=[member('Assets/Scripts/Core/GameSession.Expedition.cs','private void ResetExpedition('),member('Assets/Scripts/Core/GameSession.Modes.cs','public bool ModeFinished')]
  (p/'Lifecycle.cs').write_text('using System.Collections.Generic;using UnityEngine;namespace Emberfall{public sealed partial class GameSession{'+''.join(methods)+'}}')
  ui='namespace Emberfall{public sealed class GameUI{GameSession session;public void RebindProgressionNotifications(ProgressionService a,ProgressionService b){}void BlockUITransition(){}public GameUI(GameSession s){session=s;}public void Return()=>ReturnFromChapter();'+member('Assets/Scripts/UI/GameUI.Chapter.cs','private void ReturnFromChapter()')+'}}'

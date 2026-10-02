@@ -33,7 +33,7 @@ namespace Emberfall {
   public enum Kind{Wolf,Spirit,Treant}
   private static List<SummonedCompanion> active=new List<SummonedCompanion>();private static Dictionary<PlayerController,BondState> bonds=new Dictionary<PlayerController,BondState>();private static List<PlayerController> staleOwners=new List<PlayerController>();
   public PlayerController Owner;public Kind Form;public bool IsStarter,IsPermanent=true,IsAlive=true;public float RemainingLifetime=100;
-  private GameSession session;private Transform transform=new Transform();private int rank=1;private float cooldown=2,attackPose,recallTime,commandTime,commandMultiplier=1,damage=10;private bool commandEmpowered,hasCommandPoint,commandHadTarget;private EnemyController commandedTarget,target;private Vector3 commandedPoint;
+  private GameSession session;private Transform transform=new Transform();private int rank=1;private float cooldown=2,attackPose,recallTime,commandTime,commandMultiplier=1,damage=10;private bool commandEmpowered,hasCommandPoint,commandHadTarget,recallVisualPending;private EnemyController commandedTarget,target;private Vector3 commandedPoint;
   private float NavigationRadius=>.3f;private float AttackMultiplier=>commandMultiplier;
   private bool CanReachTarget(Vector3 p)=>false;
   private void RefreshContractPower(int r){rank=r;}
@@ -79,11 +79,11 @@ namespace Emberfall {
    b.transform.position=new Vector3(7,0,0);SetFreeFocus(owner,b);game.Enemies.Remove(b);check(ExplicitFocus(owner)==null&&!SetFreeFocus(owner,b),"removed encounter target cannot persist or be ordered");game.Enemies.Add(b);
    SetFreeFocus(owner,a);owner.CombatEpoch++;check(ExplicitFocus(owner)==null,"new room epoch clears team and cooperation state");
    SetFreeFocus(owner,a);CastContract(owner,game,Kind.Spirit,1,b.transform.position,10,false,b,true);float cd=spirit.cooldown;
-   check(FreeRecall(owner)&&spirit.AcquireTarget()==null&&wolf.AcquireTarget()==null,"free recall cancels local navigation without casting");
+   check(FreeRecall(owner)&&spirit.recallVisualPending&&wolf.recallVisualPending&&spirit.AcquireTarget()==null&&wolf.AcquireTarget()==null,"free recall cancels local navigation without casting");
    int damageCalls=a.DamageCalls+b.DamageCalls+c.DamageCalls;float remaining=spirit.RemainingLifetime,commandRemaining=spirit.commandTime;
    for(int i=0;i<1000;i++)FreeRecall(owner);
    check(spirit.cooldown==cd&&spirit.RemainingLifetime==remaining&&spirit.commandTime==commandRemaining&&damageCalls==a.DamageCalls+b.DamageCalls+c.DamageCalls,"1000 free recalls do not deal damage or reset cooldown/lifetime/command timer");
-   SetFreeFocus(owner,a);check(spirit.AcquireTarget()==a,"new explicit focus exits recall");
+   SetFreeFocus(owner,a);check(spirit.AcquireTarget()==a&&!spirit.recallVisualPending,"new explicit focus exits recall");
    return n;
   }
  }

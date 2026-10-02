@@ -935,7 +935,8 @@ namespace Emberfall
             else if (heroClass == HeroClass.Arcanist || heroClass == HeroClass.Summoner)
             {
                 staffRig.localRotation = Quaternion.Euler(12, 0, -12);
-                if (acting)
+                if(acting&&!actionBasic)ApplyCasterSkillPose(t);
+                else if (acting)
                 {
                     spine.localRotation *= Pose(Vector3.zero, new Vector3(-9, -13, -3), new Vector3(14, 16, 3), t);
                     rightArm.localRotation = Pose(new Vector3(-10, 0, 10), new Vector3(-115, -12, 32),
