@@ -224,6 +224,8 @@ def main():
         for name,test in [("progression-goal-identity","ProgressionGoalIdentityTests"),("progression-route-layers","ProgressionRouteLayerTests")]:
             checks.append((name,[ROOT/("Assets/Scripts/Core/"+f+".cs") for f in ["GameTypes","ProgressionService","CampRouteCards","RunChoices","SkillRuntime","ProgressionHudHint","ProgressionAttention"]]+[ROOT/"Tests/ProgressionTests.cs",ROOT/("Tests/"+test+".cs")],
                 'using System; internal static class Program { static void Main(string[] args) { Console.WriteLine('+test+'.Run(args[0])); } }'))
+        checks.append(("chest-reveal-presentation",[ROOT/"Assets/Scripts/Core/GameTypes.cs",ROOT/"Assets/Scripts/Core/ProgressionService.cs",ROOT/"Assets/Scripts/UI/ChestRevealPresentation.cs",ROOT/"Tests/ProgressionTests.cs",ROOT/"Tests/ChestRevealPresentationTests.cs"],
+            'using System; internal static class Program { static void Main(string[] args) { Console.WriteLine(ChestRevealPresentationTests.Run(args[0])); } }'))
         checks.append(("side-event-rewards",[ROOT/"Assets/Scripts/Core/GameTypes.cs",ROOT/"Assets/Scripts/Core/ProgressionService.cs",ROOT/"Tests/ProgressionTests.cs",ROOT/"Tests/SideEventRewardTests.cs"],
             'using System; internal static class Program { static void Main(string[] args) { Console.WriteLine(SideEventRewardTests.Run(args[0])); } }'))
         checks.append(("adventure-entry-truth",[ROOT/("Assets/Scripts/"+f+".cs") for f in ["UI/AdventureEntryPresentation","Core/ExpeditionModeState","Core/TierRewardBand","Core/TierRewardRules","Core/GameTypes","Core/SkillRuntime","Core/ProgressionGoalState"]]+[ROOT/"Tests/SkillRuntimeTests.cs",ROOT/"Tests/AdventureEntryPresentationTests.cs"],
