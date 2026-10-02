@@ -49,7 +49,7 @@ namespace Emberfall
         {
             if (IsCharging)
             {
-                if (owner != null) CombatReviewEvents.Emit("chargecancel",CombatReviewObjectId.Get(owner),skill:SkillIndex);
+                if (CombatReviewEvents.Enabled && owner != null) CombatReviewEvents.Emit("chargecancel",CombatReviewObjectId.Get(owner),skill:SkillIndex);
                 if (owner != null) owner.CancelCombatPose();
                 cancelledFrame = Time.frameCount;
             }
