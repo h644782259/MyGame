@@ -18,13 +18,13 @@ namespace Emberfall
  public class ChapterDefinition {public string Name="章节";public static ChapterDefinition Get(int node)=>new ChapterDefinition();}
  public class GameSession
  {
-  public List<object> Enemies=new List<object>();public Profile Profile=new Profile();public bool ChapterActive,ChapterOpen,Paused;public int ActiveChapterNode;public string ChapterObjectiveCompact="章节目标",ChapterObjectiveStatus="章节目标";
+  public List<object> Enemies=new List<object>();public int RoomAQueries,RoomBQueries,ChapterAQueries,ChapterBQueries;public Profile Profile=new Profile();public bool ChapterActive,ChapterOpen,Paused;public int ActiveChapterNode;public string ChapterObjectiveCompact="章节目标",ChapterObjectiveStatus="章节目标";
   public RoomChainState ChapterRun=new RoomChainState(0),RoomChainRun;public ModeStub ModeRun=new ModeStub();public int Occupied=-1,Contested=-1;public string ModeName="远征",Objective="目标";public int DungeonWave=1,TotalWaves=5,HealingCharges=3;
   public bool SpecialAdventure=true,InDungeon=true,DungeonCleared,ChallengeRun;public string ModeObjectiveStatus=>RoomObjectiveView.ProgressText;
   public bool RoomCaptureContested=>Contested>=0;public RoomSupportSnapshot Support=new RoomSupportSnapshot(true,5,RoomTargetSupport.Supplier);
   public RoomObjectivePresentation RoomObjectiveView=>RoomObjectivePresentation.Create(RoomChainRun,Occupied>=0,Contested>=0?1:0,Paused,Support);
-  public ChapterSealPresentation RoomSealView(int index)=>!ChapterActive&&RoomChainRun!=null&&!RoomChainRun.Finished&&RoomChainRun.Room.Objective==RoomObjective.Purify?new ChapterSealPresentation(index,RoomChainRun.SealProgress(index),Occupied==index,Contested==index,RoomChainRun.SealComplete(index),Paused):null;
-  public ChapterSealPresentation ChapterSealView(int index)=>ChapterActive&&ChapterOpen?new ChapterSealPresentation(index,index+.5f,index==0,false,false,false):null;
+  public ChapterSealPresentation RoomSealView(int index){if(index==0)RoomAQueries++;else RoomBQueries++;return !ChapterActive&&RoomChainRun!=null&&!RoomChainRun.Finished&&RoomChainRun.Room.Objective==RoomObjective.Purify?new ChapterSealPresentation(index,RoomChainRun.SealProgress(index),Occupied==index,Contested==index,RoomChainRun.SealComplete(index),Paused):null;}
+  public ChapterSealPresentation ChapterSealView(int index){if(index==0)ChapterAQueries++;else ChapterBQueries++;return ChapterActive&&ChapterOpen?new ChapterSealPresentation(index,index+.5f,index==0,false,false,false):null;}
  }
  public sealed partial class GameUI
  {
@@ -37,7 +37,7 @@ namespace Emberfall
   class MeasuredStyle {public float CalcHeight(GUIContent content,float width)=>18;}
   MeasuredStyle Style(int size,bool bold,bool wrap)=>new MeasuredStyle();
   static int n;static void Check(bool b,string why){n++;if(!b)throw new Exception(why);}
-  void Clear(){labels.Clear();bars.Clear();fills.Clear();blockedRects.Clear();}
+  void Clear(){session.RoomAQueries=session.RoomBQueries=session.ChapterAQueries=session.ChapterBQueries=0;labels.Clear();bars.Clear();fills.Clear();blockedRects.Clear();}
   static bool Inside(Rect a,Rect b)=>a.x>=b.x-.001f&&a.y>=b.y-.001f&&a.xMax<=b.xMax+.001f&&a.yMax<=b.yMax+.001f;
   static bool Overlap(Rect a,Rect b)=>a.x<b.xMax&&a.xMax>b.x&&a.y<b.yMax&&a.yMax>b.y;
   static void Register(RoomChainState r){for(int i=0;i<r.Room.EnemyCount;i++)r.Register(r.Room,i);}
@@ -51,17 +51,23 @@ namespace Emberfall
     foreach(var control in layout.Skills.Concat(new[]{layout.Attack,layout.Dodge,layout.Potion,layout.Jump,layout.Interact,layout.FocusCommand,layout.RecallCommand}))Check(!a.Overlaps(control),"unchanged mode card never expands into touch controls");
     var run=new RoomChainState(0);Register(run);for(int i=0;i<6;i++){run.AdvanceSeal(0,.25f,true,true,false);run.AdvanceSeal(1,.25f,true,true,false);}v.session.RoomChainRun=run;v.session.Occupied=occupied;v.session.Contested=1-occupied;
     v.Clear();v.DrawMobileModeStatus(card);
+    Check(v.session.RoomAQueries==1&&v.session.RoomBQueries==1,"room snapshots read exactly once per mobile draw event");
     Check(v.labels.Count==4&&v.bars.Count==3,"actual Purify draw contains title two seals support and three bars");
     foreach(var label in v.labels){Check(Inside(label.Rect,card),"compact actual draw stays inside existing mode card");Check(TextBudget(label.Value,label.Font)<=label.Rect.width,"compact text stays within conservative glyph budget");}
     foreach(var bar in v.bars)Check(Inside(bar.Item1,card),"compact actual draw stays inside existing mode card");
     for(int i=0;i<v.labels.Count;i++)for(int j=i+1;j<v.labels.Count;j++)Check(!Overlap(v.labels[i].Rect,v.labels[j].Rect),"title seal text and support never overlap");
     foreach(var label in v.labels)foreach(var bar in v.bars)Check(!Overlap(label.Rect,bar.Item1),"text and capture bars never overlap");
     var rows=v.labels.Where(l=>l.Value.Contains("/3秒")).ToArray();Check(rows.Length==2&&rows[occupied].Bold&&!rows[1-occupied].Bold&&rows[1-occupied].Value.Contains("争夺"),"actual rows preserve independent occupancy and contest");Check(v.bars.All(b=>b.Item2==.5f),"two partial rings and aggregate each render half progress");
-    v.Clear();v.Desktop();Check(v.labels.Count(l=>l.Value.Contains("/3秒"))==2&&v.bars.Count==3,"actual desktop site draws independent rows and aggregate");foreach(var label in v.labels)Check(Inside(label.Rect,v.blockedRects[0]),"desktop labels remain in measured objective card");
+    v.session.Paused=true;v.session.Contested=-1;v.session.Occupied=1-occupied;v.Clear();v.DrawMobileModeStatus(card);
+    Check(v.labels.Count(l=>l.Value.Contains("暂停"))==2&&v.labels.Where(l=>l.Value.Contains("/3秒")).ToArray()[1-occupied].Bold,"next event observes changed pause contest and occupancy without cached state");
+    v.session.Paused=false;v.session.Contested=1-occupied;v.session.Occupied=occupied;
+    v.Clear();v.Desktop();Check(v.session.RoomAQueries==1&&v.session.RoomBQueries==1,"room snapshots read exactly once at desktop site");Check(v.labels.Count(l=>l.Value.Contains("/3秒"))==2&&v.bars.Count==3,"actual desktop site draws independent rows and aggregate");foreach(var label in v.labels)Check(Inside(label.Rect,v.blockedRects[0]),"desktop labels remain in measured objective card");
     for(int i=0;i<6;i++){run.AdvanceSeal(1,.25f,true,true,false);run.AdvanceSeal(0,.25f,true,true,false);}v.Clear();v.DrawMobileModeStatus(card);Check(v.labels[0].Value=="双印完成 · 前往北门"&&v.labels.Count(l=>l.Value.Contains("完成"))==3,"completed room shows both identities and exit instruction");
+    run.Fail();v.Clear();v.DrawMobileModeStatus(card);Check(!v.labels.Any(l=>l.Value.Contains("/3秒"))&&v.labels.Any(l=>l.Value=="远征失败"),"terminal event drops both rows rather than retaining previous snapshots");
    }
    foreach(int seed in new[]{1,2}){v.session.RoomChainRun=new RoomChainState(seed);Register(v.session.RoomChainRun);v.Clear();v.DrawMobileModeStatus(new Rect(0,0,236,76));Check(!v.labels.Any(l=>l.Value.Contains("/3秒"))&&v.bars.Count==1,"Hunt and Escape keep original generic mode card");}
-   v.session.ChapterActive=true;v.session.ChapterOpen=true;v.TouchRatio=1;v.Clear();v.DrawMobileModeStatus(new Rect(0,0,188,76));Check(v.labels.Count==3&&v.bars.Count==2&&v.labels[1].Rect.y==24&&v.labels[2].Rect.y==46,"chapter seal drawing remains unchanged");
+   v.session.ChapterActive=true;v.session.ChapterOpen=true;v.TouchRatio=1;v.Clear();v.DrawMobileModeStatus(new Rect(0,0,188,76));Check(v.labels.Count==3&&v.bars.Count==2&&v.labels[1].Rect.y==24&&v.labels[2].Rect.y==46,"chapter seal drawing remains unchanged");Check(v.session.ChapterAQueries==1&&v.session.ChapterBQueries==1&&v.session.RoomAQueries==0,"chapter precedence reads only its own pair once");
+   v.session.ChapterOpen=false;v.Clear();v.DrawMobileModeStatus(new Rect(0,0,188,76));Check(v.bars.Count==0&&v.labels.Any(l=>l.Value=="章节目标"),"null chapter snapshot switches immediately to objective text");
    Console.WriteLine("PASS: "+n+" actual room HUD Draw/rectangle/state assertions; managed UI recorder, not Unity/font screenshots");
   }
  }

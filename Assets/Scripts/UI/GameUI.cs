@@ -729,13 +729,15 @@ namespace Emberfall
                 : "收集装备，进入传送门 · T";
             if(session.ChapterActive){objectiveText=ChapterDefinition.Get(session.ActiveChapterNode).Name;objectiveProgress=session.ChapterObjectiveStatus;}
             string growthTitle,growthDetail;if(!session.ChapterActive&&TryGrowthHudHint(out growthTitle,out growthDetail)){objectiveText=growthTitle;objectiveProgress=growthDetail;}
-            if(session.ChapterSealView(0)!=null&&session.ChapterRun.DoorUnlocked)objectiveText="双印完成 · 前往出口";
-            if(!session.ChapterActive&&session.RoomSealView(0)!=null&&session.RoomChainRun.DoorUnlocked)objectiveText="双印完成 · 前往北门";
+            var chapterFirstSeal=session.ChapterSealView(0);
+            var roomFirstSeal=session.ChapterActive?null:session.RoomSealView(0);
+            if(chapterFirstSeal!=null&&session.ChapterRun.DoorUnlocked)objectiveText="双印完成 · 前往出口";
+            if(roomFirstSeal!=null&&session.RoomChainRun.DoorUnlocked)objectiveText="双印完成 · 前往北门";
             float bodyHeight=Mathf.Max(24,Style(15,true,true).CalcHeight(new GUIContent(objectiveText),255));
             string progressText=PlatformText(objectiveProgress);
             float progressHeight=Mathf.Max(18,Style(12,false,true).CalcHeight(new GUIContent(progressText),255));
-            bool showSeals=session.ChapterSealView(0)!=null;
-            bool showRoomSeals=!session.ChapterActive&&session.RoomSealView(0)!=null;
+            bool showSeals=chapterFirstSeal!=null;
+            bool showRoomSeals=roomFirstSeal!=null;
             if(showSeals)progressHeight=44;
             else if(showRoomSeals)progressHeight=66;
             bool showCharge=session.InDungeon&&session.ChallengeRun;
@@ -746,8 +748,8 @@ namespace Emberfall
             Fill(new Rect(objective.x,objective.y,3,objective.height),jade);
             Text(new Rect(objective.x+13,objective.y+measured.HeadingY,255,17),"当前目标",11,jade,true);
             Text(new Rect(objective.x+13,objective.y+measured.BodyY,255,bodyHeight),objectiveText,15,pale,true,true);
-            if(showSeals)DrawChapterSeals(new Rect(objective.x+13,objective.y+measured.ProgressY,255,44),1);
-            else if(showRoomSeals)DrawRoomSeals(new Rect(objective.x+13,objective.y+measured.ProgressY,255,66),1,false);
+            if(showSeals)DrawChapterSeals(new Rect(objective.x+13,objective.y+measured.ProgressY,255,44),1,chapterFirstSeal,session.ChapterSealView(1));
+            else if(showRoomSeals)DrawRoomSeals(new Rect(objective.x+13,objective.y+measured.ProgressY,255,66),1,false,roomFirstSeal,session.RoomSealView(1),session.RoomObjectiveView);
             else Text(new Rect(objective.x+13,objective.y+measured.ProgressY,255,progressHeight),progressText,12,muted,false,true);
             if(showCharge)Text(new Rect(objective.x+13,objective.y+measured.ChargeY,255,chargeHeight),chargeText,17,gold,true,true);
             if (objective.Contains(Mouse) && GUI.enabled)
