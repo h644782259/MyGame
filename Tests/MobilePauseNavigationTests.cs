@@ -8,7 +8,7 @@ namespace Emberfall
     public sealed class PauseSessionStub { public bool Paused; }
     public sealed partial class GameUI
     {
-        private enum Panel { None, Controls }
+        private enum Panel { None, Controls, Chests, SaveSelection, SaveLocation, Bindings }
         private Panel panel;
         private PauseSessionStub session;
         private int mobilePausePage, transitionBlocks;
@@ -19,13 +19,13 @@ namespace Emberfall
             Action<bool,string> check = (ok, message) => { n++; if (!ok) throw new Exception(message); };
             for (int mobile = 0; mobile < 2; mobile++)
             for (int paused = 0; paused < 2; paused++)
-            for (int modal = 0; modal < 2; modal++)
+            for (int modal = 0; modal < 6; modal++)
             for (int page = 0; page < 3; page++)
             {
                 MobileControls.Active = mobile != 0;
                 var ui = new GameUI { session = new PauseSessionStub { Paused = paused != 0 },
-                    panel = modal != 0 ? Panel.Controls : Panel.None, mobilePausePage = page };
-                bool expected = mobile != 0 && paused != 0 && modal == 0 && page > 0;
+                    panel = (Panel)modal, mobilePausePage = page };
+                bool expected = mobile != 0 && paused != 0 && (modal == 0 || modal == 2) && page > 0;
                 check(ui.ReturnToMobilePauseRoot() == expected, "only mobile paused subpages consume Back");
                 check(ui.mobilePausePage == (expected ? 0 : page), "subpage returns to root; other surfaces remain intact");
                 check(ui.session.Paused == (paused != 0), "Back to root never resumes or introduces pause");
