@@ -263,6 +263,7 @@ namespace Emberfall
 
         private void Update()
         {
+            if(HasStarted)TickSideEvent();
             if (InputBlocked) return;
             if(ModeRun!=null){TickArenaRun();if(InputBlocked)return;}
             if(RoomChainRun!=null)TickRoomTactics();
@@ -682,6 +683,7 @@ namespace Emberfall
         public bool SaveBeforeLeaving()
         {
             if (!HasStarted) return true;
+            if(!TrySettleSideEventRewards())return false;
             if(DungeonRewardPending&&!TrySettleDungeonReward())return false;
             if(ModeRewardPending&&!TrySettleArenaReward())return false;
             if (!PreserveWorldLoot()) return false;

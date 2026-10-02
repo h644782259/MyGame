@@ -5,5 +5,5 @@ s=read('Assets/Scripts/Core/GameSession.Modes.cs');a=read('Assets/Scripts/World/
 assert 'ExpeditionModeState.ContestsHoldPoint' in s and 'enemy.NavigationRadius' in s and 'sqrMagnitude<36' not in s
 assert 'ExpeditionModeState.InsideHoldPoint' in s and 'i==2?ExpeditionModeState.HoldPointRadius' in a
 assert 'session.ModeRun.HoldStateLabel' in ui and 'session.ModeRun.Mode==ExpeditionModeKind.HoldPoint?TouchRect(l.AdventureStatus)' in mobile
-assert 'RoomObjectivePresentation.Create' in ui
+assert 'var objective=session.RoomObjectiveView;' in ui and 'RoomObjectivePresentation.Create' in read('Assets/Scripts/Core/GameSession.RoomTactics.cs')
 print('PASS: 4 hold-point host/geometry/mobile wiring contracts')
