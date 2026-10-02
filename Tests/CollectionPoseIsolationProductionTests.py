@@ -13,3 +13,11 @@ with tempfile.TemporaryDirectory(prefix='preview-pose-') as directory:
  assert body.count('(isolatedPreview?previewTime:Time.time)')==1;production.write_text(body.replace('(isolatedPreview?previewTime:Time.time)','Time.time'));subprocess.run([dotnet,'build',str(project),'--no-restore','-v:q'],env=env,check=True,stdout=subprocess.DEVNULL)
  result=subprocess.run(cmd+['--no-build'],env=env,capture_output=True,text=True);assert result.returncode and 'System.Exception: preview pose is independent of world clock pause and frames' in result.stdout+result.stderr,result.stdout+result.stderr
  print('PASS: old global-clock breathing compiled and rejected by exact preview isolation assertion')
+
+ # Restore the actual pose source before isolating the formerly reset orbit angle.
+ production.write_text(body)
+ orbitSource=p/'CombatModel.Preview.cs';normalOrbit=orbitSource.read_text();assert normalOrbit.count('float.IsNaN(mechanicalYaw)?time*16:mechanicalYaw')==1
+ orbitSource.write_text(normalOrbit.replace('float.IsNaN(mechanicalYaw)?time*16:mechanicalYaw','time*16'))
+ subprocess.run([dotnet,'build',str(project),'--no-restore','-v:q'],env=env,check=True,stdout=subprocess.DEVNULL)
+ result=subprocess.run(cmd+['--no-build'],env=env,capture_output=True,text=True);assert result.returncode and 'System.Exception: actual mechanical orbit remains continuous across local-clock wrap' in result.stdout+result.stderr,result.stdout+result.stderr
+ print('PASS: 16-degree orbit tied to wrapped time compiled and failed exact visual-transform continuity assertion')

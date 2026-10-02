@@ -13,7 +13,7 @@ namespace UnityEngine
         public T AddComponent<T>() where T:new(){var value=new T();if(value is MonoBehaviour mb)mb.gameObject=this;components[typeof(T)]=value;return value;}
         public T GetComponent<T>() where T:class {return components.TryGetValue(typeof(T),out var value)?value as T:null;}
     }
-    public class Transform {public Vector3 position,localPosition,localScale;public Quaternion localRotation;public GameObject gameObject;public Transform(){ }public void SetParent(Transform parent,bool world){} }
+    public class Transform {public Vector3 forward=>Vector3.forward;public Vector3 position,localPosition,localScale;public Quaternion localRotation;public GameObject gameObject;public Transform(){ }public void SetParent(Transform parent,bool world){} }
     public struct Color{public float r,g,b,a;public Color(float r,float g,float b,float a=1){this.r=r;this.g=g;this.b=b;this.a=a;}}
     public enum PrimitiveType{Cylinder,Cube,Capsule}
     public class Shader:Object{public static Shader Find(string n)=>new Shader();}
@@ -31,11 +31,11 @@ namespace UnityEngine
 namespace UnityEngine.Rendering{public enum ShadowCastingMode{Off}}
 namespace Emberfall
 {
-    public class GameSession
+    public partial class GameSession
     {public static GameSession Instance;public bool HasStarted=true,ChapterActive=true,ChapterFinished,InputBlocked,IsDead,ModeFinished;public PlayerController Player=new PlayerController();public int ChapterRoomIndex,ChapterSeed;public ChapterNode ActiveChapterNode;public ProgressionService Progression=new ProgressionService();public List<string> Logs=new List<string>();public void LogSystem(string s){Logs.Add(s);}public void SpawnMechanismText(Vector3 p,string s,Color c){} }
-    public class PlayerController:MonoBehaviour {public bool IsDead;public int CombatEpoch=1,DamageCalls;public float MaxHealth=100,Health=100;public void TakeDamageFrom(float value,string reason){Health-=value;DamageCalls++;}}
-    public class EnemyController:MonoBehaviour{public bool IsBoss=true,IsDead,IsStunned;public bool CanBeSkillInterrupted=true;public float Health=70,MaxHealth=100,AttackDamage=20;public int BeginCalls;public void ConfigureLargeExpedition(LargeExpeditionBoss boss){}public void BeginLargeBossMechanic(){BeginCalls++;}}
-    public class ProgressionService{public Profile Profile=new Profile();}public class Profile{public int level=1;}
+    public class PlayerController:MonoBehaviour {public HeroClass HeroClass=HeroClass.Vanguard;public bool IsDead;public int CombatEpoch=1,DamageCalls;public float MaxHealth=100,Health=100;public void TakeDamageFrom(float value,string reason){Health-=value;DamageCalls++;}}
+    public partial class EnemyController:MonoBehaviour{public bool IsBoss=true,IsDead,IsStunned;public bool CanBeSkillInterrupted=true;public float Health=70,MaxHealth=100,AttackDamage=20;public int BeginCalls;public void ConfigureLargeExpedition(LargeExpeditionBoss boss){largeBoss=boss;session=GameSession.Instance;}public void BeginLargeBossMechanic(){BeginCalls++;attackNumber++;}}
+    public partial class ProgressionService{public Profile Profile=new Profile();}public class Profile{public int level=1;}
     public enum VisualSurface{Metal,Crystal}public enum DestructibleKind{Crate}public enum PropRecovery{None}
     public class WorldResources:MonoBehaviour{public Material Material(Color c,bool glow,VisualSurface surface)=>new Material();}
     public static class LargeBossRig
@@ -102,16 +102,16 @@ public static class ChapterCombatProductionTests
         Check(reverse.BeamWorldAngle<initial&&game.Logs.Exists(s=>s.Contains("逆时针")),"heroic actual beam follows the announced reverse direction");
         game=Game();game.Player.transform.position=new Vector3(0,0,5);enemy=new EnemyController();var hard=LargeExpeditionBoss.ConfigureChapter(enemy,1,0,ChapterDifficulty.Hard);hard.Tick(.05f);hard.InterruptWindup();Check(hard.State.Phase==LargeBossPhase.Recovery&&hard.State.Remaining==2f&&hard.State.IncomingMultiplier==1,"chapter interrupt gives two seconds recovery without vulnerability");Steps(hard,600);
         Check(enemy.BeginCalls==1&&hard.State.Phase==LargeBossPhase.Combat,"interrupt cancels pending followup without new attacks");
-        foreach(bool bossFirst in new[]{true,false})
+        foreach(var counterDifficulty in new[]{ChapterDifficulty.Hard,ChapterDifficulty.Heroic}) foreach(bool bossFirst in new[]{true,false})
         {
-            game=Game();enemy=new EnemyController();var atomic=LargeExpeditionBoss.ConfigureChapter(enemy,1,0,ChapterDifficulty.Hard);atomic.Tick(.05f);
+            game=Game();enemy=new EnemyController();var atomic=LargeExpeditionBoss.ConfigureChapter(enemy,1,0,counterDifficulty);atomic.Tick(.05f);
             var actualAnchors=(DestructibleProp[])Field<DestructibleProp[]>(atomic,"anchors").Clone();
             actualAnchors[0].Broken=true;actualAnchors[1].Broken=true;atomic.Tick(.05f);
             Check(atomic.State.LiveAnchorMask==4,"two prior broken anchors leave exactly the last anchor");
             CombatImpactBatch.Begin();try {
-                if(bossFirst)atomic.InterruptWindup();
+                if(bossFirst){Check(enemy.TrySkillInterrupt(game.Player,1,91),"real hard heroic attack qualifies before anchor target");enemy.TakeDamage(10,Vector3.forward,impact:false);}
                 for(int i=0;i<3;i++)actualAnchors[i].Broken=true;
-                if(!bossFirst)atomic.InterruptWindup();
+                if(!bossFirst){Check(enemy.TrySkillInterrupt(game.Player,1,91),"real hard heroic attack qualifies after anchor target");enemy.TakeDamage(10,Vector3.forward,impact:false);}
             } finally { CombatImpactBatch.End(); }
             Check(atomic.State.Phase==LargeBossPhase.Exposed&&atomic.State.Remaining==6f&&atomic.State.IncomingMultiplier==1.35f,"same attack last anchor break wins over interrupt in both target orders");
             Steps(atomic,700);Check(enemy.BeginCalls==1,"anchor counter cancels the threshold followup");
@@ -171,6 +171,16 @@ public static class ChapterCombatProductionTests
         }
         game=Game(ChapterNode.ForestCourt);var old=ChapterHazards.Configure(game,ChapterNode.ForestCourt,ChapterDifficulty.Heroic,0,0,ChapterRoomGeometry.Plan(ChapterNode.ForestCourt,0,0));game.InputBlocked=true;game.Player.CombatEpoch++;Update(old);
         Check(!old.gameObject.activeInHierarchy,"old epoch hazard retires before pause gate");
+        foreach(int mode in new[]{0,1,2,3}) {
+            var combat=Game();var victim=new EnemyController();var encounter=mode==0?LargeExpeditionBoss.Configure(victim,1,0):LargeExpeditionBoss.ConfigureChapter(victim,1,0,(ChapterDifficulty)(mode-1));encounter.Tick(.05f);
+            float before=victim.Health;
+            CombatImpactBatch.Begin();try {
+                Check(victim.TrySkillInterrupt(combat.Player,1,101),"actual qualifying controller skill interrupts windup");
+                victim.TakeDamage(10,Vector3.forward,impact:false);
+                Check(Math.Abs(before-victim.Health-(mode<2?13.5f:10f))<.001f,"legacy and normal triggering hit retain immediate 1.35 multiplier; hard heroic defer without vulnerability");
+            } finally { CombatImpactBatch.End(); }
+            Check(encounter.State.Phase==(mode<2?LargeBossPhase.Exposed:LargeBossPhase.Recovery),"attack resolution retains mode-specific counterplay");
+        }
         return "PASS: "+checks+" chapter component/pattern checks (managed substitutes; not Unity play)";
     }
 }

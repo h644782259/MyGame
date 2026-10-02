@@ -888,7 +888,7 @@ namespace Emberfall
             float y = bar.y;
             blockedRects.Add(bar);
             Box(bar, jade);
-            Text(new Rect(x+10,y+4,bar.width-20,18),"技能快捷栏",10,pale,true,false,TextAnchor.MiddleCenter);
+            Text(new Rect(x+10,y+4,bar.width-20,18),mobile?"技能快捷栏":DesktopBasicOpportunityCaption(),10,pale,true,false,TextAnchor.MiddleCenter);
             for (int slotIndex = 0; slotIndex < GameBalance.HotbarSize; slotIndex++)
             {
                 int skill = LearnedSkillAtSlot(p, slotIndex);
@@ -899,6 +899,8 @@ namespace Emberfall
                 float cost = skill < 0 ? 0 : GameBalance.SkillEnergyCost(p.heroClass, skill);
                 bool lacksEnergy = !locked && session.Player != null && session.Player.Energy < cost;
                 float cooldown = skill < 0 || session.Player == null ? 0 : session.Player.CooldownRemaining(slotIndex);
+                bool actionable=false;
+                string actionCaption=mobile?"":DesktopSkillOpportunityCaption(skill,locked,lacksEnergy,cooldown,out actionable);
                 Rect slot = hotbarSlots[slotIndex];
                 Color accent = empty ? muted : potion ? gold : GameBalance.ClassColor(p.heroClass);
                 Fill(slot, locked ? new Color(.04f, .06f, .085f) : card);
@@ -906,9 +908,10 @@ namespace Emberfall
                 if (hotbarDragging && !hotbarPointerConfiguring && (slotIndex == hotbarPointerSlot || slot.Contains(Mouse))) Border(slot, gold, 2);
                 if (!empty)
                 {
-                    Rect identity=new Rect(slot.center.x-(mobile?22:16),slot.y+10,mobile?44:32,mobile?44:32);
+                    float identitySize=mobile?44:actionCaption.Length>0?24:32;
+                    Rect identity=new Rect(slot.center.x-identitySize*.5f,slot.y+(actionCaption.Length>0?8:10),identitySize,identitySize);
                     if(potion)DrawIcon(identity,HotbarIcon(p,skill),locked?new Color(.4f,.4f,.4f):Color.white);
-                    else DrawSkillIdentity(identity,p.heroClass,skill,rank,!locked&&!lacksEnergy,32);
+                    else DrawSkillIdentity(identity,p.heroClass,skill,rank,!locked&&!lacksEnergy,actionCaption.Length>0?24:32);
                 }
                 else Text(new Rect(slot.x, slot.y + 9, slot.width, 32), "+", 20, new Color(.34f, .44f, .53f), false, false, TextAnchor.MiddleCenter);
                 if (cooldown > .01f)
@@ -930,6 +933,13 @@ namespace Emberfall
                     float countWidth = Mathf.Max(17, count.Length * 8 + 4);
                     Fill(new Rect(slot.xMax - countWidth - 2, slot.yMax - 17, countWidth, 15), new Color(.015f, .025f, .04f, .94f));
                     Text(new Rect(slot.xMax - countWidth - 3, slot.yMax - 18, countWidth, 17), count, 11, locked ? muted : pale, true, false, TextAnchor.MiddleRight);
+                }
+                if(actionCaption.Length>0)
+                {
+                    if(actionable)Border(slot,jade,2);
+                    Rect caption=new Rect(slot.x+2,slot.yMax-14,slot.width-4,11);
+                    Fill(caption,new Color(.025f,.055f,.06f,.96f));
+                    Text(caption,actionCaption,8,actionable?jade:gold,true,false,TextAnchor.MiddleCenter);
                 }
                 bool hover = slot.Contains(Mouse);
                 if (hover && GUI.enabled)

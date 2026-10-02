@@ -108,7 +108,8 @@ namespace Emberfall
         internal void InterruptWindup()
         {
             if(stopped||State==null||!State.Interruptible)return;
-            CombatImpactBatch.Resolve(ResolveInterrupt);
+            if(chapterConfigured&&chapterDifficulty!=ChapterDifficulty.Normal) CombatImpactBatch.Resolve(ResolveInterrupt);
+            else ResolveInterrupt();
         }
         private void ResolveInterrupt()
         {

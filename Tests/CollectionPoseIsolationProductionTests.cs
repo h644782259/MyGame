@@ -1,5 +1,6 @@
 using System;using UnityEngine;using Emberfall;
-namespace Emberfall {public sealed partial class CombatModel {public Vector3 PreviewSpine=>spine.localPosition;public Quaternion PreviewDecoration=>decoration.localRotation;} }
+namespace Emberfall {public sealed partial class CombatModel {public Vector3 PreviewSpine=>spine.localPosition;public Quaternion PreviewDecoration=>decoration.localRotation;
+ public Transform InstallPreviewOrbit(){var orbit=new Transform();fashionWings=new Transform{childName="Mechanical star-ring orbit",namedChild=orbit};ConfigurePreview();return orbit;}} }
 public static class CollectionPoseIsolationProductionTests
 {
  static int n;static void Check(bool ok,string why){n++;if(!ok)throw new Exception(why);}
@@ -19,6 +20,19 @@ public static class CollectionPoseIsolationProductionTests
    }
    model.SamplePreview(0,CollectionPreviewAction.Idle,1);float before=model.PreviewSpine.y;model.SamplePreview(.3f,CollectionPreviewAction.Idle,1);Check(Math.Abs(before-model.PreviewSpine.y)>.00001f,"local idle clock actually animates model joints");
   }
+  var clock=new CollectionPreviewMotion();var mannequin=new CombatModel(HeroClass.Arcanist);var orbit=mannequin.InstallPreviewOrbit();bool crossed=false;float previousTime=0,previousRing=0;Quaternion previousOrbit=Quaternion.identity;
+  for(int frame=0;frame<2500;frame++)
+  {
+   clock.Advance(.05f,frame);mannequin.SamplePreview(clock.Time,CollectionPreviewAction.Idle,1,clock.OrbitYaw);
+   if(clock.Time<previousTime)
+   {
+    crossed=true;Check(Quaternion.Difference(previousOrbit,orbit.localRotation)<.00005f,"actual mechanical orbit remains continuous across local-clock wrap");
+    float ringDelta=(clock.RingYaw-previousRing+360)%360;Check(ringDelta<.61f,"12-degree floor ring remains continuous at the same boundary");
+    var expected=previousOrbit*Quaternion.Euler(0,0,.8f);Check(Same(expected,orbit.localRotation),"actual mechanical orbit retains 16 degrees per second across wrap");break;
+   }
+   previousTime=clock.Time;previousRing=clock.RingYaw;previousOrbit=orbit.localRotation;
+  }
+  Check(crossed,"orbit continuity test actually crosses the production 120-second wrap");
   return "PASS: "+n+" production isolated preview pose checks (managed transforms, no rendered engine frames)";
  }
 }

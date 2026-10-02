@@ -20,10 +20,11 @@ public static class ChapterProgressionTests
         Check(p.Profile.chapterCompletedMask==0&&p.Profile.mechanicMaterials==initial&&events==0&&File.ReadAllText(p.SaveFilePath)==disk,"failed save publishes no rewards unlock or changed event");
         Directory.Delete(p.SaveFilePath+".tmp");Check(p.TryCompleteChapterNode(a),"same receipt retries successfully");
         Check(p.Profile.mechanicMaterials==initial+2&&p.Profile.chapterFirstRewardMask==1&&p.Profile.highestAdventureTier==0,"first forest tier1 pays base1 plus fixed1 with no tier advancement");
-        Check(p.Profile.pendingFirstClearReward&&p.Load()&&p.Profile.pendingFirstClearReward,"chapter-only clear persists shared first-core eligibility");
+        Check(!p.Profile.pendingFirstClearReward&&p.Load()&&!p.Profile.pendingFirstClearReward,"forest alone never enables chapter first-core eligibility");
         int paid=p.Profile.mechanicMaterials;Check(p.TryCompleteChapterNode(a)&&p.Profile.mechanicMaterials==paid,"duplicate receipt no payout");
         var b=Begin(p,ChapterNode.Redrock);Check(p.TryCompleteChapterNode(b)&&p.Profile.highestAdventureTier==0,"redrock only story progress");
         Check(!p.TryCompleteChapterNode(a),"old receipt after newer settlement is rejected");
+        Check(!p.Profile.pendingFirstClearReward&&p.Load()&&!p.Profile.pendingFirstClearReward,"redrock alone never enables chapter first-core eligibility");
         var c=Begin(p,ChapterNode.StarPlatform);Check(p.TryCompleteChapterNode(c),"first star completes tier1");
         for(int tier=2;tier<=5;tier++){c=Begin(p,ChapterNode.StarPlatform,ChapterDifficulty.Normal,tier);Check(p.TryCompleteChapterNode(c),"chapter can advance only one authorized tier");}
         Check(p.TryCompleteChapterNode(c)&&p.Profile.highestAdventureTier==5&&p.Profile.pendingFirstClearReward&&!p.Profile.pendingFashionChest,"only star advances shared tier without legacy chest");

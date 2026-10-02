@@ -33,7 +33,6 @@ namespace Emberfall
             while(candidate.level<MaximumLevel&&experience>=GameBalance.XpToNext(candidate.level))
             {experience-=GameBalance.XpToNext(candidate.level);candidate.level++;candidate.skillPoints++;}
             candidate.xp=candidate.level>=MaximumLevel?0:(int)experience;
-            candidate.pendingFirstClearReward=!candidate.firstClearRewardClaimed;
             int index=(int)receipt.Node,bit=1<<index;
             candidate.chapterRevision=1;candidate.chapterCompletedMask|=bit;candidate.chapterFirstRewardMask|=bit;
             candidate.chapterHighestDifficulties[index]=Math.Max(candidate.chapterHighestDifficulties[index],(int)receipt.Difficulty+1);
@@ -41,6 +40,7 @@ namespace Emberfall
             candidate.chapterRewardSequence=receipt.Sequence;candidate.lastChapterRewardId=receipt.Id;
             if(receipt.Node==ChapterNode.StarPlatform)
             {
+                candidate.pendingFirstClearReward=!candidate.firstClearRewardClaimed;
                 if(candidate.highestAdventureTier>candidate.chapterHighestAdventureTier)candidate.chapterPriorAdventureTier=Math.Max(candidate.chapterPriorAdventureTier,candidate.highestAdventureTier);
                 candidate.chapterHighestAdventureTier=Math.Max(candidate.chapterHighestAdventureTier,receipt.Tier);
                 candidate.highestAdventureTier=Math.Max(candidate.highestAdventureTier,receipt.Tier);

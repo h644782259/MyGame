@@ -22,7 +22,7 @@ namespace Emberfall
                 "解锁 · 普通通关解锁困难，困难通关解锁英雄；阶数和治疗规则独立。\n"+
                 (limited?"限疗：初始3次治疗充能。":"普通治疗：使用携带药剂。")+"\n"+
                 "完成奖励 "+total+" 碎片（重复 "+repeat+(total>repeat?" + 首次1":"")+"）；难度不加乘，不发旧副本宝箱。\n"+
-                (!profile.firstClearRewardClaimed?(profile.pendingFirstClearReward?"共享一次首通核心已待领取；本次不重复。\n":"节点完成可领取共享一次首通核心。\n"):"")+TierEffect(node);
+                (!profile.firstClearRewardClaimed?(profile.pendingFirstClearReward?"共享一次首通核心已待领取；本次不重复。\n":(node==ChapterNode.StarPlatform?"星台通关完成整章，可领取共享一次首通核心。\n":"首通核心需完成整章：通关星台；本节点不授予资格。\n")):"")+TierEffect(node);
         }
         public static string Result(ChapterResultSnapshot result)
         {

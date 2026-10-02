@@ -29,7 +29,7 @@ namespace Emberfall {
   public bool ChapterResultReady=true;public ChapterResultSnapshot ChapterResult;public void ContinueChapterResult(){ChapterResultReady=true;}public void Respawn(){ReturnCalls++;}
   public RunStub ChapterRun=new RunStub();public ChapterRunReceipt Receipt;public int ChapterRewardMaterials=>Receipt==null?0:Receipt.Materials;public int ConfirmCalls,ReturnCalls;
   public bool ConfirmChapterEnter(){ConfirmCalls++;if(!AllowConfirm||!Progression.TryBeginChapterNode(SelectedChapterNode,SelectedChapterDifficulty,SelectedChapterTier,out Receipt))return false;for(int room=0;room<ChapterDefinition.RoomCount(Receipt.Node);room++)for(int i=0;i<(Receipt.Node==ChapterNode.StarPlatform?3:6);i++)if(!Progression.RegisterChapterEnemy(Receipt,room,i,Receipt.Node==ChapterNode.StarPlatform&&i==0))throw new Exception("UI host double must register actual completion budget");ChapterResult=new ChapterResultSnapshot(Receipt.Node,Receipt.Difficulty,Receipt.Tier,Progression.Profile.potions,false,0,0,0,0,false,null,null,0,0);return true;}
-  public bool TrySettleChapterReward(){int before=Progression.Profile.mechanicMaterials;bool ok=Progression.TryCompleteChapterNode(Receipt);if(ok){ChapterRewardPending=false;ChapterResult.RecordSaved(Progression.Profile.mechanicMaterials-before,true,-1,-1,0,0,Progression.ChapterCompletionExperience);}return ok;}
+  public bool TrySettleChapterReward(){bool beforePending=Progression.Profile.pendingFirstClearReward;int before=Progression.Profile.mechanicMaterials;bool ok=Progression.TryCompleteChapterNode(Receipt);if(ok){ChapterRewardPending=false;ChapterResult.RecordSaved(Progression.Profile.mechanicMaterials-before,true,-1,-1,0,0,Progression.ChapterCompletionExperience,!beforePending&&Progression.Profile.pendingFirstClearReward);}return ok;}
   public bool LeaveSucceeds=true;public void ReturnToCamp(){ReturnCalls++;if(LeaveSucceeds)ChapterFinished=false;}public void SetUIBlocking(bool b){Blocked=b;}public void SetPaused(bool b){Paused=b;}
  }
  public sealed partial class GameUI {
@@ -84,7 +84,10 @@ namespace Emberfall {
    MobileControls.Active=false;ui.width=1600;ui.height=900;ui.buttons.Clear();ui.DrawChapterSelection();
    var centered=ui.ChapterRect(ui.ChapterPanelGeometry().Body,1);check(centered.x==336&&centered.y==188,"CENTERED_CHAPTER desktop content centered in wide viewport");
    MobileControls.Active=true;ui.width=568;ui.height=320;ui.TouchRatio=1;
-   string preview=ChapterEntryPresentation.Preview(p.Profile,ChapterNode.ForestCourt,ChapterDifficulty.Normal,1,false);check(preview.Contains("节点完成可领取共享一次首通核心")&&!preview.Contains("无全局首通核心"),"first forest preview shares actual first-core eligibility");
+   string preview=ChapterEntryPresentation.Preview(p.Profile,ChapterNode.ForestCourt,ChapterDifficulty.Normal,1,false);check(preview.Contains("本节点不授予资格")&&!preview.Contains("可领取共享一次"),"forest preview must not promise first-core eligibility");
+   check(ChapterEntryPresentation.Preview(p.Profile,ChapterNode.Redrock,ChapterDifficulty.Normal,1,false).Contains("本节点不授予资格"),"redrock preview requires entire chapter");
+   check(ChapterEntryPresentation.Preview(p.Profile,ChapterNode.StarPlatform,ChapterDifficulty.Normal,1,false).Contains("星台通关完成整章，可领取共享一次首通核心"),"star preview identifies actual entitlement trigger");
+   p.Profile.highestAdventureTier=0;p.Profile.chapterPriorAdventureTier=0;ui.session.SelectedChapterTier=1;
    ui.session.AllowConfirm=true;check(ui.ConfirmSelectedChapter()&&ui.panel==Panel.None&&!ui.session.Blocked,"successful actual core Begin closes entry once");
    // Real filesystem rejection and actual core Complete, reached through production result retry method.
    ui.session.ChapterFinished=true;ui.session.ChapterRewardPending=true;ui.session.ActiveChapterNode=ChapterNode.Redrock;
@@ -93,6 +96,7 @@ namespace Emberfall {
    check(ui.texts.Exists(t=>t.Contains("结算待保存"))&&ui.texts.Exists(t=>t.Contains(p.LastError)),"result visibly distinguishes unsaved progress and actual error");
    int capturedMaterials=ui.session.Receipt.Materials;Directory.Delete(p.SaveFilePath+".tmp");check(ui.RetryChapterSettlement()&&!ui.session.ChapterRewardPending,"same receipt retries through actual UI method and real save");
    ui.texts.Clear();ui.DrawChapterResult();check(ui.texts.Exists(t=>t.Contains("奖励已保存 · +"+capturedMaterials+" 碎片")),"result displays original receipt amount including captured first-clear bonus");
+   check(!p.Profile.pendingFirstClearReward&&!ui.session.ChapterResult.FirstCoreAvailable,"actual Redrock UI settlement cannot unlock shared first core");
    check(capturedMaterials==ChapterProgression.MaterialReward(ui.session.Receipt.Node,ui.session.Receipt.Tier)+1,"first-clear receipt retains bonus after completion mask changed");
    int after=events;check(!ui.RetryChapterSettlement()&&events==after,"completed UI retry cannot grant again");
    ui.session.ChapterResultReady=false;ui.opaqueFrame=false;ui.texts.Clear();ui.buttons.Clear();ui.DrawChapterResult();
@@ -113,6 +117,9 @@ namespace Emberfall {
    check(p.LoadSlot(p.CurrentSlotId),"replace profile through real slot load");int callsBefore=ui.session.ConfirmCalls;
    check(!ui.ConfirmSelectedChapter()&&ui.session.ConfirmCalls==callsBefore,"same character reloaded profile cannot use stale UI owner");
    ui.DrawChapterSelection();check(ui.panel==Panel.None&&ui.chapterSelectionOwner==null&&!ui.session.Blocked,"drawing stale selection closes safely without entry");
+   var starProgression=new ProgressionService(Path.Combine(root,"star-ui"));check(starProgression.CreateNewSlot(HeroClass.Vanguard),"fresh star UI profile");starProgression.Profile.chapterCompletedMask=3;starProgression.Profile.chapterHighestDifficulties=new[]{1,1,0};starProgression.Save();
+   var starUI=new GameUI{session=new SessionStub{Progression=starProgression,SelectedChapterNode=ChapterNode.StarPlatform,ActiveChapterNode=ChapterNode.StarPlatform}};check(starUI.OpenChapterSelection()&&starUI.ConfirmSelectedChapter(),"actual star UI confirmation starts eligible receipt");starUI.session.ChapterFinished=true;starUI.session.ChapterRewardPending=true;check(starUI.RetryChapterSettlement()&&starProgression.Profile.pendingFirstClearReward&&starUI.session.ChapterResult.FirstCoreAvailable,"actual Star UI settlement enables shared core after save");starUI.DrawChapterResult();check(starUI.texts.Exists(t=>t.Contains("首通核心已可领取（共享一次）")),"saved Star UI reveals actual new shared entitlement");
+   int starMaterials=starProgression.Profile.mechanicMaterials;check(!starUI.RetryChapterSettlement()&&starProgression.Profile.mechanicMaterials==starMaterials,"Star UI saved retry cannot duplicate reward");
    return n;
   }
  }
