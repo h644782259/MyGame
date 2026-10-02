@@ -226,7 +226,7 @@ def main():
                 'using System; internal static class Program { static void Main(string[] args) { Console.WriteLine('+test+'.Run(args[0])); } }'))
         checks.append(("side-event-rewards",[ROOT/"Assets/Scripts/Core/GameTypes.cs",ROOT/"Assets/Scripts/Core/ProgressionService.cs",ROOT/"Tests/ProgressionTests.cs",ROOT/"Tests/SideEventRewardTests.cs"],
             'using System; internal static class Program { static void Main(string[] args) { Console.WriteLine(SideEventRewardTests.Run(args[0])); } }'))
-        checks.append(("adventure-entry-truth",[ROOT/("Assets/Scripts/"+f+".cs") for f in ["UI/AdventureEntryPresentation","Core/ExpeditionModeState","Core/TierRewardBand","Core/TierRewardRules","Core/GameTypes","Core/SkillRuntime"]]+[ROOT/"Tests/SkillRuntimeTests.cs",ROOT/"Tests/AdventureEntryPresentationTests.cs"],
+        checks.append(("adventure-entry-truth",[ROOT/("Assets/Scripts/"+f+".cs") for f in ["UI/AdventureEntryPresentation","Core/ExpeditionModeState","Core/TierRewardBand","Core/TierRewardRules","Core/GameTypes","Core/SkillRuntime","Core/ProgressionGoalState"]]+[ROOT/"Tests/SkillRuntimeTests.cs",ROOT/"Tests/AdventureEntryPresentationTests.cs"],
             'using System; internal static class Program { static void Main() { Console.WriteLine(AdventureEntryPresentationTests.Run()); } }'))
         checks.append(("mobile-room-objective",[ROOT/"Assets/Scripts/Core/RoomTacticalRegion.cs",ROOT/"Assets/Scripts/Core/RoomChainState.cs",ROOT/"Assets/Scripts/UI/RoomObjectivePresentation.cs",ROOT/"Assets/Scripts/UI/MobileControlLayout.cs",ROOT/"Tests/RoomObjectivePresentationTests.cs"],
             'using System; internal static class Program { static void Main() { Console.WriteLine(RoomObjectivePresentationTests.Run()); } }'))

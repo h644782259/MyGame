@@ -24,7 +24,9 @@ namespace Emberfall
    // The spare sixth cell carries the same selected goal as camp and results.
    Rect goal=new Rect((x+266)*u,(y+142)*u,254*u,50*u);
    Fill(goal,card);
-   Text(new Rect(goal.x+8*u,goal.y+3*u,goal.width-16*u,44*u),session.Progression.ProgressionGoalStatus(),Mathf.RoundToInt(10*u),jade,false,true);
+   var selectedGoal=session.Progression.SelectedProgressionGoal();
+   Text(new Rect(goal.x+8*u,goal.y+3*u,goal.width-16*u,16*u),selectedGoal.Title,Mathf.RoundToInt(10*u),jade,true);
+   Text(new Rect(goal.x+8*u,goal.y+20*u,goal.width-16*u,28*u),AdventureEntryPresentation.GoalFit(session.Progression.Profile,selectedGoal,session.SelectedArenaMode,session.SelectedDungeonTier),Mathf.RoundToInt(10*u),pale,false,true);
    float options=layout.OptionsY;
    Text(new Rect(x*u,options*u,180*u,25*u),"第 "+session.SelectedDungeonTier+" 阶",Mathf.RoundToInt(18*u),gold,true,false,TextAnchor.MiddleLeft);
    
