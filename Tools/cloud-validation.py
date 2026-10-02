@@ -221,6 +221,9 @@ def main():
             'using System; internal static class Program { static void Main(string[] args) { Console.WriteLine(AdventureProgressionTests.Run(args[0])); } }'))
         checks.append(("build-size-policy", [ROOT/"Assets/Editor/BuildSizePolicy.cs", ROOT/"Tests/BuildSizePolicyTests.cs"],
             'using System; internal static class Program { static void Main() { Console.WriteLine(BuildSizePolicyTests.Run()); } }'))
+        for name,test in [("progression-goal-identity","ProgressionGoalIdentityTests"),("progression-route-layers","ProgressionRouteLayerTests")]:
+            checks.append((name,[ROOT/("Assets/Scripts/Core/"+f+".cs") for f in ["GameTypes","ProgressionService","CampRouteCards","RunChoices","SkillRuntime","ProgressionHudHint","ProgressionAttention"]]+[ROOT/"Tests/ProgressionTests.cs",ROOT/("Tests/"+test+".cs")],
+                'using System; internal static class Program { static void Main(string[] args) { Console.WriteLine('+test+'.Run(args[0])); } }'))
         checks.append(("side-event-rewards",[ROOT/"Assets/Scripts/Core/GameTypes.cs",ROOT/"Assets/Scripts/Core/ProgressionService.cs",ROOT/"Tests/ProgressionTests.cs",ROOT/"Tests/SideEventRewardTests.cs"],
             'using System; internal static class Program { static void Main(string[] args) { Console.WriteLine(SideEventRewardTests.Run(args[0])); } }'))
         checks.append(("adventure-entry-truth",[ROOT/("Assets/Scripts/"+f+".cs") for f in ["UI/AdventureEntryPresentation","Core/ExpeditionModeState","Core/TierRewardBand","Core/TierRewardRules","Core/GameTypes","Core/SkillRuntime"]]+[ROOT/"Tests/SkillRuntimeTests.cs",ROOT/"Tests/AdventureEntryPresentationTests.cs"],
@@ -300,7 +303,7 @@ def main():
                 sources.append(ROOT / "Assets/Scripts/Core/CombatBalance.cs")
         for _,sources,_ in checks:
             if ROOT/"Assets/Scripts/Core/ProgressionService.cs" in sources:
-                for helper in ["HubTravelRules","MasteryCoreRuntime","TierRewardRules","TierRewardBand"]:sources.append(ROOT/("Assets/Scripts/Core/"+helper+".cs"))
+                for helper in ["HubTravelRules","MasteryCoreRuntime","TierRewardRules","TierRewardBand","ProgressionGoalState"]:sources.append(ROOT/("Assets/Scripts/Core/"+helper+".cs"))
             if ROOT/"Tests/CombatBalanceTests.cs" in sources:sources.append(ROOT/"Assets/Scripts/Core/SkillDamageBudgets.cs")
         for name, sources, program in checks:
             project = write_project(workspace / name, sources, program, defines={"combat-review-object-id-modern-contract":"UNITY_6000_6_OR_NEWER", "game-font-android":"UNITY_ANDROID", "game-font-ios":"UNITY_IOS"}.get(name, ""))

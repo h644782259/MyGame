@@ -24,7 +24,7 @@ def main():
     assert 'CombatReviewConfigurations.CreateAll()' in fixture and 'CombatReviewBuildSetup.Apply(game.Progression,config,expected)' in fixture
     spec=importlib.util.spec_from_file_location('validation',ROOT/'Tools/cloud-validation.py')
     validation=importlib.util.module_from_spec(spec);spec.loader.exec_module(validation)
-    sources=['Assets/Scripts/Core/'+name+'.cs' for name in ['GameTypes','ProgressionService','CombatBalance','HubTravelRules','MasteryCoreRuntime','TierRewardRules','TierRewardBand','SkillRuntime','CombatReviewConfigurations']]
+    sources=['Assets/Scripts/Core/'+name+'.cs' for name in ['GameTypes','ProgressionGoalState','ProgressionService','CombatBalance','HubTravelRules','MasteryCoreRuntime','TierRewardRules','TierRewardBand','SkillRuntime','CombatReviewConfigurations']]
     sources+=['Assets/Scripts/Combat/'+name+'.cs' for name in ['PlayerUpgradeRules','CompanionRules']]
     sources+=['Assets/Editor/CombatReviewBuildSetup.cs','Tests/ProgressionTests.cs','Tests/GrowthReviewFixtureTests.cs']
     with tempfile.TemporaryDirectory(prefix='EmberfallGrowthReview-') as temp:
