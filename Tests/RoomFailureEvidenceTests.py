@@ -31,3 +31,7 @@ for name in ['GameSession.RoomChain.cs','GameSession.RoomTactics.cs']:
  source=(root/'Assets/Scripts/Core'/name).read_text();assert 'RoomChainRun.Fail();' not in source and 'RoomFailureReason.GenerationOrPathFailure' in source
 assert main.index('if (!loadingSaveSnapshot && !enteringChapter && !SaveBeforeLeaving()) return false;')<main.index('LastRunSummary=BuildRunSummary(false, "Abandoned")')<main.index('int previousCombatEpoch = Player.CombatEpoch;',main.index('private bool ChangeZone'))
 print('PASS: death/path/abandon callsite contracts; no Unity engine execution')
+
+player=(root/"Assets/Scripts/Combat/PlayerController.cs").read_text()
+heal=method(player,"public void Heal(")
+assert heal.index("Health += healed")<heal.index("session.RecordActualHealing(healed)")
