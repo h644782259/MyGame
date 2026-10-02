@@ -22,8 +22,18 @@ namespace Emberfall
         {
             GameObject root=new GameObject("Room capture boundary");root.transform.position=position;
             WorldResources r=root.AddComponent<WorldResources>();Material gold=r.Material(new Color(1,.8f,.25f),true);
-            Ring(root.transform,r,"Stand inside",position+Vector3.up*.08f,2.4f,.09f,gold,false);
+            Ring(root.transform,r,"Stand inside",position+Vector3.up*.08f,RoomTacticalRegion.CaptureRadius,.09f,gold,false);
             Crystal(root.transform,r,position+Vector3.up*.6f,.35f,gold);
+            return root;
+        }
+        public static GameObject MakeRoomContestMarker(Transform enemy,float footprint)
+        {
+            var root=new GameObject("Contesting objective: double gold ring");
+            root.transform.SetParent(enemy,false);
+            var r=root.AddComponent<WorldResources>();
+            var gold=r.Material(new Color(1f,.82f,.18f),true);
+            Ring(root.transform,r,"Contest inner",enemy.position+Vector3.up*.08f,footprint+.10f,.055f,gold,false);
+            Ring(root.transform,r,"Contest outer",enemy.position+Vector3.up*.08f,footprint+.23f,.055f,gold,false);
             return root;
         }
     }
