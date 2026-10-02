@@ -848,7 +848,7 @@ namespace Emberfall
                     else if (status.TryShatter(this, castId)) amount += direct.WithoutCritical().Amount * .6f;
                 }
                 enemy.TakeDamage(amount, Vector3.zero, 0, final?.3f:0, critical:direct.IsCritical);
-                if(burnSettlement!=null)burnSettlement.Apply();
+                if(burnSettlement!=null&&burnSettlement.Apply())RecordBurnCash(castId,impactEpoch,enemy.transform.position);
             }
         }
 

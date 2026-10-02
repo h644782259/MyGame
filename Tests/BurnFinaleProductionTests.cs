@@ -6,7 +6,7 @@ namespace UnityEngine
     public struct Quaternion{public static Quaternion identity=>new Quaternion();public static Quaternion Euler(float a,float b,float c)=>new Quaternion();}
     public struct Vector3{public float x,y,z;public Vector3(float x,float y,float z){this.x=x;this.y=y;this.z=z;}public static Vector3 zero=>new Vector3();public float magnitude=>(float)Math.Sqrt(x*x+y*y+z*z);public static Vector3 operator -(Vector3 a,Vector3 b)=>new Vector3(a.x-b.x,a.y-b.y,a.z-b.z);}
     public struct Color{public Color(float r,float g,float b){}}
-    public static class Time{public static int frameCount;public static float deltaTime;}
+    public static class Time{public static int frameCount;public static float deltaTime,time;}
     public static class Mathf{public const float PI=(float)Math.PI;public static float Max(float a,float b)=>Math.Max(a,b);public static float Min(float a,float b)=>Math.Min(a,b);public static int Min(int a,int b)=>Math.Min(a,b);public static float Clamp(float a,float b,float c)=>Math.Min(c,Math.Max(a,b));public static float Clamp01(float a)=>Clamp(a,0,1);public static float Sin(float a)=>(float)Math.Sin(a);}
 }
 namespace Emberfall
@@ -17,19 +17,19 @@ namespace Emberfall
     public class EnemyController:MonoBehaviour
     {
         public enum ThreatTier{Normal,Elite}public ThreatTier Tier;public bool IsDead,IsBoss,IsStunned;public float HitFootprintBonus,ControlStunRemaining;public EnemyStatusEffects StatusEffects;
-        public float Health=10000;public Action OnDamage;public readonly List<DamageEvent> Hits=new List<DamageEvent>();
+        public float Health=10000;public bool IgnoreDamage;public Action OnDamage;public readonly List<DamageEvent> Hits=new List<DamageEvent>();
         public class DamageEvent{public float Amount;public bool Impact,Critical;}
-        public void TakeDamage(float value,Vector3 offset,float knockback=0,float stun=0,bool impact=true,bool critical=false){if(IsDead)return;Hits.Add(new DamageEvent{Amount=value,Impact=impact,Critical=critical});Health-=Math.Max(1,value*.5f);if(Health<=0)IsDead=true;OnDamage?.Invoke();}
+        public void TakeDamage(float value,Vector3 offset,float knockback=0,float stun=0,bool impact=true,bool critical=false){if(IsDead||IgnoreDamage)return;Hits.Add(new DamageEvent{Amount=value,Impact=impact,Critical=critical});Health-=Math.Max(1,value*.5f);if(Health<=0)IsDead=true;OnDamage?.Invoke();}
         public void Provoke(){}public float ApplyControl(float duration)=>duration;
     }
-    public partial class PlayerController:MonoBehaviour
+    public sealed partial class PlayerController:MonoBehaviour
     {
         public int CombatEpoch=1,ProcHits,Boons;public bool DodgeBurn;public bool IsDead;public ElementalistSpecialization Specialization=ElementalistSpecialization.Burn;private GameSession session=>GameSession.Instance;
         private bool ValidAimTarget(EnemyController e)=>e!=null&&!e.IsDead;
         internal void RegisterSkillHit(int cast){ProcHits++;}private void ApplySpellDodgeBoon(EnemyController enemy){Boons++;if(DodgeBurn)enemy.StatusEffects.Burn(this,2,200);}
     }
     public static class ElementalCombatVfx{public enum Element{Fire,Poison}public static int Clears;public static void OnEnemy(EnemyController e,Element element,float duration){}public static void ClearFire(EnemyController e){Clears++;}}
-    public static class CombatFx{public static Vector3 Flat(Vector3 v){v.y=0;return v;}public static void Ring(Vector3 p,float r,Color c,float duration,float width){} }
+    public static class CombatFx{public static int CashContacts;public static void BurnContact(PlayerController owner,Vector3 point,bool finale=false){CashContacts++;}public static Vector3 Flat(Vector3 v){v.y=0;return v;}public static void Ring(Vector3 p,float r,Color c,float duration,float width){} }
     public static class CombatSight{public static bool Area(Vector3 a,Vector3 b)=>true;}
     public static class DestructibleProp{public static void StrikeArea(PlayerController p,Vector3 at,float r,CombatDamage d,int cast){} }
     public static class PlayerUpgradeRules{public const float PoisonDetonationTicks=3;}
@@ -42,7 +42,7 @@ public static class BurnFinaleProductionTests
     static void Frame(float delta){Time.frameCount++;Time.deltaTime=delta;}
     static EnemyController Create(out PlayerController player)
     {
-        Time.frameCount=0;Time.deltaTime=0;ElementalCombatVfx.Clears=0;player=new PlayerController();GameSession.Instance=new GameSession{Player=player};
+        Time.frameCount=0;Time.deltaTime=0;Time.time=0;CombatFx.CashContacts=0;ElementalCombatVfx.Clears=0;player=new PlayerController();GameSession.Instance=new GameSession{Player=player};
         var enemy=new EnemyController();enemy.StatusEffects=new EnemyStatusEffects{OwnerEnemy=enemy};enemy.StatusEffects.GetType().GetMethod("Awake",BindingFlags.Instance|BindingFlags.NonPublic).Invoke(enemy.StatusEffects,null);GameSession.Instance.Enemies.Add(enemy);return enemy;
     }
     public static string Run()
@@ -83,7 +83,10 @@ public static class BurnFinaleProductionTests
         enemy=Create(out owner);status=enemy.StatusEffects;status.Burn(owner,3,30);Frame(.1f);
         owner.ElementalAdvancedArea(Vector3.zero,4,new CombatDamage(100,true,2),12,true);
         Check(enemy.Hits.Count==2&&enemy.Hits[1].Amount==30&&!enemy.Hits[1].Critical&&!enemy.Hits[1].Impact&&enemy.Hits[0].Amount==65&&enemy.Hits[0].Critical,"actual player final branch preserves direct crit damage and adds only noncritical DOT cash");
+        Check(owner.BurnCashFeedback(out int cashed,out float expires)&&cashed==1&&expires==2&&CombatFx.CashContacts==1,"actual accepted cash publishes one target and one bounded contact");
         Check(owner.ProcHits==1&&owner.Boons==1,"cash does not re-enter skill-hit/resource/boon hooks");
+        owner.ElementalAdvancedArea(Vector3.zero,4,new CombatDamage(100,true,2),12,true);Check(owner.BurnCashFeedback(out cashed,out expires)&&cashed==1&&CombatFx.CashContacts==1,"same target same cast never doubles feedback");
+        Time.time=2;Check(!owner.BurnCashFeedback(out cashed,out expires),"cash presentation expires on gameplay clock");
         enemy=Create(out owner);status=enemy.StatusEffects;
         owner.ElementalAdvancedArea(Vector3.zero,4,new CombatDamage(100,false),13,false);
         Check(enemy.Hits.Count==1&&enemy.Hits[0].Amount==65&&status.IsBurning,"nonfinal production branch only applies normal burn and direct damage");
@@ -105,10 +108,18 @@ public static class BurnFinaleProductionTests
         Check(enemy.Hits.Count==2&&enemy.Hits[1].Amount==300&&!status.IsBurning,"existing burn cash includes same-hit boon strength and clears its future events");
         for(int i=0;i<8;i++)Tick(status,.5f);Check(enemy.Hits.Count==2,"stopping after boon-assisted cash produces no extra burn ticks");
         enemy=Create(out owner);status=enemy.StatusEffects;status.Burn(owner,3,30);Frame(.1f);var settlement=status.PrepareBurnFinale(owner,16,60);
-        settlement.Apply();settlement.Apply();Check(enemy.Hits.Count==1,"prepared cash receipt delivers exactly once");
+        Check(settlement.Apply()&&!settlement.Apply()&&enemy.Hits.Count==1,"prepared cash receipt delivers exactly once");
         enemy=Create(out owner);status=enemy.StatusEffects;status.Burn(owner,3,30);Frame(.1f);settlement=status.PrepareBurnFinale(owner,17,60);owner.CombatEpoch++;settlement.Apply();Check(enemy.Hits.Count==0,"prepared cash cannot cross world epoch after direct callback");
         enemy=Create(out owner);status=enemy.StatusEffects;status.Burn(owner,3,30);Frame(.1f);enemy.Health=1;owner.ElementalAdvancedArea(Vector3.zero,4,new CombatDamage(100,false),18,true);
-        Check(enemy.Hits.Count==1&&enemy.Hits[0].Amount==65&&enemy.IsDead,"direct hit keeps priority and dead target cannot receive cash");
+        Check(enemy.Hits.Count==1&&enemy.Hits[0].Amount==65&&enemy.IsDead&&CombatFx.CashContacts==0&&!owner.BurnCashFeedback(out _,out _),"direct hit keeps priority and dead target cannot receive cash or contact");
+        enemy=Create(out owner);status=enemy.StatusEffects;status.Burn(owner,3,30);Frame(.1f);settlement=status.PrepareBurnFinale(owner,101,60);enemy.IsDead=true;Check(!settlement.Apply()&&enemy.Hits.Count==0,"direct-lethal target never reports accepted burn cash");
+        enemy=Create(out owner);status=enemy.StatusEffects;status.Burn(owner,3,30);enemy.IgnoreDamage=true;Frame(.1f);Check(status.ResolveBurnFinale(owner,102,60)==0&&enemy.Hits.Count==0,"claimed ticks without actual HP loss never report cash success");
+        enemy=Create(out owner);status=enemy.StatusEffects;status.Burn(owner,3,30);
+        var second=new EnemyController();second.StatusEffects=new EnemyStatusEffects{OwnerEnemy=second};second.StatusEffects.GetType().GetMethod("Awake",BindingFlags.Instance|BindingFlags.NonPublic).Invoke(second.StatusEffects,null);GameSession.Instance.Enemies.Add(second);second.StatusEffects.Burn(owner,3,30);
+        Frame(.1f);owner.ElementalAdvancedArea(Vector3.zero,4,new CombatDamage(100,false),103,true);
+        Check(owner.BurnCashFeedback(out cashed,out expires)&&cashed==2&&CombatFx.CashContacts==2,"actual final area aggregates two accepted targets into one cast receipt");
+        GameSession.Instance.InputBlocked=true;Check(!owner.BurnCashFeedback(out cashed,out expires),"paused feedback is hidden");GameSession.Instance.InputBlocked=false;
+        owner.CombatEpoch++;Check(!owner.BurnCashFeedback(out cashed,out expires),"feedback cannot survive a room epoch");
         var gate=new BurnFinaleReceipts();Check(gate.TryEnter(10)&&gate.TryEnter(8)&&!gate.TryEnter(10),"recent out-of-order finale completions retain independent receipts");
         for(int i=11;i<80;i++)Check(gate.TryEnter(i),"new finale receipt accepted within bounded storage");
         Check(!gate.TryEnter(8)&&!gate.TryEnter(10),"evicted old cast receipts never become payable again");gate.Clear();Check(gate.TryEnter(8),"new owner epoch receives a clean receipt scope");

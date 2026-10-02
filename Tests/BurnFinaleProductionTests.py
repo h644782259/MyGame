@@ -22,17 +22,19 @@ def main():
     assert 'int statusSkill = -1' in area
     assert not any(api in area for api in ('BeginBurnFinale(', 'CompleteBurnFinale(', 'ResolveBurnFinale(', 'ElementalAdvancedArea('))
     print('PASS: production tail emitter/area source contract excludes finale cash entry (not simulated tail damage)')
-    cases=[('current',None),('missing-final-cash-delivery','actual player final branch preserves direct crit damage and adds only noncritical DOT cash'),('missing-due-drain','due original-strength tick must settle before strongest refresh and future cash'),('cash-without-own-burn','without existing own burn finale leaves a fresh three-second schedule'),('double-frame-advance','status Update followed by finale in same frame cannot advance burn clock twice')]
+    cases=[('current',None),('claimed-not-delivered','claimed ticks without actual HP loss never report cash success'),('false-contact','direct hit keeps priority and dead target cannot receive cash or contact'),('missing-final-cash-delivery','actual player final branch preserves direct crit damage and adds only noncritical DOT cash'),('missing-due-drain','due original-strength tick must settle before strongest refresh and future cash'),('cash-without-own-burn','without existing own burn finale leaves a fresh three-second schedule'),('double-frame-advance','status Update followed by finale in same frame cannot advance burn clock twice')]
     with tempfile.TemporaryDirectory(prefix='burn-finale-') as temporary:
         for name,expected in cases:
             folder=Path(temporary)/name;folder.mkdir();method=player
-            if name=='missing-final-cash-delivery':method=once(method,'if(burnSettlement!=null)burnSettlement.Apply();','')
+            if name=='false-contact':method=once(method,'if(burnSettlement!=null&&burnSettlement.Apply())RecordBurnCash(castId,impactEpoch,enemy.transform.position);','if(burnSettlement!=null){burnSettlement.Apply();RecordBurnCash(castId,impactEpoch,enemy.transform.position);}')
+            if name=='missing-final-cash-delivery':method=once(method,'if(burnSettlement!=null&&burnSettlement.Apply())RecordBurnCash(castId,impactEpoch,enemy.transform.position);','')
             (folder/'PlayerMethod.cs').write_text('using UnityEngine;namespace Emberfall{public partial class PlayerController{'+method+'}}')
             (folder/'Gate.cs').write_text('using System.Collections.Generic;namespace Emberfall{'+gate+'}')
-            files=['Assets/Scripts/Core/ScheduledTickWindow.cs','Assets/Scripts/Core/BurnFinaleReceipts.cs','Assets/Scripts/Combat/EnemyStatusEffects.cs','Assets/Scripts/Combat/CombatDamage.cs','Tests/BurnFinaleProductionTests.cs','Tests/ScheduledTickWindowTests.cs']
+            files=['Assets/Scripts/Core/ScheduledTickWindow.cs','Assets/Scripts/Core/BurnFinaleReceipts.cs','Assets/Scripts/Combat/EnemyStatusEffects.cs','Assets/Scripts/Combat/PlayerController.BurnFeedback.cs','Assets/Scripts/Combat/CombatDamage.cs','Tests/BurnFinaleProductionTests.cs','Tests/ScheduledTickWindowTests.cs']
             for path in files:
                 source=(ROOT/path).read_text()
                 if path.endswith('EnemyStatusEffects.cs'):
+                    if name=='claimed-not-delivered':source=once(source,'return settlement.Apply()?settlement.Ticks:0;','settlement.Apply();return settlement.Ticks;')
                     if name=='missing-due-drain':source=once(source,'while(burnSchedule!=null&&burnSchedule.HasDueTicks&&!enemy.IsDead&&ValidSource(source,expectedEpoch))','while(false&&burnSchedule!=null&&burnSchedule.HasDueTicks&&!enemy.IsDead&&ValidSource(source,expectedEpoch))')
                     if name=='cash-without-own-burn':source=once(source,'            if(!plan.HadOwnBurn)return null;','')
                     if name=='double-frame-advance':source=once(source,'            if(burnClockFrame==Time.frameCount)return;','')
