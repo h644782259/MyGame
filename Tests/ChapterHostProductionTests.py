@@ -11,7 +11,7 @@ def method(file,signature):
         elif text[end]=='}':depth-=1
         end+=1
     return text[start:end]
-core=['GameTypes','ProgressionService','ProgressionService.Chapter','ChapterProgression','ChapterCombatRun','RoomTactics','RoomChainState','ExpeditionModeState','RoomTacticalRegion','CombatBalance','HubTravelRules','MasteryCoreRuntime','TierRewardRules','TierRewardBand','ProgressionGoalState','AdventureResultPolicy','GameSession.Chapter','EscapePostPolicy']
+core=['GameTypes','ProgressionService','ProgressionService.Chapter','ProgressionService.Reforge','ReforgeQuote','ChapterProgression','ChapterCombatRun','RoomTactics','RoomChainState','ExpeditionModeState','RoomTacticalRegion','CombatBalance','HubTravelRules','MasteryCoreRuntime','TierRewardRules','TierRewardBand','ProgressionGoalState','AdventureResultPolicy','GameSession.Chapter','EscapePostPolicy']
 with tempfile.TemporaryDirectory(prefix='chapter-host-production-') as temp:
     folder=Path(temp)
     for name in core:(folder/(name+'.cs')).write_text((root/'Assets/Scripts/Core'/(name+'.cs')).read_text())
