@@ -1,0 +1,38 @@
+/workspace/emberfall_moving_pilot_validation/Assets/Scripts/Core/ChapterProgression.cs(65,22): warning CS0649: Field 'ChapterRunReceipt.MasteryEvidence' is never assigned to, and will always have its default value 0 [/tmp/redrock-route-eu309_ao/positive/Validation.csproj]
+/workspace/emberfall_moving_pilot_validation/Assets/Scripts/Core/ChapterProgression.cs(66,23): warning CS0649: Field 'ChapterRunReceipt.MasteryEligible' is never assigned to, and will always have its default value false [/tmp/redrock-route-eu309_ao/positive/Validation.csproj]
+
+Build succeeded.
+
+/workspace/emberfall_moving_pilot_validation/Assets/Scripts/Core/ChapterProgression.cs(65,22): warning CS0649: Field 'ChapterRunReceipt.MasteryEvidence' is never assigned to, and will always have its default value 0 [/tmp/redrock-route-eu309_ao/positive/Validation.csproj]
+/workspace/emberfall_moving_pilot_validation/Assets/Scripts/Core/ChapterProgression.cs(66,23): warning CS0649: Field 'ChapterRunReceipt.MasteryEligible' is never assigned to, and will always have its default value false [/tmp/redrock-route-eu309_ao/positive/Validation.csproj]
+    2 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:01.39
+/workspace/emberfall_moving_pilot_validation/Assets/Scripts/Core/ChapterProgression.cs(66,23): warning CS0649: Field 'ChapterRunReceipt.MasteryEligible' is never assigned to, and will always have its default value false [/tmp/redrock-route-eu309_ao/wall/Validation.csproj]
+/workspace/emberfall_moving_pilot_validation/Assets/Scripts/Core/ChapterProgression.cs(65,22): warning CS0649: Field 'ChapterRunReceipt.MasteryEvidence' is never assigned to, and will always have its default value 0 [/tmp/redrock-route-eu309_ao/wall/Validation.csproj]
+
+Build succeeded.
+
+/workspace/emberfall_moving_pilot_validation/Assets/Scripts/Core/ChapterProgression.cs(66,23): warning CS0649: Field 'ChapterRunReceipt.MasteryEligible' is never assigned to, and will always have its default value false [/tmp/redrock-route-eu309_ao/wall/Validation.csproj]
+/workspace/emberfall_moving_pilot_validation/Assets/Scripts/Core/ChapterProgression.cs(65,22): warning CS0649: Field 'ChapterRunReceipt.MasteryEvidence' is never assigned to, and will always have its default value 0 [/tmp/redrock-route-eu309_ao/wall/Validation.csproj]
+    2 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:01.53
+/workspace/emberfall_moving_pilot_validation/Assets/Scripts/Core/ChapterProgression.cs(65,22): warning CS0649: Field 'ChapterRunReceipt.MasteryEvidence' is never assigned to, and will always have its default value 0 [/tmp/redrock-route-eu309_ao/low-bit/Validation.csproj]
+/workspace/emberfall_moving_pilot_validation/Assets/Scripts/Core/ChapterProgression.cs(66,23): warning CS0649: Field 'ChapterRunReceipt.MasteryEligible' is never assigned to, and will always have its default value false [/tmp/redrock-route-eu309_ao/low-bit/Validation.csproj]
+
+Build succeeded.
+
+/workspace/emberfall_moving_pilot_validation/Assets/Scripts/Core/ChapterProgression.cs(65,22): warning CS0649: Field 'ChapterRunReceipt.MasteryEvidence' is never assigned to, and will always have its default value 0 [/tmp/redrock-route-eu309_ao/low-bit/Validation.csproj]
+/workspace/emberfall_moving_pilot_validation/Assets/Scripts/Core/ChapterProgression.cs(66,23): warning CS0649: Field 'ChapterRunReceipt.MasteryEligible' is never assigned to, and will always have its default value false [/tmp/redrock-route-eu309_ao/low-bit/Validation.csproj]
+    2 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:01.72
+PASS: 3232 actual room-zero host spawn isolation and full jitter-byte assertions
+PASS: 51209 chapter production geometry/navigation/spawn checks (managed shims, not gameplay or rendering)
+PASS: 780 chapter formation production navigation assertions (managed shims, not combat AI playback)
+PASS: compiled wall control fails exact SPLIT_CROSSING oracle
+PASS: compiled low-bit control fails exact ROUTE_LOW_BYTE oracle

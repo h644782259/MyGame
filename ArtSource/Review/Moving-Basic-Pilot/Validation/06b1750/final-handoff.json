@@ -1,0 +1,78 @@
+{
+  "head": "06b1750cf6936051b2f2d5f21589b23bb1ebc241",
+  "tree": "715c9af6a9466a99e381cc707ba27fc537bacb46",
+  "defaultJIT": true,
+  "fullSuite": {
+    "passed": true,
+    "passedCount": 196,
+    "totalCount": 196,
+    "startedUtc": "20261002T190212860154Z",
+    "completedUtc": "2026-10-02T19:19:34.825840+00:00",
+    "report": "/workspace/scratch/moving-basic-validation/06b1750/final-report/report.json",
+    "reportSha256": "799d323c2df0e7051abd63ecd8c28f84ea34d4742a7db90670cd0570ce8b72de",
+    "log": "/workspace/scratch/moving-basic-validation/06b1750/full.log",
+    "sourceChangedDuringRun": [],
+    "runtimeSourceCount": 256,
+    "allSourceManifestSha256": "2ce34502e246d4e50d87ddaf8f7bdd5b86c11d0da44323dd2a1d173dbe153953"
+  },
+  "platformAPI": {
+    "passed": true,
+    "report": "/workspace/scratch/moving-basic-validation/06b1750/platform-api-report.json",
+    "runtimeParity": true,
+    "runtimeManifestSha256": "afe736b49b2912229f5cdf2405ead46cbd248dd0e92d7a1c367f7f665243fee4",
+    "platformHeadsAfterRun": [
+      {
+        "head": "06b1750cf6936051b2f2d5f21589b23bb1ebc241",
+        "tree": "715c9af6a9466a99e381cc707ba27fc537bacb46",
+        "runtimeAndArtUnchanged": true,
+        "trackedStatus": ""
+      },
+      {
+        "head": "d8597236519a1cd01caf67274c95e1d0204094ea",
+        "tree": "833e36cbb50da55bb42a220bb575e6874394d5eb",
+        "runtimeAndArtUnchanged": true,
+        "trackedStatus": ""
+      },
+      {
+        "head": "f2fcbf876edc9abeb9216720efcaf700783829ab",
+        "tree": "887549070f88536ce74ddd3bad0cb3ec50a5ac4e",
+        "runtimeAndArtUnchanged": true,
+        "trackedStatus": ""
+      }
+    ]
+  },
+  "parityProtection": {
+    "report": "/workspace/scratch/moving-basic-validation/06b1750/parity-protection.json",
+    "passed": true,
+    "runtimeAndMetaFiles": 516,
+    "artAndPilotAssetFiles": 69,
+    "artManifestSha256": "193242a32f155f1c8e3da53c89953737d33258a1e21275542de20a0335b5d3f4",
+    "platforms": [
+      {
+        "path": "/workspace/emberfall_ios_moving_pilot",
+        "head": "d8597236519a1cd01caf67274c95e1d0204094ea",
+        "roundBase": "054d23b8e9235573f15234b518229f7e51bcb77d",
+        "protectedVsRoundBase": 24,
+        "protectedVsPriorOriginalLedger": 24,
+        "syncedPaths": 9,
+        "runtimeAndMetaFiles": 516,
+        "artAndPilotAssetFiles": 69
+      },
+      {
+        "path": "/workspace/emberfall_android_moving_pilot",
+        "head": "f2fcbf876edc9abeb9216720efcaf700783829ab",
+        "roundBase": "d0a8b8ee790b8f3e8f6fc9d61711816c15cbbd4c",
+        "protectedVsRoundBase": 24,
+        "protectedVsPriorOriginalLedger": 24,
+        "syncedPaths": 9,
+        "runtimeAndMetaFiles": 516,
+        "artAndPilotAssetFiles": 69
+      }
+    ]
+  },
+  "limitations": [
+    "Registered196 checks only, not all repository test scripts.",
+    "Managed animation/scene boundaries and cached Unity2021 API references; no Unity Editor/import/render, actual FBX deformation, Player movement, device gameplay or platform package build."
+  ],
+  "candidateEdits": false
+}
