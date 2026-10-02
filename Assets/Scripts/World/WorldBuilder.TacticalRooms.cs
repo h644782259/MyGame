@@ -26,6 +26,12 @@ namespace Emberfall
             Crystal(root.transform,r,position+Vector3.up*.6f,.35f,gold);
             return root;
         }
+        public static GameObject MakeSideEventCrystal(Vector3 position)
+        {
+            var root=MakeLootBeacon(position,new Color(.33f,.85f,1));
+            Label(root.transform,"Optional crystal terms","晶核支线 · 2敌\n全灭：1材料+补给\n可放弃 · 不阻北门",position+Vector3.up*2.1f,.065f,new Color(.65f,.95f,1),false);
+            return root;
+        }
         public static GameObject MakeRoomContestMarker(Transform enemy,float footprint)
         {
             var root=new GameObject("Contesting objective: double gold ring");

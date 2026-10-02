@@ -16,7 +16,7 @@ namespace Emberfall
         public int DungeonEntryLevel { get; private set; } = 2;
         public string LastRunSummary { get; private set; } = "";
         public bool IsInCamp { get { return HasStarted && !InDungeon && !IsDead && Player != null && (Vector3.Distance(Player.transform.position, new Vector3(0,0,-10)) < 7f || NearbyHubNpc!=HubNpcKind.None); } }
-        public bool SideEventAvailable { get { return InDungeon && ModeRun==null && (RoomChainRun==null || RoomChainRun.Room.Index==RoomTactics.EventRoom(runSeed)&&RoomChainRun.DoorUnlocked&&!RoomChainRun.Finished) && !DungeonCleared && sideCrystal!=null && !sideEventStarted && Player != null && Vector3.Distance(Player.transform.position, sideEventPosition) < 3.5f; } }
+        public bool SideEventAvailable { get { return InDungeon && ModeRun==null && (RoomChainRun==null || RoomChainRun.Room.Index==RoomTactics.EventRoom(runSeed)&&!RoomChainRun.Finished) && !DungeonCleared && sideCrystal!=null && !sideEventStarted && Player != null && Vector3.Distance(Player.transform.position, sideEventPosition) < 3.5f; } }
         private int runSeed, wavePopulation;
         private readonly Queue<EncounterSpawn> reinforcementQueue=new Queue<EncounterSpawn>();
         private float nextReinforcementAt;
@@ -45,7 +45,7 @@ namespace Emberfall
         private void ResetExpedition(bool dungeon)
         {
             ClearDungeonSettlement();
-            RunChoices.Reset(); reinforcementQueue.Clear(); nextReinforcementAt=0; DungeonSelectionOpen = false; sideEventEnemies.Clear(); sideEventStarted = false; sideCrystal = null;
+            RunChoices.Reset(); reinforcementQueue.Clear(); nextReinforcementAt=0; DungeonSelectionOpen = false; AbandonSideEvent();
             combatActions.Clear(); lastDamageSource = "未记录"; lastDamageAmount = 0; lastInterruptAt = -10; recapGoldLost = 0;
             if (dungeon)
             {
@@ -130,38 +130,91 @@ namespace Emberfall
                 if (ChallengeRun) HealingCharges = Mathf.Min(3, HealingCharges + 1);
                 if (HasBlessing(RunBlessing.ExecutionMend)) Player.Heal(Player.MaxHealth * .12f);
             }
-            if (sideEventEnemies.Remove(enemy) && sideEventEnemies.Count == 0)
+            RecordSideEventDefeat(enemy);
+        }
+
+        private SideEventRun sideEventRun;
+        private sealed class PendingSideReward
+        {public SideEventRun Run;public ProgressionService Source;public PlayerController Owner;public int Epoch;}
+        private readonly List<PendingSideReward> pendingSideRewards=new List<PendingSideReward>();
+        private float nextSideRewardRetry;
+        private bool sideEventOfferShown;
+        private object SideEventContext {get{return RoomChainRun==null?(object)Player:RoomChainRun.Room;}}
+        public bool SideEventRewardPending {get{return pendingSideRewards.Count>0;}}
+        private void AbandonSideEvent()
+        {
+            if(sideEventRun!=null)sideEventRun.Abandon();sideEventRun=null;
+            sideEventEnemies.Clear();sideEventStarted=false;sideCrystal=null;sideEventOfferShown=false;
+        }
+        private void RecordSideEventDefeat(EnemyController enemy)
+        {
+            if(sideEventRun==null||!sideEventRun.Defeat(enemy,SideEventContext,Player,Player==null?-1:Player.CombatEpoch,
+                HasStarted&&InDungeon&&!IsDead&&!CombatEnded))return;
+            sideEventEnemies.Remove(enemy);
+            if(!sideEventRun.Completed)return;
+            pendingSideRewards.Add(new PendingSideReward{Run=sideEventRun,Source=Progression,Owner=Player,Epoch=Player.CombatEpoch});
+            TrySettleSideEventRewards();
+        }
+        public bool TrySettleSideEventRewards()
+        {
+            for(int i=pendingSideRewards.Count-1;i>=0;i--)
             {
-                Progression.Profile.mechanicMaterials = Mathf.Min(999999, Progression.Profile.mechanicMaterials + 1);
-                if (ChallengeRun) HealingCharges = Mathf.Min(3, HealingCharges + 1); else Player.Heal(Player.MaxHealth * .15f);
-                RecordCombatAction("支线"); Progression.Save(); LogSystem("供能晶核已净化 · 星烬碎片 +1 · 补给恢复");
+                var pending=pendingSideRewards[i];
+                // An explicit discard/load must never redirect an old reward into another role.
+                if(!object.ReferenceEquals(pending.Source,Progression))continue;
+                bool already=pending.Run.Claimed,newlyCommitted=false;
+                if(!pending.Run.TryClaim(receipt=>pending.Source.TryGrantSideEventReward(receipt,out newlyCommitted)))
+                {Notify("晶核奖励待保存 · 保留领取记录，可重试："+pending.Source.LastError);return false;}
+                pendingSideRewards.RemoveAt(i);
+                if(already||!newlyCommitted)continue;
+                if(Player==pending.Owner&&!IsDead&&Player!=null&&!Player.IsDead&&Player.CombatEpoch==pending.Epoch)
+                {if(ChallengeRun)HealingCharges=Mathf.Min(3,HealingCharges+1);else Player.Heal(Player.MaxHealth*.15f);}
+                RecordCombatAction("支线");LogSystem("晶核支线完成 · 材料 +1 已保存 · 补给仅恢复原场战斗");
             }
+            return true;
+        }
+        private void TickSideEvent()
+        {
+            if(SideEventAvailable&&!sideEventOfferShown)
+            {sideEventOfferShown=true;Notify("可选晶核 · 唤醒2敌，全灭得1材料+补给；北门开启后可随时放弃");}
+            if(HasStarted&&SideEventRewardPending&&Time.unscaledTime>=nextSideRewardRetry)
+            {nextSideRewardRetry=Time.unscaledTime+2;TrySettleSideEventRewards();}
         }
 
         private void BuildSideEvent()
         {
             sideEventPosition = RoomChainRun==null?new Vector3(12,0,-3):new Vector3(-RoomTactics.Mirror(runSeed)*12,0,-6);
             if(RoomChainRun!=null&&!WorldTraversal.CanReach(TacticalRoomGeometry.Entrance,sideEventPosition,.65f))return;
-            sideCrystal = WorldBuilder.MakeLootBeacon(sideEventPosition, new Color(.33f,.85f,1));
+            sideCrystal = WorldBuilder.MakeSideEventCrystal(sideEventPosition);
             sideCrystal.name = "Optional power crystal"; transientObjects.Add(sideCrystal);
         }
         public bool StartSideEvent()
         {
             if (!SideEventAvailable || InputBlocked) return false;
-            if (Enemies.Count > EncounterPlan.MaximumSimultaneous-2) { Notify("先清理部分敌人，再唤醒晶核；最多14名敌人同时在场。"); return false; }
+            if (RoomChainRun!=null?!SideEventRun.HasRoomCapacity(Enemies.Count):Enemies.Count>EncounterPlan.MaximumSimultaneous-2) { Notify("先清理部分敌人，再唤醒2名晶核守卫；战术房最多8敌。"); return false; }
             Vector3 guardPosition, wispPosition;
             if (!TrySafeSpawn(sideEventPosition+new Vector3(-2,0,2),.65f,5.5f,out guardPosition) ||
                 !TrySafeSpawn(sideEventPosition+new Vector3(-1,0,6),.5f,5.5f,out wispPosition) ||
                 Vector3.Distance(guardPosition,wispPosition)<2.5f)
             { Notify("晶核附近暂时没有安全来袭位置，请拉开距离后重试。"); return false; }
+            sideEventRun=new SideEventRun(SideEventContext,Player,Player.CombatEpoch,System.Guid.NewGuid().ToString("N"));
+            int level = DungeonEntryLevel;
+            try
+            {
+                SpawnEnemy(EnemyKind.Guardian,level,guardPosition,false);
+                var guardian=Enemies[Enemies.Count-1];sideEventEnemies.Add(guardian);sideEventRun.Register(guardian);
+                SpawnEnemy(EnemyKind.Wisp,level,wispPosition,false);
+                var wisp=Enemies[Enemies.Count-1];sideEventEnemies.Add(wisp);sideEventRun.Register(wisp);
+            }
+            catch(System.Exception error)
+            {
+                foreach(var spawned in sideEventEnemies){Enemies.Remove(spawned);spawned.gameObject.SetActive(false);Destroy(spawned.gameObject);}
+                sideEventEnemies.Clear();sideEventRun.Abandon();sideEventRun=null;
+                Notify("晶核唤醒失败，可稍后重试："+error.Message);return false;
+            }
             sideEventStarted = true;
             if (sideCrystal != null) { Destroy(sideCrystal); sideCrystal = null; }
-            int level = DungeonEntryLevel; // Entry level and tier each scale once.
-            SpawnEnemy(EnemyKind.Guardian, level, guardPosition, false);
-            sideEventEnemies.Add(Enemies[Enemies.Count - 1]);
-            SpawnEnemy(EnemyKind.Wisp, level, wispPosition, false);
-            sideEventEnemies.Add(Enemies[Enemies.Count - 1]);
-            Notify("晶核守卫来袭 · 击败两名守卫获得碎片与补给"); return true;
+            Notify("晶核支线2敌 · 全灭得1材料+补给 · 北门已开可放弃"); return true;
         }
 
 

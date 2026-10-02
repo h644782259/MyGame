@@ -53,7 +53,7 @@ namespace Emberfall
    if(RoomChainRun==null||!NearRoomExit||InputBlocked||pendingRoomChoice.Pending)return false;
    if(!SaveBeforeLeaving())return false;
    if(!RoomChainRun.Next(true,false))return false;
-   SuspendInputs();changingZone=true;sideEventEnemies.Clear();sideEventStarted=false;sideCrystal=null;
+   SuspendInputs();changingZone=true;AbandonSideEvent();
    int previousCombatEpoch=Player.CombatEpoch;
    foreach(var enemy in Enemies)if(enemy!=null){enemy.gameObject.SetActive(false);Destroy(enemy.gameObject);}Enemies.Clear();roomEnemies.Clear();
    foreach(var obj in transientObjects)if(obj!=null){obj.SetActive(false);Destroy(obj);}transientObjects.Clear();
