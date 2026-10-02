@@ -1,0 +1,68 @@
+{
+  "dynamicResourceBoundary": "The generic CreateProp(name) expression is not statically resolved. Its three literal production callers below resolve to packaged FBXs; this is not general string dataflow or importer/subasset validation.",
+  "knownPropCallers": [
+    {
+      "caller": "Assets/Scripts/World/DestructiblePropFactory.cs",
+      "line": 22,
+      "literalName": "SupplyCrate",
+      "resource": "Assets/Resources/BlenderPilot/SupplyCrate.fbx",
+      "exists": true,
+      "sha256": "98c820f44a44ed78608cf0d4a201308e737c7bbdc9d04874c8369ec423fe159f"
+    },
+    {
+      "caller": "Assets/Scripts/World/WorldBuilder.cs",
+      "line": 423,
+      "literalName": "StarEmberCampfire",
+      "resource": "Assets/Resources/BlenderPilot/StarEmberCampfire.fbx",
+      "exists": true,
+      "sha256": "b940faca2e2f044dd91fdde290c2a6b95cc4db8bc16a0460b5ff07253cc1d926"
+    },
+    {
+      "caller": "Assets/Scripts/World/WorldBuilder.cs",
+      "line": 440,
+      "literalName": "WayfarerTent",
+      "resource": "Assets/Resources/BlenderPilot/WayfarerTent.fbx",
+      "exists": true,
+      "sha256": "0da4461f859aebd8eea27f3b242490f6ed428cdeedf52f224956a6af100eb4c1"
+    }
+  ],
+  "malformedGuidSourceUsage": [
+    {
+      "source": "Assets/Scripts/Combat/WeaponVisualLinks.cs",
+      "line": 20,
+      "code": "var bridge=body.gameObject.AddComponent<ProjectileVisualBridge>();"
+    },
+    {
+      "source": "Assets/Scripts/Combat/WeaponVisualLinks.cs",
+      "line": 67,
+      "code": "var ribbon=obj.AddComponent<WeaponSlashRibbon>();ribbon.owner=owner;ribbon.epoch=owner.CombatEpoch;ribbon.model=model;ribbon.side=model.WeaponSwingSide;ribbon.action=model.WeaponActionId;"
+    },
+    {
+      "source": "Assets/Scripts/Core/FilledVfxPlacement.cs",
+      "line": 6,
+      "code": "public static class FilledVfxPlacement"
+    }
+  ],
+  "guidHistory": "/workspace/scratch/archive-audit/guid-history.json",
+  "severity": "Confirmed malformed source metadata identities; Unity import impact unverified. Not a ZIP corruption. Absence of serialized references limits migration scope but does not establish valid metadata or import safety.",
+  "minimalFixIfAuthorized": "Use a separate metadata-only revision with two distinct 32-hex identities synchronized across platforms; scan complete source for old references and identity collisions, verify all other source bytes unchanged, then test Unity import when available. The frozen archive is not silently modified.",
+  "introduction": [
+    {
+      "path": "Assets/Scripts/Combat/WeaponVisualLinks.cs.meta",
+      "guid": "68a6e6a74a54417a8f1162a6ff67f5dc4",
+      "length": 33,
+      "windowsCommit": "2caf707f4897ae29c51ad056ad260c75a4ad2762",
+      "commitUTC": "2026-10-02T05:25:13Z"
+    },
+    {
+      "path": "Assets/Scripts/Core/FilledVfxPlacement.cs.meta",
+      "guid": "a61004eb35a84c3c821b82421b504a5cf",
+      "length": 33,
+      "windowsCommit": "34c58e8de7b2523087ed3bb6cf949cafe958eb8f",
+      "commitUTC": "2026-10-02T05:18:35Z"
+    }
+  ],
+  "referenceScan": "Both complete literals occur only in their defining meta files in six audited platform commits (PR26 and PR27); full package YAML reference resolution found no unresolved asset GUID. This does not exercise Unity native parsing, AssetDatabase or script importer.",
+  "unityDocumentation": "https://docs.unity3d.com/2021.3/Documentation/Manual/AssetMetadata.html",
+  "engineBoundary": "Documentation establishes the role of meta identities in import and asset references, not exact native behavior for these malformed values. Reject/regenerate/truncate behavior has not been tested or assumed."
+}

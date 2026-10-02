@@ -2,8 +2,9 @@
 
 本包是 Unity Android 工程源码，不是可安装 APK。编辑器版本由 ProjectSettings/ProjectVersion.txt 固定为 6000.6.3f1。Windows／iOS 最终 main 与 Android 来源提交，以 SOURCE-DELIVERY.json 为准；PR27 已合并，Windows main 为 ace3109c23485d7f145d372b8cb3c24bd79abe89，iOS main 为 a9caf3776d80439c7c559202b531dc4a3df4518e；两者树与验证候选完全一致。Android 同步源码为 b1104bbd05e4f7f360ace83ec6d8ccc16ed1b0e1。
 
-本轮新增
+PR26 旅程验证
 沿真实章节目标与服务追踪同一角色和首件核心装备：一级新档／原始旧档迁移、目标经验、首次共享核心、装备及槽位升级、金币不足时的部分重铸、技能重置、旧预设恢复、重载及返回失败后重试。未复现生产缺陷，因此只增加测试和说明，运行时代码、画面、字体及平台设置不变。
+PR27 修复 FBX 分数帧烘焙精度，保留作者 blend、运行时代码和导入器配置；4,923 个离散样本通过严格 0.1mm 阈值，不能推断连续时间或 Unity 导入精度。完整 PR21–27 变化见同目录更新说明。
 此前已合并的自由顺序净化封印、托管分配优化、默认关闭的移动普攻试点随对应源码保留。试点不会由本次交付自动启用。
 
 已实际验证
@@ -25,8 +26,8 @@ Docs/Android-Development.md：Android 配置与构建流程。
 Tests/ 与 Tools/：回归及验证工具；Assets/：运行时源码、资源及 meta；ArtSource/：创作源文件与离线审阅材料。
 source-inventory.json：完整归档源文件的字节数和 SHA256。
 asset-inventory.csv：美术、创作源文件及视频清单。
-native-media.json：已核对的现有 Library 资源身份，由父任务组织最终原生链接。
+native-media-final.json：已核对的现有 Library 资源身份，由父任务组织最终原生链接。
 
 离线视频属于 Blender／作者场景重建，不是 Unity 录像。移动普攻审阅 ZIP 解压后打开 Review.html；不要把该审阅 ZIP 当作 Android 工程包。原生五动作及 VFX 前后视频也保留各自身份，不被源码附件覆盖。
 
-发布核查提示：两份既有 C# .meta（WeaponVisualLinks、FilledVfxPlacement）的 GUID 为33位；没有发现序列化引用，也没有在本轮改写。此静态缺陷已记录，不等于已证明 Unity 会构建失败；原生导入行为仍待验收。
+发布核查提示：两份既有 C# .meta（WeaponVisualLinks、FilledVfxPlacement）的 GUID 为33位；没有发现序列化引用，也没有在本轮改写。这是已确认的元数据格式缺陷；没有引用不代表导入安全，包完整性通过也不代表静态源码完全合格。尚无 Editor 证明会拒绝、重建身份或构建失败；详见 Archive-QA/guid-assessment.json，原生导入行为仍待验收。

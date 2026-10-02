@@ -1,9 +1,13 @@
 {
-  "scope": "Final frozen source/archive delivery checkpoint; packaged198 running; no Library mutation",
+  "scope": "Final frozen source delivery; actual packaged198 and independent binary QA complete; two malformed GUID findings unresolved; no Library mutation",
   "files": {
     "Archive-QA/audit_source_zip.py": {
       "bytes": 13622,
       "sha256": "898dfb7ad7b08e866c027176c82ead8c7748bca61aedad6b13fd578b3be8e37d"
+    },
+    "Archive-QA/guid-assessment.json": {
+      "bytes": 3617,
+      "sha256": "8001c30744bb466f26ad914d8569cb7897b8862bd3d97875d75946f19a63dfbc"
     },
     "Archive-QA/guid-history.json": {
       "bytes": 6044,
@@ -21,9 +25,881 @@
       "bytes": 29504810,
       "sha256": "798871e7592c640323377b14c69f0f74729468f402341058409789984603d012"
     },
-    "PR21-27\u66f4\u65b0\u8bf4\u660e.txt": {
-      "bytes": 3290,
-      "sha256": "05da9347d8965366c4a884ae81c35f2fb8bb488d488d05a2a4ebf32b943b6ef5"
+    "PR21-27更新说明.txt": {
+      "bytes": 3304,
+      "sha256": "c255bde2567f442cdd81a2c0b6e57b20dbaa2ec374be3be0af5df849d71b80c0"
+    },
+    "Packaged-Binary-QA/README.md": {
+      "bytes": 3209,
+      "sha256": "95ab96653a3c69395b592dcf79595f6c423a440fb4331731e5c01f40f389c36b"
+    },
+    "Packaged-Binary-QA/after.json": {
+      "bytes": 205251,
+      "sha256": "f524eb22b372f615243b6f6735199247a0210a02753506b6c4cc343c3cba5d26"
+    },
+    "Packaged-Binary-QA/before.json": {
+      "bytes": 205250,
+      "sha256": "8be250de33a773f97a1e4d019c6f0584dab4ca6c3bfe2ba079b83c30f738bf3b"
+    },
+    "Packaged-Binary-QA/blender-readability.json": {
+      "bytes": 20532,
+      "sha256": "fad39ea7eadee56dc4e1be4bd7d6e866c8cb7a3e143ebaf067724f60d2280ab7"
+    },
+    "Packaged-Binary-QA/blender-readability.log": {
+      "bytes": 1212,
+      "sha256": "8b864930a35aef8fa0bf74a8ed88d52b92df19452f6121c1969e0d6ab1652a18"
+    },
+    "Packaged-Binary-QA/blender_readability.py": {
+      "bytes": 5148,
+      "sha256": "7a29eea5c8cc5433fe8490f63cc7f31610f8e32190814e9cefaf39f3ca1f05b6"
+    },
+    "Packaged-Binary-QA/finish.py": {
+      "bytes": 2206,
+      "sha256": "e10e93f51894bccd3af2a838404079f108d306b9e23e73c5f8385d552aa5cd8a"
+    },
+    "Packaged-Binary-QA/png-font-readability.json": {
+      "bytes": 6947,
+      "sha256": "ff00d945c67d06f2e0f9facc92908ad3e467eb0863b0be7568f21403eda2bf6a"
+    },
+    "Packaged-Binary-QA/png-font-readability.log": {
+      "bytes": 87,
+      "sha256": "7838649ed474fe792d86154822fa786fb2d76e1760442f0705a863d6731b029d"
+    },
+    "Packaged-Binary-QA/png_font_readability.py": {
+      "bytes": 2645,
+      "sha256": "94008300e86cff6079df2da230efade40a20fa432a3c5635b3e70f90012fb79d"
+    },
+    "Packaged-Binary-QA/report-hashes.json": {
+      "bytes": 1009,
+      "sha256": "f33e528046fd79445ee7e7f59de055902f32a35872690fe91d5866885a5f8ba2"
+    },
+    "Packaged-Binary-QA/summary.json": {
+      "bytes": 1081,
+      "sha256": "4cfe08be06a91c421e2568743afb39415fb2d8a2cfb26d147276d9c5935ef0d8"
+    },
+    "Packaged-Source-QA/Cloud-Latest/BlenderPilotAdapterProductionTests.log": {
+      "bytes": 1841,
+      "sha256": "1a04a3d603607959c59281dde06303c22b46cf1f6fff74ca4c3fe5689ca18a17"
+    },
+    "Packaged-Source-QA/Cloud-Latest/PilotFacingCommitProductionTests.log": {
+      "bytes": 281,
+      "sha256": "f69a43921e9078d9af767d68c0eba146b04376722c73a777a354668d4403ea74"
+    },
+    "Packaged-Source-QA/Cloud-Latest/PilotStarterCompatibilityTests.log": {
+      "bytes": 210,
+      "sha256": "5c34766c810997affd5e7910e4a40baf9b1d0f13a8c005ef06839bf497b73e2b"
+    },
+    "Packaged-Source-QA/Cloud-Latest/adventure-entry-truth.log": {
+      "bytes": 90,
+      "sha256": "9327600cb75e239b08738306ce624743bbcad379db686ff436b460435dc44ce2"
+    },
+    "Packaged-Source-QA/Cloud-Latest/adventure-progression.log": {
+      "bytes": 95,
+      "sha256": "7a3ac7abf81c50cd082b343c5e49d9d359c79aa8616ef5f4c461794102c09ea1"
+    },
+    "Packaged-Source-QA/Cloud-Latest/adventure-results.log": {
+      "bytes": 69,
+      "sha256": "d33644a54879d0972d507f5714e6c4a2910742bc6f8e3ca0e04b8ae225286a43"
+    },
+    "Packaged-Source-QA/Cloud-Latest/anchored-impact-coverage.log": {
+      "bytes": 2410,
+      "sha256": "bd02c5d632e7c210ea214a533acc222f02c73479c34d3be6dab54c818cd3492f"
+    },
+    "Packaged-Source-QA/Cloud-Latest/android-lifecycle.log": {
+      "bytes": 77,
+      "sha256": "9b01d0619f5abf31b71a4144ca18c6148f563a73916d3acada6685bed7e21475"
+    },
+    "Packaged-Source-QA/Cloud-Latest/application-pause-state.log": {
+      "bytes": 33,
+      "sha256": "c43651fb4f0c888dbcc9dc4fd0f432e08473989f93f76b44b571cf2a889f0ee9"
+    },
+    "Packaged-Source-QA/Cloud-Latest/authored-scenery-production.log": {
+      "bytes": 166,
+      "sha256": "340d0f7529fd03fe295212c1a1cd7927eb7d50504304bdce7dd947311c35304c"
+    },
+    "Packaged-Source-QA/Cloud-Latest/basic-action-timeline.log": {
+      "bytes": 76,
+      "sha256": "8d6c3cf4264ac185a671de7ef7b48d7a658424832d1b3f3a828355654f398add"
+    },
+    "Packaged-Source-QA/Cloud-Latest/blender-pilot-pose.log": {
+      "bytes": 1296,
+      "sha256": "ce668e7bb168f2a03b6e9604fac9aac140c17d50d7ece8d85baca4c41c264512"
+    },
+    "Packaged-Source-QA/Cloud-Latest/blessing-damage-production.log": {
+      "bytes": 1929,
+      "sha256": "53651a6a5dace6096e568aeed9eb2ee617e1314d2b2b33a34f2aa0a2016718b6"
+    },
+    "Packaged-Source-QA/Cloud-Latest/blocked-combat-update-production.log": {
+      "bytes": 327,
+      "sha256": "cba81b1b7cbceab6699f3a9f7373d7e51471080536da649dd965c2c7e3acf0f2"
+    },
+    "Packaged-Source-QA/Cloud-Latest/boss-attack-policy.log": {
+      "bytes": 60,
+      "sha256": "14745586c79fc9f622b0f3c7667d671e4a5bc07e28f9f3253cc0cd80da330ff0"
+    },
+    "Packaged-Source-QA/Cloud-Latest/boss-sweep-capsule-production.log": {
+      "bytes": 159,
+      "sha256": "846b8d3dc60d02bed214177eaeb6d847df5470614b9dbb911bfa9869fc7a59f8"
+    },
+    "Packaged-Source-QA/Cloud-Latest/build-presets.log": {
+      "bytes": 177,
+      "sha256": "d4da1b5fc8d100e865c327383ae7a0a90a93db2250ca936923ee0e1649a6fdc9"
+    },
+    "Packaged-Source-QA/Cloud-Latest/build-size-policy.log": {
+      "bytes": 67,
+      "sha256": "dc62613291f9012aea8e0d0a737c690e1946c208ea5d5d720e65ad86d962d1a4"
+    },
+    "Packaged-Source-QA/Cloud-Latest/burn-finale-production.log": {
+      "bytes": 1214,
+      "sha256": "14ccc5133f6893585d6f22021579551f8cd46a464d2217503c8e7dd5e055402a"
+    },
+    "Packaged-Source-QA/Cloud-Latest/camera-visibility.log": {
+      "bytes": 57,
+      "sha256": "9f4494d5f4d85abb06837acb46ec4754c3e5311e995045550ce708522f318850"
+    },
+    "Packaged-Source-QA/Cloud-Latest/casterchargeproduction.log": {
+      "bytes": 198,
+      "sha256": "68062576029207439ee9eb665b9661118ca04330a32fda3cba5be626fbb9adaf"
+    },
+    "Packaged-Source-QA/Cloud-Latest/chapter-combat-production.log": {
+      "bytes": 1642,
+      "sha256": "989ce36e9cf0cc3be4e89066a609b96d296b6e9bbc8e8b05101e0ed0b71073fe"
+    },
+    "Packaged-Source-QA/Cloud-Latest/chapter-entry-production.log": {
+      "bytes": 3162,
+      "sha256": "550c4479254386e2a541e34f36391c81f829309b211cba01a4160cd3cc2e4b9e"
+    },
+    "Packaged-Source-QA/Cloud-Latest/chapter-host-production.log": {
+      "bytes": 1496,
+      "sha256": "6c378f050589ec99421f5abb0322c2cbe1dcc5f5aca6e2d107db690c3a3b6836"
+    },
+    "Packaged-Source-QA/Cloud-Latest/chapter-mobile-support.log": {
+      "bytes": 169,
+      "sha256": "a49e5bc3b22c7df65fee0c942d6e31a003e06f2cee13385bf55f847474b264b0"
+    },
+    "Packaged-Source-QA/Cloud-Latest/chapter-presentation.log": {
+      "bytes": 79,
+      "sha256": "ede9862c26bfeb4b7a286dc8b85f732b76628a69c27e6f04f7fc68871467c3d7"
+    },
+    "Packaged-Source-QA/Cloud-Latest/chapter-progression.log": {
+      "bytes": 420,
+      "sha256": "ed62126039bd4e1939d46a44a771048651b0d1cb0b7dfe6f97936c5bab4fe79d"
+    },
+    "Packaged-Source-QA/Cloud-Latest/chapter-return-time-scale.log": {
+      "bytes": 546,
+      "sha256": "48d2cb8185d3ba14cfd1a3c884e8b5a8c4a13a5eed8c25686c14db2d800b8aa0"
+    },
+    "Packaged-Source-QA/Cloud-Latest/chapter-room-geometry.log": {
+      "bytes": 831,
+      "sha256": "07e78181c6719472a3cb665dfd6ee1da17649c9bf71636a294b4f3ee4a5d39b4"
+    },
+    "Packaged-Source-QA/Cloud-Latest/chapter-ui-wiring.log": {
+      "bytes": 77,
+      "sha256": "777ef6c77c54432b227b37c5e543d515b3e241ce012c4424200c4726a7600c49"
+    },
+    "Packaged-Source-QA/Cloud-Latest/chapterexperience.log": {
+      "bytes": 942,
+      "sha256": "b692bf4ea2b0656ca5d6871e9cf2188d1863ae7d1e1b20bf0e2f0fb452bb4e33"
+    },
+    "Packaged-Source-QA/Cloud-Latest/chapternodeworldproduction.log": {
+      "bytes": 204,
+      "sha256": "cc7fd9e51aa3c496c62170659be95233a4a37af2fda9f80f635ea36aa40bb6cd"
+    },
+    "Packaged-Source-QA/Cloud-Latest/chaptersealrouteproduction.log": {
+      "bytes": 566,
+      "sha256": "fcd31446a99bd68aa58772ad68c63b6ece31a00eca2f7a2b66328aaba7c3ab63"
+    },
+    "Packaged-Source-QA/Cloud-Latest/chest-composite-production.log": {
+      "bytes": 158,
+      "sha256": "dd6fd6e93d665b7a7ff54cd2d758bd8f6fe240fc1da896dbe244a9fbf9eb2682"
+    },
+    "Packaged-Source-QA/Cloud-Latest/chest-currency-deltas.log": {
+      "bytes": 58,
+      "sha256": "f1518d92eaac8d7c62452cada8fccfd5d9656054e1a0e985a174928453ca9a13"
+    },
+    "Packaged-Source-QA/Cloud-Latest/chest-pause-back-production.log": {
+      "bytes": 126,
+      "sha256": "adf8e8c96bba10aeb8e52ba8a04a9d1938ec76b39e60f2908a1cff7e525e7c2d"
+    },
+    "Packaged-Source-QA/Cloud-Latest/chest-reveal-presentation.log": {
+      "bytes": 65,
+      "sha256": "f21152a18e0435ed57ceab57488f2cb260c14c32a09e93e0ef041a5c9ae15d32"
+    },
+    "Packaged-Source-QA/Cloud-Latest/chest-trial-production.log": {
+      "bytes": 146,
+      "sha256": "3fd70cd16159f80e287d007638b995980ed4ace7c7cacf5543c770532a93256b"
+    },
+    "Packaged-Source-QA/Cloud-Latest/classtierstructureproduction.log": {
+      "bytes": 222,
+      "sha256": "e3afbff9810ceebce070ca2b73d8773a5fb1ff9d70125a7706962939e22d0dd9"
+    },
+    "Packaged-Source-QA/Cloud-Latest/collection-compact-geometry.log": {
+      "bytes": 213,
+      "sha256": "c02c4702ef85520c7a1e08e0305b81e75064e39785e09477dd45bef926ef8c3a"
+    },
+    "Packaged-Source-QA/Cloud-Latest/collection-preview-composition.log": {
+      "bytes": 95,
+      "sha256": "0b64267901b5e192db6ff728feb70ead472e13d57b0cc626ff684b06bf69a7ae"
+    },
+    "Packaged-Source-QA/Cloud-Latest/collection-render-lifecycle-modern.log": {
+      "bytes": 96,
+      "sha256": "6db2fe11ebbe90e0ae63ac81fba089be5714d0740e247339dd37d627cd4ea7d2"
+    },
+    "Packaged-Source-QA/Cloud-Latest/collection-render-lifecycle.log": {
+      "bytes": 96,
+      "sha256": "6db2fe11ebbe90e0ae63ac81fba089be5714d0740e247339dd37d627cd4ea7d2"
+    },
+    "Packaged-Source-QA/Cloud-Latest/collection-stage-recovery-negative.log": {
+      "bytes": 259,
+      "sha256": "747dd0ac60bdad003fcffb11a8d2e3cee80b6d93b88060c9f995bc470903d0b2"
+    },
+    "Packaged-Source-QA/Cloud-Latest/collectionposeisolationproduction.log": {
+      "bytes": 387,
+      "sha256": "5f556e42bbf960a4fcc4da02a513286f2e4fc624bb492489465777513a2c5ef2"
+    },
+    "Packaged-Source-QA/Cloud-Latest/collectionpreviewpresentationproduction.log": {
+      "bytes": 305,
+      "sha256": "c0dd3057c80d5001311ec290b92fa50c8de191128fec5dfd2e22c296c7a682b7"
+    },
+    "Packaged-Source-QA/Cloud-Latest/combat-balance.log": {
+      "bytes": 39,
+      "sha256": "3b837de24f84a64c8bee4dcb67aedb2e3070b3f3e04958fe1cfc280d410fdde3"
+    },
+    "Packaged-Source-QA/Cloud-Latest/combat-opportunity-slot.log": {
+      "bytes": 624,
+      "sha256": "2289995fde1bcadb4f28ca4c0d20ccda13720622aa9b8fb8785810d96b02bcf6"
+    },
+    "Packaged-Source-QA/Cloud-Latest/combat-opportunity.log": {
+      "bytes": 54,
+      "sha256": "44e30466d5bed89ada1d61a9b52cea3160df352ea17f53dd8355a27b6996d30c"
+    },
+    "Packaged-Source-QA/Cloud-Latest/combat-pacing-followup.log": {
+      "bytes": 35,
+      "sha256": "af91c31d836019e16d3178a943fd46c424a61353dfc17ce37dd3a2c2cfc77974"
+    },
+    "Packaged-Source-QA/Cloud-Latest/combat-readability-production.log": {
+      "bytes": 658,
+      "sha256": "081e7a2fb62c55f3826377a9cf3af917cf7210070d074960b4862534cf75a6ce"
+    },
+    "Packaged-Source-QA/Cloud-Latest/combat-review-events.log": {
+      "bytes": 108,
+      "sha256": "828f3e3b93495edcec86e76523cba3df8422dfbe8f049cfd60ad0bbc7dd401ff"
+    },
+    "Packaged-Source-QA/Cloud-Latest/combat-review-impact-production.log": {
+      "bytes": 368,
+      "sha256": "80bd63c6baff333814528cce141655c8631b8cfdbb383b380de6b240642a346e"
+    },
+    "Packaged-Source-QA/Cloud-Latest/combat-review-instrumentation.log": {
+      "bytes": 221,
+      "sha256": "fffa979be385dc075ab491c24e8c92334d51fc16f13f1f3f356b6faf860f5290"
+    },
+    "Packaged-Source-QA/Cloud-Latest/combat-review-object-id-legacy.log": {
+      "bytes": 119,
+      "sha256": "582a78abaa2942674752bbac4d8765ef4304b8aabecfda6eab2e75ca9055eba2"
+    },
+    "Packaged-Source-QA/Cloud-Latest/combat-review-object-id-modern-contract.log": {
+      "bytes": 119,
+      "sha256": "582a78abaa2942674752bbac4d8765ef4304b8aabecfda6eab2e75ca9055eba2"
+    },
+    "Packaged-Source-QA/Cloud-Latest/combat-review-rules.log": {
+      "bytes": 43,
+      "sha256": "8931adb40752e3dc719460804f393c68b4d05f20c126299a6141c8b48a386198"
+    },
+    "Packaged-Source-QA/Cloud-Latest/combat-sight-traversal.log": {
+      "bytes": 74,
+      "sha256": "7655fb3881528356258666e6ee7e7f25ffced57df9bef01109acf4bf2362532d"
+    },
+    "Packaged-Source-QA/Cloud-Latest/combat-sight.log": {
+      "bytes": 49,
+      "sha256": "c13769d0200ae188c1fb9c57d9278921aee4f70acaca2e6c0afae6d1d3f1c78c"
+    },
+    "Packaged-Source-QA/Cloud-Latest/combat-text-layout.log": {
+      "bytes": 55,
+      "sha256": "f0ea690f68506f97a3a6bed90b541349ccc3d2aaf530a06dbfe0a933fca43339"
+    },
+    "Packaged-Source-QA/Cloud-Latest/combo-resource-budgets.log": {
+      "bytes": 80,
+      "sha256": "c26a0968b1f02f66d6e7caa8c089e4367265ea849fb7fe259910c91d0c134893"
+    },
+    "Packaged-Source-QA/Cloud-Latest/companion-appearance.log": {
+      "bytes": 419,
+      "sha256": "a79b7d4fa8dbeb0ecee7b757cd540bfa76133f5fea99efb2183a0abb28fc8c64"
+    },
+    "Packaged-Source-QA/Cloud-Latest/companion-directive.log": {
+      "bytes": 39,
+      "sha256": "f53bc76a3d25db75de6ffd23615b18ce571d2985cfdea6b8aa1d7c0394246974"
+    },
+    "Packaged-Source-QA/Cloud-Latest/companion-intent-production.log": {
+      "bytes": 1218,
+      "sha256": "ef72662b6e887629c80104b89f1578eb09c186a0b7f5e3d0e8793b1dda106fa5"
+    },
+    "Packaged-Source-QA/Cloud-Latest/companion-path-allocation.log": {
+      "bytes": 2841,
+      "sha256": "b32f7ae07c1222eb312599493db16812cd8b6d64b0dca7745ba06efb34cf2b73"
+    },
+    "Packaged-Source-QA/Cloud-Latest/companion-rules.log": {
+      "bytes": 38,
+      "sha256": "84c6d55afe76dc03f45f61c1f12c9934100cf78a890f8e37c84719f06910109d"
+    },
+    "Packaged-Source-QA/Cloud-Latest/contract-snapshot-production.log": {
+      "bytes": 125,
+      "sha256": "0217708faf49365a6e57d8087192262ac796ea89aea06c994fdd7b76b87953bf"
+    },
+    "Packaged-Source-QA/Cloud-Latest/costume-layers.log": {
+      "bytes": 79,
+      "sha256": "8772e7ab5679d251698b35644201bd3b884257bfa08ccda9414fde338b23b4ec"
+    },
+    "Packaged-Source-QA/Cloud-Latest/costume-recipes.log": {
+      "bytes": 83,
+      "sha256": "48361f3d4d0aac778d1cef23714c4bdac211090c62ad4efda475437ca3376c3a"
+    },
+    "Packaged-Source-QA/Cloud-Latest/decoration-budget.log": {
+      "bytes": 52,
+      "sha256": "9f98e6e96e6bc00e023a4f371aedeb958ad6b5365b51f6ef19ecf567158f3dcc"
+    },
+    "Packaged-Source-QA/Cloud-Latest/deferred-room-choice.log": {
+      "bytes": 69,
+      "sha256": "137b8f66031788189b7b3b0cf3a0fd308b29cfb3f0459d5b37f8335bc862adf0"
+    },
+    "Packaged-Source-QA/Cloud-Latest/dense-finale-production.log": {
+      "bytes": 177,
+      "sha256": "f9869c9307beb1daa6b898bee2ef4ba911a6b8d9658e86a655d7219ce6c7444f"
+    },
+    "Packaged-Source-QA/Cloud-Latest/desktop-opportunity-hotbar.log": {
+      "bytes": 622,
+      "sha256": "eaa3e7b3089220e735a46bf51866fa217ba4d06d05301ece7532fb2159a77cc5"
+    },
+    "Packaged-Source-QA/Cloud-Latest/destructible-props.log": {
+      "bytes": 48,
+      "sha256": "98b7fb6a4b605d4e45517c0e56b1d05f0f77a03b345ba01c5a974662b5ad027a"
+    },
+    "Packaged-Source-QA/Cloud-Latest/destructible-traversal.log": {
+      "bytes": 46,
+      "sha256": "c3d9a4f0fef336fc7d98b9274aeee8c8a942b12ae1070d05a1c8e395f550fb90"
+    },
+    "Packaged-Source-QA/Cloud-Latest/economy-goal-ui.log": {
+      "bytes": 7778,
+      "sha256": "67dc01fe36e7220ad9f93aa74a458c34c574de8cd69eb6d7f0de749af4083659"
+    },
+    "Packaged-Source-QA/Cloud-Latest/economy-growth.log": {
+      "bytes": 1131,
+      "sha256": "d8a11fb8ed6787b63a068fbc676668df66bd0f87d3e5f3e32693290a58008560"
+    },
+    "Packaged-Source-QA/Cloud-Latest/effectpriorityproduction.log": {
+      "bytes": 158,
+      "sha256": "6e6eeca1d6286af566fcf496750898aeababfa12fa3e488cd7b55840d6bc41de"
+    },
+    "Packaged-Source-QA/Cloud-Latest/elemental-field-continuity.log": {
+      "bytes": 295,
+      "sha256": "9add11634e63caf10660bfdcee682dd3ad0850524fe459e3e233f3a2b7cc468d"
+    },
+    "Packaged-Source-QA/Cloud-Latest/elemental-priority-production.log": {
+      "bytes": 346,
+      "sha256": "629cdd1bab78a975614a3236c357789953384c4ffa68c6e224953d1a95c4af19"
+    },
+    "Packaged-Source-QA/Cloud-Latest/encounter-plans.log": {
+      "bytes": 88,
+      "sha256": "d3b9fb101f27b77314d71a973c12d2b9f567408d73b42c35b68426265a90a8cd"
+    },
+    "Packaged-Source-QA/Cloud-Latest/enemy-impact-contour.log": {
+      "bytes": 173,
+      "sha256": "0196f14bf00f1b06072126b62eb4b2669b2b6c428c23027480f8dc3ccbc1fc39"
+    },
+    "Packaged-Source-QA/Cloud-Latest/enemy-kill-rewards.log": {
+      "bytes": 669,
+      "sha256": "4ec8c386e70b2a656dd44a7fc17e91c6edb142e95d9e64a59f4f79899185b4da"
+    },
+    "Packaged-Source-QA/Cloud-Latest/environment-light-profile.log": {
+      "bytes": 98,
+      "sha256": "ed94e4fae813e5270854dbce20935702f4bef9042d5de3306b4cdb39c6ee2e13"
+    },
+    "Packaged-Source-QA/Cloud-Latest/environment-readability.log": {
+      "bytes": 129,
+      "sha256": "23817af5cda792fca4e89bbee7cf7b9e008287c3a0d0b1cadbfc50ab1dbc2ac4"
+    },
+    "Packaged-Source-QA/Cloud-Latest/equipment-appearance-production.log": {
+      "bytes": 404,
+      "sha256": "835fd3490afc16887462c9312034c081e286fc8d7adb64a1603f07dc67227256"
+    },
+    "Packaged-Source-QA/Cloud-Latest/equipment-attachment-source.log": {
+      "bytes": 131,
+      "sha256": "de35efed700cd0b38c37bc76491099f5f32086a7859e9995917730eb1d812ba3"
+    },
+    "Packaged-Source-QA/Cloud-Latest/equipment-attachment.log": {
+      "bytes": 124,
+      "sha256": "c5d2542329f38c2a79deea8f433dbf1ece22bf051283d26ebbd18a3185104cc5"
+    },
+    "Packaged-Source-QA/Cloud-Latest/equipment-comparison.log": {
+      "bytes": 78,
+      "sha256": "3f89fb7c665253111ae224b1d1d340bd49367ebbb09890e14e51d7dfad4a2df1"
+    },
+    "Packaged-Source-QA/Cloud-Latest/equipment-composition-production.log": {
+      "bytes": 371,
+      "sha256": "4aacc40eadafe274dc4906a711424fccd35e3493770ef6c2da4ef98d89f0064b"
+    },
+    "Packaged-Source-QA/Cloud-Latest/equipment-lookups.log": {
+      "bytes": 109,
+      "sha256": "f3594457e699c3860ca4af4f17d8e965020ab4e697765cb846cced1ca8dd6cff"
+    },
+    "Packaged-Source-QA/Cloud-Latest/escape-room-formation.log": {
+      "bytes": 97,
+      "sha256": "1e95fc08499eea2620263f3e41b386df33f13b47975e13f8099fd80c666f9a56"
+    },
+    "Packaged-Source-QA/Cloud-Latest/expedition-modes.log": {
+      "bytes": 39,
+      "sha256": "26ade850b8004a36792f4a5ab8c191125ed99732675969ed9a3385b246d1c98e"
+    },
+    "Packaged-Source-QA/Cloud-Latest/explicit-action-persistence.log": {
+      "bytes": 85,
+      "sha256": "0ea66ea3ddf3f11a8255cbf32afe983bfcccfd7ef9a0a4f6ea09307b28385f37"
+    },
+    "Packaged-Source-QA/Cloud-Latest/fading-combat-effect-lifecycle.log": {
+      "bytes": 186,
+      "sha256": "c0224d64b324ebebd8b09b7286adea252608ca2d2f9c56760f18a8f7e9fcd7d7"
+    },
+    "Packaged-Source-QA/Cloud-Latest/filled-vfx-allocation.log": {
+      "bytes": 701,
+      "sha256": "3666646c1143c73cf555a7142d7c2f6b117a2543b8b7f94489d8d160469348fd"
+    },
+    "Packaged-Source-QA/Cloud-Latest/filled-vfx.log": {
+      "bytes": 33,
+      "sha256": "339dc289b0c812a78867968aaeac6233bf54cb23360942796316d6728c6476f3"
+    },
+    "Packaged-Source-QA/Cloud-Latest/game-font-android.log": {
+      "bytes": 95,
+      "sha256": "82b9d11d5174c800d04aec7ed510f7053307713d95c041e644a90fc4a284a8b7"
+    },
+    "Packaged-Source-QA/Cloud-Latest/game-font-desktop.log": {
+      "bytes": 95,
+      "sha256": "ecbfdd5cdc868b052de4b9b825fee4a72f80b230be3512657baecf0e3dc0952d"
+    },
+    "Packaged-Source-QA/Cloud-Latest/game-font-ios.log": {
+      "bytes": 95,
+      "sha256": "82b9d11d5174c800d04aec7ed510f7053307713d95c041e644a90fc4a284a8b7"
+    },
+    "Packaged-Source-QA/Cloud-Latest/growth-navigation-source.log": {
+      "bytes": 110,
+      "sha256": "b9fe152f490d01812adb323f587165f1c0802cfb151c6d17c74fd9b6f46359ef"
+    },
+    "Packaged-Source-QA/Cloud-Latest/guard-return.log": {
+      "bytes": 677,
+      "sha256": "7f4dd0a1a450e204e52777b28773fe3c94f76df8be8c7c19efead2440b42fb74"
+    },
+    "Packaged-Source-QA/Cloud-Latest/guardian-charge-pose.log": {
+      "bytes": 95,
+      "sha256": "d66a3f44174b9e6c96348a061e41a74f4901ebfad257750ffdfd2b52366e89e6"
+    },
+    "Packaged-Source-QA/Cloud-Latest/hero-pose-commit.log": {
+      "bytes": 264,
+      "sha256": "0c211fa43820a95ed7ca3920856ea1996738e7bf03e7101b6f17693a02048336"
+    },
+    "Packaged-Source-QA/Cloud-Latest/hold-point-state.log": {
+      "bytes": 58,
+      "sha256": "0085a00f76d9c23596853b58a5ec512b7a60d94ac230340e2e8fc874970caa7f"
+    },
+    "Packaged-Source-QA/Cloud-Latest/hotbar-reset.log": {
+      "bytes": 91,
+      "sha256": "b7904e01da546745d5ffc45ecec87c9c8750e7124e3b0a5a59a0e1c2f1cc3c68"
+    },
+    "Packaged-Source-QA/Cloud-Latest/hub-economy.log": {
+      "bytes": 54,
+      "sha256": "8df8d91b74aaef74b4574736c699475b143bbd86e84e560a7932a529d1189af5"
+    },
+    "Packaged-Source-QA/Cloud-Latest/hub-settlement-geometry.log": {
+      "bytes": 75,
+      "sha256": "9e0cbe2d0b41951902ad489d42f80c0babe46c0d2bc62ecf3b311a1852b6f6c2"
+    },
+    "Packaged-Source-QA/Cloud-Latest/integrated-player-journey.log": {
+      "bytes": 40592,
+      "sha256": "5399ae3c22e02048c24b98afce01e2ce022245d43c56e8c61fa57fa68c188630"
+    },
+    "Packaged-Source-QA/Cloud-Latest/interface-safety.log": {
+      "bytes": 44,
+      "sha256": "7dc37134a556e6f02f7c491682666f704103954de13acbe6a6e9073741869864"
+    },
+    "Packaged-Source-QA/Cloud-Latest/large-boss-motion.log": {
+      "bytes": 84,
+      "sha256": "b3a338c847f0312020fd146ee2a8e2ae01a4e24ebcf5cadd0bf81cf8b5524ae5"
+    },
+    "Packaged-Source-QA/Cloud-Latest/large-boss-phases.log": {
+      "bytes": 29,
+      "sha256": "0a331988bbc82d0314de9214aba63366a7721f923b20f828951a7950128a5510"
+    },
+    "Packaged-Source-QA/Cloud-Latest/large-boss-shutdown.log": {
+      "bytes": 294,
+      "sha256": "2b4908aec379019f5dcca95175aa2cf97534c4db794fbbecd01cc41b30465c5d"
+    },
+    "Packaged-Source-QA/Cloud-Latest/level-up-point-feedback.log": {
+      "bytes": 117,
+      "sha256": "95f24d1850dd6e3c6b246c8616b2221637d6079dd79c06e9732b09d4e1a6f67a"
+    },
+    "Packaged-Source-QA/Cloud-Latest/locomotion-poses.log": {
+      "bytes": 90,
+      "sha256": "93e93fad1d91c19ff088a8f1082377d675d066dc5eb629967aa46411722ff4ca"
+    },
+    "Packaged-Source-QA/Cloud-Latest/mechanism-evidence-production.log": {
+      "bytes": 223,
+      "sha256": "63e023af80ea36f794d865eedb18c31f6f59fec23c1fb65bbb8758330c31e9d8"
+    },
+    "Packaged-Source-QA/Cloud-Latest/milestone-goal-surface.log": {
+      "bytes": 2221,
+      "sha256": "bf6b9d130d2d30c0347fb8f79cb296e14b5e8c9427ed830fddaae5432ae6e1b8"
+    },
+    "Packaged-Source-QA/Cloud-Latest/mobile-blessing-preview-production.log": {
+      "bytes": 313,
+      "sha256": "78582843db4ca09c251299b3c7feef875aae71d010f23fdb02a61259c93ba128"
+    },
+    "Packaged-Source-QA/Cloud-Latest/mobile-camera.log": {
+      "bytes": 76,
+      "sha256": "5f8345cf1f1f96c60526fdc9c428559c8385845b456f0be21c6d46f7c2c3e1e0"
+    },
+    "Packaged-Source-QA/Cloud-Latest/mobile-collection-layout.log": {
+      "bytes": 56,
+      "sha256": "15a8cc5baf16a3fb8c52677b698866fadaf2afe9616839812399f2ee79fb9217"
+    },
+    "Packaged-Source-QA/Cloud-Latest/mobile-combat-feedback.log": {
+      "bytes": 42,
+      "sha256": "c4eb229e6abba7f59163eae3c269aada77a39cc9ab2dc2a2201a051236d5356a"
+    },
+    "Packaged-Source-QA/Cloud-Latest/mobile-inventory-back-production.log": {
+      "bytes": 2023,
+      "sha256": "360e8a1e0cecc0b1508f27dc13079be2685e1ad9a5caa9094471336dadaead88"
+    },
+    "Packaged-Source-QA/Cloud-Latest/mobile-layout.log": {
+      "bytes": 49,
+      "sha256": "91cd98f8aaa09c15ff0bdd2a7ba9c2fc162a5adead0781acf244796f778c8e94"
+    },
+    "Packaged-Source-QA/Cloud-Latest/mobile-pause-navigation.log": {
+      "bytes": 57,
+      "sha256": "7ec28cba45afdcda9fcdb24b3e6b0a84c0b520f27631f657b4d6da8f5cbc57fd"
+    },
+    "Packaged-Source-QA/Cloud-Latest/mobile-room-objective.log": {
+      "bytes": 94,
+      "sha256": "c5cfed54a3c4a595e73ab1cb21356044c8bf1ed3f91a99ba2d434380d37fe799"
+    },
+    "Packaged-Source-QA/Cloud-Latest/mobile-save-location.log": {
+      "bytes": 86,
+      "sha256": "e8a7a3911e1421096da4118064fbe4db1cd7b5891b0e475ecf849401ea24a1ab"
+    },
+    "Packaged-Source-QA/Cloud-Latest/mobile-skills-workshop-layout.log": {
+      "bytes": 80,
+      "sha256": "1519a3e38051e2df58ae2f0d5c96fc8411665de69fea7d1c3c8a02d2443611d1"
+    },
+    "Packaged-Source-QA/Cloud-Latest/mobile-skills.log": {
+      "bytes": 70,
+      "sha256": "d39671288e90dcc0a5655400232a25cf0b7c7ef54a1c533f40b119a37093cc25"
+    },
+    "Packaged-Source-QA/Cloud-Latest/mobilepinnedtargetproduction.log": {
+      "bytes": 606,
+      "sha256": "605b50fdc03535007d2c9ed163ebed7d5bd02d10439ebbae02fcd36f81564aa2"
+    },
+    "Packaged-Source-QA/Cloud-Latest/mode-rewards.log": {
+      "bytes": 49,
+      "sha256": "9e75adba061ed3c1a8b0f7ffc5541324eac9348409d4f1f51982e76722cfe1c9"
+    },
+    "Packaged-Source-QA/Cloud-Latest/occlusion-cause-production.log": {
+      "bytes": 77,
+      "sha256": "70cee43ce2dd4957969eebe0ea764be4d91ee021b27dac4e6074ce1e07c1dd76"
+    },
+    "Packaged-Source-QA/Cloud-Latest/pack-detour-production.log": {
+      "bytes": 152,
+      "sha256": "3aa5c600b6d559dc4fb0e1200b30a66963eb1329e62875cdddc8bc3c7a4998b3"
+    },
+    "Packaged-Source-QA/Cloud-Latest/panel-readability.log": {
+      "bytes": 66,
+      "sha256": "d6c34e19c59cfeb5a123042fa56ee353eda98c2d75daa3d2bfd454111548b6f4"
+    },
+    "Packaged-Source-QA/Cloud-Latest/player-finale-tail-production.log": {
+      "bytes": 193,
+      "sha256": "4226bea18f05811aa5244c9fdebc127000e3e12f629fb6d7d6562b6b22509ede"
+    },
+    "Packaged-Source-QA/Cloud-Latest/player-upgrades.log": {
+      "bytes": 37,
+      "sha256": "e990751a02a48513017237b4775dc4cfb929abf575f7c5b82ceb55cf83810187"
+    },
+    "Packaged-Source-QA/Cloud-Latest/previewclothproduction.log": {
+      "bytes": 282,
+      "sha256": "b140b95d9bf346c99101869c20322509f330acbee6680b231c7130b9a4dfb522"
+    },
+    "Packaged-Source-QA/Cloud-Latest/procedural-visuals.log": {
+      "bytes": 76,
+      "sha256": "083dbe37ef75d6c11439d3f2d19e7c709c45a492b2738fd7e12fffebc5e8171b"
+    },
+    "Packaged-Source-QA/Cloud-Latest/production-touch-lifecycle.log": {
+      "bytes": 1044,
+      "sha256": "6f88dac804a0b998774676fa6691938009a28743d0f62815c44854bcfec18f4c"
+    },
+    "Packaged-Source-QA/Cloud-Latest/progression-attention.log": {
+      "bytes": 179,
+      "sha256": "51462e9bee08d3619f933b25981e525d521fa8a09f25daea4f4cfcaedfcff0b8"
+    },
+    "Packaged-Source-QA/Cloud-Latest/progression-goal-identity.log": {
+      "bytes": 89,
+      "sha256": "4b702461463e58c4af1055103f52190960dde51c5fe145bb0fdcbc1e455befd4"
+    },
+    "Packaged-Source-QA/Cloud-Latest/progression-goal-layout.log": {
+      "bytes": 77,
+      "sha256": "37778f8cb1bb9fa67f6f70f02530d9c023411194a6da98d5e91a420f3b103eb8"
+    },
+    "Packaged-Source-QA/Cloud-Latest/progression-growth.log": {
+      "bytes": 66,
+      "sha256": "c16ca0db06fc5b7584ed56b6a8326133bcf4a96ff6f29671248f76dff1c406f4"
+    },
+    "Packaged-Source-QA/Cloud-Latest/progression-route-layers.log": {
+      "bytes": 53,
+      "sha256": "09eb9074bd1275a68a5cb5fcd8b8132e2550a146b9bad04ce2a31e27c15c0f23"
+    },
+    "Packaged-Source-QA/Cloud-Latest/progression.log": {
+      "bytes": 66,
+      "sha256": "9c129800fc26ba2306fb9a5e4abcb21c6e8982c2ba1df9536762e4b03acf9e0b"
+    },
+    "Packaged-Source-QA/Cloud-Latest/rebalance-progression.log": {
+      "bytes": 70,
+      "sha256": "df707b64cc7ad8abfd19e430652f507eaadd1c64daacacf4642ef47cd50477c6"
+    },
+    "Packaged-Source-QA/Cloud-Latest/redrock-replay-geometry.log": {
+      "bytes": 4071,
+      "sha256": "c2c4f322f66242d26d932772fd49bc92f665d858094ce8829e1caa23eea368f6"
+    },
+    "Packaged-Source-QA/Cloud-Latest/reforgeselection.log": {
+      "bytes": 7790,
+      "sha256": "0ed4ffcf4dcc2a719557f93b5a9d46dacb48df8a5a730afe49fafd80b8e087e8"
+    },
+    "Packaged-Source-QA/Cloud-Latest/report.json": {
+      "bytes": 93699,
+      "sha256": "ffbd0aeaa14243d024c7e5470fc0f1238bc3ccfd2cf186de9a990f4f1fa26cb8"
+    },
+    "Packaged-Source-QA/Cloud-Latest/reward-viewing-rules.log": {
+      "bytes": 70,
+      "sha256": "cfd6b9290746295aa1ccaed75e60bdf6dc0da7d09e2ea3d0b0753b01525a16a3"
+    },
+    "Packaged-Source-QA/Cloud-Latest/room-blessing-preview.log": {
+      "bytes": 60,
+      "sha256": "737ca09dd4942bf80a7737002da00d5c319d18f98e20082d888c69501536bc96"
+    },
+    "Packaged-Source-QA/Cloud-Latest/room-blessing-routes.log": {
+      "bytes": 1300,
+      "sha256": "202e2dd52097756da0c4cecd5e5d1bbc925feeea6fa154a890469477927871b9"
+    },
+    "Packaged-Source-QA/Cloud-Latest/room-blessing-usability-negative.log": {
+      "bytes": 158,
+      "sha256": "bf1e64b51a899c575ea4489e113f5f0448a5c55a09988b5fca997e1bbb45b2ff"
+    },
+    "Packaged-Source-QA/Cloud-Latest/room-blessing-usability.log": {
+      "bytes": 122,
+      "sha256": "f32fa284e27f91b62f5af2fd018e62d8533eb96cd51ce39031caa018709cfc58"
+    },
+    "Packaged-Source-QA/Cloud-Latest/room-chain.log": {
+      "bytes": 111,
+      "sha256": "a6dba90154b706be40761d56baaf6d6628f1174313575a943d7abbb674ce9ffe"
+    },
+    "Packaged-Source-QA/Cloud-Latest/room-failure-evidence.log": {
+      "bytes": 446,
+      "sha256": "2bd192556293520555f3ed246280c1280fa60d2bac9c8c44be7fcef4e43e32a4"
+    },
+    "Packaged-Source-QA/Cloud-Latest/room-first-choice-production.log": {
+      "bytes": 227,
+      "sha256": "b05e3130ec61c7d40fa97ffdd07e0bf5663b60c798820f13b2aee677964a66f3"
+    },
+    "Packaged-Source-QA/Cloud-Latest/room-free-seal-host.log": {
+      "bytes": 316,
+      "sha256": "3e0500c1d6893ca4bd41378b74b7f049fdde1fedb06fcc85dc7dd16e8f7666bd"
+    },
+    "Packaged-Source-QA/Cloud-Latest/room-preview-ui-contract.log": {
+      "bytes": 91,
+      "sha256": "c0f1eca6cf5e8f0121e6335b09cb4b887aa1fbcd236dbd1b126ab8cb9ba38cfd"
+    },
+    "Packaged-Source-QA/Cloud-Latest/room-seal-hud-production.log": {
+      "bytes": 281,
+      "sha256": "74def0573fa324d462eb1d41799ffd1dbadc20a01c8c4b11152e21ac205dde12"
+    },
+    "Packaged-Source-QA/Cloud-Latest/room-tactical-los-production.log": {
+      "bytes": 279,
+      "sha256": "c8737ff5ac38636573f79621824e58f1e92255dd4f64e710049fbbe0f66ce828"
+    },
+    "Packaged-Source-QA/Cloud-Latest/route-skill-navigation.log": {
+      "bytes": 755,
+      "sha256": "8adcba12f24b24aab20a9143b42c5763e9d19f1d25c832148dc1c9b7ce02d865"
+    },
+    "Packaged-Source-QA/Cloud-Latest/run-choices.log": {
+      "bytes": 35,
+      "sha256": "77d11d2a9e05acab20f685fb3e62ff507283e08d042d296742e28b8cb4c43500"
+    },
+    "Packaged-Source-QA/Cloud-Latest/run-combat-rules.log": {
+      "bytes": 78,
+      "sha256": "e89de44218a2d36975d9db83e106c5e0b97cc3b593a0de26db7f69c51a88af5c"
+    },
+    "Packaged-Source-QA/Cloud-Latest/run-recap.log": {
+      "bytes": 48,
+      "sha256": "682d5a85d69d985813f3a6e092b3631bc80ba0f85b6ebee3f773bb18890166e1"
+    },
+    "Packaged-Source-QA/Cloud-Latest/runtime-compile.log": {
+      "bytes": 182,
+      "sha256": "3915e43770de553fe83db18d4bb2d47aba84dbabb9bbedea949f4369d6c2fb4a"
+    },
+    "Packaged-Source-QA/Cloud-Latest/safe-exit.log": {
+      "bytes": 95,
+      "sha256": "5960f9c03a0632411eabcc63b2ca41607a47d113840c2c99793d1b549ce9836c"
+    },
+    "Packaged-Source-QA/Cloud-Latest/safe-save-flow.log": {
+      "bytes": 168,
+      "sha256": "18779ad6a7742dfcef3aa91201fe20ffee68d07cc90cf12dff3ee07d0973af40"
+    },
+    "Packaged-Source-QA/Cloud-Latest/save-deletion.log": {
+      "bytes": 1028,
+      "sha256": "1a1411b502e0b8e6e47dffa85bf8b2101dcd0ab9b2d84e69a05d207d5d3e2733"
+    },
+    "Packaged-Source-QA/Cloud-Latest/save-idempotence.log": {
+      "bytes": 1341,
+      "sha256": "59cecf112994f83dc36d58d42844f06339e346d95b6a01679291167cde790777"
+    },
+    "Packaged-Source-QA/Cloud-Latest/scenery-presentation-production.log": {
+      "bytes": 2384,
+      "sha256": "39d5d93c71641af25148393738b9ee8b757a9136a8656b75907e3805d156b6d4"
+    },
+    "Packaged-Source-QA/Cloud-Latest/scheduled-ticks.log": {
+      "bytes": 29,
+      "sha256": "3acbe441cb1246bd02dd97c24cf63b2b220b088671db7d3e7abe0bd0ed5f7319"
+    },
+    "Packaged-Source-QA/Cloud-Latest/shatter-availability.log": {
+      "bytes": 563,
+      "sha256": "8ea521a9b9651b901b5e913ab9558fa73ce9bd2eacc8f444e92364f8e531908a"
+    },
+    "Packaged-Source-QA/Cloud-Latest/shore-contact-production.log": {
+      "bytes": 309,
+      "sha256": "6cbc92fc87aba9ac7e6fde5b81a15ce5e9b78e4d3a784abc321d93c722623372"
+    },
+    "Packaged-Source-QA/Cloud-Latest/side-event-production.log": {
+      "bytes": 647,
+      "sha256": "57f122c287ce1960b8586816759c7beac78f4eec72601e871a4120fbf20a1939"
+    },
+    "Packaged-Source-QA/Cloud-Latest/side-event-rewards.log": {
+      "bytes": 112,
+      "sha256": "cfddc6a0688f0b77d4b648bf5b2959ee8f024b1a739455d5695d6323795b96e8"
+    },
+    "Packaged-Source-QA/Cloud-Latest/skill-damage-budgets.log": {
+      "bytes": 68,
+      "sha256": "c158217843aa01c0db55d075776848b2e03917aa5cf2e062866bdd8cab1d2423"
+    },
+    "Packaged-Source-QA/Cloud-Latest/skill-panel-navigation.log": {
+      "bytes": 1860,
+      "sha256": "4be3e8e40c8d1442fb9057fbaa5ba619486c40cc91d8ef689dc21efab9db1367"
+    },
+    "Packaged-Source-QA/Cloud-Latest/skill-readability-production.log": {
+      "bytes": 1862,
+      "sha256": "194493e207dc73a7cfd45de120cb3a258b25a96fc52e95f1d163329a509ff3b9"
+    },
+    "Packaged-Source-QA/Cloud-Latest/skill-visual-recipe.log": {
+      "bytes": 70,
+      "sha256": "320bfa2aa62066cbac131c1683add201b1c9387157b3b618a7e3daf5710ce60e"
+    },
+    "Packaged-Source-QA/Cloud-Latest/skills.log": {
+      "bytes": 66,
+      "sha256": "a097a6146571e110d8bb3f1a9074400c72cb65d340446ad3c65bbe559741f3f3"
+    },
+    "Packaged-Source-QA/Cloud-Latest/starting-skill-budget.log": {
+      "bytes": 583,
+      "sha256": "5bc19d7aad401db052380ed4ef48b77f612e20a21af15caa7b21796af447cad0"
+    },
+    "Packaged-Source-QA/Cloud-Latest/tactical-live-visual.log": {
+      "bytes": 429,
+      "sha256": "af6cdbadcc4631b9aadf20bc95fd15f2ce73d6a64c7eef94665b400064e3c0cd"
+    },
+    "Packaged-Source-QA/Cloud-Latest/tactical-room-geometry.log": {
+      "bytes": 114,
+      "sha256": "b6d8bf826108a28c254b9d64b90c8b5827980fdb363dcb5580f535e751900545"
+    },
+    "Packaged-Source-QA/Cloud-Latest/tactical-room-region.log": {
+      "bytes": 111,
+      "sha256": "a13a020e9aca87503a6950cfc805f10a3422fac39437864ec778c9f096089370"
+    },
+    "Packaged-Source-QA/Cloud-Latest/tier-reward-bands.log": {
+      "bytes": 72,
+      "sha256": "6479af6b6c74fe8bf305283065913116726bd63f5cba62e0987ad23f78a64cf8"
+    },
+    "Packaged-Source-QA/Cloud-Latest/touch-release-latch.log": {
+      "bytes": 57,
+      "sha256": "df4c5f23e4ad795002c2655216f5f37faa477bedd89256be4921f991222082e6"
+    },
+    "Packaged-Source-QA/Cloud-Latest/touch-scroll.log": {
+      "bytes": 104,
+      "sha256": "d5515d6bcaa743bfe6057d34b9d52a283461170cc306132dda6fc10ae36d880d"
+    },
+    "Packaged-Source-QA/Cloud-Latest/tree-occlusion-registry.log": {
+      "bytes": 223,
+      "sha256": "e713227de49e044535b95c15b8028892de683aef74598e35672c4866d8421df2"
+    },
+    "Packaged-Source-QA/Cloud-Latest/ui-render-cache-lifecycle.log": {
+      "bytes": 180,
+      "sha256": "26fd7c7c7e533070824a3aa9c7c7480d49e32f28be44313c730e03ff08aeb78e"
+    },
+    "Packaged-Source-QA/Cloud-Latest/ui-render-cache.log": {
+      "bytes": 183,
+      "sha256": "3ae7b2b041d2032d656417a7477fcd233b106c93fef73b182bc1363f81bab58a"
+    },
+    "Packaged-Source-QA/Cloud-Latest/upgrade-progression.log": {
+      "bytes": 63,
+      "sha256": "348d4beb2006686475ecf703b708f99c19350096d4cf8107b5723a8dea125b7e"
+    },
+    "Packaged-Source-QA/Cloud-Latest/visual-motion-envelope.log": {
+      "bytes": 81,
+      "sha256": "57fd771423e7e031a424bd936123708d604f97f2eeb1bd346c9e35ea91bfe914"
+    },
+    "Packaged-Source-QA/Cloud-Latest/water-flow-production.log": {
+      "bytes": 156,
+      "sha256": "194c66e45acebf2247ed22303ce8f00e95d6cd5f68142c35d8843f33ef1df0af"
+    },
+    "Packaged-Source-QA/Cloud-Latest/water-presentation.log": {
+      "bytes": 83,
+      "sha256": "0dc79749db5673956c5de9fceec88c84ae2b4da0270176b5899ec1cbb1f5c70d"
+    },
+    "Packaged-Source-QA/Cloud-Latest/weapon-structure.log": {
+      "bytes": 71,
+      "sha256": "4b0472adf5f0e74d11accbc2e48f00755b99357814c43a83d2c6bec50d282cb2"
+    },
+    "Packaged-Source-QA/Cloud-Latest/weapon-swing-identity.log": {
+      "bytes": 257,
+      "sha256": "055f23132f31a8a3696f42d4817606a604e78071e2ae995d4dd16942f4a67795"
+    },
+    "Packaged-Source-QA/Cloud-Latest/weaponfashionstructureproduction.log": {
+      "bytes": 187,
+      "sha256": "494c5644ce459b8f20a95966057f93d5ec2ccfaffff3901c9a6fac607c413a4c"
+    },
+    "Packaged-Source-QA/Cloud-Latest/world-label-production.log": {
+      "bytes": 87,
+      "sha256": "aa9e860026231ad5efc307029fec56f862ed9f0a313197ad03a2f24920a6e83c"
+    },
+    "Packaged-Source-QA/Cloud-Latest/world-loot-receipts.log": {
+      "bytes": 73,
+      "sha256": "035db0217e8d3cb0807c2cbd7e35e22402b6dc43af69d6eb522ba202cc4ccfd2"
+    },
+    "Packaged-Source-QA/audit.log": {
+      "bytes": 949,
+      "sha256": "f1838e39e6d6839cbe10589fa76a717d4979ff233ca4a5b6e287d727cc98d2cd"
+    },
+    "Packaged-Source-QA/external-reference-sha256.json": {
+      "bytes": 7039,
+      "sha256": "73815502ea976537cd0d2edb69c1b719c9f08af37cc05ef72156e2945cb6afba"
+    },
+    "Packaged-Source-QA/final-handoff.json": {
+      "bytes": 3374,
+      "sha256": "f842bf3fd8deab4f7af6d02b334afadf53898c2a29e3bc5099c67a2a2f56c219"
+    },
+    "Packaged-Source-QA/full.log": {
+      "bytes": 132184,
+      "sha256": "32728bffa7b50164383102007491f5ee9ca52e9d477cd40f8a4805111719b1e2"
+    },
+    "Packaged-Source-QA/generated-file-inventory.json": {
+      "bytes": 12681,
+      "sha256": "0aa3011acea6304ecc89922b0360356e7a2bdba44c953cb875024c3292570953"
+    },
+    "Packaged-Source-QA/packaged-files-after.json": {
+      "bytes": 130687,
+      "sha256": "9c7d50eba3b964af4dc6f4778be23eb2bff2780fe0c02eda3a8da74db06ebdb0"
+    },
+    "Packaged-Source-QA/packaged-files-before.json": {
+      "bytes": 130686,
+      "sha256": "bd307fd7aaf633620cd5c5392572b0aa21c0f44779f18313b500d62039bb84c1"
     },
     "Platform-Inventories/Android-source-inventory.json": {
       "bytes": 284725,
@@ -42,8 +918,8 @@
       "sha256": "0e37ba598fafd858bc140584036efa61930f4b3b0e6d212465b3e24eee2c0494"
     },
     "README.md": {
-      "bytes": 2915,
-      "sha256": "94d4ccedf9baa21082d21699665133798a1dfad94a0ad6d72a0e9f6627c22843"
+      "bytes": 4138,
+      "sha256": "66ba16992c7ed2546dfa58ecd86bd52b974553c5608d7a5d32abc80cb101606d"
     },
     "asset-inventory.csv": {
       "bytes": 12065,
@@ -81,9 +957,9 @@
       "bytes": 175040,
       "sha256": "542e3fa0faa5c0b2d6a42c605f94ba18f4717b4025a8e23ea1fa45258b86ff76"
     },
-    "\u4ea4\u4ed8\u4e0e\u9a8c\u6536\u8bf4\u660e.txt": {
-      "bytes": 4042,
-      "sha256": "f10f2cf55265f3564521b420c8017b8693341e389254af3189566bd6c2764b5a"
+    "交付与验收说明.txt": {
+      "bytes": 4467,
+      "sha256": "af30880b294b383afc332722982c368fefbffed250a11c56eed0d408462772a3"
     }
   }
 }

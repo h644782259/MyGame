@@ -1,0 +1,32 @@
+{
+  "sourceCommit": "b1104bbd05e4f7f360ace83ec6d8ccc16ed1b0e1",
+  "sourceTree": "23b01b626afd7eabffd8d1d8ba1941af3348fab1",
+  "verifiedSourceFiles": 1152,
+  "packagingPassed": true,
+  "staticSourceClean": false,
+  "sourceFindings": [
+    {
+      "kind": "invalid_guid",
+      "detail": {
+        "meta": "Assets/Scripts/Combat/WeaponVisualLinks.cs.meta",
+        "guid": "68a6e6a74a54417a8f1162a6ff67f5dc4",
+        "length": 33,
+        "references": [],
+        "asset": "Assets/Scripts/Combat/WeaponVisualLinks.cs",
+        "csharpSource": true
+      }
+    },
+    {
+      "kind": "invalid_guid",
+      "detail": {
+        "meta": "Assets/Scripts/Core/FilledVfxPlacement.cs.meta",
+        "guid": "a61004eb35a84c3c821b82421b504a5cf",
+        "length": 33,
+        "references": [],
+        "asset": "Assets/Scripts/Core/FilledVfxPlacement.cs",
+        "csharpSource": true
+      }
+    }
+  ],
+  "completedUtc": "2026-10-02T21:36:14.265016+00:00"
+}

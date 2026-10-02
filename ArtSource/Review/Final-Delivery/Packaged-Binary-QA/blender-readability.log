@@ -1,0 +1,22 @@
+Extensions: writing cache failed ([Errno 30] Read-only file system: '/home/agent/.config/blender/4.3/extensions').
+FBX version: 7400
+READABLE FBX StarEmberCampfire.fbx
+Extensions: writing cache failed ([Errno 30] Read-only file system: '/home/agent/.config/blender/4.3/extensions').
+FBX version: 7400
+READABLE FBX StarcoreSword.fbx
+Extensions: writing cache failed ([Errno 30] Read-only file system: '/home/agent/.config/blender/4.3/extensions').
+FBX version: 7400
+READABLE FBX SupplyCrate.fbx
+Extensions: writing cache failed ([Errno 30] Read-only file system: '/home/agent/.config/blender/4.3/extensions').
+FBX version: 7400
+READABLE FBX Vanguard.fbx
+Extensions: writing cache failed ([Errno 30] Read-only file system: '/home/agent/.config/blender/4.3/extensions').
+FBX version: 7400
+READABLE FBX WayfarerTent.fbx
+READABLE BLEND Emberfall-Pilot-Props.blend
+READABLE BLEND Emberfall-Pilot-Vanguard.blend
+Blender 4.3.2
+Read blend: "/workspace/scratch/android-package-binary-qa/extracted/Emberfall-Android/ArtSource/BlenderPilot/Emberfall-Pilot-Props.blend"
+Read blend: "/workspace/scratch/android-package-binary-qa/extracted/Emberfall-Android/ArtSource/BlenderPilot/Emberfall-Pilot-Vanguard.blend"
+
+Blender quit

@@ -1,0 +1,35 @@
+{
+  "pass": true,
+  "zip": "/workspace/scratch/android-final-delivery/Emberfall-Android-Source-b1104bb.zip",
+  "zipSHA256": "798871e7592c640323377b14c69f0f74729468f402341058409789984603d012",
+  "zipUnchanged": true,
+  "packagedFileCount": 1153,
+  "allPackagedFilesUnchanged": true,
+  "blender": "4.3.2",
+  "fbxImports": 5,
+  "readOnlySourceBlends": 2,
+  "fullyDecodedPNGs": 15,
+  "fontsTablesCmapAndSelectedOutlines": 2,
+  "heroGroups": [
+    "Vanguard_Armor",
+    "Vanguard_Back",
+    "Vanguard_Body",
+    "Vanguard_Clothes",
+    "Vanguard_Head",
+    "Vanguard_Sword"
+  ],
+  "rigBones": 19,
+  "runtimeBoneNamesParentsMatch": true,
+  "clips": [
+    "Pilot_Basic",
+    "Pilot_Hit",
+    "Pilot_Idle",
+    "Pilot_Move",
+    "Pilot_Skill"
+  ],
+  "runtimeRequiredSockets": 5,
+  "authoringEmissionSocket": 1,
+  "packedTextureBytesMatchPNG": true,
+  "PNGHashesAndCandidateFBXPinned": true,
+  "scope": "Packaged binary readability and bounded data integrity; no render/export/source mutation, Unity importer/native font rasterization/device/performance acceptance, or full-suite claim."
+}

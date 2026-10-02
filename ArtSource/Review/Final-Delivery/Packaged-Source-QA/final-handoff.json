@@ -1,0 +1,54 @@
+{
+  "archive": "/workspace/scratch/android-final-delivery/Emberfall-Android-Source-b1104bb.zip",
+  "archiveBytes": 29504810,
+  "archiveSha256Before": "798871e7592c640323377b14c69f0f74729468f402341058409789984603d012",
+  "archiveSha256After": "798871e7592c640323377b14c69f0f74729468f402341058409789984603d012",
+  "sourceCommit": "b1104bbd05e4f7f360ace83ec6d8ccc16ed1b0e1",
+  "sourceTree": "23b01b626afd7eabffd8d1d8ba1941af3348fab1",
+  "packagingAuditPassed": true,
+  "staticSourceClean": false,
+  "sourceFindingCount": 2,
+  "auditReport": "/workspace/scratch/archive-audit/final-b1104bb/report.json",
+  "auditReportSha256": "a5e784944defb4202398d82784d249421e0c6af507874f490d4b3f4f8c6131d5",
+  "packagedFileCount": 1153,
+  "packagedSourceCount": 1152,
+  "packagedChangedAfterExecution": [],
+  "packagedBeforeManifest": "/workspace/scratch/archive-audit/final-b1104bb/packaged-files-before.json",
+  "packagedManifestSha256": "bd307fd7aaf633620cd5c5392572b0aa21c0f44779f18313b500d62039bb84c1",
+  "entryCommand": "env -u DOTNET_TieredCompilation DOTNET_CLI_HOME=/workspace/scratch/chapter-root-dotnet python3 -u Tools/cloud-validation.py --dotnet /workspace/scratch/dotnet/dotnet --compile",
+  "entrySourceUnmodified": true,
+  "defaultJIT": true,
+  "execution": {
+    "passed": true,
+    "count": 198,
+    "startedUtc": "20261002T213635926017Z",
+    "completedUtc": "2026-10-02T21:52:41.034844+00:00",
+    "sourceChangedDuringRun": [],
+    "report": "/workspace/scratch/archive-audit/final-b1104bb/final-test-report/report.json",
+    "reportSha256": "ffbd0aeaa14243d024c7e5470fc0f1238bc3ccfd2cf186de9a990f4f1fa26cb8",
+    "log": "/workspace/scratch/archive-audit/final-b1104bb/full.log",
+    "runtimeSourceCount": 256
+  },
+  "externalDependencies": {
+    "dotnet": "8.0.408",
+    "cachedUnityReferences": "Unity2021.3.33 supplemental API references, not project-pinned Unity6000.6.3f1 Editor",
+    "referenceHashManifest": "/workspace/scratch/archive-audit/final-b1104bb/external-reference-sha256.json",
+    "addedSymlink": "Tools/ReferenceAssemblies/UnityEngine -> /workspace/emberfall_win/Tools/ReferenceAssemblies/UnityEngine",
+    "referencesUnchangedDuringRun": true
+  },
+  "generatedOutputs": {
+    "fileCount": 203,
+    "inventory": "/workspace/scratch/archive-audit/final-b1104bb/generated-file-inventory.json",
+    "originalEntryOutputDirectory": "Tests/TestResults/Cloud-Latest",
+    "noPackagedSourcesChanged": true
+  },
+  "guidHistory": "/workspace/scratch/archive-audit/guid-history.json",
+  "safetyControls": "/workspace/scratch/archive-audit/safety-controls.json",
+  "limitations": [
+    "No Unity Editor/import/render, engine JsonUtility, FBX subasset/deformation validation, Android APK build or device play.",
+    "Two source .meta GUIDs have invalid33-hex identity. Their import impact is UNKNOWN. No serialized references is not a proof of safe import. Unchanged from source; no metadata fix applied.",
+    "Eight PowerShell archive files use declared CRLF export/checkout bytes; raw LF Git blob bytes differ, but exact inventory and normalized Git blob identities match.",
+    "Runtime Resources.Load dynamic name flow is not generally solved; all three literal CreateProp callers have packaged FBX paths.",
+    "Reference assemblies and .NET SDK were supplied externally, not packaged; their absence from a source ZIP is not a missing runtime asset."
+  ]
+}
