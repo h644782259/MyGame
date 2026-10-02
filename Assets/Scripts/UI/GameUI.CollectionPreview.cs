@@ -32,7 +32,7 @@ namespace Emberfall
             FashionData wings=progression.EquippedFashion(FashionSlot.Wings),weapon=progression.EquippedFashion(FashionSlot.Weapon);
             if(trial!=null){if(trial.slot==FashionSlot.Wings)wings=trial;else weapon=trial;}
             Texture image=collectionModel.Render(progression.Profile.heroClass,progression.Equipped(ItemSlot.Weapon),progression.Equipped(ItemSlot.Armor),progression.Equipped(ItemSlot.Relic),wings,weapon);
-            Fill(area,new Color(.035f,.06f,.09f));GUI.DrawTexture(area,image,ScaleMode.ScaleToFit,false);
+            Fill(area,new Color(.035f,.06f,.09f));if(image!=null)GUI.DrawTexture(area,image,ScaleMode.ScaleToFit,false);
             if(rotate)
             {
                 float size=MobileControls.Active?48*TouchRatio:42;

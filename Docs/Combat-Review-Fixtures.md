@@ -56,3 +56,9 @@ Recorder v2 emits `actorId` and `targetId` as invariant decimal **strings**, inc
 The summary accepts legacy integer IDs and new strings without float conversion; fixture health/pet dictionaries use string keys. Tests include adjacent values at ulong max, signed legacy values, repeated reads, deliberately colliding object hashes and null/destroyed objects. API-double tests do not establish engine compatibility: actual Unity 6000.6.3 reference compilation must be reported separately. The previous frozen c022a463/11d02c8 candidates failed that check because `GetInstanceID` and EntityId-to-int conversion are error-obsolete; legacy 2021 compilation was insufficient.
 
 API references: https://docs.unity3d.com/6000.6/Documentation/ScriptReference/EntityId.ToULong.html and https://docs.unity3d.com/6000.4/Documentation/ScriptReference/Object.GetEntityId.html .
+
+## Disabled recording hot-path follow-up
+
+Every runtime capture site now checks `CombatReviewEvents.Enabled` before constructing its IDs or event arguments. In particular, damage, basic attacks, skill attempts/releases and charge cancellation no longer format IDs when no recorder is attached. The enabled transport and full-width string identity format are unchanged; this is not a measured Unity framerate or stutter improvement.
+
+`Tests/CombatReviewInstrumentationTests.py` extracts all 17 actual guarded capture statements and executes them with counting identity API doubles: 340,000 disabled/unsubscribed statement executions perform zero ID API reads; enabled execution delivers all 17 events with complete IDs and original damage data. This is capture-statement verification, not execution of full controllers or native Unity allocation profiling. The source guard test also protects the non-telemetry blocked-muzzle effect.

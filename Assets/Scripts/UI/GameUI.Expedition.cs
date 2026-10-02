@@ -7,13 +7,19 @@ namespace Emberfall
         private int selectedBlessing = -1, campTab;
         private Vector2 pendingScroll;
         private bool systemHistory;
-        public void CancelBackgroundInput()
+        public void CancelForegroundInput()
         {
             CancelHotbarPointer(); rebindingSlot = -1;
             // IMGUI buttons have their own hotControl, unrelated to our hotbar.
             GUIUtility.hotControl=0;GUIUtility.keyboardControl=0;
-            lifecycleRelease.Block(Time.unscaledTime);
             BlockUITransition();
+        }
+        public void CancelBackgroundInput()
+        {
+            CancelForegroundInput();
+            // Only focus/suspension and viewport invalidation require every
+            // pointer to lift. Room transitions retain their initiating finger.
+            lifecycleRelease.Block(Time.unscaledTime);
         }
 
         private void DrawDungeonSelection(){DrawArenaSelection();}

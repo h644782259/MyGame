@@ -785,7 +785,11 @@ namespace Emberfall
                 var charge = Player.GetComponent<SkillChargeController>();
                 if (charge != null) charge.Cancel();
             }
-            if (ui != null) ui.CancelBackgroundInput();
+            if (ui != null)
+            {
+                if (BackgroundPaused) ui.CancelBackgroundInput();
+                else ui.CancelForegroundInput();
+            }
         }
         private void OnApplicationQuit() { SaveOnApplicationQuit(); }
         private void OnDestroy()

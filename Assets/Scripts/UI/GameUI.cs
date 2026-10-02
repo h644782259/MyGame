@@ -209,6 +209,7 @@ namespace Emberfall
             if (rebindingSlot >= 0) return;
             if (Input.GetKeyDown(KeyCode.Escape))
             {
+                if (ReturnToMobilePauseRoot()) return;
                 if (hotbarPointerSlot >= 0) { CancelHotbarPointer(); return; }
                 SkillChargeController charge = session.Player == null ? null : session.Player.GetComponent<SkillChargeController>();
                 if (gameplayBackAllowed && charge != null && (charge.IsCharging || charge.CancelledThisFrame))

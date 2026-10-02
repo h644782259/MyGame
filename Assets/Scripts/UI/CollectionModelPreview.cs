@@ -19,8 +19,9 @@ namespace Emberfall
             if(stage==null||camera==null){float yaw=state.Yaw;Dispose();state.SetYaw(yaw);CreateStage();}
             state.Observe(new CollectionPreviewAppearance(hero,weapon,armor,relic,wings,fashionWeapon));
             if(texture==null)CreateTexture();
-            if(!texture.IsCreated()){texture.Create();state.Invalidate();}
-            if(Event.current.type!=EventType.Repaint||!texture.IsCreated()||!state.ShouldRender(true,Time.frameCount))return texture;
+            if(!texture.IsCreated()){texture.Create();state.InvalidateTexture();}
+            if(!texture.IsCreated())return null;
+            if(Event.current.type!=EventType.Repaint||!state.ShouldRender(true,Time.frameCount))return texture;
             if(state.NeedsModel)
             {
                 if(avatar!=null){avatar.SetActive(false);UnityEngine.Object.Destroy(avatar);}
@@ -58,7 +59,7 @@ namespace Emberfall
         void CreateTexture()
         {
             texture=new RenderTexture(384,480,16){name="Collection preview",hideFlags=HideFlags.HideAndDontSave};
-            texture.Create();camera.targetTexture=texture;state.Invalidate();
+            texture.Create();camera.targetTexture=texture;state.InvalidateTexture();
         }
         public void Dispose()
         {
