@@ -24,7 +24,7 @@ namespace Emberfall
         private bool enteringChapter;
         private GameObject chapterExit,chapterObjective;
         private EnemyController chapterSupplier;
-        private float chapterSupplyVisual;
+
         private sealed class ChapterEnemyReceipt {public ChapterCombatRun Run;public int Room,Epoch,Index;}
         private readonly Dictionary<EnemyController,ChapterEnemyReceipt> chapterEnemies=new Dictionary<EnemyController,ChapterEnemyReceipt>();
         private Vector3 ChapterObjectivePoint {get{return chapterPlan.Objectives[Mathf.Clamp(ChapterRun.Seals,0,chapterPlan.Objectives.Length-1)];}}
@@ -74,7 +74,7 @@ namespace Emberfall
         }
         private void BeginChapterRoom()
         {
-            ChapterRun.BindRoom(Player.CombatEpoch);chapterEnemies.Clear();chapterSupplier=null;chapterSupplyVisual=0;
+            ChapterRun.BindRoom(Player.CombatEpoch);chapterEnemies.Clear();chapterSupplier=null;
             DungeonWave=ChapterRoomIndex+1;wavePopulation=Mathf.Max(1,ChapterRun.EnemyCount);objectiveHealedThisWave=false;
             chapterExit=WorldBuilder.MakeLootBeacon(chapterPlan.Exit,new Color(.25f,.8f,1));chapterExit.transform.SetParent(world.transform,true);chapterExit.SetActive(ChapterRun.DoorUnlocked);
             if(!WorldTraversal.CanReach(chapterPlan.Entrance,chapterPlan.Exit,.65f)){FailChapter("章节出口不可达，已安全结束挑战");return;}
@@ -83,7 +83,7 @@ namespace Emberfall
             if(ChapterRun.Objective==RoomObjective.Purify||ChapterRun.Objective==RoomObjective.Escape)
             {
                 foreach(var point in chapterPlan.Objectives)if(!WorldTraversal.CanReach(chapterPlan.Entrance,point,.65f)){FailChapter("章节目标不可达，已安全结束挑战");return;}
-                chapterObjective=WorldBuilder.MakeRoomObjective(ChapterObjectivePoint);chapterObjective.transform.SetParent(world.transform,true);
+                chapterObjective=WorldBuilder.MakeRoomObjective(ChapterObjectivePoint);chapterObjective.transform.SetParent(world.transform,true);TacticalCaptureVisual.Attach(chapterObjective,this);
             }
             var occupied=new List<Vector3>();
             for(int index=0;index<ChapterRun.EnemyCount;index++)
@@ -101,6 +101,7 @@ namespace Emberfall
                 if(index==0&&!boss)chapterSupplier=enemy;
                 if(crossfire)
                     enemy.ConfigureEscapePost(index==0?EscapeRole.GateSupplier:index==1||index==5?EscapeRole.SideFlanker:index<4?EscapeRole.GateGuard:EscapeRole.Pursuer,point);
+                TacticalEnemyVisual.Attach(enemy,this);
                 if(boss)LargeExpeditionBoss.ConfigureChapter(enemy,DungeonTier,ChapterSeed,ActiveChapterDifficulty);
             }
             ChapterHazards.Configure(this,ActiveChapterNode,ActiveChapterDifficulty,ChapterRoomIndex,ChapterSeed,chapterPlan);
@@ -120,19 +121,17 @@ namespace Emberfall
             if(!ChapterActive||ChapterFinished||InputBlocked||Player==null)return;
             if(chapterObjective!=null&&!ChapterRun.DoorUnlocked)
             {
-                Vector3 target=ChapterObjectivePoint;bool contested=false;
-                foreach(var enemy in Enemies)if(enemy!=null&&!enemy.IsDead&&enemy.isActiveAndEnabled&&RoomTacticalRegion.Contests(CombatFx.Flat(enemy.transform.position-target).sqrMagnitude,enemy.NavigationRadius,true)&&WorldTraversal.HasLineOfSight(enemy.transform.position,target)){contested=true;break;}
-                ChapterRun.Advance(Time.deltaTime,true,RoomTacticalRegion.ContainsPlayer(CombatFx.Flat(Player.transform.position-target).sqrMagnitude),contested);
+                bool contested=false;
+                foreach(var enemy in Enemies)if(IsChapterContesting(enemy)){contested=true;break;}
+                ChapterRun.Advance(Time.deltaTime,true,RoomTacticalRegion.ContainsPlayer(CombatFx.Flat(Player.transform.position-ChapterObjectivePoint).sqrMagnitude),contested);
                 chapterObjective.transform.position=ChapterObjectivePoint;
             }
             if(ChapterRun.DoorUnlocked){if(chapterExit!=null)chapterExit.SetActive(true);if(chapterObjective!=null)chapterObjective.SetActive(false);}
-            if(chapterSupplier!=null&&!chapterSupplier.IsDead&&Time.time>=chapterSupplyVisual)
-            {
-                chapterSupplyVisual=Time.time+.8f;
-                if(ChapterRun.Objective==RoomObjective.Hunt||ChapterHasSupport)CombatFx.Ring(chapterSupplier.transform.position,1.1f,new Color(1,.8f,.25f),.85f,.08f);
-                if(ChapterHasSupport)foreach(var enemy in Enemies)if(ChapterSupportMultiplier(enemy)<1)CombatFx.Ring(enemy.transform.position,.8f,new Color(.25f,.85f,1),.85f,.06f);
-            }
+
         }
+        public bool IsChapterHuntTarget(EnemyController enemy){return ChapterActive&&!ChapterFinished&&ChapterRun.Objective==RoomObjective.Hunt&&LiveRoomEnemy(enemy)&&enemy==chapterSupplier;}
+        public bool IsChapterContesting(EnemyController enemy)
+        {return ChapterActive&&!ChapterFinished&&chapterObjective!=null&&!ChapterRun.DoorUnlocked&&LiveRoomEnemy(enemy)&&RoomTacticalRegion.Contests(CombatFx.Flat(enemy.transform.position-ChapterObjectivePoint).sqrMagnitude,enemy.NavigationRadius,true)&&WorldTraversal.HasLineOfSight(enemy.transform.position,ChapterObjectivePoint);}
         private bool ChapterHasSupport {get{return ChapterActive&&!ChapterFinished&&ActiveChapterNode==ChapterNode.ForestCourt&&ActiveChapterDifficulty!=ChapterDifficulty.Normal&&chapterSupplier!=null&&!chapterSupplier.IsDead&&chapterSupplier.isActiveAndEnabled;}}
         public bool IsChapterSupplier(EnemyController enemy){return ChapterHasSupport&&enemy==chapterSupplier;}
         public float ChapterSupportMultiplier(EnemyController enemy)

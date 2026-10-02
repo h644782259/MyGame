@@ -40,6 +40,7 @@ namespace Emberfall
      if(escape)enemy.ConfigureEscapePost(EscapeRoomFormation.Role(index),point);
      if(index==0&&!plan.Boss){roomSupplier=enemy;Notify(RoomTactics.Name(plan.Objective)+" · 金环魔灵为6米内可见同伴减伤30%，引开或优先击败");}
      if(boss)LargeExpeditionBoss.Configure(enemy,DungeonTier,runSeed+plan.Index*911);
+     TacticalEnemyVisual.Attach(enemy,this);
      roomEnemies.Add(enemy,new RoomEnemyReceipt{Plan=plan,Index=index});
     }
     catch(System.Exception error){RoomChainRun.Fail(RoomFailureReason.GenerationOrPathFailure);Notify("房间生成失败："+error.Message);FinalizeRoomChain();return;}

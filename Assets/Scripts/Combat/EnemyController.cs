@@ -20,6 +20,8 @@ namespace Emberfall
         public bool CanBeSkillInterrupted { get { return IsPreparingAttack && controlPolicy != null && controlPolicy.CanInterruptWindup; } }
         public float ControlRecoveryRemaining { get { return controlPolicy == null ? 0 : controlPolicy.InterruptRecovery; } }
         public float AttackWindupRemaining { get { return largeBoss != null && largeBoss.State.Interruptible ? largeBoss.State.Remaining : preparing ? windup : 0; } }
+        private GuardArmorVisual guardArmorVisual;
+        public bool GuardArmorClosed {get{return GuardArmorRules.Closed(Kind==EnemyKind.Guardian,IsBoss,preparing);}}
         public float NavigationRadius { get { return largeBoss != null ? 1.25f : IsBoss ? .9f : Kind == EnemyKind.Guardian ? .6f : .45f; } }
         public float HitFootprintBonus { get { return largeBoss != null ? .45f : 0f; } }
         public float ProjectileHitRadius { get { return largeBoss != null ? 1.3f : IsBoss ? 1.05f : .6f; } }
@@ -86,6 +88,7 @@ namespace Emberfall
             model = CombatModel.Enemy(transform,kind,boss);
             StatusEffects = gameObject.AddComponent<EnemyStatusEffects>();
             BuildHealthBar();
+            guardArmorVisual=GuardArmorVisual.Attach(this);
         }
 
         public void ConfigureArenaBoss(int pattern)
@@ -157,10 +160,11 @@ namespace Emberfall
             amount *= session.RoomSupportMultiplier(this)*session.ChapterSupportMultiplier(this);
             amount *= StatusEffects == null ? 1 : StatusEffects.DamageMultiplier;
             if (largeBoss != null) amount *= largeBoss.State.IncomingMultiplier;
-            if (Kind == EnemyKind.Guardian && !IsBoss && !preparing && CombatFx.Flat(direction).sqrMagnitude > .01f && Vector3.Dot(transform.forward, -CombatFx.Flat(direction).normalized) > .45f)
-                amount *= .65f;
+            float armorMultiplier=GuardArmorRules.Multiplier(Kind==EnemyKind.Guardian,IsBoss,preparing,CombatFx.Flat(direction).sqrMagnitude,Vector3.Dot(transform.forward,-CombatFx.Flat(direction).normalized));
+            amount*=armorMultiplier;
             float previousHealth = Health;
             Health = Mathf.Max(0,Health-amount);
+            if(guardArmorVisual!=null&&Health<previousHealth)guardArmorVisual.RecordImpact(armorMultiplier<1,preparing);
             if (CombatReviewEvents.Enabled) CombatReviewEvents.Emit("damage","0",CombatReviewObjectId.Get(this),previousHealth-Health,detail:"enemy_health_loss");
             aggro = true;
             hurtTime = .15f;
