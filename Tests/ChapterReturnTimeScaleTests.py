@@ -7,7 +7,7 @@ def member(file,signature):
  s=(root/file).read_text();a=s.index(signature);b=s.index('{',a)+1;d=1
  while d:d+=(s[b]=='{')-(s[b]=='}');b+=1
  return s[a:b]
-core=['GameTypes','ProgressionService','ProgressionService.Chapter','ChapterProgression','ChapterCombatRun','RoomTactics','RoomTacticalRegion','CombatBalance','HubTravelRules','MasteryCoreRuntime','TierRewardRules','TierRewardBand','ProgressionGoalState','AdventureResultPolicy','GameSession.Chapter','EscapePostPolicy','ApplicationPauseState','SafeSaveFlow','SaveLifecycleGate']
+core=['GameTypes','ProgressionService','ProgressionService.Chapter','ChapterProgression','ChapterCombatRun','RoomTactics','RoomTacticalRegion','CombatBalance','HubTravelRules','MasteryCoreRuntime','TierRewardRules','TierRewardBand','ProgressionGoalState','AdventureResultPolicy','GameSession.Chapter','EscapePostPolicy','ApplicationPauseState','SafeSaveFlow','SaveLifecycleGate','RoomChainState','ExpeditionModeState']
 with tempfile.TemporaryDirectory(prefix='chapter-return-clock-') as t:
  p=Path(t)
  for n in core:(p/(n+'.cs')).write_text((root/'Assets/Scripts/Core'/(n+'.cs')).read_text())
@@ -16,10 +16,9 @@ with tempfile.TemporaryDirectory(prefix='chapter-return-clock-') as t:
  replacements={
  'deltaTime=.25f,time;':'deltaTime=.25f,time,timeScale=1;',
  'public int CombatEpoch=1,':'public void Initialize(GameSession s,HeroClass h){}public int CombatEpoch=1,',
- 'public class FakeChoices {public void Reset(){}}':'public class FakeChoices {public bool AwaitingChoice;public void Reset(){AwaitingChoice=false;}}\npublic enum ExpeditionModeStatus{Disposed}public class FakeMode{public bool Finished,IsTerminal;public ExpeditionModeStatus Status;}',
+ 'public class FakeChoices {public void Reset(){}}':'public class FakeChoices {public bool AwaitingChoice;public void Reset(){AwaitingChoice=false;}}',
  'Paused,BackgroundPaused,IsInCamp=true;':'Paused,IsInCamp=true;public bool BackgroundPaused=>pauseState.BackgroundPaused;',
  'public bool InputBlocked=>Paused||BackgroundPaused||IsDead||ChapterFinished;':member('Assets/Scripts/Core/GameSession.cs','public bool InputBlocked'),
- 'object ModeRun,RoomChainRun;':'FakeMode ModeRun,RoomChainRun;',
  'void UpdateTimeScale(){}':'',
  'public static int Builds;':'public static int Builds;public static bool ThrowBuild;',
  'Builds++;return new GameObject("World");':'if(ThrowBuild)throw new Exception("scene fixture failure");Builds++;return new GameObject("World");',
