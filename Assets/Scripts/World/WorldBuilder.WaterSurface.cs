@@ -1,4 +1,5 @@
 using UnityEngine;
+using System.Collections.Generic;
 namespace Emberfall
 {
     public static partial class WorldBuilder
@@ -23,6 +24,45 @@ namespace Emberfall
             Ribbon(parent,r,name+" broad reflected current",flow,profile.CurrentWidth,height+.003f,current);
             WaterFlowBands.Create(parent,flow,profile.CurrentWidth*.72f,height+.004f,environment,
                 r.Material(new Color(.31f,.55f,.55f)*profile.CurrentBrightness,false,VisualSurface.Water));
+            BuildShoreWaterContact(parent,r,name,path,profile.Width,height);
+        }
+        // Same miter as the rendered ribbon: the waterline must meet the real surface edge.
+        private static void RibbonSection(Vector3[] path,int i,out Vector3 normal,out float miter)
+        {
+            Vector3 before=i==0?path[1]-path[0]:path[i]-path[i-1];
+            Vector3 after=i==path.Length-1?before:path[i+1]-path[i];
+            Vector3 direction=(before.normalized+after.normalized).normalized;
+            normal=new Vector3(-direction.z,0,direction.x);
+            Vector3 sectionNormal=new Vector3(-before.z,0,before.x).normalized;
+            miter=1f/Mathf.Max(.72f,Vector3.Dot(normal,sectionNormal));
+        }
+        private static void BuildShoreWaterContact(Transform parent,WorldResources r,string name,Vector3[] path,float width,float height)
+        {
+            // Static, merged bank details; cap malformed/very long authored paths without runtime updates.
+            int sections=Mathf.Min(path.Length,65);
+            Material damp=r.Material(new Color(.12f,.22f,.215f),false,VisualSurface.Stone);
+            var wet=new List<Vector3>();var line=new List<Vector3>();
+            var topTriangles=new List<int>();var lineTriangles=new List<int>();
+            for(int side=-1;side<=1;side+=2)
+            {
+                int start=wet.Count;
+                for(int i=0;i<sections;i++)
+                {
+                    Vector3 normal;float miter;RibbonSection(path,i,out normal,out miter);
+                    Vector3 edge=path[i]+normal*(side*width*.5f*miter);edge.y=height;
+                    Vector3 inner=edge-normal*(side*.045f),outer=edge+normal*(side*.12f);
+                    inner.y=outer.y=height+.002f;wet.Add(inner);wet.Add(outer);
+                    line.Add(edge+Vector3.up*.004f);line.Add(edge-Vector3.up*.012f);
+                    if(i==sections-1)continue;
+                    int a=start+i*2,b=a+2;
+                    if(side==1){topTriangles.Add(a);topTriangles.Add(a+1);topTriangles.Add(b);topTriangles.Add(a+1);topTriangles.Add(b+1);topTriangles.Add(b);}
+                    else{topTriangles.Add(a);topTriangles.Add(b);topTriangles.Add(a+1);topTriangles.Add(a+1);topTriangles.Add(b);topTriangles.Add(b+1);}
+                    // Both banks remain visible from either bank/camera side without a special shader.
+                    int[] face={a,b,a+1,a+1,b,b+1,a+1,b,a,b+1,b,a+1};lineTriangles.AddRange(face);
+                }
+            }
+            Geometry(parent,r,name+" shore damp seam",wet,topTriangles,damp);
+            Geometry(parent,r,name+" shore vertical waterline",line,lineTriangles,damp);
         }
         private static void BuildBridgeWaterContact(Transform parent,WorldResources r,Rect footprint,float deckTop)
         {

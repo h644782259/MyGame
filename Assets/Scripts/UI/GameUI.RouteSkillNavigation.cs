@@ -12,7 +12,9 @@ namespace Emberfall
         {
             if(!session.IsInCamp||skill<0||skill>=GameBalance.SkillCount)return;
             routeSkillOwner=session.Progression;routeSkillSlot=routeSkillOwner.CurrentSlotId;routeSkillTab=campTab;
-            ReconcileMobileSkillOwner();selectedSkill=skill;mobileSkillDetail=true;mobileSkillDetailScroll=Vector2.zero;
+            ReconcileMobileSkillOwner();
+            if(selectedSkill!=skill){mobileSkillStatus=null;mobileSkillStatusFailed=false;}
+            selectedSkill=skill;mobileSkillDetail=true;mobileSkillDetailScroll=Vector2.zero;
             desktopDetailScroll=Vector2.zero;desktopDetailSkill=skill;panel=Panel.Skills;
             CancelMobileScroll();session.SetUIBlocking(true);BlockUITransition();
         }
