@@ -56,7 +56,7 @@ public static class RoomBlessingRouteTests
         {
             // Legal level-50 all-first-rank build: eight active buttons equipped,
             // ordinary class choices only; no impossible mechanic prerequisites.
-            var p=new GameProfile{heroClass=(HeroClass)hero,level=50,equippedSkills=new[]{0,1,2,3,4,6,7,9,-1,-1}};
+            var p=new GameProfile{heroClass=(HeroClass)hero,level=50,equippedSkills=new[]{0,1,2,4,5,6,7,9,-1,-1}};
             for(int skill=0;skill<10;skill++)p.skillRanks[skill]=1;
             var opening=new RunChoices();opening.PrepareRoomChoice(1,p,mobile,seed);
             var cards=opening.Offer;

@@ -12,13 +12,13 @@ namespace Emberfall
    blockedRects.Add(new Rect(0,0,width,height));
    Text(new Rect(x*u,y*u,520*u,26*u),"选择冒险",Mathf.RoundToInt(22*u),pale,true);
    string[] names={"沉星遗迹","守望林庭","烬河突围","蚀星斗场","回廊远征"};
-   string[] types={"三波探索 · 宝箱","守点解围 · 荆棘","限时突围 · 窄桥","三首领轮替连战","五房 · 支线 · 星环首领"};
    for(int i=0;i<names.Length;i++)
    {
     var a=layout.Entry(i);Rect r=new Rect(a.X*u,a.Y*u,a.Width*u,a.Height*u);bool chosen=session.SelectedArenaMode==i-1;
     Fill(r,chosen?new Color(.11f,.2f,.21f):card);Border(r,chosen?gold:jade*.4f);
     Text(new Rect(r.x+10*u,r.y+3*u,r.width-20*u,23*u),names[i],Mathf.RoundToInt(17*u),chosen?gold:pale,true);
-    Text(new Rect(r.x+10*u,r.y+28*u,r.width-20*u,17*u),types[i],Mathf.RoundToInt(12*u),muted);
+    Text(new Rect(r.x+10*u,r.y+25*u,r.width-20*u,12*u),AdventureEntryPresentation.RewardLine(i-1,session.SelectedDungeonTier),Mathf.RoundToInt(10*u),jade);
+    Text(new Rect(r.x+10*u,r.y+37*u,r.width-20*u,12*u),AdventureEntryPresentation.EncounterLine(i-1),Mathf.RoundToInt(10*u),muted);
     if(GUI.Button(r,GUIContent.none,invisibleButton))session.SelectedArenaMode=i-1;
    }
    // The spare sixth cell carries the same selected goal as camp and results.
@@ -27,8 +27,8 @@ namespace Emberfall
    Text(new Rect(goal.x+8*u,goal.y+3*u,goal.width-16*u,44*u),session.Progression.ProgressionGoalStatus(),Mathf.RoundToInt(10*u),jade,false,true);
    float options=layout.OptionsY;
    Text(new Rect(x*u,options*u,180*u,25*u),"第 "+session.SelectedDungeonTier+" 阶",Mathf.RoundToInt(18*u),gold,true,false,TextAnchor.MiddleLeft);
-   int materialBase=session.SelectedArenaMode<0?3:session.SelectedArenaMode==3?4:session.SelectedArenaMode+1;
-   Text(new Rect(x*u,(options+27)*u,180*u,18*u),"通关碎片 "+TierRewardBand.Materials(materialBase,session.SelectedDungeonTier),Mathf.RoundToInt(12*u),jade);
+   
+   Text(new Rect(x*u,(options+27)*u,180*u,18*u),"通关碎片 "+AdventureEntryPresentation.Materials(session.SelectedArenaMode,session.SelectedDungeonTier),Mathf.RoundToInt(12*u),jade);
    if(Button(new Rect((x+184)*u,options*u,48*u,48*u),"−",jade,session.SelectedDungeonTier>1))session.SelectedDungeonTier--;
    if(Button(new Rect((x+240)*u,options*u,48*u,48*u),"+",jade,session.SelectedDungeonTier<session.MaximumDungeonTier))session.SelectedDungeonTier++;
    if(Button(new Rect((x+300)*u,options*u,220*u,48*u),session.SelectedChallengeMode?"限疗挑战 ✓":"普通治疗",jade))session.SelectedChallengeMode=!session.SelectedChallengeMode;

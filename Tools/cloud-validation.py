@@ -221,6 +221,10 @@ def main():
             'using System; internal static class Program { static void Main(string[] args) { Console.WriteLine(AdventureProgressionTests.Run(args[0])); } }'))
         checks.append(("build-size-policy", [ROOT/"Assets/Editor/BuildSizePolicy.cs", ROOT/"Tests/BuildSizePolicyTests.cs"],
             'using System; internal static class Program { static void Main() { Console.WriteLine(BuildSizePolicyTests.Run()); } }'))
+        checks.append(("side-event-rewards",[ROOT/"Assets/Scripts/Core/GameTypes.cs",ROOT/"Assets/Scripts/Core/ProgressionService.cs",ROOT/"Tests/ProgressionTests.cs",ROOT/"Tests/SideEventRewardTests.cs"],
+            'using System; internal static class Program { static void Main(string[] args) { Console.WriteLine(SideEventRewardTests.Run(args[0])); } }'))
+        checks.append(("adventure-entry-truth",[ROOT/("Assets/Scripts/"+f+".cs") for f in ["UI/AdventureEntryPresentation","Core/ExpeditionModeState","Core/TierRewardBand","Core/TierRewardRules","Core/GameTypes","Core/SkillRuntime"]]+[ROOT/"Tests/SkillRuntimeTests.cs",ROOT/"Tests/AdventureEntryPresentationTests.cs"],
+            'using System; internal static class Program { static void Main() { Console.WriteLine(AdventureEntryPresentationTests.Run()); } }'))
         checks.append(("mobile-room-objective",[ROOT/"Assets/Scripts/Core/RoomTacticalRegion.cs",ROOT/"Assets/Scripts/Core/RoomChainState.cs",ROOT/"Assets/Scripts/UI/RoomObjectivePresentation.cs",ROOT/"Assets/Scripts/UI/MobileControlLayout.cs",ROOT/"Tests/RoomObjectivePresentationTests.cs"],
             'using System; internal static class Program { static void Main() { Console.WriteLine(RoomObjectivePresentationTests.Run()); } }'))
         checks.append(("tactical-room-region",[ROOT/("Assets/Scripts/"+f+".cs") for f in ["Core/RoomTacticalRegion","Core/RoomChainState","Core/ExpeditionModeState","Core/TierRewardBand","UI/RoomObjectivePresentation","World/WorldTraversal"]]+[ROOT/"Tests/DestructibleTraversalTests.cs",ROOT/"Tests/RoomTacticalRegionTests.cs"],
@@ -230,6 +234,8 @@ def main():
         for name, test, helpers in [
             ("basic-action-timeline", "BasicActionTimelineTests", ["Core/BasicActionTimeline"]),
             ("weapon-structure", "WeaponStructureTests", ["Core/WeaponStructure"]),
+            ("visual-motion-envelope", "VisualMotionEnvelopeTests", ["Core/VisualMotionEnvelope"]),
+            ("environment-light-profile", "EnvironmentLightProfileTests", ["Core/EnvironmentLightProfile"]),
             ("costume-layers", "CostumeLayersTests", ["Core/CostumeLayers"]),
             ("panel-readability", "PanelReadabilityLayoutTests", ["UI/AdventureSelectionLayout", "UI/MobilePanelLayout"]),
             ("decoration-budget", "DecorationBudgetTests", ["Core/DecorationBudget"]),
@@ -307,6 +313,9 @@ def main():
         failed = failed or not passed
         passed = run_check("chest-pause-back-production", [[sys.executable, str(ROOT / "Tests/ChestPauseBackProductionTests.py"), dotnet]], env, output, report)
         failed = failed or not passed
+        for name, script in [("companion-intent-production","CompanionIntentProductionTests.py"),("contract-snapshot-production","ContractSnapshotProductionTests.py"),("filled-vfx-allocation","FilledVfxAllocationTests.py")]:
+            passed = run_check(name, [[sys.executable,str(ROOT/"Tests"/script),dotnet]], dict(env,DOTNET=dotnet), output, report)
+            failed = failed or not passed
         if args.compile or args.download_references or args.compile_android:
             try:
                 refs = unity_references(args.download_references)
