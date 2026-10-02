@@ -8,7 +8,7 @@ def load(name,path):
  s=importlib.util.spec_from_file_location(name,path);m=importlib.util.module_from_spec(s);s.loader.exec_module(m);return m
 cv=load('cv',root/'Tools/cloud-validation.py');comp=load('comp',root/'Tests/CompanionIntentProductionTests.py')
 shell=comp.shell.replace('private float AttackMultiplier=>commandMultiplier;',comp.member('private float AttackMultiplier'))
-shell=shell.replace('private bool CanReachTarget(Vector3 p)=>false;','private bool CanReachTarget(Vector3 p)=>true;').replace('public int DamageCalls;','public float DamageTotal;public int DamageCalls;').replace('{DamageCalls++;}','{DamageCalls++;DamageTotal+=d;}')
+shell=shell.replace('private bool pathClear;private bool CanReachTarget(Vector3 p)=>pathClear;','private bool pathClear=true;private bool CanReachTarget(Vector3 p)=>pathClear;').replace('public int DamageCalls;','public float DamageTotal;public int DamageCalls;').replace('{DamageCalls++;Health-=d;}','{DamageCalls++;Health-=d;DamageTotal+=d;}')
 extra=r'''
  public static int VerifyBlessing(){int n=0;Action<bool,string> check=(ok,why)=>{n++;if(!ok)throw new Exception(why);};
   foreach(bool twin in new[]{false,true}){

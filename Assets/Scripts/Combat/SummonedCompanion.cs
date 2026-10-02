@@ -10,6 +10,7 @@ namespace Emberfall
         private sealed class BondState
         {
             public int Epoch;
+            public int EmpoweredHitSequence;public float EmpoweredHitTime=float.NegativeInfinity;
             public readonly CompanionDirective<EnemyController> Directive = new CompanionDirective<EnemyController>();
             public readonly CompanionCommandOpportunity Commands = new CompanionCommandOpportunity();
             public readonly CompanionCooperationTracker<EnemyController> Cooperation = new CompanionCooperationTracker<EnemyController>();
@@ -254,6 +255,20 @@ namespace Emberfall
         public static float CommandOpportunityRemaining(PlayerController owner)
         {return owner==null||owner.IsDead?0:State(owner).Commands.Remaining(Time.time);}
 
+        public bool EmpoweredAttackActive {get{return IsAlive&&commandEmpowered&&commandTime>0;}}
+        public void RecordEmpoweredHit(EnemyController enemy,float actualHealthLoss,bool empoweredAtRelease)
+        {
+            if(!IsAlive||enemy==null||!empoweredAtRelease||float.IsNaN(actualHealthLoss)||float.IsInfinity(actualHealthLoss)||actualHealthLoss<=0)return;
+            var state=State(Owner);state.EmpoweredHitSequence=state.EmpoweredHitSequence==int.MaxValue?1:state.EmpoweredHitSequence+1;state.EmpoweredHitTime=Time.time;
+        }
+        public static bool EmpoweredHitFeedback(PlayerController owner,out int sequence,out int hits,out float age)
+        {
+            sequence=hits=0;age=0;BondState state;
+            if(owner==null||owner.IsDead||!owner.gameObject.activeInHierarchy||!bonds.TryGetValue(owner,out state)||state.Epoch!=owner.CombatEpoch)return false;
+            age=Time.time-state.EmpoweredHitTime;if(age<0||age>2||state.EmpoweredHitSequence==0)return false;
+            sequence=state.EmpoweredHitSequence;hits=1;return true;
+        }
+
         // Free orders change only navigation/target choice. They never invoke a
         // contract, reset recovery, consume a dodge opportunity or grant protection.
         public static bool SetFreeFocus(PlayerController owner, EnemyController enemy)
@@ -387,7 +402,9 @@ namespace Emberfall
                 AdvancedSkillVfx.Beam(Owner, previous + Vector3.up * .5f, transform.position + Vector3.up * .5f, GameBalance.ClassColor(HeroClass.Summoner), .25f, .15f);
                 if (CombatFx.Flat(commandedTarget.transform.position - transform.position).magnitude <= 1.8f && CanReachTarget(commandedTarget.transform.position))
                 {
+                    float before=commandedTarget.Health;bool empoweredHit=EmpoweredAttackActive;
                     commandedTarget.TakeDamage(damage * AttackMultiplier * CompanionRules.WolfCommandCoefficient, towards.normalized, .35f, .2f);
+                    RecordEmpoweredHit(commandedTarget,before-commandedTarget.Health,empoweredHit);
                     OnConfirmedHit(commandedTarget);
                     cooldown = CompanionRules.WolfCommandRecovery; attackPose = 1;
                 }
@@ -569,26 +586,39 @@ namespace Emberfall
                         if (enemy != null && !enemy.IsDead && CombatFx.Flat(enemy.transform.position - transform.position).magnitude < 3.3f * GameBalance.SkillRangeMultiplier(rank)
                             && WorldTraversal.HasGroundPath(transform.position, enemy.transform.position, .12f))
                         {
+                            float before=enemy.Health;bool empoweredHit=EmpoweredAttackActive;
                             enemy.TakeDamage(attackDamage * CompanionRules.AttackCoefficient((int)Form), enemy.transform.position - transform.position, .55f, .3f);
                             if (!enemy.IsDead) enemy.StatusEffects.Knockdown(.45f + rank * .12f);
+                            RecordEmpoweredHit(enemy,before-enemy.Health,empoweredHit);
                             OnConfirmedHit(enemy);
                         }
                 }
                 else
                 {
                     CombatFx.Slash(transform.position, delta.normalized, 1.25f, new Color(.55f, 1f, .87f));
+                    float before=target.Health;bool empoweredHit=EmpoweredAttackActive;
                     target.TakeDamage(attackDamage * CompanionRules.AttackCoefficient((int)Form), delta.normalized, .13f, .05f);
+                    RecordEmpoweredHit(target,before-target.Health,empoweredHit);
                     OnConfirmedHit(target);
                 }
             }
             // Sample only this frame's navigated displacement, after the actual
             // release event so projectile/damage and contact pose share a frame.
             float locomotion = CombatFx.Flat(transform.position - previous).magnitude / Mathf.Max(.0001f, dt * (Form == Kind.Treant ? 4.2f : 7f));
+            model.SetCompanionAttackPreparation(AttackPreparation(attackRange));
             model.Animate(Mathf.Clamp01(locomotion), attackPose, false);
             if(recallVisualPending&&target==null&&CombatFx.Flat(transform.position-followAnchor).sqrMagnitude<=.64f)
             {recallVisualPending=false;recallVisualTime=.4f;}
             recallVisualTime=Mathf.Max(0,recallVisualTime-dt);
             model.SetCompanionRecall(recallVisualTime>0?1-recallVisualTime/.4f:0);
+        }
+
+        private float AttackPreparation(float range)
+        {
+            const float window=.22f;
+            if(cooldown<=0||cooldown>window||attackPose>.05f||recallTime>0||!ValidTarget(target)||
+                CombatFx.Flat(target.transform.position-transform.position).sqrMagnitude>range*range||!CanReachTarget(target.transform.position))return 0;
+            return Mathf.Clamp01(1-cooldown/window);
         }
 
         private bool CanReachTarget(Vector3 position)

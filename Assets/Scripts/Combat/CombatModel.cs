@@ -410,7 +410,7 @@ namespace Emberfall
                 model.floating = true;
                 model.body = model.Part("Star spirit", PrimitiveType.Sphere, new Vector3(0,1.2f,0), new Vector3(.54f,.7f,.54f), new Color(.4f,1f,.84f));
                 model.companionBodyScale = model.body.localScale;
-                model.decoration = model.Part("Star crown", PrimitiveType.Cube, new Vector3(0,1.75f,0), Vector3.one*.25f, new Color(1f,.87f,.47f));
+                model.decoration = model.Part("Star crown", PrimitiveType.Cube, new Vector3(0,1.75f,0), Vector3.one*.25f, new Color(1f,.87f,.47f),model.CompanionRigidParent());
                 for(int i=-1;i<=1;i+=2) model.Part("Spirit wing",PrimitiveType.Capsule,new Vector3(i*.42f,1.35f,0),new Vector3(.18f,.5f,.15f),new Color(.67f,1f,.88f)).localRotation=Quaternion.Euler(0,0,i*45);
             }
             else if (form == SummonedCompanion.Kind.Treant)
@@ -419,7 +419,7 @@ namespace Emberfall
                 model.Humanoid(new Color(.35f,.26f,.15f), new Color(.28f,.32f,.14f), new Color(.4f,.69f,.32f), 1.6f);
                 model.transform.localScale = Vector3.one * 1.3f;
                 for (int i = -1; i <= 1; i++)
-                    model.Part("Leaf crown", PrimitiveType.Sphere, new Vector3(i * .35f, 2.23f, -.08f), new Vector3(.75f,.65f,.65f), new Color(.35f,.69f,.37f), surface: VisualSurface.Foliage);
+                    model.Part("Leaf crown", PrimitiveType.Sphere, new Vector3(i * .35f, 2.23f, -.08f), new Vector3(.75f,.65f,.65f), new Color(.35f,.69f,.37f), model.CompanionRigidParent(), surface: VisualSurface.Foliage);
             }
             else
             {
@@ -1208,6 +1208,7 @@ namespace Emberfall
             }
             if(decoration!=null) decoration.Rotate(0,dt*65f,0,Space.Self);
             ApplyRecoil();
+            ApplyCompanionPose();
             if (enemyOwner != null && enemyOwner.StatusEffects != null)
                 transform.localPosition += Vector3.up * enemyOwner.StatusEffects.AirborneHeight;
         }

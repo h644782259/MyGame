@@ -7,7 +7,7 @@ def member(signature):
  s=(root/'Assets/Scripts/Combat/SummonedCompanion.cs').read_text();start=s.index(signature);end=s.index('{',start)+1;depth=1
  while depth:depth+=(s[end]=='{')-(s[end]=='}');end+=1
  return s[start:end]
-methods='\n'.join(member(x) for x in ['private sealed class BondState','private static BondState State(', 'public static SummonedCompanion[] Snapshot(', 'public static bool SetFreeFocus(', 'public static bool FreeRecall(', 'public static EnemyController ExplicitFocus(', 'public static SummonedCompanion CastContract(', 'private bool ValidTarget(', 'private void Command(', 'private EnemyController AcquireTarget()', 'private void AdvanceCommand(', 'public void OnConfirmedHit('])
+methods='\n'.join(member(x) for x in ['private sealed class BondState','private static BondState State(', 'public static SummonedCompanion[] Snapshot(', 'public static bool SetFreeFocus(', 'public static bool FreeRecall(', 'public static EnemyController ExplicitFocus(', 'public static SummonedCompanion CastContract(', 'private bool ValidTarget(', 'private void Command(', 'private EnemyController AcquireTarget()', 'private void AdvanceCommand(', 'public void OnConfirmedHit(', 'public bool EmpoweredAttackActive', 'public void RecordEmpoweredHit(', 'public static bool EmpoweredHitFeedback(', 'private float AttackPreparation('])
 if '--legacy-clear' in sys.argv:methods=methods.replace('BondState state = State(owner);','BondState state = State(owner); state.Directive.Clear();')
 shell=r'''
 using System;using System.Collections.Generic;using UnityEngine;
@@ -22,8 +22,8 @@ namespace UnityEngine {
 namespace Emberfall {
  public enum HeroClass{Summoner}public enum EquipmentMechanic{TwinSummonResonance}
  public static class GameBalance {public static float SkillRangeMultiplier(int rank)=>1;public static Color ClassColor(HeroClass h)=>new Color();}
- public class PlayerController {public float RunAttackMultiplier=1;public bool IsDead,Twin;public HeroClass HeroClass;public int CombatEpoch;public EnemyController FocusTarget;public object Targeting;public Vector3 AimPoint;public EnemyController AimTarget;public bool Ready=true;public Func<int,Vector3,bool> ConfirmCast;public Func<int,bool> ExecuteCast;public T GetComponent<T>() where T:class=>Targeting as T;public bool CanBeginSkillTargeting(int skill)=>Ready;public bool ConfirmTargetedSkill(int skill,Vector3 point)=>ConfirmCast(skill,point);public bool ExecuteChargedSkill(int skill)=>ExecuteCast(skill);public void CancelCombatPose(){}public Transform transform=new Transform();public bool HasMechanic(EquipmentMechanic m)=>Twin;}
- public class EnemyController {public bool IsDead,IsAggro=true;public GameObject gameObject=new GameObject();public Transform transform=new Transform();public int DamageCalls;public void TakeDamage(float d,Vector3 v,float a=0,float b=0,bool impact=true){DamageCalls++;}}
+ public class PlayerController {public GameObject gameObject=new GameObject();public float RunAttackMultiplier=1;public bool IsDead,Twin;public HeroClass HeroClass;public int CombatEpoch;public EnemyController FocusTarget;public object Targeting;public Vector3 AimPoint;public EnemyController AimTarget;public bool Ready=true;public Func<int,Vector3,bool> ConfirmCast;public Func<int,bool> ExecuteCast;public T GetComponent<T>() where T:class=>Targeting as T;public bool CanBeginSkillTargeting(int skill)=>Ready;public bool ConfirmTargetedSkill(int skill,Vector3 point)=>ConfirmCast(skill,point);public bool ExecuteChargedSkill(int skill)=>ExecuteCast(skill);public void CancelCombatPose(){}public Transform transform=new Transform();public bool HasMechanic(EquipmentMechanic m)=>Twin;}
+ public class EnemyController {public float Health=100;public bool IsDead,IsAggro=true;public GameObject gameObject=new GameObject();public Transform transform=new Transform();public int DamageCalls;public void TakeDamage(float d,Vector3 v,float a=0,float b=0,bool impact=true){DamageCalls++;Health-=d;}}
  public class GameSession {public static GameSession Instance;public class ProfileStub{public int[] skillRanks={1,1,1,1,1,1,1,1,1,1};}public class ProgressionStub{public ProfileStub Profile=new ProfileStub();}public ProgressionStub Progression=new ProgressionStub();public float ArenaRadius=30;public PlayerController Player;public bool HasStarted=true,InputBlocked,CombatEnded,InDungeon=true;public List<EnemyController> Enemies=new List<EnemyController>();public int Procs;public void RecordCombatAction(string s){if(s=="双契共鸣")Procs++;}public void RecordClassTutorial(HeroClass h){}public void SpawnMechanismText(Vector3 p,string s,Color c){}}
  public static class CombatFx {public static Vector3 Flat(Vector3 v)=>new Vector3(v.x,0,v.z);}
  public static class CombatSight {public static Vector3 GroundPoint(Vector3 a,Vector3 b)=>b;}
@@ -35,7 +35,7 @@ namespace Emberfall {
   public PlayerController Owner;public Kind Form;public bool IsStarter,IsPermanent=true,IsAlive=true;public float RemainingLifetime=100;
   private GameSession session;private Transform transform=new Transform();private int rank=1;private float cooldown=2,attackPose,recallTime,commandTime,commandMultiplier=1,damage=10;private bool commandEmpowered,hasCommandPoint,commandHadTarget,recallVisualPending;private EnemyController commandedTarget,target;private Vector3 commandedPoint;
   private float NavigationRadius=>.3f;private float AttackMultiplier=>commandMultiplier;
-  private bool CanReachTarget(Vector3 p)=>false;
+  private bool pathClear;private bool CanReachTarget(Vector3 p)=>pathClear;
   private void RefreshContractPower(int r){rank=r;}
   private static int Count(PlayerController p)=>active.Count;
   private static SummonedCompanion SummonStarter(PlayerController p,GameSession g,float strength)=>Summon(p,g,Kind.Wolf,1,p.transform.position,strength,true);
@@ -84,6 +84,22 @@ namespace Emberfall {
    for(int i=0;i<1000;i++)FreeRecall(owner);
    check(spirit.cooldown==cd&&spirit.RemainingLifetime==remaining&&spirit.commandTime==commandRemaining&&damageCalls==a.DamageCalls+b.DamageCalls+c.DamageCalls,"1000 free recalls do not deal damage or reset cooldown/lifetime/command timer");
    SetFreeFocus(owner,a);check(spirit.AcquireTarget()==a&&!spirit.recallVisualPending,"new explicit focus exits recall");
+   wolf.target=a;wolf.pathClear=true;wolf.recallTime=0;wolf.attackPose=0;a.transform.position=new Vector3(.5f,0,0);wolf.cooldown=.11f;
+   float originalCooldown=wolf.cooldown;int originalDamage=a.DamageCalls;
+   check(wolf.AttackPreparation(1.4f)>.4f&&wolf.cooldown==originalCooldown&&a.DamageCalls==originalDamage,"preparation is a read-only final cooldown slice");
+   wolf.pathClear=false;check(wolf.AttackPreparation(1.4f)==0,"blocked attack cannot advertise preparation");wolf.pathClear=true;
+   wolf.cooldown=.3f;check(wolf.AttackPreparation(1.4f)==0,"outside existing cooldown tail no preparation");wolf.cooldown=.11f;
+   a.IsDead=true;check(wolf.AttackPreparation(1.4f)==0,"dead target cancels preparation");a.IsDead=false;
+   a.transform.position=new Vector3(8,0,0);check(wolf.AttackPreparation(1.4f)==0,"distant target cancels preparation");a.transform.position=new Vector3(.5f,0,0);
+   wolf.recallTime=1;check(wolf.AttackPreparation(1.4f)==0,"recall cancels preparation");wolf.recallTime=0;
+   int sequence,hits;float age;check(!EmpoweredHitFeedback(owner,out sequence,out hits,out age),"no forecast is a real hit");
+   wolf.Command(a,true,a.transform.position,false);check(EmpoweredHitFeedback(owner,out sequence,out hits,out age)&&hits==1&&age==0,"actual empowered wolf HP loss produces feedback");int firstSequence=sequence;
+   check(wolf.cooldown==CompanionRules.WolfCommandRecovery&&wolf.attackPose==1,"actual wolf release preserves recovery and contact pose");
+   SetFreeFocus(owner,a);FreeRecall(owner);check(EmpoweredHitFeedback(owner,out sequence,out hits,out age)&&sequence==firstSequence,"pin and recall never mint hit feedback");
+   wolf.RecordEmpoweredHit(a,0,true);wolf.RecordEmpoweredHit(a,1,false);check(EmpoweredHitFeedback(owner,out sequence,out hits,out age)&&sequence==firstSequence,"blocked damage and unempowered damage cannot emit");
+   wolf.commandTime=0;wolf.RecordEmpoweredHit(a,1,true);check(EmpoweredHitFeedback(owner,out sequence,out hits,out age)&&sequence==firstSequence+1,"inflight empowered release snapshot survives command expiry");
+   Time.time+=2.1f;check(!EmpoweredHitFeedback(owner,out sequence,out hits,out age),"feedback expires without renewing opportunity");
+   wolf.RecordEmpoweredHit(a,1,true);owner.CombatEpoch++;check(!EmpoweredHitFeedback(owner,out sequence,out hits,out age),"epoch cancels old feedback");
    return n;
   }
  }
@@ -97,3 +113,18 @@ if __name__ == '__main__':
   p.write_text(p.read_text().replace('<OutputType>Library</OutputType>','<OutputType>Exe</OutputType>'))
   config=out/'NuGet.Config';config.write_text('<configuration><packageSources><clear /></packageSources></configuration>');env=os.environ.copy();env.update(DOTNET_CLI_HOME=str(out/'cli'),DOTNET_NOLOGO='1',DOTNET_CLI_TELEMETRY_OPTOUT='1')
   dotnet=sys.argv[1] if len(sys.argv)>1 else 'dotnet';subprocess.run([dotnet,'build',str(p),'--configfile',str(config),'-v:q'],env=env,check=True);subprocess.run([dotnet,str(p.parent/'bin/Debug/net8.0/Validation.dll')],env=env,check=True)
+
+  for old,new,expected in [
+   ('||!CanReachTarget(target.transform.position))return 0;',')return 0;','blocked attack cannot advertise preparation'),
+   ('||actualHealthLoss<=0','', 'blocked damage and unempowered damage cannot emit')]:
+   assert old in shell
+   (out/'Replay.cs').write_text(shell.replace(old,new))
+   subprocess.run([dotnet,'build',str(p),'--configfile',str(config),'-v:q'],env=env,check=True)
+   failed=subprocess.run([dotnet,str(p.parent/'bin/Debug/net8.0/Validation.dll')],env=env,capture_output=True,text=True)
+   assert failed.returncode!=0 and expected in failed.stdout+failed.stderr,failed.stdout+failed.stderr
+   print('PASS: compiled invalid companion behavior fails exact assertion: '+expected)
+  update=member('private void Update()')
+  assert update.index('cooldown -= dt;')<update.index('cooldown <= 0')<update.index('model.SetCompanionAttackPreparation(')<update.index('model.Animate(')
+  assert 'cooldown = CompanionRules.AttackInterval((int)Form);' in update
+  assert 'companionSource: this' in update and 'RecordEmpoweredHit(target,before-target.Health,empoweredHit)' in update
+  print('PASS: actual Update keeps cooldown release order and uses read-only preparation after movement/contact')

@@ -17,3 +17,14 @@ with tempfile.TemporaryDirectory(prefix='companion-appearance-') as d:
  assert 'transform.position-followAnchor' in method('private void Update()') and 'model.SetCompanionRecall(' in source
  assert 'SetCompanionAppearance(Form,rank,IsPermanent)' in method('private void RefreshPower(')
  print('PASS expiry/defeat/recall and real rank refresh hooks; recall remains a living navigation command')
+
+ file=p/'CombatModel.CompanionAppearance.cs';original=file.read_text();needle='companionRigid.localRotation=rotation;'
+ assert needle in original;file.write_text(original.replace(needle,'companionRigid.localRotation=Quaternion.Euler(0,0,0);').replace('companionRigid.localPosition=body.localPosition-rotation*companionRestPosition;','companionRigid.localPosition=Vector3.zero;'))
+ subprocess.run([dotnet,'build',str(p/'Test.csproj'),'--no-restore','-v:q'],env=env,check=True)
+ failed=subprocess.run([dotnet,str(p/'bin/Debug/net8.0/Test.dll')],env=env,capture_output=True,text=True)
+ assert failed.returncode!=0 and 'rigid attachments follow body rotation around its authored pivot' in failed.stdout+failed.stderr,failed.stdout+failed.stderr
+ print('PASS: compiled old root-fixed hardware fails exact pose attachment assertion')
+ model=(r/'Assets/Scripts/Combat/CombatModel.cs').read_text()
+ assert 'ApplyRecoil();\n            ApplyCompanionPose();' in model
+ assert 'new Color(1f,.87f,.47f),model.CompanionRigidParent())' in model
+ print('PASS production Animate and authored crown connect to companion rigid pose')

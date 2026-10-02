@@ -3,10 +3,39 @@ namespace Emberfall
 {
     public sealed partial class CombatModel
     {
-        private Transform companionInsignia;
+        private Transform companionInsignia,companionRigid;
+        private Vector3 companionRestPosition;
+        private Quaternion companionRestRotation;
+        private float companionPreparation,companionRecallLift;
+        private Transform CompanionRigidParent()
+        {
+            if(companionRigid==null)
+            {companionRigid=Joint("Companion rigid body attachments",Vector3.zero);companionRestPosition=body.localPosition;companionRestRotation=body.localRotation;}
+            return companionRigid;
+        }
+        public void SetCompanionAttackPreparation(float value){companionPreparation=Mathf.Clamp01(value);}
+        private void ApplyCompanionPose()
+        {
+            if(companionRigid==null||body==null)return;
+            float ready=companionPreparation;
+            if(ready>0)
+            {
+                body.localRotation=body.localRotation*Quaternion.Euler(-ready*12,0,0);
+                if(quadruped){transform.localPosition+=new Vector3(0,-ready*.06f,-ready*.04f);if(wolfJaw!=null)wolfJaw.localRotation=Quaternion.Euler(-ready*18,0,0);}
+                if(treantCompanion){if(leftArm!=null)leftArm.localRotation=Quaternion.Euler(-ready*65,0,-10);if(rightArm!=null)rightArm.localRotation=Quaternion.Euler(-ready*65,0,10);}
+            }
+            // Match the body's rigid motion about its authored pivot, excluding its soft scale.
+            Quaternion rotation=body.localRotation*Quaternion.Inverse(companionRestRotation);
+            companionRigid.localRotation=rotation;
+            companionRigid.localPosition=body.localPosition-rotation*companionRestPosition;
+            companionRigid.localScale=Vector3.one;
+            if(companionInsignia!=null)companionInsignia.localPosition=Vector3.up*companionRecallLift;
+            if(floating&&decoration!=null)decoration.localPosition=new Vector3(0,1.75f+Mathf.Sin(Time.time*2)*.025f,0);
+        }
+
         private int companionAppearanceKey=-1;
         public void SetCompanionRecall(float progress)
-        {if(companionInsignia!=null)companionInsignia.localScale=Vector3.one*(1+.16f*Mathf.Sin(Mathf.Clamp01(progress)*Mathf.PI));}
+        {companionRecallLift=.04f*Mathf.Sin(Mathf.Clamp01(progress)*Mathf.PI);}
         // A stable local structure, independent of health/command VFX and combat stats.
         public void SetCompanionAppearance(SummonedCompanion.Kind form,int rank,bool permanent)
         {
@@ -14,6 +43,7 @@ namespace Emberfall
             if(companionAppearanceKey==key)return;companionAppearanceKey=key;
             if(companionInsignia!=null){companionInsignia.gameObject.SetActive(false);Destroy(companionInsignia.gameObject);}
             companionInsignia=Joint("Companion contract structure",Vector3.zero);
+            companionInsignia.SetParent(CompanionRigidParent(),false);
             Color metal=new Color(.56f,.51f,.31f),jade=new Color(.35f,.73f,.58f),wood=new Color(.31f,.24f,.14f);
             if(form==SummonedCompanion.Kind.Wolf)
             {
