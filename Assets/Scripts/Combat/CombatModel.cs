@@ -1178,16 +1178,18 @@ namespace Emberfall
                     float sideStride = Mathf.Sin(gaitPhase)*locomotion.Side;
                     leftLeg.localRotation=Quaternion.Euler(signedStride*27,0,-2+sideStride*22);
                     rightLeg.localRotation=Quaternion.Euler(-signedStride*27,0,2-sideStride*22);
+                    float chargeBrace = EnemyActionPose.Charge(enemyActionPhase);
                     float release = EnemyActionPose.Contact(enemyActionPhase,enemyActionProgress);
                     float windup = EnemyActionPose.Windup(enemyActionPhase,enemyActionProgress);
-                    spine.localRotation=Quaternion.Euler(smoothedSpeed*6f-windup*12f+release*13f,windup*-18f+release*19f, -stride*2f*smoothedSpeed);
-                    headRig.localRotation=Quaternion.Euler(windup*8f,windup*10f,-stride*1.5f*smoothedSpeed);
+                    spine.localRotation=Quaternion.Euler(smoothedSpeed*6f-windup*12f+release*13f+chargeBrace*23f,windup*-18f+release*19f, -stride*2f*smoothedSpeed);
+                    headRig.localRotation=Quaternion.Euler(windup*8f-chargeBrace*12f,windup*10f,-stride*1.5f*smoothedSpeed);
                     pelvis.localRotation=Quaternion.Euler(0,stride*-4f*smoothedSpeed,stride*2f*smoothedSpeed);
-                    rightArm.localRotation=Quaternion.Euler(walk*.5f-windup*133f-release*26f,windup*-12f,12f+windup*23f);
-                    rightElbow.localRotation=Quaternion.Euler(-12f-windup*49f+release*8f,0,0);
-                    leftElbow.localRotation=Quaternion.Euler(-18f-windup*20f,0,0);
-                    leftKnee.localRotation=Quaternion.Euler(Mathf.Max(0,-stride)*smoothedSpeed*35f,0,0);
-                    rightKnee.localRotation=Quaternion.Euler(Mathf.Max(0,stride)*smoothedSpeed*35f,0,0);
+                    rightArm.localRotation=Quaternion.Euler(walk*.5f-windup*133f-release*26f-chargeBrace*58f,windup*-12f,12f+windup*23f);
+                    rightElbow.localRotation=Quaternion.Euler(-12f-windup*49f+release*8f-chargeBrace*43f,0,0);
+                    leftElbow.localRotation=Quaternion.Euler(-18f-windup*20f-chargeBrace*32f,0,0);
+                    leftArm.localRotation=Quaternion.Euler(-walk*.6f-chargeBrace*42f,0,-8f-chargeBrace*14f);
+                    leftKnee.localRotation=Quaternion.Euler(Mathf.Max(0,-stride)*smoothedSpeed*35f+chargeBrace*22f,0,0);
+                    rightKnee.localRotation=Quaternion.Euler(Mathf.Max(0,stride)*smoothedSpeed*35f+chargeBrace*12f,0,0);
                 }
                 else if (treantCompanion)
                 {

@@ -6,13 +6,13 @@ namespace Emberfall
     {
         public struct Entry
         {
-            public string kind, detail;
-            public int actorId, targetId, skill;
+            public string kind, detail, actorId, targetId;
+            public int skill;
             public float amount;
         }
         public static event Action<Entry> Observed;
         public static bool Enabled { get { return Observed != null; } }
-        public static void Emit(string kind, int actorId, int targetId = 0, float amount = 0, int skill = -1, string detail = "")
+        public static void Emit(string kind, string actorId, string targetId = "0", float amount = 0, int skill = -1, string detail = "")
         {
             var listener = Observed;
             if (listener == null) return;

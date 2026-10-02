@@ -154,7 +154,7 @@ namespace Emberfall
             projectile.radius *= Mathf.Min(2f,size);
             if (velocity > 0) projectile.speed = velocity;
             if (tracking != null) projectile.lifetime = 2.5f;
-            if (CombatReviewEvents.Enabled) CombatReviewEvents.Emit("projectilelaunch",player.GetInstanceID(),tracking==null?0:tracking.GetInstanceID(),skill:skillIndex,detail:projectile.GetInstanceID().ToString());
+            if (CombatReviewEvents.Enabled) CombatReviewEvents.Emit("projectilelaunch",CombatReviewObjectId.Get(player),tracking==null?"0":CombatReviewObjectId.Get(tracking),skill:skillIndex,detail:CombatReviewObjectId.Get(projectile).ToString());
         }
 
         internal static bool CanLaunchFromMuzzle(PlayerController player,Vector3 muzzle,CombatDamage amount,int castId)
@@ -172,7 +172,7 @@ namespace Emberfall
         {
             int attackId=player.NewCastId();
             if (!CanLaunchFromMuzzle(player,muzzle,amount,attackId))
-            {CombatReviewEvents.Emit("basicmiss",player.GetInstanceID(),detail:"blocked_muzzle;prop_may_have_been_hit");CombatFx.Ring(player.transform.position,.4f,tint,.15f);return;}
+            {CombatReviewEvents.Emit("basicmiss",CombatReviewObjectId.Get(player),detail:"blocked_muzzle;prop_may_have_been_hit");CombatFx.Ring(player.transform.position,.4f,tint,.15f);return;}
             Vector3 direction=CombatFx.Flat(target-muzzle);
             if(direction.sqrMagnitude<.0001f) direction=player.transform.forward;
             CombatProjectile projectile=Make(muzzle,direction,tint,arrow);
@@ -195,7 +195,7 @@ namespace Emberfall
             projectile.aimedDistance=Mathf.Max(.25f,CombatFx.Flat(target-muzzle).magnitude);
             projectile.transform.position=muzzle;
             projectile.AlignBodyFlight();
-            if (CombatReviewEvents.Enabled) CombatReviewEvents.Emit("projectilelaunch",player.GetInstanceID(),selected==null?0:selected.GetInstanceID(),detail:projectile.GetInstanceID().ToString());
+            if (CombatReviewEvents.Enabled) CombatReviewEvents.Emit("projectilelaunch",CombatReviewObjectId.Get(player),selected==null?"0":CombatReviewObjectId.Get(selected),detail:CombatReviewObjectId.Get(projectile).ToString());
         }
 
         public static void Hostile(GameSession game, Vector3 at, Vector3 forward, float amount, float velocity = 8f, string sourceName = "敌方弹幕")
@@ -342,7 +342,7 @@ namespace Emberfall
                     if (LockedImpactMarkPolicy.ShouldApply(impactMarkTarget, enemy, !enemy.IsDead, impact.Amount, impactMarkStrength) && enemy.StatusEffects != null)
                         enemy.StatusEffects.Mark(4f, impactMarkStrength);
                     if(impact.Amount>0){if(!basicAttack&&companionSource==null)owner.RegisterSkillHit(castId);enemy.TakeDamage(owner.ResolveSkillImpact(enemy, skillIndex, castId, impact.Amount, impact.IsCritical, impact.CriticalMultiplier), direction, .18f, critical:impact.IsCritical);}
-                    if (CombatReviewEvents.Enabled) CombatReviewEvents.Emit("projectilehit",owner.GetInstanceID(),enemy.GetInstanceID(),Mathf.Max(0,healthBefore-enemy.Health),skillIndex,GetInstanceID().ToString());
+                    if (CombatReviewEvents.Enabled) CombatReviewEvents.Emit("projectilehit",CombatReviewObjectId.Get(owner),CombatReviewObjectId.Get(enemy),Mathf.Max(0,healthBefore-enemy.Health),skillIndex,CombatReviewObjectId.Get(this).ToString());
                     if (companionSource != null) companionSource.OnConfirmedHit(enemy);
                     CombatFx.Ring(hitPosition, .7f, color, .2f);
                     if (basicAttack && !energyAwarded)
@@ -373,7 +373,7 @@ namespace Emberfall
 
         private void OnDestroy()
         {
-            if (!hostile && owner != null && CombatReviewEvents.Enabled) CombatReviewEvents.Emit("projectileend",owner.GetInstanceID(),skill:skillIndex,detail:GetInstanceID()+":"+terminationReason+":hits="+hitTargets.Count);
+            if (!hostile && owner != null && CombatReviewEvents.Enabled) CombatReviewEvents.Emit("projectileend",CombatReviewObjectId.Get(owner),skill:skillIndex,detail:CombatReviewObjectId.Get(this)+":"+terminationReason+":hits="+hitTargets.Count);
             hostileProjectiles.Remove(this);
             if (bodyMaterial != null) Destroy(bodyMaterial);
             if (trailMaterial != null) Destroy(trailMaterial);
