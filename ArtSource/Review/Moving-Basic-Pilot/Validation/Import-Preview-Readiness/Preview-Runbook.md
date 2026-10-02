@@ -1,0 +1,25 @@
+# Supplemental pilot importer and preview readiness
+
+Scope: frozen source dcd75ac, inspected without Unity Editor. This scratch bundle runs the exact `Assets/Editor/BlenderPilotImport.cs` callbacks against explicit managed Unity/UnityEditor API doubles. It does not import FBX/PNG, instantiate Unity materials, render a preview, validate shader support, or measure device performance. No runtime, assets, settings or aggregate registration are changed.
+
+## Repeatable managed check
+
+Run `python3 /workspace/scratch/pilot-import-preview-readiness/run.py`. The local script uses the existing `/workspace/scratch/dotnet/dotnet` .NET 8 SDK, offline package sources and a scratch CLI home. `rawstdout.log` records the original run; each case has separate build/stdout/stderr logs. `manifest.json` identifies exact source content and compiled controls. Source extraction was `git show dcd75ac:Assets/Editor/BlenderPilotImport.cs`; the copied source is restored after controls.
+
+The callbacks themselves are compiled unchanged. Importer property bags, AssetDatabase lookup, renderer/material identities and menu/session APIs are doubles. Tests invoke real private callbacks by reflection. Source tests cover unrelated/similarly prefixed paths remaining unchanged, all five shipped model names, scale/normals/tangents, readable/collider flags, named-hierarchy retention, hero-only animation and Legacy wrap mode, texture colour space/alpha/mips/compression, exact shared-material identity and absent-material behavior. Menu methods compile but are not invoked or claimed tested here. Runtime default-off/session behavior remains covered separately by existing adapter tests.
+
+## Existing Unity inspection route (pending execution)
+
+1. Use the repository's specified Editor version and Built-in pipeline. Start with a Vanguard wearing only the exact unupgraded common level-1 starter sword, armor and relic, with no equipped or trial fashion. Do not use a production save merely to strip equipment for a screenshot; use a disposable test character.
+2. Before the hero or preview factory runs, choose **Emberfall > Art Pilot > Enable for Play (base outfit only)**. The opt-in is Editor-session-local. Enter Play and create/load the test character after enabling. Enabling does not retrofit an already-created CombatModel that never loaded the pilot: recreate it (for example, restart Play with the session opt-in retained). Disable returns to procedural presentation; a new Editor session/player startup defaults off.
+3. For an already-open collection preview, leave the preview-owning panels (Fashion, Chests, Inventory equipment appearance) and let UI reconciliation dispose it, then reopen. Toggling the pilot does not appear in CollectionPreviewAppearance's model-cache key; recreation is required for a reliable comparison. Existing code: `GameUI.CollectionPreview.cs:ReconcileCollectionPreview/ReleaseCollectionPreview` and `CollectionModelPreview.cs:Render`.
+4. Use the existing collection controls **全身 / 武器 / 后背** (Full/Weapon/Back), and existing action/rotation controls. Do not select a fashion trial when checking the base pilot: fashion intentionally activates the procedural fallback. Weapon and Back composition recognize `Vanguard_Sword` and `Vanguard_Back`; they frame renderer bounds rather than independent sampled vertex bounds. No new preview mode is needed.
+5. Capture default-off versus enabled results with identical viewport, camera, lighting, outfit, action and phase. Inspect base material, sword/hand alignment, front/back framing and transition visibility; record missing/fallback cases explicitly. Preserve Full/Weapon/Back screenshots and exact source/asset identifiers. These captures are still pending; Blender evidence is not an engine screenshot substitute.
+
+## Current runtime readiness contract
+
+`BlenderPilotVisual.Create` rejects missing/duplicate named bones, invalid expected parent relationships, missing/duplicate sword sockets or sockets not directly under Hand.R, invalid clips, failed binding smoke samples and invalid shared material/texture/mesh readiness. It disables automatic animation drivers. `CombatModel.BlenderPilot.SampleBlenderPilot` reveals the imported root only after a complete successful sample; sampler exceptions hide it, restore procedural renderer states and stop the partial pose supplying visible anchors. Default-off, gear/fashion/death/charge/airborne and unsupported moving-skill fallbacks remain in place. No gameplay callbacks are introduced by sampling.
+
+## Still requires real Unity acceptance
+
+Model importer execution by Unity, exact clip bindings/deformation, texture compression and colour-space appearance, Standard shader compilation, actual skinned bounds/culling/shadows, socket alignment in engine, GPU fades/cost, touch/device readability and gameplay feel. The current source audit has not established a shadow or bounds defect; no speculative renderer toggles or enlarged bounds are proposed. This supplemental fixture validates policy wiring only and is not a replacement for the pending Editor/device acceptance.

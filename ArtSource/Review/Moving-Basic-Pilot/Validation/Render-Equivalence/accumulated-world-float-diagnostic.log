@@ -1,0 +1,28 @@
+TRACE False 0 phase=0.13000001 expected=0.13000001 speed=0.09516257 progress=1 expectedProgress=1
+TRACE False 5 phase=0.78 expected=0.78000003 speed=0.4511883 progress=1 expectedProgress=1
+TRACE False 10 phase=1.43 expected=1.4300001 speed=0.66712886 progress=1 expectedProgress=1
+TRACE False 15 phase=2.08 expected=2.0800002 speed=0.79810345 progress=1 expectedProgress=1
+TRACE False 20 phase=2.73 expected=2.7300007 speed=0.8775434 progress=1 expectedProgress=1
+TRACE False 25 phase=3.3799994 expected=3.3800013 speed=0.9257259 progress=1 expectedProgress=1
+TRACE False 30 phase=4.029999 expected=4.0300016 speed=0.9549501 progress=1 expectedProgress=1
+TRACE False 35 phase=4.6799994 expected=4.680002 speed=0.97267544 progress=1 expectedProgress=1
+TRACE False 40 phase=5.33 expected=5.330003 speed=0.9834265 progress=1 expectedProgress=1
+TRACE False 45 phase=5.9800005 expected=5.9800034 speed=0.98994726 progress=1 expectedProgress=1
+TRACE False 50 phase=0.3468151 expected=0.34681824 speed=0.99390227 progress=1 expectedProgress=1
+TRACE False 55 phase=0.9968145 expected=0.99681824 speed=0.9963011 progress=1 expectedProgress=1
+Traceback (most recent call last):
+  File "/workspace/scratch/render-equivalence-dcd75ac/run_locked.py", line 44, in <module>
+    else:print(run.stdout,end='');assert run.returncode==0,run.stderr
+                                         ^^^^^^^^^^^^^^^^^
+AssertionError: Unhandled exception. System.Exception: actual locked layer inputs unchanged
+   at PilotFacingFixture.C(Boolean value, String label) in /workspace/scratch/render-equivalence-dcd75ac/build/PilotFacingCommitProductionFixture.cs:line 28
+   at PilotFacingFixture.RunLocked() in /workspace/scratch/render-equivalence-dcd75ac/build/PilotFacingCommitProductionFixture.cs:line 53
+   at BlenderPilotAdapterProductionTests.Main() in /workspace/scratch/render-equivalence-dcd75ac/build/Fixture.cs:line 34
+
+Traceback (most recent call last):
+  File "/workspace/scratch/render-equivalence-dcd75ac/probe.py", line 50, in <module>
+    env=dict(os.environ,DOTNET_CLI_HOME=str(out/'cli'));subprocess.run(['python3',str(out/'run_locked.py')],env=env,check=True)
+                                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/subprocess.py", line 571, in run
+    raise CalledProcessError(retcode, process.args,
+subprocess.CalledProcessError: Command '['python3', '/workspace/scratch/render-equivalence-dcd75ac/run_locked.py']' returned non-zero exit status 1.

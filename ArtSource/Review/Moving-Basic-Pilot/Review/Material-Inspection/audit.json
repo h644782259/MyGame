@@ -1,0 +1,190 @@
+{
+  "blendSha256": "40cd32d40e0f715c953fba556623e2c62e409724721f5b954a84ab98818d7c6b",
+  "materials": {
+    "Material": {
+      "nodes": [
+        {
+          "name": "Material Output",
+          "type": "OUTPUT_MATERIAL",
+          "image": null
+        },
+        {
+          "name": "Principled BSDF",
+          "type": "BSDF_PRINCIPLED",
+          "image": null
+        }
+      ],
+      "links": [
+        [
+          "Principled BSDF",
+          "BSDF",
+          "Material Output",
+          "Surface"
+        ]
+      ]
+    },
+    "Pilot_Atlas_Standard": {
+      "nodes": [
+        {
+          "name": "Principled BSDF",
+          "type": "BSDF_PRINCIPLED",
+          "image": null
+        },
+        {
+          "name": "Material Output",
+          "type": "OUTPUT_MATERIAL",
+          "image": null
+        },
+        {
+          "name": "Image Texture",
+          "type": "TEX_IMAGE",
+          "image": "EmberfallPilot_Atlas"
+        },
+        {
+          "name": "Image Texture.001",
+          "type": "TEX_IMAGE",
+          "image": "EmberfallPilot_MetallicSmoothness"
+        },
+        {
+          "name": "Math",
+          "type": "MATH",
+          "image": null
+        }
+      ],
+      "links": [
+        [
+          "Principled BSDF",
+          "BSDF",
+          "Material Output",
+          "Surface"
+        ],
+        [
+          "Image Texture",
+          "Color",
+          "Principled BSDF",
+          "Base Color"
+        ],
+        [
+          "Image Texture.001",
+          "Color",
+          "Principled BSDF",
+          "Metallic"
+        ],
+        [
+          "Image Texture.001",
+          "Alpha",
+          "Math",
+          "Value"
+        ],
+        [
+          "Math",
+          "Value",
+          "Principled BSDF",
+          "Roughness"
+        ]
+      ]
+    }
+  },
+  "images": {
+    "EmberfallPilot_Atlas": {
+      "path": "//../../Assets/Resources/BlenderPilot/EmberfallPilot_Atlas.png",
+      "packed": true,
+      "colorspace": "sRGB",
+      "size": [
+        1024,
+        1024
+      ],
+      "alphaMode": "STRAIGHT"
+    },
+    "EmberfallPilot_MetallicSmoothness": {
+      "path": "//../../Assets/Resources/BlenderPilot/EmberfallPilot_MetallicSmoothness.png",
+      "packed": true,
+      "colorspace": "Non-Color",
+      "size": [
+        1024,
+        1024
+      ],
+      "alphaMode": "STRAIGHT"
+    },
+    "Render Result": {
+      "path": "",
+      "packed": false,
+      "colorspace": "",
+      "size": [
+        0,
+        0
+      ],
+      "alphaMode": "STRAIGHT"
+    }
+  },
+  "meshes": {
+    "Vanguard_Armor": {
+      "materials": [
+        "Pilot_Atlas_Standard"
+      ],
+      "uv": 1,
+      "swatches": [
+        1,
+        3,
+        4
+      ]
+    },
+    "Vanguard_Back": {
+      "materials": [
+        "Pilot_Atlas_Standard"
+      ],
+      "uv": 1,
+      "swatches": [
+        5
+      ]
+    },
+    "Vanguard_Body": {
+      "materials": [
+        "Pilot_Atlas_Standard"
+      ],
+      "uv": 1,
+      "swatches": [
+        0,
+        5,
+        7
+      ]
+    },
+    "Vanguard_Clothes": {
+      "materials": [
+        "Pilot_Atlas_Standard"
+      ],
+      "uv": 1,
+      "swatches": [
+        5,
+        6
+      ]
+    },
+    "Vanguard_Head": {
+      "materials": [
+        "Pilot_Atlas_Standard"
+      ],
+      "uv": 1,
+      "swatches": [
+        0,
+        1,
+        3,
+        4,
+        5
+      ]
+    },
+    "Vanguard_Sword": {
+      "materials": [
+        "Pilot_Atlas_Standard"
+      ],
+      "uv": 1,
+      "swatches": [
+        0,
+        2,
+        3,
+        4,
+        6,
+        7
+      ]
+    }
+  }
+}

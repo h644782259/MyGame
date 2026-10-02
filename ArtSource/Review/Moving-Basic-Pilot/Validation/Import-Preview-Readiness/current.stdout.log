@@ -1,0 +1,1 @@
+PASS: 59 real importer callback assertions; UnityEditor/asset database are managed doubles, no actual FBX/texture import

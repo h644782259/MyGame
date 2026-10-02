@@ -1,0 +1,5 @@
+WARN (bpy.rna): ./source/blender/python/intern/bpy_rna.cc:1367 pyrna_enum_to_py: current value '0' matches no enum in 'ColorManagedInputColorspaceSettings', '(null)', 'name'
+Blender 4.3.2
+Read blend: "/workspace/emberfall_moving_pilot/ArtSource/BlenderPilot/Emberfall-Pilot-Vanguard.blend"
+
+Blender quit

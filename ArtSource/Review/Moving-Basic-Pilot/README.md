@@ -4,7 +4,11 @@ This is native Blender source reconstruction, **not Unity gameplay footage**. Ru
 
 ## Current acceptance boundary
 
-Independent parent review found a separate runtime admission bug: `SetLocomotion` precedes `FaceAim`, so a same-frame90°/180° facing change can leave stale smoothed direction and incorrectly admit moving-basic. That guard fix is pending on top of06b1750; this package does **not** grant overall feature GO. These videos pin the49a production recipe and a straight-forward fixed-facing scenario only. Reuse after a guard-only fix requires an explicit source-equivalence note for this unchanged scenario, not a claim that these videos cover turns.
+The same-frame facing admission defect found in the first candidate is fixed in frozen Windows `dcd75ac8a96806788868696f05cffcf4a4d583f4` (iOS `d8533c6c`, Android `134e617`). The corrected registered suite passed **197/197**, with no source changes during the run, and all three cached API builds/parity/protection checks passed. [Raw reports and supplemental tests](Validation/README.md) preserve both the historical 196-check result and the new run without conflating their coverage.
+
+The videos still depict the original49a straight, fixed-facing reconstruction. [Source/input equivalence](Validation/Render-Equivalence/Render-Source-Equivalence.md) verifies identical sampler/assets and exact locked trajectory/layer inputs for dcd; reuse does not cover turns or Unity execution. The strict fractional FBX threshold below remains **FAIL**. Source review and managed checks are not overall visual/device acceptance.
+
+Open [Review.html](Review.html) locally for an offline video/still review surface. [The existing Unity preview inspection route](Validation/Import-Preview-Readiness/Preview-Runbook.md) describes base-kit/session setup and Full/Weapon/Back inspection; actual Editor captures remain pending.
 
 ## Review
 
@@ -21,6 +25,10 @@ No Unity importer, native `SampleAnimation`, rendering, device performance, enem
 Primary camera matches AdventureCamera defaults: verticalFOV48°,distance19×1.2041595,pitch48.36646°,yaw0°,targetheight.7. Close camera is orthographic4.7 atoffset(5,−8,4.2),target(0,0,1.1). Both follow the same externally translated owner at a fixed relative offset; AdventureCamera follow smoothing is not executed. No Root bone movement is invented. Identical neutral gray diffuse material(.42,.44,.47),roughness.68,metal/specular0 and directional lights2.5/.75/1.6 are used. Cycles CPU1, noOIDN/adaptive sampling, zero path bounces;8samples close/4combat. Low-sample alias/noise remains visible and is not a geometry or motion improvement claim.
 
 Review consecutive frame indices23–25 for first contact,28–30 for gait wrap,30–35 for late recovery,36 for next contact,123–126 for final recovery/return. `review-frame-indices.json` records exact times/phases. Seven optional stop/restart stills use actual `LocomotionPoseState.Advance`: accepted displacement stops1.4–2.4s, phase pauses andSpeed decays, then movement resumes. Independent attack timing is the same actual exported `PlayAction` schedule, not a hand-selectedSpeed test.
+
+## Existing material and preview inspection
+
+[Four primary source-material stills](Review/Material-Inspection/README.md) compare the unchanged native Blender shader against neutral gray using identical cameras/lights. Existing packed textures equal the shipped PNG bytes; UV mapping and Unity material saved values are recorded. These show existing source geometry/material separation, not a new art redesign, Unity Standard output, runtime preview framing or overall visual-quality GO. The offline review surface includes the Full/Weapon/Back source plates and contact pair.
 
 ## FBX result: keep the sampling domains separate
 

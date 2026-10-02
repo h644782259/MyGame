@@ -1,7 +1,7 @@
 {
   "baseline": "6afcb19b3c293f521279c3290d25920ad750f116",
   "runtimeRecipe": "49a356eb2df9951fc07f9758f3eea4055b0b9c30",
-  "scope": "straight-forward fixed-facing native Blender source reconstruction; direction-admission guard fix pending; no overall feature GO",
+  "scope": "straight-forward fixed-facing native Blender source reconstruction; source/input equivalence verified against corrected dcd75ac; strict fractional FBX check remains FAIL; no Unity/overall visual acceptance",
   "files": {
     "Review/Baseline-close-native.mp4": {
       "sha256": "b391c5cc77fe402a5758a8defef5fa489c86ce063c2f0cd1e7af0bafeb828abf",
@@ -297,5 +297,6 @@
     }
   },
   "bytes": 12086816,
-  "fileCount": 73
+  "fileCount": 73,
+  "validatedCandidate": "dcd75ac8a96806788868696f05cffcf4a4d583f4"
 }

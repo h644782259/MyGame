@@ -1,0 +1,75 @@
+{
+  "head": "dcd75ac8a96806788868696f05cffcf4a4d583f4",
+  "tree": "6fd11dbf273a0ab745dee70897e7e5386cb5ab40",
+  "defaultJIT": true,
+  "fullSuite": {
+    "passed": true,
+    "passedCount": 197,
+    "totalCount": 197,
+    "startedUtc": "20261002T193740867539Z",
+    "completedUtc": "2026-10-02T19:53:26.844751+00:00",
+    "report": "/workspace/scratch/moving-basic-validation/dcd75ac/final-report/report.json",
+    "reportSha256": "f47a0f94ee3d2e12585051cb8531926f901242d4dcca9f5d973e2695491ea9a3",
+    "log": "/workspace/scratch/moving-basic-validation/dcd75ac/full.log",
+    "sourceChangedDuringRun": [],
+    "runtimeSourceCount": 256,
+    "allSourceManifestSha256": "504252e19b86c226940dffe24e599264665b913547b7139acc4c4282e59fefc6"
+  },
+  "platformAPI": {
+    "passed": true,
+    "report": "/workspace/scratch/moving-basic-validation/dcd75ac/platform-api-report.json",
+    "runtimeParity": true,
+    "runtimeManifestSha256": "f2c717aa5858cc7df8d248a82e3a13627136982146fdf546adf85f50b1e5df52",
+    "platformHeadsAfterRun": [
+      {
+        "head": "dcd75ac8a96806788868696f05cffcf4a4d583f4",
+        "tree": "6fd11dbf273a0ab745dee70897e7e5386cb5ab40",
+        "runtimeAndArtUnchanged": true,
+        "trackedStatus": ""
+      },
+      {
+        "head": "d8533c6cca80a5fdbba3639fc1c9a725b2d99928",
+        "tree": "48e5556768909cfb279d2628d790ba2d5277d8a4",
+        "runtimeAndArtUnchanged": true,
+        "trackedStatus": ""
+      },
+      {
+        "head": "134e617944aee99f16aac29b30e984f97bc57c30",
+        "tree": "f49152e993af1bd57b9087945fdecc8f018e8b5e",
+        "runtimeAndArtUnchanged": true,
+        "trackedStatus": ""
+      }
+    ]
+  },
+  "parityProtection": {
+    "report": "/workspace/scratch/moving-basic-validation/dcd75ac/parity-protection.json",
+    "passed": true,
+    "runtimeAndMetaFiles": 516,
+    "artAndPilotAssetFiles": 69,
+    "artManifestSha256": "193242a32f155f1c8e3da53c89953737d33258a1e21275542de20a0335b5d3f4",
+    "platforms": [
+      {
+        "path": "/workspace/emberfall_ios_moving_pilot",
+        "head": "d8533c6cca80a5fdbba3639fc1c9a725b2d99928",
+        "roundBase": "054d23b8e9235573f15234b518229f7e51bcb77d",
+        "protectedVsRoundBase": 24,
+        "protectedVsPriorOriginalLedger": 24,
+        "syncedPaths": 13
+      },
+      {
+        "path": "/workspace/emberfall_android_moving_pilot",
+        "head": "134e617944aee99f16aac29b30e984f97bc57c30",
+        "roundBase": "d0a8b8ee790b8f3e8f6fc9d61711816c15cbbd4c",
+        "protectedVsRoundBase": 24,
+        "protectedVsPriorOriginalLedger": 24,
+        "syncedPaths": 13
+      }
+    ]
+  },
+  "limitations": [
+    "Registered197 checks only, not all repository test scripts.",
+    "Managed animation/scene boundaries and cached Unity2021 API references; no Unity Editor/import/render, actual FBX deformation, full Player Update or damage dispatch, device gameplay or platform package build.",
+    "Facing harness RotateTowards boundary snaps to requested target; actual Unity turn-rate behavior is not covered."
+  ],
+  "candidateEdits": false
+}

@@ -1,0 +1,82 @@
+{
+  "Back-material.png": {
+    "bytes": 392929,
+    "sha256": "08845e950a9af3c4c924ae29f47c9c91c346eb03ae21a8f00eb2340317751e20"
+  },
+  "Back-neutral.png": {
+    "bytes": 363965,
+    "sha256": "026f4b749ea4a6a732239bd29f6960f35242a9e339f42b2f86032ba34f216b97"
+  },
+  "Contact24-material.png": {
+    "bytes": 417057,
+    "sha256": "6fc50286f9c39f284b21ffe7f73b3d351690fe4de79c04e3a3d41e82afec76c8"
+  },
+  "Contact24-neutral.png": {
+    "bytes": 401281,
+    "sha256": "344f1f7848d1b3001b0478aa2db43d873d16f5f2386848b4698805f648f65da3"
+  },
+  "Full-material.png": {
+    "bytes": 386025,
+    "sha256": "e47168640f082203e34d2eec120264ad130a605df74e06e4bb1a5fc9f609b3ed"
+  },
+  "Full-neutral.png": {
+    "bytes": 364587,
+    "sha256": "029a21fd1b04c1e3dfea4da20bfe05160e589ad0b4a49e32f82e84c7fb8eb20f"
+  },
+  "Plate-material.png": {
+    "bytes": 677521,
+    "sha256": "528ec3128725676dd6b7a239b6ec73c1f2fee86e95daec0f6de47518ae9562a7"
+  },
+  "Plate-neutral.png": {
+    "bytes": 628073,
+    "sha256": "32e6549f4730acc9c4eb51dbab80846b2ef4e551a321907b3eb96c32b776ac44"
+  },
+  "README.md": {
+    "bytes": 6727,
+    "sha256": "3113b68cfa1e15e9254148346149493c030e998897eaf44288ff37d8c396c5f4"
+  },
+  "Weapon-material.png": {
+    "bytes": 335852,
+    "sha256": "eb0dcf2e7952b7a29cfa2d213a15b3c4b2aa853f7c077a272231b78fc7c8eb9d"
+  },
+  "Weapon-neutral.png": {
+    "bytes": 328536,
+    "sha256": "8b4a2c96718f49e02bac2b87073278b569808b3c0e23c68f9f4fe4bf6545301f"
+  },
+  "audit.json": {
+    "bytes": 3565,
+    "sha256": "c3c08e47035561f9e14361c1697ad374d3c0dbc0d6b16129f52bfc62e94e93f9"
+  },
+  "audit.log": {
+    "bytes": 304,
+    "sha256": "fb7261ac8ed238e74189c28b7d35bc31492f28eb21718f0e5393e2adcf963411"
+  },
+  "audit.py": {
+    "bytes": 1222,
+    "sha256": "3a16f57b852419041119db5be8d2461d9239c218bace595e6233bef175ef70cd"
+  },
+  "compose.py": {
+    "bytes": 1151,
+    "sha256": "7eb808b4bdb80b7c713f452de33c9d2e7eeea54f88b103ca0b1f2ee2649c9149"
+  },
+  "contact-sample.json": {
+    "bytes": 232,
+    "sha256": "7499dbe3c022d8a8bd671182798f92b9b5c9083f808e40d98518d0d658618f36"
+  },
+  "layered_pose.py": {
+    "bytes": 1562,
+    "sha256": "f40548d72410dcaf86228f146714d73bf99d147d97e61abe4c95daf171233a25"
+  },
+  "render-manifest.json": {
+    "bytes": 5206,
+    "sha256": "40d07df2d8d3ca5b7d75a9ad2ec08e0e4e078eb34f4ae69abb600b21bda3d5f7"
+  },
+  "render.log": {
+    "bytes": 43316,
+    "sha256": "0d5ac687049650198e08d78c2f53af450f0a952861c537c44096a78b528f0fdf"
+  },
+  "render.py": {
+    "bytes": 4969,
+    "sha256": "842568987e7082b83141ddad3780672c6f510ea4a55c48bede4389136db2dd23"
+  }
+}

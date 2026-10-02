@@ -1,0 +1,58 @@
+{
+  "/workspace/scratch/render-equivalence-dcd75ac/probe.py": {
+    "sha256": "731175a1ac828f2791aba359930bc7e289969449d6a250104e8709eb8c4bb41d",
+    "bytes": 6539
+  },
+  "/workspace/scratch/render-equivalence-dcd75ac/run_locked.py": {
+    "sha256": "33795555b83135050d9cecef0819566f1e591aa15e229214569fc87c8fa2c034",
+    "bytes": 10377
+  },
+  "/workspace/scratch/render-equivalence-dcd75ac/byte-equivalence.json": {
+    "sha256": "fc112f53a0bba8cdbf0fe3632672b131af6055c94bec65aff93ae1c9645f2bcb",
+    "bytes": 13604
+  },
+  "/workspace/scratch/render-equivalence-dcd75ac/trajectory-equivalence.json": {
+    "sha256": "2be31c790647ff6bc6898ce4b626c9c4d1c9995c7a5035d7eb95c5cd711b3577",
+    "bytes": 710
+  },
+  "/workspace/scratch/render-equivalence-dcd75ac/probe.log": {
+    "sha256": "0edf737a383ac4c48142643639098a53cbf0403b6f6c08401904839eda11fd38",
+    "bytes": 164
+  },
+  "/workspace/scratch/render-equivalence-dcd75ac/accumulated-world-float-diagnostic.log": {
+    "sha256": "6c49cd2ebf274e6a05836b24b4f2bf2975ceaed4aaab82e6068c27ba80af542e",
+    "bytes": 2594
+  },
+  "/workspace/scratch/vanguard-moving-basic-baseline/candidate-samples.json": {
+    "sha256": "4f2c774f4bc8ce99179e61d4bbb9c00813ad63b2c6fef4ac9ef8acf63d18d3bd",
+    "bytes": 29939
+  },
+  "/workspace/scratch/vanguard-moving-basic-baseline/candidate-stop-samples.json": {
+    "sha256": "e516635352e55c1a6d7d8e99ba218807e86837c4350b14af2e6f3e6bff3be4f8",
+    "bytes": 30106
+  },
+  "/workspace/emberfall_moving_pilot/Tests/PilotFacingCommitProductionTests.py": {
+    "sha256": "22eccdb6670abf4519e99615076248ff82f6072ce1ed6ed821d1bfcaac1b9af1",
+    "bytes": 6554
+  },
+  "/workspace/emberfall_moving_pilot/Tests/PilotFacingCommitProductionFixture.cs": {
+    "sha256": "21d19e330ab5b2330923d6a7d0bccecb62db75a57cc175a734b2eadb77d6f0f7",
+    "bytes": 5648
+  },
+  "/workspace/emberfall_moving_pilot/Tests/BlenderPilotAdapterProductionTests.py": {
+    "sha256": "25a662c0bc3db2df53a00efefd418ea94c54e84705a4588559a6c4c3d3db60ba",
+    "bytes": 8429
+  },
+  "/workspace/emberfall_moving_pilot/Tests/BlenderPilotAdapterProductionFixture.cs": {
+    "sha256": "6ea942d75eb4aaa1857ad32997cb1f6d0c74e1fc4f6f5e762221b1fc41cce604",
+    "bytes": 22581
+  },
+  "/workspace/emberfall_moving_pilot/Tests/BlenderPilotLayerProductionFixture.cs": {
+    "sha256": "6ac7100695eb3234be0ccf2ad686ba064b81c1b88ef25edb0edce4c941258ccc",
+    "bytes": 13680
+  },
+  "/workspace/emberfall_moving_pilot/Tests/BlenderPilotReadinessTests.cs": {
+    "sha256": "7ef86ed693db03884719f1acc0b3ed875e94835783ff83c35b7c3c36812376a4",
+    "bytes": 3629
+  }
+}

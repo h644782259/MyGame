@@ -1,0 +1,3 @@
+Unhandled exception. System.Exception: atlas sRGB and metallic linear
+   at Program.C(Boolean b, String m) in /workspace/scratch/pilot-import-preview-readiness/Fixture.cs:line 25
+   at Program.Main() in /workspace/scratch/pilot-import-preview-readiness/Fixture.cs:line 45

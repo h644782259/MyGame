@@ -1,0 +1,6 @@
+PASS: 59 real importer callback assertions; UnityEditor/asset database are managed doubles, no actual FBX/texture import
+PASS compiled negative: wrong-path -> outside model path untouched
+PASS compiled negative: wrong-colorspace -> atlas sRGB and metallic linear
+PASS compiled negative: wrong-material -> shared material exact path and identity
+PASS compiled negative: lost-sockets -> sockets hierarchy retained
+PASS compiled negative: prop-animation -> only hero imports animation

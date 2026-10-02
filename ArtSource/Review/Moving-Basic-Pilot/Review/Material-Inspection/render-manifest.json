@@ -1,0 +1,231 @@
+{
+  "blendSha256": "40cd32d40e0f715c953fba556623e2c62e409724721f5b954a84ab98818d7c6b",
+  "material": "Unmodified packed source Pilot_Atlas_Standard Principled graph; not a Unity Standard shader conversion",
+  "images": {
+    "EmberfallPilot_Atlas": {
+      "packedEqualsShippedPNG": true,
+      "sha256": "5f29f01b6022bbd56b329a518309d90745e1bd8c248c246e8c97590792761717",
+      "colorspace": "sRGB"
+    },
+    "EmberfallPilot_MetallicSmoothness": {
+      "packedEqualsShippedPNG": true,
+      "sha256": "eafb0a4e74860da9fde51068bdd036d685d600531e93e6171edbe63eeffbe347",
+      "colorspace": "Non-Color"
+    }
+  },
+  "views": {
+    "Contact24": {
+      "visibleMeshes": [
+        "Vanguard_Armor",
+        "Vanguard_Back",
+        "Vanguard_Body",
+        "Vanguard_Clothes",
+        "Vanguard_Head",
+        "Vanguard_Sword"
+      ],
+      "camera": [
+        5.0,
+        -8.0,
+        4.199999809265137
+      ],
+      "target": [
+        0.0,
+        0.0,
+        1.100000023841858
+      ],
+      "orthographicScale": 4.699999809265137,
+      "resolution": [
+        800,
+        600
+      ],
+      "bounds": [
+        [
+          -0.5264362096786499,
+          -0.44703924655914307,
+          0.03395594656467438
+        ],
+        [
+          1.4043643474578857,
+          0.5511561036109924,
+          2.443985939025879
+        ]
+      ],
+      "pose": "actual locked layered contact frame24"
+    },
+    "Full": {
+      "visibleMeshes": [
+        "Vanguard_Armor",
+        "Vanguard_Back",
+        "Vanguard_Body",
+        "Vanguard_Clothes",
+        "Vanguard_Head",
+        "Vanguard_Sword"
+      ],
+      "camera": [
+        5.078280448913574,
+        -8.168583869934082,
+        4.385000228881836
+      ],
+      "target": [
+        0.07828021049499512,
+        -0.16858352720737457,
+        1.2850000858306885
+      ],
+      "orthographicScale": 3.299999952316284,
+      "resolution": [
+        640,
+        640
+      ],
+      "bounds": [
+        [
+          -0.6623879075050354,
+          -0.7638948559761047,
+          0.03499998897314072
+        ],
+        [
+          0.8189483284950256,
+          0.4267278015613556,
+          2.5350000858306885
+        ]
+      ],
+      "pose": "source Idle normalized0"
+    },
+    "Weapon": {
+      "visibleMeshes": [
+        "Vanguard_Sword"
+      ],
+      "camera": [
+        5.569999694824219,
+        -8.35642147064209,
+        4.637450218200684
+      ],
+      "target": [
+        0.5699999332427979,
+        -0.35642102360725403,
+        1.5374501943588257
+      ],
+      "orthographicScale": 1.6896326541900635,
+      "resolution": [
+        640,
+        640
+      ],
+      "bounds": [
+        [
+          0.32105153799057007,
+          -0.7638948559761047,
+          0.8974378108978271
+        ],
+        [
+          0.8189483284950256,
+          0.05105280876159668,
+          2.177462577819824
+        ]
+      ],
+      "pose": "source Idle normalized0"
+    },
+    "Back": {
+      "visibleMeshes": [
+        "Vanguard_Back"
+      ],
+      "camera": [
+        3.0,
+        8.322614669799805,
+        3.335211753845215
+      ],
+      "target": [
+        0.0,
+        0.3226144313812256,
+        1.3352118730545044
+      ],
+      "orthographicScale": 0.884172260761261,
+      "resolution": [
+        640,
+        640
+      ],
+      "bounds": [
+        [
+          -0.32700270414352417,
+          0.2185010462999344,
+          1.0002981424331665
+        ],
+        [
+          0.32700270414352417,
+          0.4267278015613556,
+          1.6701256036758423
+        ]
+      ],
+      "pose": "source Idle normalized0"
+    }
+  },
+  "settings": {
+    "renderer": "4.3.2",
+    "samples": 64,
+    "seed": 7081,
+    "threads": 1,
+    "denoising": false,
+    "maxBounces": 4,
+    "diffuseBounces": 2,
+    "glossyBounces": 2,
+    "viewTransform": "AgX",
+    "exposure": 0.0,
+    "gamma": 1.0,
+    "lights": [
+      {
+        "name": "Key",
+        "position": [
+          -3,
+          -4,
+          6
+        ],
+        "watts": 700,
+        "diskDiameter": 4
+      },
+      {
+        "name": "Fill",
+        "position": [
+          4,
+          -1,
+          3.5
+        ],
+        "watts": 400,
+        "diskDiameter": 3
+      },
+      {
+        "name": "Back",
+        "position": [
+          -2,
+          4,
+          5
+        ],
+        "watts": 800,
+        "diskDiameter": 3
+      }
+    ],
+    "worldLinearRGB": [
+      0.25,
+      0.28,
+      0.32
+    ],
+    "worldStrength": 0.4
+  },
+  "contactSample": {
+    "index": 24,
+    "time": 1,
+    "phase": 3.1636374,
+    "speed": 0.9999945,
+    "progress": 0.52,
+    "basic": true,
+    "idle": 0.5,
+    "move": 0.5035085,
+    "speedWeight": 0.9999945,
+    "upperWeight": 1,
+    "scenario": "continuous-forward"
+  },
+  "inputProvenance": {
+    "lockedWholePolicySha256": "4f2c774f4bc8ce99179e61d4bbb9c00813ad63b2c6fef4ac9ef8acf63d18d3bd",
+    "sampleIndex": 24,
+    "copiedLayeredPoseSha256": "f40548d72410dcaf86228f146714d73bf99d147d97e61abe4c95daf171233a25",
+    "standaloneContactSampleSha256": "7499dbe3c022d8a8bd671182798f92b9b5c9083f808e40d98518d0d658618f36",
+    "note": "Post-render packaging copies the identical LayeredPose and locked sample24 locally; no pose/render calculation changes."
+  }
+}

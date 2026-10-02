@@ -1,0 +1,44 @@
+[
+  {
+    "scenario": "continuous-forward",
+    "ticks": 720,
+    "visible": 720,
+    "recorded": 144,
+    "phaseError": 0,
+    "speedError": 0,
+    "progressError": 0,
+    "layerError": 0,
+    "contacts": [
+      1,
+      1.4666667,
+      1.9333334,
+      2.4,
+      2.8666668,
+      3.3333335,
+      3.8000002,
+      4.266667,
+      4.7333336
+    ]
+  },
+  {
+    "scenario": "stop1.4-restart2.4",
+    "ticks": 720,
+    "visible": 720,
+    "recorded": 144,
+    "phaseError": 0,
+    "speedError": 0,
+    "progressError": 0,
+    "layerError": 0,
+    "contacts": [
+      1,
+      1.4666667,
+      1.9333334,
+      2.4,
+      2.8666668,
+      3.3333335,
+      3.8000002,
+      4.266667,
+      4.7333336
+    ]
+  }
+]

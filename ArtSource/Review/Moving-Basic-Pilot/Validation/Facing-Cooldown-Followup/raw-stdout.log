@@ -1,0 +1,15 @@
+TRACE angle=90 postTurnFrame=0 cooldown=0.46 age=0.4983333 phase=0.26881266 action=21 visible=False
+TRACE angle=90 postTurnFrame=1 cooldown=0.44 age=0.5183333 phase=0.5808124 action=21 visible=False
+TRACE angle=90 postTurnFrame=2 cooldown=0.42 age=0.5383333 phase=0.89281213 action=21 visible=False
+TRACE angle=90 postTurnFrame=3 cooldown=0.39999998 age=0.5583333 phase=1.2048118 action=21 visible=False
+TRACE angle=180 postTurnFrame=0 cooldown=0.46 age=0.4983333 phase=0.26881266 action=21 visible=False
+TRACE angle=180 postTurnFrame=1 cooldown=0.44 age=0.5183333 phase=0.58081234 action=21 visible=False
+TRACE angle=180 postTurnFrame=2 cooldown=0.42 age=0.5383333 phase=0.892812 action=21 visible=False
+TRACE angle=180 postTurnFrame=3 cooldown=0.39999998 age=0.5583333 phase=1.2048117 action=21 visible=False
+TRACE angle=-90 postTurnFrame=0 cooldown=0.46 age=0.4983333 phase=0.26881266 action=21 visible=False
+TRACE angle=-90 postTurnFrame=1 cooldown=0.44 age=0.5183333 phase=0.5808124 action=21 visible=False
+TRACE angle=-90 postTurnFrame=2 cooldown=0.42 age=0.5383333 phase=0.89281213 action=21 visible=False
+TRACE angle=-90 postTurnFrame=3 cooldown=0.39999998 age=0.5583333 phase=1.2048118 action=21 visible=False
+PASS: 90 actual Update movement/aim tail + FaceAim + BasicAttack visual-commit facing assertions; damage dispatch and Unity frame loop excluded
+PASS: compiled missing-raw-facing fails current-facing commit assertion
+PASS: compiled stale-basis fails current-facing commit assertion

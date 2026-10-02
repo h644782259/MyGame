@@ -1,0 +1,51 @@
+{
+  "sourceCommit": "dcd75ac8a96806788868696f05cffcf4a4d583f4",
+  "sourcePath": "Assets/Editor/BlenderPilotImport.cs",
+  "sha256": "36e35a4a2bda060085394c1150a2b17463917a86aae8a15523ab2ac3dfb04141",
+  "boundary": "actual unchanged callback source; UnityEditor importers, AssetDatabase, renderer and menu APIs are managed doubles; no Unity import/render acceptance",
+  "results": [
+    {
+      "case": "current",
+      "exitCode": 0,
+      "requiredFailure": null,
+      "pass": true
+    },
+    {
+      "case": "wrong-path",
+      "exitCode": -6,
+      "requiredFailure": "outside model path untouched",
+      "pass": true
+    },
+    {
+      "case": "wrong-colorspace",
+      "exitCode": -6,
+      "requiredFailure": "atlas sRGB and metallic linear",
+      "pass": true
+    },
+    {
+      "case": "wrong-material",
+      "exitCode": -6,
+      "requiredFailure": "shared material exact path and identity",
+      "pass": true
+    },
+    {
+      "case": "lost-sockets",
+      "exitCode": -6,
+      "requiredFailure": "sockets hierarchy retained",
+      "pass": true
+    },
+    {
+      "case": "prop-animation",
+      "exitCode": -6,
+      "requiredFailure": "only hero imports animation",
+      "pass": true
+    }
+  ],
+  "fixtureSha256": {
+    "Fixture.cs": "ad3a23beff58ccd7d588e22885b272eb3dda5764480c7c704028702d4ba4bebb",
+    "run.py": "8fcdb6beccff5445c2683030d26d2bb409a7f5c11963de295c875c73fa405f78",
+    "Test.csproj": "ab29c9db3cfeb61b83afbfd6db8c2548fff0c1b90a2484d09baea7c43ebd3474",
+    "NuGet.Config": "3eb413f39fb8791745d58c6769618f9ada15a480caca042d72838817c4b7c359",
+    "Preview-Runbook.md": "97305d9265361d764b620a79a641e553e07a27e4ef39b13da43e29af72e5521d"
+  }
+}

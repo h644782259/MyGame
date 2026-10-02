@@ -1,0 +1,2330 @@
+{
+  "frozenCandidate": "dcd75ac8a96806788868696f05cffcf4a4d583f4",
+  "scope": "Evidence and offline review, not Unity gameplay or release build",
+  "files": {
+    "Android-Rollup-Handoff.md": {
+      "bytes": 2154,
+      "sha256": "9b16f3049eb00bf7948e2b521cc7e5f5eac47946eaeb0937dd4292b5e8ba4c87"
+    },
+    "README.md": {
+      "bytes": 11535,
+      "sha256": "5aa2d6c85783a6ad8b09221fa31d7f4eb047a768c5233e28531e5a205704d117"
+    },
+    "Review/Baseline-close-native.mp4": {
+      "bytes": 864827,
+      "sha256": "b391c5cc77fe402a5758a8defef5fa489c86ce063c2f0cd1e7af0bafeb828abf"
+    },
+    "Review/Baseline-combat-native.mp4": {
+      "bytes": 539271,
+      "sha256": "b234e84586dde2241ebb15efa1d7b5ccdfb7d1eb7810513f9b040c6546c7ef29"
+    },
+    "Review/Candidate-close-native.mp4": {
+      "bytes": 639491,
+      "sha256": "9e05c5fbcfc0b73e10195de550428783e68ddfadd6949c583684c4031191966b"
+    },
+    "Review/Candidate-combat-native.mp4": {
+      "bytes": 491039,
+      "sha256": "a5133a0a3cc781daf4405f0b9afa6f7143d108ba6b821ca4e3bee5377c167f73"
+    },
+    "Review/Comparison-combat.mp4": {
+      "bytes": 1000794,
+      "sha256": "c8740cd7b1a1d7f90f2b6e90dfa645b98c5cdcafa5b382a9d90fc9506ac7c1c8"
+    },
+    "Review/Material-Inspection/Back-material.png": {
+      "bytes": 392929,
+      "sha256": "08845e950a9af3c4c924ae29f47c9c91c346eb03ae21a8f00eb2340317751e20"
+    },
+    "Review/Material-Inspection/Back-neutral.png": {
+      "bytes": 363965,
+      "sha256": "026f4b749ea4a6a732239bd29f6960f35242a9e339f42b2f86032ba34f216b97"
+    },
+    "Review/Material-Inspection/Contact24-material.png": {
+      "bytes": 417057,
+      "sha256": "6fc50286f9c39f284b21ffe7f73b3d351690fe4de79c04e3a3d41e82afec76c8"
+    },
+    "Review/Material-Inspection/Contact24-neutral.png": {
+      "bytes": 401281,
+      "sha256": "344f1f7848d1b3001b0478aa2db43d873d16f5f2386848b4698805f648f65da3"
+    },
+    "Review/Material-Inspection/Full-material.png": {
+      "bytes": 386025,
+      "sha256": "e47168640f082203e34d2eec120264ad130a605df74e06e4bb1a5fc9f609b3ed"
+    },
+    "Review/Material-Inspection/Full-neutral.png": {
+      "bytes": 364587,
+      "sha256": "029a21fd1b04c1e3dfea4da20bfe05160e589ad0b4a49e32f82e84c7fb8eb20f"
+    },
+    "Review/Material-Inspection/Plate-material.png": {
+      "bytes": 677521,
+      "sha256": "528ec3128725676dd6b7a239b6ec73c1f2fee86e95daec0f6de47518ae9562a7"
+    },
+    "Review/Material-Inspection/Plate-neutral.png": {
+      "bytes": 628073,
+      "sha256": "32e6549f4730acc9c4eb51dbab80846b2ef4e551a321907b3eb96c32b776ac44"
+    },
+    "Review/Material-Inspection/README.md": {
+      "bytes": 6727,
+      "sha256": "3113b68cfa1e15e9254148346149493c030e998897eaf44288ff37d8c396c5f4"
+    },
+    "Review/Material-Inspection/Weapon-material.png": {
+      "bytes": 335852,
+      "sha256": "eb0dcf2e7952b7a29cfa2d213a15b3c4b2aa853f7c077a272231b78fc7c8eb9d"
+    },
+    "Review/Material-Inspection/Weapon-neutral.png": {
+      "bytes": 328536,
+      "sha256": "8b4a2c96718f49e02bac2b87073278b569808b3c0e23c68f9f4fe4bf6545301f"
+    },
+    "Review/Material-Inspection/audit.json": {
+      "bytes": 3565,
+      "sha256": "c3c08e47035561f9e14361c1697ad374d3c0dbc0d6b16129f52bfc62e94e93f9"
+    },
+    "Review/Material-Inspection/audit.log": {
+      "bytes": 304,
+      "sha256": "fb7261ac8ed238e74189c28b7d35bc31492f28eb21718f0e5393e2adcf963411"
+    },
+    "Review/Material-Inspection/audit.py": {
+      "bytes": 1222,
+      "sha256": "3a16f57b852419041119db5be8d2461d9239c218bace595e6233bef175ef70cd"
+    },
+    "Review/Material-Inspection/compose.py": {
+      "bytes": 1151,
+      "sha256": "7eb808b4bdb80b7c713f452de33c9d2e7eeea54f88b103ca0b1f2ee2649c9149"
+    },
+    "Review/Material-Inspection/contact-sample.json": {
+      "bytes": 232,
+      "sha256": "7499dbe3c022d8a8bd671182798f92b9b5c9083f808e40d98518d0d658618f36"
+    },
+    "Review/Material-Inspection/hashes.json": {
+      "bytes": 2582,
+      "sha256": "aeac6adb00ca25101ff733180ff324e5820d8fc8f9aed6a793673e0077ede2ce"
+    },
+    "Review/Material-Inspection/layered_pose.py": {
+      "bytes": 1562,
+      "sha256": "f40548d72410dcaf86228f146714d73bf99d147d97e61abe4c95daf171233a25"
+    },
+    "Review/Material-Inspection/render-manifest.json": {
+      "bytes": 5206,
+      "sha256": "40d07df2d8d3ca5b7d75a9ad2ec08e0e4e078eb34f4ae69abb600b21bda3d5f7"
+    },
+    "Review/Material-Inspection/render.log": {
+      "bytes": 43316,
+      "sha256": "0d5ac687049650198e08d78c2f53af450f0a952861c537c44096a78b528f0fdf"
+    },
+    "Review/Material-Inspection/render.py": {
+      "bytes": 4969,
+      "sha256": "842568987e7082b83141ddad3780672c6f510ea4a55c48bede4389136db2dd23"
+    },
+    "Review/candidate-combat-frames/0024.png": {
+      "bytes": 439640,
+      "sha256": "e8f1d6685549b824ccfbb5620b4a44959efd19cac5f81df84d235e36c8b23436"
+    },
+    "Review/candidate-combat-frames/0035.png": {
+      "bytes": 439681,
+      "sha256": "6dbe9944a5426e7dddfeba0e828e9496d2fd5449e6d844a6f53ea7a99d517d7d"
+    },
+    "Review/candidate-combat-frames/0036.png": {
+      "bytes": 439869,
+      "sha256": "62f4883714ae54721e3c2cf2e495301d9655c9cfc407bc4d567d30f6a7174ab7"
+    },
+    "Review/candidate-combat-frames/0125.png": {
+      "bytes": 439936,
+      "sha256": "b754b741b19d14a4e7c14725016ea8ea736bf9ea0e2b488a13ee708318bdc37f"
+    },
+    "Review/candidate-combat-manifest.json": {
+      "bytes": 2294,
+      "sha256": "de829c62069336e33e3473f051b485ba27beccb994ec91851651e3c8ccc2fe21"
+    },
+    "Review/candidate-fbx-validation.log": {
+      "bytes": 627,
+      "sha256": "bccdb75dbcf6d346d902d307933974cae1f99ca55c7590058b6dd449f7296aaf"
+    },
+    "Review/candidate-render-manifest.json": {
+      "bytes": 2244,
+      "sha256": "2317c492a9de96a7a0b51e2aa6694ed524c12d19329b5da450ca051d53a9aa96"
+    },
+    "Review/candidate-samples.json": {
+      "bytes": 29939,
+      "sha256": "4f2c774f4bc8ce99179e61d4bbb9c00813ad63b2c6fef4ac9ef8acf63d18d3bd"
+    },
+    "Review/candidate-source-manifest.json": {
+      "bytes": 890,
+      "sha256": "a3a962b3110421a319dacf9e90357c5f08ccb45f13aa1345bd76ed8d17f53d7e"
+    },
+    "Review/candidate-stop-render-manifest.json": {
+      "bytes": 2314,
+      "sha256": "88a8231e278c20b753732512974ce4f49861af293bead44fa1a47ee5e2131c6c"
+    },
+    "Review/candidate-stop-render.log": {
+      "bytes": 40254,
+      "sha256": "ca0445008f68a7c6b520b3c6b410a8f245e68d188ea3e21522818cbfdc51be3c"
+    },
+    "Review/candidate-stop-samples.json": {
+      "bytes": 30106,
+      "sha256": "e516635352e55c1a6d7d8e99ba218807e86837c4350b14af2e6f3e6bff3be4f8"
+    },
+    "Review/clean-contact/Baseline.png": {
+      "bytes": 425507,
+      "sha256": "bdf5a5b4d58529a7bc6d677a25504afdc633cffe34be8f19190bef50d4969d16"
+    },
+    "Review/clean-contact/Candidate.png": {
+      "bytes": 423311,
+      "sha256": "ae92a13d89129d71a694e1844bd218f7553a71afafcd90e2a6a354cbd4c8c6aa"
+    },
+    "Review/clean-contact/Comparison-contact64.png": {
+      "bytes": 451822,
+      "sha256": "31abb3ec7fdba8be6eea4e46c105bf9d0f55491cdd936c7b744f1fc749377424"
+    },
+    "Review/clean-contact/baseline-render.json": {
+      "bytes": 2076,
+      "sha256": "ee1386daf18550c4b99ff0caf14d6cf15724c2e99f538fda78bc463fb8e06e99"
+    },
+    "Review/clean-contact/candidate-render.json": {
+      "bytes": 2295,
+      "sha256": "79dea1e30f41947385f8b535897bb4699fee8c9f66a5c28c73be9876067ee688"
+    },
+    "Review/clean-contact/manifest.json": {
+      "bytes": 434,
+      "sha256": "9af33acc985fe349d8f3c806bfa978eb4626914144c1256639b2cce71edc1416"
+    },
+    "Review/clean-stills-manifest.json": {
+      "bytes": 963,
+      "sha256": "905d3b18ad7c1f441c7e31a2b3066887f0c5eaa12b1f18ff74014d0a8f071030"
+    },
+    "Review/combat-frames/0012.png": {
+      "bytes": 440574,
+      "sha256": "bcad36349b15e37efcb2f4e7dbd4f88be7db617122b27b31b7d21d053d94cfcd"
+    },
+    "Review/combat-frames/0024.png": {
+      "bytes": 444557,
+      "sha256": "04a47c64c65849eef7cfa5a617082824e613a856de710ba32e680deaa3e94d1f"
+    },
+    "Review/combat-frames/0035.png": {
+      "bytes": 444116,
+      "sha256": "4a23de176705d9d772d69776748900f494f2d5150452d3a3a1ae082cfb1987f6"
+    },
+    "Review/combat-frames/0036.png": {
+      "bytes": 445583,
+      "sha256": "1547f2ab989d9a865bef7040bcb2eb31ebd7e751b9afe4bc4f62d3a01388d268"
+    },
+    "Review/combat-frames/0125.png": {
+      "bytes": 439936,
+      "sha256": "febd8a4b5c1927be81048997496fe496688a6e91c554d9b52070349d018553fe"
+    },
+    "Review/combat-manifest.json": {
+      "bytes": 2075,
+      "sha256": "1e0c17697c7cffcef87811cb3b3cabdd3ffce7d231a18e0352c55553f5f64e30"
+    },
+    "Review/compiled-source-hashes.json": {
+      "bytes": 2606,
+      "sha256": "e4136a5e328736f8359ebd483385282ce99f40c553147a4b52a2074cb38b8049"
+    },
+    "Review/error-peaks/incremental-stop49-fbx.png": {
+      "bytes": 195359,
+      "sha256": "d949842a572e538c3c0a61292aef1ecf3752ae17ae2cfd056c8f7f0b6c4cda7d"
+    },
+    "Review/error-peaks/incremental-stop49-source.png": {
+      "bytes": 195548,
+      "sha256": "0a29adaacf687293aca5a7499444977167077155a0e84ef1a9bfc752a8b89ee8"
+    },
+    "Review/error-peaks/layered-peak30-fbx.png": {
+      "bytes": 194788,
+      "sha256": "212b8617e466bcf847c518ddbbc2b4153780d00a2be9802a93cf8aa4dd812705"
+    },
+    "Review/error-peaks/layered-peak30-source.png": {
+      "bytes": 194911,
+      "sha256": "573aa2e043812d973058208632a2af408a8cca1a71f6d59fd7609ebedff24bb6"
+    },
+    "Review/error-peaks/manifest.json": {
+      "bytes": 4694,
+      "sha256": "21a89a1be34d066cd2478e5ef81d0455374d374a3d8d9ed12f33f3deea278909"
+    },
+    "Review/error-peaks/unlayered-basic-control57-fbx.png": {
+      "bytes": 196380,
+      "sha256": "e41454b873657ecede51875106e3b4f1bb4f005286b3589d6c367d1415c4f9b9"
+    },
+    "Review/error-peaks/unlayered-basic-control57-source.png": {
+      "bytes": 196739,
+      "sha256": "9c42cdcd2f98e5199a029497ba8721797ad92c95aec4b885d38c546acf92a812"
+    },
+    "Review/fractional-fbx-details.json": {
+      "bytes": 113997,
+      "sha256": "00e9684eea92ad1584403d8ec072e1aac4ed0238167277ee8ab281312c259619"
+    },
+    "Review/fractional-fbx-details.log": {
+      "bytes": 2455,
+      "sha256": "6015b978a1535743438246649695c5630847d21ac01e95bc4c2ec7879b104c1e"
+    },
+    "Review/fractional-fbx-diagnostic.json": {
+      "bytes": 359,
+      "sha256": "1644fe614ee28aecba22a29f7aadf56a61429e5416804bd9e31b23eee2087c57"
+    },
+    "Review/frames/0012.png": {
+      "bytes": 195528,
+      "sha256": "abf5cc12b269303f113874642c0671e30749792840383f18f888b27fdb81767d"
+    },
+    "Review/frames/0024.png": {
+      "bytes": 205384,
+      "sha256": "28824e6118dd13af19cf1ece1f489da77e5309732e4fbcc5a65449f07ecef8d0"
+    },
+    "Review/integer-fbx-validation.json": {
+      "bytes": 1661,
+      "sha256": "6c941c167a99c47c434c4cd80cf331f4df9519e85eb0175169f843cb84bc0574"
+    },
+    "Review/integer-fbx-validation.log": {
+      "bytes": 1607,
+      "sha256": "5a85e4cc1a4013ed88112745602b2dbbcc98e8019f2858fef1eaac590895aa6e"
+    },
+    "Review/motion-state.json": {
+      "bytes": 22701,
+      "sha256": "14e90180de95d8efb3b21e0fc9f72c7bb963b7cd16a815011b4e5b7f926e17ff"
+    },
+    "Review/parameterized-reproduction.json": {
+      "bytes": 1591,
+      "sha256": "dae6692f6e8a69407a270b62185822f54fbcac82c1df19e9dbdc73f69b4a8f76"
+    },
+    "Review/render-manifest.json": {
+      "bytes": 2025,
+      "sha256": "f834d16104c864b8a5119183cba85a8cd5265e89d3f654f0f773ce20b80fd921"
+    },
+    "Review/review-frame-indices.json": {
+      "bytes": 2257,
+      "sha256": "6d80b3d40e928981dd5e041c803abaf0570117d832bcb6881ee5d09eed65a231"
+    },
+    "Review/rig-inspection.json": {
+      "bytes": 13809,
+      "sha256": "4e628348e839ab647dab165f4c8d06d3026c69396c63e5bf5f6ee398c1e1856c"
+    },
+    "Review/source-manifest.json": {
+      "bytes": 2974,
+      "sha256": "2c4eddc09c21e7d225a10e731d0cb249a3a30d9503f30ee6bdbb97f8d34378c3"
+    },
+    "Review/stop-restart/0033.png": {
+      "bytes": 195900,
+      "sha256": "03f1fc262eb687ec0dfd0454074e8cfee0aa9e67a8a98557e6b78d6a33950243"
+    },
+    "Review/stop-restart/0036.png": {
+      "bytes": 195628,
+      "sha256": "7938b26d3b205057eba91ebf3c6185cbf8569db637322b875b68cc98af7d2e8d"
+    },
+    "Review/stop-restart/0042.png": {
+      "bytes": 196076,
+      "sha256": "85ab3328476fa0b6aa7a27c811e22a920b3e29c4b0ae2d3ae7272f9c630955f4"
+    },
+    "Review/stop-restart/0048.png": {
+      "bytes": 195311,
+      "sha256": "8f03fe6398d81484beb1411447e2130ddc0ea9e8b043822dfa72318523c242e7"
+    },
+    "Review/stop-restart/0057.png": {
+      "bytes": 196152,
+      "sha256": "ac8e72fcb4c6d286c7abaeb86912b48cd776bc420244b7b71fcf13c327243cdc"
+    },
+    "Review/stop-restart/0058.png": {
+      "bytes": 195460,
+      "sha256": "968f07c320ba76489dce496626cafac7c87751b8b58fd09c1fd26ee9321bf30d"
+    },
+    "Review/stop-restart/0066.png": {
+      "bytes": 195097,
+      "sha256": "199211ff133b715c7cc8ed82c21c7727e6b9293f753aee85f570ff2aff11849b"
+    },
+    "Review/video-probe.json": {
+      "bytes": 753,
+      "sha256": "6c36c75dedf438dfc07989845ec09832eee70b8b4e97d0b426da9b230a09a212"
+    },
+    "Review.html": {
+      "bytes": 5421,
+      "sha256": "cbe5a9df2ca0245155ca2a45cdb82e7ccc72b190b200b1d274707db8d95550d8"
+    },
+    "Scripts/PolicyExport.cs": {
+      "bytes": 1677,
+      "sha256": "ddab098db653c3ad66b822042599a8da6eb36c0274212cf48cbb115de604ef3e"
+    },
+    "Scripts/compose.py": {
+      "bytes": 1270,
+      "sha256": "190099f65e323253dca5bcf4d41c5326d5e2123f0cf324d9a1942e48b02c0c60"
+    },
+    "Scripts/diagnose_fractional_details.py": {
+      "bytes": 4333,
+      "sha256": "0c39a9d106b8f621aeb98b71aa66fb7d23e5c8d8421d80eec18a13a062ee8593"
+    },
+    "Scripts/encode.py": {
+      "bytes": 841,
+      "sha256": "0d01fe144b3f5882b3f0b60df2571f0dbcbc8075a3c0ae5345861bc3ef895804"
+    },
+    "Scripts/export_motion.py": {
+      "bytes": 6298,
+      "sha256": "60fd565cabec3ff955d65d348f1a7c86dda8c3d0c47bc00c2029b9042071f7b3"
+    },
+    "Scripts/export_policy.py": {
+      "bytes": 1778,
+      "sha256": "dfa36e1181f59c39f0ad2db552801251db6a3ee89f76ce2ad89b4573a2384b86"
+    },
+    "Scripts/inspect_rig.py": {
+      "bytes": 1272,
+      "sha256": "f89ab50fca9c162f37130688f34b915396eea2faa726c2fee175d0cb350c5792"
+    },
+    "Scripts/layered_pose.py": {
+      "bytes": 1562,
+      "sha256": "f40548d72410dcaf86228f146714d73bf99d147d97e61abe4c95daf171233a25"
+    },
+    "Scripts/render.py": {
+      "bytes": 6487,
+      "sha256": "1def9f945e051de595ae6b7c54436bbdb7df6faca0dba3ebc6c3d69048ce9a85"
+    },
+    "Scripts/render_candidate.py": {
+      "bytes": 6939,
+      "sha256": "644d244d97b65e57cc73dd8ceefaeda2a1e43c53ba99dc6f8bf2e74c529fd31c"
+    },
+    "Scripts/render_clean_contact.py": {
+      "bytes": 2264,
+      "sha256": "a0d11ac4788f17275abce9012182f79c2afb788cced0a021838b3528ad098682"
+    },
+    "Scripts/render_error_peaks.py": {
+      "bytes": 1869,
+      "sha256": "3f1337919155082fe8b65ba668283ab12ac2ea010bdbb3df76158872c98297e6"
+    },
+    "Scripts/validate_integer_fbx.py": {
+      "bytes": 3452,
+      "sha256": "c5ba228bd65d561ae19ed62b5782fcfae64b1319d963d4e9d9e30a01ebd8c00d"
+    },
+    "Scripts/validate_layered_fbx.py": {
+      "bytes": 2559,
+      "sha256": "33982684084932e999710091d1e41e4bb20538cb3509079c848befb3f9dc527d"
+    },
+    "Validation/06b1750/api-Android/compile.log": {
+      "bytes": 76,
+      "sha256": "8cc2d9de0a988e9f41eeb10861b6d96a24efc7ad6852be1546f3ba7c1b6e65f7"
+    },
+    "Validation/06b1750/api-Windows/compile.log": {
+      "bytes": 76,
+      "sha256": "fb58e93a169d1252c496cee40180cd0cb30db3e527222a0b8e8fb7f155d3470b"
+    },
+    "Validation/06b1750/api-iOS/compile.log": {
+      "bytes": 76,
+      "sha256": "e4e3e6047aa1f4988e9f7b0a73005a2b2e4078da45c371f2e666b267a99cf477"
+    },
+    "Validation/06b1750/final-handoff.json": {
+      "bytes": 3046,
+      "sha256": "0340257774eae1d80911e1f96dcb5eb44cc49044ce12d7a6241a6bdd6a54cd10"
+    },
+    "Validation/06b1750/final-report/BlenderPilotAdapterProductionTests.log": {
+      "bytes": 1772,
+      "sha256": "a4e8404f08f26b2bc84f19832a1249bd27cb3b81d0e98a5388142ea475577517"
+    },
+    "Validation/06b1750/final-report/PilotStarterCompatibilityTests.log": {
+      "bytes": 210,
+      "sha256": "5c34766c810997affd5e7910e4a40baf9b1d0f13a8c005ef06839bf497b73e2b"
+    },
+    "Validation/06b1750/final-report/adventure-entry-truth.log": {
+      "bytes": 90,
+      "sha256": "9327600cb75e239b08738306ce624743bbcad379db686ff436b460435dc44ce2"
+    },
+    "Validation/06b1750/final-report/adventure-progression.log": {
+      "bytes": 95,
+      "sha256": "7a3ac7abf81c50cd082b343c5e49d9d359c79aa8616ef5f4c461794102c09ea1"
+    },
+    "Validation/06b1750/final-report/adventure-results.log": {
+      "bytes": 69,
+      "sha256": "d33644a54879d0972d507f5714e6c4a2910742bc6f8e3ca0e04b8ae225286a43"
+    },
+    "Validation/06b1750/final-report/anchored-impact-coverage.log": {
+      "bytes": 2410,
+      "sha256": "9cf2936aebfab5de9c117ff8260c4894c08d91a6b42d8eef50578ae22f157ec7"
+    },
+    "Validation/06b1750/final-report/android-lifecycle.log": {
+      "bytes": 77,
+      "sha256": "9b01d0619f5abf31b71a4144ca18c6148f563a73916d3acada6685bed7e21475"
+    },
+    "Validation/06b1750/final-report/application-pause-state.log": {
+      "bytes": 33,
+      "sha256": "c43651fb4f0c888dbcc9dc4fd0f432e08473989f93f76b44b571cf2a889f0ee9"
+    },
+    "Validation/06b1750/final-report/authored-scenery-production.log": {
+      "bytes": 166,
+      "sha256": "340d0f7529fd03fe295212c1a1cd7927eb7d50504304bdce7dd947311c35304c"
+    },
+    "Validation/06b1750/final-report/basic-action-timeline.log": {
+      "bytes": 76,
+      "sha256": "8d6c3cf4264ac185a671de7ef7b48d7a658424832d1b3f3a828355654f398add"
+    },
+    "Validation/06b1750/final-report/blender-pilot-pose.log": {
+      "bytes": 1248,
+      "sha256": "cc5fa37d4fcc0b7e781042707225b99122a0f5480df872a095884c684231af6e"
+    },
+    "Validation/06b1750/final-report/blessing-damage-production.log": {
+      "bytes": 1929,
+      "sha256": "5d8f55afbb7405c85de497b46737718979d083d692e10ae5203bbc450154a14b"
+    },
+    "Validation/06b1750/final-report/blocked-combat-update-production.log": {
+      "bytes": 327,
+      "sha256": "cba81b1b7cbceab6699f3a9f7373d7e51471080536da649dd965c2c7e3acf0f2"
+    },
+    "Validation/06b1750/final-report/boss-attack-policy.log": {
+      "bytes": 60,
+      "sha256": "14745586c79fc9f622b0f3c7667d671e4a5bc07e28f9f3253cc0cd80da330ff0"
+    },
+    "Validation/06b1750/final-report/boss-sweep-capsule-production.log": {
+      "bytes": 159,
+      "sha256": "846b8d3dc60d02bed214177eaeb6d847df5470614b9dbb911bfa9869fc7a59f8"
+    },
+    "Validation/06b1750/final-report/build-presets.log": {
+      "bytes": 177,
+      "sha256": "d4da1b5fc8d100e865c327383ae7a0a90a93db2250ca936923ee0e1649a6fdc9"
+    },
+    "Validation/06b1750/final-report/build-size-policy.log": {
+      "bytes": 67,
+      "sha256": "dc62613291f9012aea8e0d0a737c690e1946c208ea5d5d720e65ad86d962d1a4"
+    },
+    "Validation/06b1750/final-report/burn-finale-production.log": {
+      "bytes": 1214,
+      "sha256": "14ccc5133f6893585d6f22021579551f8cd46a464d2217503c8e7dd5e055402a"
+    },
+    "Validation/06b1750/final-report/camera-visibility.log": {
+      "bytes": 57,
+      "sha256": "9f4494d5f4d85abb06837acb46ec4754c3e5311e995045550ce708522f318850"
+    },
+    "Validation/06b1750/final-report/casterchargeproduction.log": {
+      "bytes": 198,
+      "sha256": "68062576029207439ee9eb665b9661118ca04330a32fda3cba5be626fbb9adaf"
+    },
+    "Validation/06b1750/final-report/chapter-combat-production.log": {
+      "bytes": 1642,
+      "sha256": "989ce36e9cf0cc3be4e89066a609b96d296b6e9bbc8e8b05101e0ed0b71073fe"
+    },
+    "Validation/06b1750/final-report/chapter-entry-production.log": {
+      "bytes": 3162,
+      "sha256": "22fc7e857f935062e98c1d727dd33c88aade48742cdccfcc36411cee63427988"
+    },
+    "Validation/06b1750/final-report/chapter-host-production.log": {
+      "bytes": 1496,
+      "sha256": "6c378f050589ec99421f5abb0322c2cbe1dcc5f5aca6e2d107db690c3a3b6836"
+    },
+    "Validation/06b1750/final-report/chapter-mobile-support.log": {
+      "bytes": 169,
+      "sha256": "a49e5bc3b22c7df65fee0c942d6e31a003e06f2cee13385bf55f847474b264b0"
+    },
+    "Validation/06b1750/final-report/chapter-presentation.log": {
+      "bytes": 79,
+      "sha256": "ede9862c26bfeb4b7a286dc8b85f732b76628a69c27e6f04f7fc68871467c3d7"
+    },
+    "Validation/06b1750/final-report/chapter-progression.log": {
+      "bytes": 420,
+      "sha256": "0194b124d3ce7d6101a21b99edc255558ac6c4e03683fb4280fca3a63c429884"
+    },
+    "Validation/06b1750/final-report/chapter-return-time-scale.log": {
+      "bytes": 546,
+      "sha256": "5d8b6f68addf0ababad4c1ede1d75280281b4dcd77027e2606920f1ad3efc3e4"
+    },
+    "Validation/06b1750/final-report/chapter-room-geometry.log": {
+      "bytes": 807,
+      "sha256": "4bee76c3f1508cca853fda1bf9b621fa709d29720a340a943aa3bfd835d44a76"
+    },
+    "Validation/06b1750/final-report/chapter-ui-wiring.log": {
+      "bytes": 77,
+      "sha256": "777ef6c77c54432b227b37c5e543d515b3e241ce012c4424200c4726a7600c49"
+    },
+    "Validation/06b1750/final-report/chapterexperience.log": {
+      "bytes": 942,
+      "sha256": "831b121b3dae0015c2610cfde69e0a305c3b59db9e91155d5dd15557a3524cec"
+    },
+    "Validation/06b1750/final-report/chapternodeworldproduction.log": {
+      "bytes": 204,
+      "sha256": "cc7fd9e51aa3c496c62170659be95233a4a37af2fda9f80f635ea36aa40bb6cd"
+    },
+    "Validation/06b1750/final-report/chaptersealrouteproduction.log": {
+      "bytes": 566,
+      "sha256": "fcd31446a99bd68aa58772ad68c63b6ece31a00eca2f7a2b66328aaba7c3ab63"
+    },
+    "Validation/06b1750/final-report/chest-composite-production.log": {
+      "bytes": 158,
+      "sha256": "dd6fd6e93d665b7a7ff54cd2d758bd8f6fe240fc1da896dbe244a9fbf9eb2682"
+    },
+    "Validation/06b1750/final-report/chest-currency-deltas.log": {
+      "bytes": 58,
+      "sha256": "f1518d92eaac8d7c62452cada8fccfd5d9656054e1a0e985a174928453ca9a13"
+    },
+    "Validation/06b1750/final-report/chest-pause-back-production.log": {
+      "bytes": 126,
+      "sha256": "e4969e9e900dd2f8900e442684273c3aaf78df5d6fd5c099904f36d3e2b2a3d2"
+    },
+    "Validation/06b1750/final-report/chest-reveal-presentation.log": {
+      "bytes": 65,
+      "sha256": "f21152a18e0435ed57ceab57488f2cb260c14c32a09e93e0ef041a5c9ae15d32"
+    },
+    "Validation/06b1750/final-report/chest-trial-production.log": {
+      "bytes": 146,
+      "sha256": "3fd70cd16159f80e287d007638b995980ed4ace7c7cacf5543c770532a93256b"
+    },
+    "Validation/06b1750/final-report/classtierstructureproduction.log": {
+      "bytes": 222,
+      "sha256": "e3afbff9810ceebce070ca2b73d8773a5fb1ff9d70125a7706962939e22d0dd9"
+    },
+    "Validation/06b1750/final-report/collection-compact-geometry.log": {
+      "bytes": 213,
+      "sha256": "c02c4702ef85520c7a1e08e0305b81e75064e39785e09477dd45bef926ef8c3a"
+    },
+    "Validation/06b1750/final-report/collection-preview-composition.log": {
+      "bytes": 95,
+      "sha256": "0b64267901b5e192db6ff728feb70ead472e13d57b0cc626ff684b06bf69a7ae"
+    },
+    "Validation/06b1750/final-report/collection-render-lifecycle-modern.log": {
+      "bytes": 96,
+      "sha256": "6db2fe11ebbe90e0ae63ac81fba089be5714d0740e247339dd37d627cd4ea7d2"
+    },
+    "Validation/06b1750/final-report/collection-render-lifecycle.log": {
+      "bytes": 96,
+      "sha256": "6db2fe11ebbe90e0ae63ac81fba089be5714d0740e247339dd37d627cd4ea7d2"
+    },
+    "Validation/06b1750/final-report/collection-stage-recovery-negative.log": {
+      "bytes": 259,
+      "sha256": "8120a702b5fe78686186454d91f83a62fd78155a3a91657e1ff17f28d17c6e17"
+    },
+    "Validation/06b1750/final-report/collectionposeisolationproduction.log": {
+      "bytes": 387,
+      "sha256": "5f556e42bbf960a4fcc4da02a513286f2e4fc624bb492489465777513a2c5ef2"
+    },
+    "Validation/06b1750/final-report/collectionpreviewpresentationproduction.log": {
+      "bytes": 305,
+      "sha256": "c0dd3057c80d5001311ec290b92fa50c8de191128fec5dfd2e22c296c7a682b7"
+    },
+    "Validation/06b1750/final-report/combat-balance.log": {
+      "bytes": 39,
+      "sha256": "3b837de24f84a64c8bee4dcb67aedb2e3070b3f3e04958fe1cfc280d410fdde3"
+    },
+    "Validation/06b1750/final-report/combat-opportunity-slot.log": {
+      "bytes": 624,
+      "sha256": "2289995fde1bcadb4f28ca4c0d20ccda13720622aa9b8fb8785810d96b02bcf6"
+    },
+    "Validation/06b1750/final-report/combat-opportunity.log": {
+      "bytes": 54,
+      "sha256": "44e30466d5bed89ada1d61a9b52cea3160df352ea17f53dd8355a27b6996d30c"
+    },
+    "Validation/06b1750/final-report/combat-pacing-followup.log": {
+      "bytes": 35,
+      "sha256": "af91c31d836019e16d3178a943fd46c424a61353dfc17ce37dd3a2c2cfc77974"
+    },
+    "Validation/06b1750/final-report/combat-readability-production.log": {
+      "bytes": 658,
+      "sha256": "081e7a2fb62c55f3826377a9cf3af917cf7210070d074960b4862534cf75a6ce"
+    },
+    "Validation/06b1750/final-report/combat-review-events.log": {
+      "bytes": 108,
+      "sha256": "828f3e3b93495edcec86e76523cba3df8422dfbe8f049cfd60ad0bbc7dd401ff"
+    },
+    "Validation/06b1750/final-report/combat-review-impact-production.log": {
+      "bytes": 368,
+      "sha256": "80bd63c6baff333814528cce141655c8631b8cfdbb383b380de6b240642a346e"
+    },
+    "Validation/06b1750/final-report/combat-review-instrumentation.log": {
+      "bytes": 221,
+      "sha256": "fffa979be385dc075ab491c24e8c92334d51fc16f13f1f3f356b6faf860f5290"
+    },
+    "Validation/06b1750/final-report/combat-review-object-id-legacy.log": {
+      "bytes": 119,
+      "sha256": "582a78abaa2942674752bbac4d8765ef4304b8aabecfda6eab2e75ca9055eba2"
+    },
+    "Validation/06b1750/final-report/combat-review-object-id-modern-contract.log": {
+      "bytes": 119,
+      "sha256": "582a78abaa2942674752bbac4d8765ef4304b8aabecfda6eab2e75ca9055eba2"
+    },
+    "Validation/06b1750/final-report/combat-review-rules.log": {
+      "bytes": 43,
+      "sha256": "8931adb40752e3dc719460804f393c68b4d05f20c126299a6141c8b48a386198"
+    },
+    "Validation/06b1750/final-report/combat-sight-traversal.log": {
+      "bytes": 74,
+      "sha256": "7655fb3881528356258666e6ee7e7f25ffced57df9bef01109acf4bf2362532d"
+    },
+    "Validation/06b1750/final-report/combat-sight.log": {
+      "bytes": 49,
+      "sha256": "c13769d0200ae188c1fb9c57d9278921aee4f70acaca2e6c0afae6d1d3f1c78c"
+    },
+    "Validation/06b1750/final-report/combat-text-layout.log": {
+      "bytes": 55,
+      "sha256": "f0ea690f68506f97a3a6bed90b541349ccc3d2aaf530a06dbfe0a933fca43339"
+    },
+    "Validation/06b1750/final-report/combo-resource-budgets.log": {
+      "bytes": 80,
+      "sha256": "c26a0968b1f02f66d6e7caa8c089e4367265ea849fb7fe259910c91d0c134893"
+    },
+    "Validation/06b1750/final-report/companion-appearance.log": {
+      "bytes": 419,
+      "sha256": "7b54926012d11d598cc565bf6f1867a5b7a81bcd0d0f2a349ea9f79378fccf1c"
+    },
+    "Validation/06b1750/final-report/companion-directive.log": {
+      "bytes": 39,
+      "sha256": "f53bc76a3d25db75de6ffd23615b18ce571d2985cfdea6b8aa1d7c0394246974"
+    },
+    "Validation/06b1750/final-report/companion-intent-production.log": {
+      "bytes": 1218,
+      "sha256": "31f0f03cf8b50ede908dfb5fb14a2fb3926a2d6d4e0f7c0cef0bafae5a4eb83b"
+    },
+    "Validation/06b1750/final-report/companion-path-allocation.log": {
+      "bytes": 2841,
+      "sha256": "307b7a9554a8037da15fbfb54c454732cb6ba55d07fbaa45bbfc386fc1a29af2"
+    },
+    "Validation/06b1750/final-report/companion-rules.log": {
+      "bytes": 38,
+      "sha256": "84c6d55afe76dc03f45f61c1f12c9934100cf78a890f8e37c84719f06910109d"
+    },
+    "Validation/06b1750/final-report/contract-snapshot-production.log": {
+      "bytes": 125,
+      "sha256": "a040cbe501e4792aa8f7a410571514bab9693af4cfd0bb1dbb8ed985f54521e1"
+    },
+    "Validation/06b1750/final-report/costume-layers.log": {
+      "bytes": 79,
+      "sha256": "8772e7ab5679d251698b35644201bd3b884257bfa08ccda9414fde338b23b4ec"
+    },
+    "Validation/06b1750/final-report/costume-recipes.log": {
+      "bytes": 83,
+      "sha256": "48361f3d4d0aac778d1cef23714c4bdac211090c62ad4efda475437ca3376c3a"
+    },
+    "Validation/06b1750/final-report/decoration-budget.log": {
+      "bytes": 52,
+      "sha256": "9f98e6e96e6bc00e023a4f371aedeb958ad6b5365b51f6ef19ecf567158f3dcc"
+    },
+    "Validation/06b1750/final-report/deferred-room-choice.log": {
+      "bytes": 69,
+      "sha256": "137b8f66031788189b7b3b0cf3a0fd308b29cfb3f0459d5b37f8335bc862adf0"
+    },
+    "Validation/06b1750/final-report/dense-finale-production.log": {
+      "bytes": 177,
+      "sha256": "f9869c9307beb1daa6b898bee2ef4ba911a6b8d9658e86a655d7219ce6c7444f"
+    },
+    "Validation/06b1750/final-report/desktop-opportunity-hotbar.log": {
+      "bytes": 622,
+      "sha256": "eaa3e7b3089220e735a46bf51866fa217ba4d06d05301ece7532fb2159a77cc5"
+    },
+    "Validation/06b1750/final-report/destructible-props.log": {
+      "bytes": 48,
+      "sha256": "98b7fb6a4b605d4e45517c0e56b1d05f0f77a03b345ba01c5a974662b5ad027a"
+    },
+    "Validation/06b1750/final-report/destructible-traversal.log": {
+      "bytes": 46,
+      "sha256": "c3d9a4f0fef336fc7d98b9274aeee8c8a942b12ae1070d05a1c8e395f550fb90"
+    },
+    "Validation/06b1750/final-report/economy-goal-ui.log": {
+      "bytes": 7778,
+      "sha256": "9a66b7f08c552775fc425b46cdba4b7d14e926096587b663972d27efdb8a9f27"
+    },
+    "Validation/06b1750/final-report/economy-growth.log": {
+      "bytes": 1131,
+      "sha256": "67040382727a84048432350248325a22c4348c96e75cbe6d755fffebeaa7e858"
+    },
+    "Validation/06b1750/final-report/effectpriorityproduction.log": {
+      "bytes": 158,
+      "sha256": "6e6eeca1d6286af566fcf496750898aeababfa12fa3e488cd7b55840d6bc41de"
+    },
+    "Validation/06b1750/final-report/elemental-field-continuity.log": {
+      "bytes": 296,
+      "sha256": "efcfc2cd5ca674ab67aba966a4b7e2cb169065ba7ef71c4cce1f295c9809fe01"
+    },
+    "Validation/06b1750/final-report/elemental-priority-production.log": {
+      "bytes": 346,
+      "sha256": "629cdd1bab78a975614a3236c357789953384c4ffa68c6e224953d1a95c4af19"
+    },
+    "Validation/06b1750/final-report/encounter-plans.log": {
+      "bytes": 88,
+      "sha256": "d3b9fb101f27b77314d71a973c12d2b9f567408d73b42c35b68426265a90a8cd"
+    },
+    "Validation/06b1750/final-report/enemy-impact-contour.log": {
+      "bytes": 173,
+      "sha256": "0196f14bf00f1b06072126b62eb4b2669b2b6c428c23027480f8dc3ccbc1fc39"
+    },
+    "Validation/06b1750/final-report/enemy-kill-rewards.log": {
+      "bytes": 669,
+      "sha256": "4ec8c386e70b2a656dd44a7fc17e91c6edb142e95d9e64a59f4f79899185b4da"
+    },
+    "Validation/06b1750/final-report/environment-light-profile.log": {
+      "bytes": 98,
+      "sha256": "ed94e4fae813e5270854dbce20935702f4bef9042d5de3306b4cdb39c6ee2e13"
+    },
+    "Validation/06b1750/final-report/environment-readability.log": {
+      "bytes": 129,
+      "sha256": "23817af5cda792fca4e89bbee7cf7b9e008287c3a0d0b1cadbfc50ab1dbc2ac4"
+    },
+    "Validation/06b1750/final-report/equipment-appearance-production.log": {
+      "bytes": 404,
+      "sha256": "835fd3490afc16887462c9312034c081e286fc8d7adb64a1603f07dc67227256"
+    },
+    "Validation/06b1750/final-report/equipment-attachment-source.log": {
+      "bytes": 131,
+      "sha256": "de35efed700cd0b38c37bc76491099f5f32086a7859e9995917730eb1d812ba3"
+    },
+    "Validation/06b1750/final-report/equipment-attachment.log": {
+      "bytes": 124,
+      "sha256": "c5d2542329f38c2a79deea8f433dbf1ece22bf051283d26ebbd18a3185104cc5"
+    },
+    "Validation/06b1750/final-report/equipment-comparison.log": {
+      "bytes": 78,
+      "sha256": "3f89fb7c665253111ae224b1d1d340bd49367ebbb09890e14e51d7dfad4a2df1"
+    },
+    "Validation/06b1750/final-report/equipment-composition-production.log": {
+      "bytes": 371,
+      "sha256": "4aacc40eadafe274dc4906a711424fccd35e3493770ef6c2da4ef98d89f0064b"
+    },
+    "Validation/06b1750/final-report/equipment-lookups.log": {
+      "bytes": 109,
+      "sha256": "f3594457e699c3860ca4af4f17d8e965020ab4e697765cb846cced1ca8dd6cff"
+    },
+    "Validation/06b1750/final-report/escape-room-formation.log": {
+      "bytes": 97,
+      "sha256": "1e95fc08499eea2620263f3e41b386df33f13b47975e13f8099fd80c666f9a56"
+    },
+    "Validation/06b1750/final-report/expedition-modes.log": {
+      "bytes": 39,
+      "sha256": "26ade850b8004a36792f4a5ab8c191125ed99732675969ed9a3385b246d1c98e"
+    },
+    "Validation/06b1750/final-report/explicit-action-persistence.log": {
+      "bytes": 85,
+      "sha256": "0ea66ea3ddf3f11a8255cbf32afe983bfcccfd7ef9a0a4f6ea09307b28385f37"
+    },
+    "Validation/06b1750/final-report/fading-combat-effect-lifecycle.log": {
+      "bytes": 186,
+      "sha256": "f20e866a664b526d12bef564ba0517febff79b6d472aca260267b64c4e22f86e"
+    },
+    "Validation/06b1750/final-report/filled-vfx-allocation.log": {
+      "bytes": 702,
+      "sha256": "e1a92c30ae5eb19597757a680b5db22a1d20724b543905d4b19d65b88d026a31"
+    },
+    "Validation/06b1750/final-report/filled-vfx.log": {
+      "bytes": 33,
+      "sha256": "339dc289b0c812a78867968aaeac6233bf54cb23360942796316d6728c6476f3"
+    },
+    "Validation/06b1750/final-report/game-font-android.log": {
+      "bytes": 95,
+      "sha256": "82b9d11d5174c800d04aec7ed510f7053307713d95c041e644a90fc4a284a8b7"
+    },
+    "Validation/06b1750/final-report/game-font-desktop.log": {
+      "bytes": 95,
+      "sha256": "ecbfdd5cdc868b052de4b9b825fee4a72f80b230be3512657baecf0e3dc0952d"
+    },
+    "Validation/06b1750/final-report/game-font-ios.log": {
+      "bytes": 95,
+      "sha256": "82b9d11d5174c800d04aec7ed510f7053307713d95c041e644a90fc4a284a8b7"
+    },
+    "Validation/06b1750/final-report/growth-navigation-source.log": {
+      "bytes": 110,
+      "sha256": "b9fe152f490d01812adb323f587165f1c0802cfb151c6d17c74fd9b6f46359ef"
+    },
+    "Validation/06b1750/final-report/guard-return.log": {
+      "bytes": 677,
+      "sha256": "7895c0bd90d358f08f93816936e556bfc774d06d05328e40f732c9b348230a9a"
+    },
+    "Validation/06b1750/final-report/guardian-charge-pose.log": {
+      "bytes": 95,
+      "sha256": "d66a3f44174b9e6c96348a061e41a74f4901ebfad257750ffdfd2b52366e89e6"
+    },
+    "Validation/06b1750/final-report/hero-pose-commit.log": {
+      "bytes": 264,
+      "sha256": "0c211fa43820a95ed7ca3920856ea1996738e7bf03e7101b6f17693a02048336"
+    },
+    "Validation/06b1750/final-report/hold-point-state.log": {
+      "bytes": 58,
+      "sha256": "0085a00f76d9c23596853b58a5ec512b7a60d94ac230340e2e8fc874970caa7f"
+    },
+    "Validation/06b1750/final-report/hotbar-reset.log": {
+      "bytes": 91,
+      "sha256": "b7904e01da546745d5ffc45ecec87c9c8750e7124e3b0a5a59a0e1c2f1cc3c68"
+    },
+    "Validation/06b1750/final-report/hub-economy.log": {
+      "bytes": 54,
+      "sha256": "8df8d91b74aaef74b4574736c699475b143bbd86e84e560a7932a529d1189af5"
+    },
+    "Validation/06b1750/final-report/hub-settlement-geometry.log": {
+      "bytes": 75,
+      "sha256": "9e0cbe2d0b41951902ad489d42f80c0babe46c0d2bc62ecf3b311a1852b6f6c2"
+    },
+    "Validation/06b1750/final-report/interface-safety.log": {
+      "bytes": 44,
+      "sha256": "7dc37134a556e6f02f7c491682666f704103954de13acbe6a6e9073741869864"
+    },
+    "Validation/06b1750/final-report/large-boss-motion.log": {
+      "bytes": 84,
+      "sha256": "b3a338c847f0312020fd146ee2a8e2ae01a4e24ebcf5cadd0bf81cf8b5524ae5"
+    },
+    "Validation/06b1750/final-report/large-boss-phases.log": {
+      "bytes": 29,
+      "sha256": "0a331988bbc82d0314de9214aba63366a7721f923b20f828951a7950128a5510"
+    },
+    "Validation/06b1750/final-report/large-boss-shutdown.log": {
+      "bytes": 294,
+      "sha256": "2b4908aec379019f5dcca95175aa2cf97534c4db794fbbecd01cc41b30465c5d"
+    },
+    "Validation/06b1750/final-report/level-up-point-feedback.log": {
+      "bytes": 117,
+      "sha256": "95f24d1850dd6e3c6b246c8616b2221637d6079dd79c06e9732b09d4e1a6f67a"
+    },
+    "Validation/06b1750/final-report/locomotion-poses.log": {
+      "bytes": 90,
+      "sha256": "93e93fad1d91c19ff088a8f1082377d675d066dc5eb629967aa46411722ff4ca"
+    },
+    "Validation/06b1750/final-report/mechanism-evidence-production.log": {
+      "bytes": 223,
+      "sha256": "0ebe08190174bfa7dd6614c55da2444ebfb662d56a296dff333d79ddd2633055"
+    },
+    "Validation/06b1750/final-report/milestone-goal-surface.log": {
+      "bytes": 2125,
+      "sha256": "2d55a23c4d493f9f73497ab148a8bdec70fff93f3568f6339037e832ce8d6d3c"
+    },
+    "Validation/06b1750/final-report/mobile-blessing-preview-production.log": {
+      "bytes": 313,
+      "sha256": "fe261a1f436bafefcde88d31c3d6d319e1b205d3601141510a53364086032706"
+    },
+    "Validation/06b1750/final-report/mobile-camera.log": {
+      "bytes": 76,
+      "sha256": "5f8345cf1f1f96c60526fdc9c428559c8385845b456f0be21c6d46f7c2c3e1e0"
+    },
+    "Validation/06b1750/final-report/mobile-collection-layout.log": {
+      "bytes": 56,
+      "sha256": "15a8cc5baf16a3fb8c52677b698866fadaf2afe9616839812399f2ee79fb9217"
+    },
+    "Validation/06b1750/final-report/mobile-combat-feedback.log": {
+      "bytes": 42,
+      "sha256": "c4eb229e6abba7f59163eae3c269aada77a39cc9ab2dc2a2201a051236d5356a"
+    },
+    "Validation/06b1750/final-report/mobile-inventory-back-production.log": {
+      "bytes": 2023,
+      "sha256": "2ee4162cdd4e5205dcc08bc19c0a9353ef1010aa89dfb701174523371f1a7303"
+    },
+    "Validation/06b1750/final-report/mobile-layout.log": {
+      "bytes": 49,
+      "sha256": "91cd98f8aaa09c15ff0bdd2a7ba9c2fc162a5adead0781acf244796f778c8e94"
+    },
+    "Validation/06b1750/final-report/mobile-pause-navigation.log": {
+      "bytes": 57,
+      "sha256": "7ec28cba45afdcda9fcdb24b3e6b0a84c0b520f27631f657b4d6da8f5cbc57fd"
+    },
+    "Validation/06b1750/final-report/mobile-room-objective.log": {
+      "bytes": 94,
+      "sha256": "c5cfed54a3c4a595e73ab1cb21356044c8bf1ed3f91a99ba2d434380d37fe799"
+    },
+    "Validation/06b1750/final-report/mobile-save-location.log": {
+      "bytes": 86,
+      "sha256": "e8a7a3911e1421096da4118064fbe4db1cd7b5891b0e475ecf849401ea24a1ab"
+    },
+    "Validation/06b1750/final-report/mobile-skills-workshop-layout.log": {
+      "bytes": 80,
+      "sha256": "1519a3e38051e2df58ae2f0d5c96fc8411665de69fea7d1c3c8a02d2443611d1"
+    },
+    "Validation/06b1750/final-report/mobile-skills.log": {
+      "bytes": 70,
+      "sha256": "d39671288e90dcc0a5655400232a25cf0b7c7ef54a1c533f40b119a37093cc25"
+    },
+    "Validation/06b1750/final-report/mobilepinnedtargetproduction.log": {
+      "bytes": 606,
+      "sha256": "98e52b4d12c5c310c3c6ad7a348e44d131f7829efdcb6cea2cfa28418289e281"
+    },
+    "Validation/06b1750/final-report/mode-rewards.log": {
+      "bytes": 49,
+      "sha256": "9e75adba061ed3c1a8b0f7ffc5541324eac9348409d4f1f51982e76722cfe1c9"
+    },
+    "Validation/06b1750/final-report/occlusion-cause-production.log": {
+      "bytes": 77,
+      "sha256": "70cee43ce2dd4957969eebe0ea764be4d91ee021b27dac4e6074ce1e07c1dd76"
+    },
+    "Validation/06b1750/final-report/pack-detour-production.log": {
+      "bytes": 152,
+      "sha256": "3aa5c600b6d559dc4fb0e1200b30a66963eb1329e62875cdddc8bc3c7a4998b3"
+    },
+    "Validation/06b1750/final-report/panel-readability.log": {
+      "bytes": 66,
+      "sha256": "d6c34e19c59cfeb5a123042fa56ee353eda98c2d75daa3d2bfd454111548b6f4"
+    },
+    "Validation/06b1750/final-report/player-finale-tail-production.log": {
+      "bytes": 193,
+      "sha256": "4226bea18f05811aa5244c9fdebc127000e3e12f629fb6d7d6562b6b22509ede"
+    },
+    "Validation/06b1750/final-report/player-upgrades.log": {
+      "bytes": 37,
+      "sha256": "e990751a02a48513017237b4775dc4cfb929abf575f7c5b82ceb55cf83810187"
+    },
+    "Validation/06b1750/final-report/previewclothproduction.log": {
+      "bytes": 282,
+      "sha256": "b140b95d9bf346c99101869c20322509f330acbee6680b231c7130b9a4dfb522"
+    },
+    "Validation/06b1750/final-report/procedural-visuals.log": {
+      "bytes": 76,
+      "sha256": "083dbe37ef75d6c11439d3f2d19e7c709c45a492b2738fd7e12fffebc5e8171b"
+    },
+    "Validation/06b1750/final-report/production-touch-lifecycle.log": {
+      "bytes": 1044,
+      "sha256": "ccd69fe2d861e4cc1b89594e1f81099a63eb6f805898640c4226cbebd6f803ec"
+    },
+    "Validation/06b1750/final-report/progression-attention.log": {
+      "bytes": 179,
+      "sha256": "51462e9bee08d3619f933b25981e525d521fa8a09f25daea4f4cfcaedfcff0b8"
+    },
+    "Validation/06b1750/final-report/progression-goal-identity.log": {
+      "bytes": 89,
+      "sha256": "4b702461463e58c4af1055103f52190960dde51c5fe145bb0fdcbc1e455befd4"
+    },
+    "Validation/06b1750/final-report/progression-goal-layout.log": {
+      "bytes": 77,
+      "sha256": "37778f8cb1bb9fa67f6f70f02530d9c023411194a6da98d5e91a420f3b103eb8"
+    },
+    "Validation/06b1750/final-report/progression-growth.log": {
+      "bytes": 66,
+      "sha256": "c16ca0db06fc5b7584ed56b6a8326133bcf4a96ff6f29671248f76dff1c406f4"
+    },
+    "Validation/06b1750/final-report/progression-route-layers.log": {
+      "bytes": 53,
+      "sha256": "09eb9074bd1275a68a5cb5fcd8b8132e2550a146b9bad04ce2a31e27c15c0f23"
+    },
+    "Validation/06b1750/final-report/progression.log": {
+      "bytes": 66,
+      "sha256": "9c129800fc26ba2306fb9a5e4abcb21c6e8982c2ba1df9536762e4b03acf9e0b"
+    },
+    "Validation/06b1750/final-report/rebalance-progression.log": {
+      "bytes": 70,
+      "sha256": "df707b64cc7ad8abfd19e430652f507eaadd1c64daacacf4642ef47cd50477c6"
+    },
+    "Validation/06b1750/final-report/redrock-replay-geometry.log": {
+      "bytes": 3927,
+      "sha256": "0804e929d0cc0c3af65520187094d0b1a5f3a5e58bd10e757744cd9fccb64a42"
+    },
+    "Validation/06b1750/final-report/reforgeselection.log": {
+      "bytes": 7790,
+      "sha256": "c0c626ef3dbd25f759be1c803d7b990e53d3cf51efa91422516f2188ed6223ba"
+    },
+    "Validation/06b1750/final-report/report.json": {
+      "bytes": 92415,
+      "sha256": "799d323c2df0e7051abd63ecd8c28f84ea34d4742a7db90670cd0570ce8b72de"
+    },
+    "Validation/06b1750/final-report/reward-viewing-rules.log": {
+      "bytes": 70,
+      "sha256": "cfd6b9290746295aa1ccaed75e60bdf6dc0da7d09e2ea3d0b0753b01525a16a3"
+    },
+    "Validation/06b1750/final-report/room-blessing-preview.log": {
+      "bytes": 60,
+      "sha256": "737ca09dd4942bf80a7737002da00d5c319d18f98e20082d888c69501536bc96"
+    },
+    "Validation/06b1750/final-report/room-blessing-routes.log": {
+      "bytes": 1300,
+      "sha256": "202e2dd52097756da0c4cecd5e5d1bbc925feeea6fa154a890469477927871b9"
+    },
+    "Validation/06b1750/final-report/room-blessing-usability-negative.log": {
+      "bytes": 158,
+      "sha256": "bf1e64b51a899c575ea4489e113f5f0448a5c55a09988b5fca997e1bbb45b2ff"
+    },
+    "Validation/06b1750/final-report/room-blessing-usability.log": {
+      "bytes": 122,
+      "sha256": "f32fa284e27f91b62f5af2fd018e62d8533eb96cd51ce39031caa018709cfc58"
+    },
+    "Validation/06b1750/final-report/room-chain.log": {
+      "bytes": 111,
+      "sha256": "a6dba90154b706be40761d56baaf6d6628f1174313575a943d7abbb674ce9ffe"
+    },
+    "Validation/06b1750/final-report/room-failure-evidence.log": {
+      "bytes": 446,
+      "sha256": "4e072c22117611e0bd0c009067657d309dd170a3c3f43a7de06dd5426d6cc903"
+    },
+    "Validation/06b1750/final-report/room-first-choice-production.log": {
+      "bytes": 227,
+      "sha256": "b05e3130ec61c7d40fa97ffdd07e0bf5663b60c798820f13b2aee677964a66f3"
+    },
+    "Validation/06b1750/final-report/room-free-seal-host.log": {
+      "bytes": 316,
+      "sha256": "3e0500c1d6893ca4bd41378b74b7f049fdde1fedb06fcc85dc7dd16e8f7666bd"
+    },
+    "Validation/06b1750/final-report/room-preview-ui-contract.log": {
+      "bytes": 91,
+      "sha256": "c0f1eca6cf5e8f0121e6335b09cb4b887aa1fbcd236dbd1b126ab8cb9ba38cfd"
+    },
+    "Validation/06b1750/final-report/room-seal-hud-production.log": {
+      "bytes": 281,
+      "sha256": "74def0573fa324d462eb1d41799ffd1dbadc20a01c8c4b11152e21ac205dde12"
+    },
+    "Validation/06b1750/final-report/room-tactical-los-production.log": {
+      "bytes": 279,
+      "sha256": "c8737ff5ac38636573f79621824e58f1e92255dd4f64e710049fbbe0f66ce828"
+    },
+    "Validation/06b1750/final-report/route-skill-navigation.log": {
+      "bytes": 755,
+      "sha256": "7a4fe348e234cf3601bf97360165d4ad48da22f7a2d1a69b234f85c77db41165"
+    },
+    "Validation/06b1750/final-report/run-choices.log": {
+      "bytes": 35,
+      "sha256": "77d11d2a9e05acab20f685fb3e62ff507283e08d042d296742e28b8cb4c43500"
+    },
+    "Validation/06b1750/final-report/run-combat-rules.log": {
+      "bytes": 78,
+      "sha256": "e89de44218a2d36975d9db83e106c5e0b97cc3b593a0de26db7f69c51a88af5c"
+    },
+    "Validation/06b1750/final-report/run-recap.log": {
+      "bytes": 48,
+      "sha256": "682d5a85d69d985813f3a6e092b3631bc80ba0f85b6ebee3f773bb18890166e1"
+    },
+    "Validation/06b1750/final-report/runtime-compile.log": {
+      "bytes": 182,
+      "sha256": "d60f3b85e220150afffbc1af9bef0c158fdbad3b6d2272df662f7601984eff15"
+    },
+    "Validation/06b1750/final-report/safe-exit.log": {
+      "bytes": 95,
+      "sha256": "5960f9c03a0632411eabcc63b2ca41607a47d113840c2c99793d1b549ce9836c"
+    },
+    "Validation/06b1750/final-report/safe-save-flow.log": {
+      "bytes": 168,
+      "sha256": "18779ad6a7742dfcef3aa91201fe20ffee68d07cc90cf12dff3ee07d0973af40"
+    },
+    "Validation/06b1750/final-report/save-deletion.log": {
+      "bytes": 1028,
+      "sha256": "dd3cefa8bd303f757cdd5fa4f617b2e4d39e56de745c4c8d09f2867976f88aa9"
+    },
+    "Validation/06b1750/final-report/save-idempotence.log": {
+      "bytes": 1341,
+      "sha256": "59cecf112994f83dc36d58d42844f06339e346d95b6a01679291167cde790777"
+    },
+    "Validation/06b1750/final-report/scenery-presentation-production.log": {
+      "bytes": 2384,
+      "sha256": "39d5d93c71641af25148393738b9ee8b757a9136a8656b75907e3805d156b6d4"
+    },
+    "Validation/06b1750/final-report/scheduled-ticks.log": {
+      "bytes": 29,
+      "sha256": "3acbe441cb1246bd02dd97c24cf63b2b220b088671db7d3e7abe0bd0ed5f7319"
+    },
+    "Validation/06b1750/final-report/shatter-availability.log": {
+      "bytes": 563,
+      "sha256": "4d450187b4eb5b98b8d1c16bee3cc806aa6dbe73b9350af09e83cc4c5e6669eb"
+    },
+    "Validation/06b1750/final-report/shore-contact-production.log": {
+      "bytes": 309,
+      "sha256": "6cbc92fc87aba9ac7e6fde5b81a15ce5e9b78e4d3a784abc321d93c722623372"
+    },
+    "Validation/06b1750/final-report/side-event-production.log": {
+      "bytes": 647,
+      "sha256": "88d23711e8fc3bdf55fb45a31a0cbd96aea59954cb50f1cb96e1e5537b9dbebe"
+    },
+    "Validation/06b1750/final-report/side-event-rewards.log": {
+      "bytes": 112,
+      "sha256": "cfddc6a0688f0b77d4b648bf5b2959ee8f024b1a739455d5695d6323795b96e8"
+    },
+    "Validation/06b1750/final-report/skill-damage-budgets.log": {
+      "bytes": 68,
+      "sha256": "c158217843aa01c0db55d075776848b2e03917aa5cf2e062866bdd8cab1d2423"
+    },
+    "Validation/06b1750/final-report/skill-panel-navigation.log": {
+      "bytes": 1860,
+      "sha256": "ce73115db672f53e929637e80171ba9e4eb5503c5b53e409ac9a76b5442d57d8"
+    },
+    "Validation/06b1750/final-report/skill-readability-production.log": {
+      "bytes": 1790,
+      "sha256": "2fc420230019f5ba4368beff8d0cab4d05fe6ae6308c703f8fa4e2259f7fbe26"
+    },
+    "Validation/06b1750/final-report/skill-visual-recipe.log": {
+      "bytes": 70,
+      "sha256": "320bfa2aa62066cbac131c1683add201b1c9387157b3b618a7e3daf5710ce60e"
+    },
+    "Validation/06b1750/final-report/skills.log": {
+      "bytes": 66,
+      "sha256": "a097a6146571e110d8bb3f1a9074400c72cb65d340446ad3c65bbe559741f3f3"
+    },
+    "Validation/06b1750/final-report/starting-skill-budget.log": {
+      "bytes": 583,
+      "sha256": "bb2f11913df9017568df2c7363bcc88cb08df2313bee79fc7ca96d164abd8f27"
+    },
+    "Validation/06b1750/final-report/tactical-live-visual.log": {
+      "bytes": 429,
+      "sha256": "0477d9f127aa871f06727eb2f7755df0b55b792eb992204bbd2ce38bc40cfb7d"
+    },
+    "Validation/06b1750/final-report/tactical-room-geometry.log": {
+      "bytes": 114,
+      "sha256": "b6d8bf826108a28c254b9d64b90c8b5827980fdb363dcb5580f535e751900545"
+    },
+    "Validation/06b1750/final-report/tactical-room-region.log": {
+      "bytes": 111,
+      "sha256": "a13a020e9aca87503a6950cfc805f10a3422fac39437864ec778c9f096089370"
+    },
+    "Validation/06b1750/final-report/tier-reward-bands.log": {
+      "bytes": 72,
+      "sha256": "6479af6b6c74fe8bf305283065913116726bd63f5cba62e0987ad23f78a64cf8"
+    },
+    "Validation/06b1750/final-report/touch-release-latch.log": {
+      "bytes": 57,
+      "sha256": "df4c5f23e4ad795002c2655216f5f37faa477bedd89256be4921f991222082e6"
+    },
+    "Validation/06b1750/final-report/touch-scroll.log": {
+      "bytes": 104,
+      "sha256": "d5515d6bcaa743bfe6057d34b9d52a283461170cc306132dda6fc10ae36d880d"
+    },
+    "Validation/06b1750/final-report/tree-occlusion-registry.log": {
+      "bytes": 223,
+      "sha256": "e713227de49e044535b95c15b8028892de683aef74598e35672c4866d8421df2"
+    },
+    "Validation/06b1750/final-report/ui-render-cache-lifecycle.log": {
+      "bytes": 180,
+      "sha256": "26fd7c7c7e533070824a3aa9c7c7480d49e32f28be44313c730e03ff08aeb78e"
+    },
+    "Validation/06b1750/final-report/ui-render-cache.log": {
+      "bytes": 183,
+      "sha256": "3ae7b2b041d2032d656417a7477fcd233b106c93fef73b182bc1363f81bab58a"
+    },
+    "Validation/06b1750/final-report/upgrade-progression.log": {
+      "bytes": 63,
+      "sha256": "348d4beb2006686475ecf703b708f99c19350096d4cf8107b5723a8dea125b7e"
+    },
+    "Validation/06b1750/final-report/visual-motion-envelope.log": {
+      "bytes": 81,
+      "sha256": "57fd771423e7e031a424bd936123708d604f97f2eeb1bd346c9e35ea91bfe914"
+    },
+    "Validation/06b1750/final-report/water-flow-production.log": {
+      "bytes": 156,
+      "sha256": "194c66e45acebf2247ed22303ce8f00e95d6cd5f68142c35d8843f33ef1df0af"
+    },
+    "Validation/06b1750/final-report/water-presentation.log": {
+      "bytes": 83,
+      "sha256": "0dc79749db5673956c5de9fceec88c84ae2b4da0270176b5899ec1cbb1f5c70d"
+    },
+    "Validation/06b1750/final-report/weapon-structure.log": {
+      "bytes": 71,
+      "sha256": "4b0472adf5f0e74d11accbc2e48f00755b99357814c43a83d2c6bec50d282cb2"
+    },
+    "Validation/06b1750/final-report/weapon-swing-identity.log": {
+      "bytes": 257,
+      "sha256": "055f23132f31a8a3696f42d4817606a604e78071e2ae995d4dd16942f4a67795"
+    },
+    "Validation/06b1750/final-report/weaponfashionstructureproduction.log": {
+      "bytes": 187,
+      "sha256": "494c5644ce459b8f20a95966057f93d5ec2ccfaffff3901c9a6fac607c413a4c"
+    },
+    "Validation/06b1750/final-report/world-label-production.log": {
+      "bytes": 87,
+      "sha256": "aa9e860026231ad5efc307029fec56f862ed9f0a313197ad03a2f24920a6e83c"
+    },
+    "Validation/06b1750/final-report/world-loot-receipts.log": {
+      "bytes": 73,
+      "sha256": "035db0217e8d3cb0807c2cbd7e35e22402b6dc43af69d6eb522ba202cc4ccfd2"
+    },
+    "Validation/06b1750/full.log": {
+      "bytes": 90779,
+      "sha256": "361acdf055765d6c58558f894c19e2483b4c831b3ac35b78e902ebabd179f1fd"
+    },
+    "Validation/06b1750/manifest.json": {
+      "bytes": 32627,
+      "sha256": "93f6490f9d032f21aac172b9bb0006f814e87a142303c0f55fbac093f6597880"
+    },
+    "Validation/06b1750/parity-protection.json": {
+      "bytes": 71366,
+      "sha256": "2972f06ee51871645b1146ea840dd6c7814e763142cc7cd44900294f9e1dbf5f"
+    },
+    "Validation/06b1750/platform-api-report.json": {
+      "bytes": 95143,
+      "sha256": "8b7681b25b2bc8958270738eb900e074e77051d93b22c09f44ba1533cd3e84b1"
+    },
+    "Validation/06b1750/platform-api-stdout.log": {
+      "bytes": 170,
+      "sha256": "2bb80696d608fd7c80f3c52ae57213bc894ff268e0d3cd679a74191cc31f5b81"
+    },
+    "Validation/06b1750/platform-sync.json": {
+      "bytes": 6777,
+      "sha256": "5e370ea48b6fe26f3dff96419dc5723c519ec6d87233fbd57e0e2bb3bf5cd527"
+    },
+    "Validation/Facing-Cooldown-Followup/PilotFacingCooldownFixture.cs": {
+      "bytes": 6402,
+      "sha256": "1fa77d7e6c6f937870137980c1a734e7a78dce9f9f6fa85d6290be78fa6503fb"
+    },
+    "Validation/Facing-Cooldown-Followup/README.md": {
+      "bytes": 946,
+      "sha256": "6f166eef9e6a4cca1320f4e562bbe4b4ab2894b36de551c3882de3d8b4e197bb"
+    },
+    "Validation/Facing-Cooldown-Followup/archive-manifest.json": {
+      "bytes": 724,
+      "sha256": "b570675b75308029e36d07a1ce19b8ca0b8f345ac260fec515815c3ffbeeeff0"
+    },
+    "Validation/Facing-Cooldown-Followup/manifest.json": {
+      "bytes": 32142,
+      "sha256": "4b86b4d0cfcf125384069bd6605aaf6b9376510a1e6d2cb3e58a8f6b02af4e6e"
+    },
+    "Validation/Facing-Cooldown-Followup/prepare_variant.py": {
+      "bytes": 3320,
+      "sha256": "5ce9aab995c122cd5d9d1923a03a3878ccbb02df7c983009319d487c4d484245"
+    },
+    "Validation/Facing-Cooldown-Followup/raw-stdout.log": {
+      "bytes": 1500,
+      "sha256": "a58b6bfb06445146d7d3b060e67a84aeccbeb167c88b4000d1676c9667960ea2"
+    },
+    "Validation/Facing-Cooldown-Followup/run_cooldown_followup.py": {
+      "bytes": 6723,
+      "sha256": "e85284e4fa18339efab81c5f15af5bc9291fe9ff065cff9192a610fe0c504eff"
+    },
+    "Validation/Import-Preview-Readiness/BlenderPilotImport.cs": {
+      "bytes": 2901,
+      "sha256": "36e35a4a2bda060085394c1150a2b17463917a86aae8a15523ab2ac3dfb04141"
+    },
+    "Validation/Import-Preview-Readiness/Fixture.cs": {
+      "bytes": 5791,
+      "sha256": "ad3a23beff58ccd7d588e22885b272eb3dda5764480c7c704028702d4ba4bebb"
+    },
+    "Validation/Import-Preview-Readiness/NuGet.Config": {
+      "bytes": 73,
+      "sha256": "3eb413f39fb8791745d58c6769618f9ada15a480caca042d72838817c4b7c359"
+    },
+    "Validation/Import-Preview-Readiness/Preview-Runbook.md": {
+      "bytes": 5105,
+      "sha256": "97305d9265361d764b620a79a641e553e07a27e4ef39b13da43e29af72e5521d"
+    },
+    "Validation/Import-Preview-Readiness/Test.csproj": {
+      "bytes": 174,
+      "sha256": "ab29c9db3cfeb61b83afbfd6db8c2548fff0c1b90a2484d09baea7c43ebd3474"
+    },
+    "Validation/Import-Preview-Readiness/current.build.log": {
+      "bytes": 76,
+      "sha256": "395fe5953eea856fe6c810c3058e3c8fa3a61d5645cc19536e0bd386565c92bc"
+    },
+    "Validation/Import-Preview-Readiness/current.stderr.log": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "Validation/Import-Preview-Readiness/current.stdout.log": {
+      "bytes": 121,
+      "sha256": "d0613c51fd60104e2e16c26089b99bc09a9a354c5c494417942f943bc18db5dd"
+    },
+    "Validation/Import-Preview-Readiness/lost-sockets.build.log": {
+      "bytes": 76,
+      "sha256": "e6e0ad8e6037e74168e1ab793d5a53fe5976d60f4908f26f361930598a08b127"
+    },
+    "Validation/Import-Preview-Readiness/lost-sockets.stderr.log": {
+      "bytes": 268,
+      "sha256": "11ffcd128b41e20bb589a720eea2b81a7b029b25ff60ee081b5177783203262e"
+    },
+    "Validation/Import-Preview-Readiness/lost-sockets.stdout.log": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "Validation/Import-Preview-Readiness/manifest.json": {
+      "bytes": 1678,
+      "sha256": "8cc5aead7b8b1b4a935f900d67a0a6357238235823df2630a9a92bd78da2e6cb"
+    },
+    "Validation/Import-Preview-Readiness/prop-animation.build.log": {
+      "bytes": 76,
+      "sha256": "d4106fb16c4b9760db2e338ce89a865a1201871c7bc93c33c46c94d7510ee42c"
+    },
+    "Validation/Import-Preview-Readiness/prop-animation.stderr.log": {
+      "bytes": 269,
+      "sha256": "cc79c80b06e8dc54a77b9ac16812047a154f2893a4cf779b79540a323e4b7bf2"
+    },
+    "Validation/Import-Preview-Readiness/prop-animation.stdout.log": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "Validation/Import-Preview-Readiness/rawstdout.log": {
+      "bytes": 482,
+      "sha256": "05c20bed9dc08f6269bdcd8b8c520af13b7e4cd297d1476679d89abdf82334b4"
+    },
+    "Validation/Import-Preview-Readiness/run.py": {
+      "bytes": 2376,
+      "sha256": "8fcdb6beccff5445c2683030d26d2bb409a7f5c11963de295c875c73fa405f78"
+    },
+    "Validation/Import-Preview-Readiness/source-hashes.json": {
+      "bytes": 1205,
+      "sha256": "d7ddae590976e55c352b1c14e0d57a47943a49339e12ce7c181413dd0ab02616"
+    },
+    "Validation/Import-Preview-Readiness/wrong-colorspace.build.log": {
+      "bytes": 76,
+      "sha256": "950ccce170fddea0e2b11d80f248b6c886debea08dc69e55eb9ffaa93aaab36b"
+    },
+    "Validation/Import-Preview-Readiness/wrong-colorspace.stderr.log": {
+      "bytes": 272,
+      "sha256": "00e1e49ce4f44dd9e508f6183e7812c693b3c4374bcacbc2322521967df2eff4"
+    },
+    "Validation/Import-Preview-Readiness/wrong-colorspace.stdout.log": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "Validation/Import-Preview-Readiness/wrong-material.build.log": {
+      "bytes": 76,
+      "sha256": "120edd59c8dcacbe45f8e9ba823deeffbff3c5c49c61ea131a6bb71a01fc0f3c"
+    },
+    "Validation/Import-Preview-Readiness/wrong-material.stderr.log": {
+      "bytes": 281,
+      "sha256": "c76851d3afef49e333d4d4999b1ba362c25a01796a23bd31350dc7c95fb37249"
+    },
+    "Validation/Import-Preview-Readiness/wrong-material.stdout.log": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "Validation/Import-Preview-Readiness/wrong-path.build.log": {
+      "bytes": 76,
+      "sha256": "1233a18497537e28ef486830c83f0d5323829f15a9950593989678480fbba1bc"
+    },
+    "Validation/Import-Preview-Readiness/wrong-path.stderr.log": {
+      "bytes": 270,
+      "sha256": "92d093d2a677e4aae0250290faf17e1b4dda613e9c020e36a71a6d1a29c659b5"
+    },
+    "Validation/Import-Preview-Readiness/wrong-path.stdout.log": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "Validation/README.md": {
+      "bytes": 4355,
+      "sha256": "e1dcfe1d4c2300f936976b6eb337361798b3533c10a0c68d49f43f94cf7f0d98"
+    },
+    "Validation/Render-Equivalence/Render-Source-Equivalence.md": {
+      "bytes": 5115,
+      "sha256": "1745018c0d886a10a16a7f32f2d00b05ee0081ef2fcb29e8ce8665a96c2d9f2d"
+    },
+    "Validation/Render-Equivalence/accumulated-world-float-diagnostic.log": {
+      "bytes": 2594,
+      "sha256": "6c49cd2ebf274e6a05836b24b4f2bf2975ceaed4aaab82e6068c27ba80af542e"
+    },
+    "Validation/Render-Equivalence/archive-manifest.json": {
+      "bytes": 1149,
+      "sha256": "164b24013b92630c58d1594a87466f7c429a10a61b6715a1dbc302c4ccb3adb2"
+    },
+    "Validation/Render-Equivalence/byte-equivalence.json": {
+      "bytes": 13604,
+      "sha256": "fc112f53a0bba8cdbf0fe3632672b131af6055c94bec65aff93ae1c9645f2bcb"
+    },
+    "Validation/Render-Equivalence/generated-harness/BasicActionTimeline.cs": {
+      "bytes": 1138,
+      "sha256": "2adc3cb4905edcdd446af20160019045fc6a7c2d97f7be18d9ba31c000e6369c"
+    },
+    "Validation/Render-Equivalence/generated-harness/BlenderPilotLayerProductionFixture.cs": {
+      "bytes": 13680,
+      "sha256": "6ac7100695eb3234be0ccf2ad686ba064b81c1b88ef25edb0edce4c941258ccc"
+    },
+    "Validation/Render-Equivalence/generated-harness/BlenderPilotPosePolicy.cs": {
+      "bytes": 2136,
+      "sha256": "11b472379d1fe2f25758629af4def79fb7f0ff7b01ec5f5561ecb69484b07d8d"
+    },
+    "Validation/Render-Equivalence/generated-harness/BlenderPilotReadinessTests.cs": {
+      "bytes": 3629,
+      "sha256": "7ef86ed693db03884719f1acc0b3ed875e94835783ff83c35b7c3c36812376a4"
+    },
+    "Validation/Render-Equivalence/generated-harness/BlenderPilotVisual.cs": {
+      "bytes": 11498,
+      "sha256": "78b18dc881b5315151153d3a5c98df14bf0757319d69338a3f2945383050794c"
+    },
+    "Validation/Render-Equivalence/generated-harness/CombatBalance.cs": {
+      "bytes": 4325,
+      "sha256": "6e1f8ac93dd53bb5c77c0c74a3b9fd05e1350c9d6f05781b465fd21196a73404"
+    },
+    "Validation/Render-Equivalence/generated-harness/CombatModel.BlenderPilot.cs": {
+      "bytes": 6004,
+      "sha256": "fa08e3bb265f8d4cfbd149919e6862e5283f9f9113a50f12962a406b5292dd05"
+    },
+    "Validation/Render-Equivalence/generated-harness/CombatModel.WeaponRig.cs": {
+      "bytes": 3011,
+      "sha256": "3cb99dbe8fc29d55731edc282bf0a6cc60f305195c144665d07bfc59c5e4360b"
+    },
+    "Validation/Render-Equivalence/generated-harness/Fixture.cs": {
+      "bytes": 16422,
+      "sha256": "66040ff90c41e3c582673293163db603bde2fe3c6afc8197835e75b9a5e6cfd2"
+    },
+    "Validation/Render-Equivalence/generated-harness/LocomotionPoseState.cs": {
+      "bytes": 3329,
+      "sha256": "cf16e3dfe355eeb5b3078a66e58280bc7ec2265962dd8278e5edff68223718f1"
+    },
+    "Validation/Render-Equivalence/generated-harness/Methods.cs": {
+      "bytes": 8117,
+      "sha256": "1d1b0836cff6f53e9e67a4f24cfd0257f92b5db6d6be7b2ef0143b36b4035915"
+    },
+    "Validation/Render-Equivalence/generated-harness/NuGet.Config": {
+      "bytes": 73,
+      "sha256": "e497501960554d323eef45860c14474958accd1ae7f3ae6f95b10e4c1d340401"
+    },
+    "Validation/Render-Equivalence/generated-harness/PilotFacingCommitProductionFixture.cs": {
+      "bytes": 9233,
+      "sha256": "cf54f88b1c6ee0e0d692c60454fc1da1346dbe21e0863f10006aaddfe944deaa"
+    },
+    "Validation/Render-Equivalence/generated-harness/Player.cs": {
+      "bytes": 9460,
+      "sha256": "5f8653ddd1573e49dbd87d248e007fa484737404a4a0c43e271281a5c34c8283"
+    },
+    "Validation/Render-Equivalence/generated-harness/SkillDamageBudgets.cs": {
+      "bytes": 8836,
+      "sha256": "294f358ae35868369f8f43a49996b7a83050b78122f7851121d68418892410ec"
+    },
+    "Validation/Render-Equivalence/generated-harness/Test.csproj": {
+      "bytes": 143,
+      "sha256": "558d4da9a78003b654601c6d5a9a6e796f71831935fa549d095835e3c4c59692"
+    },
+    "Validation/Render-Equivalence/generated-harness/WeaponStructure.cs": {
+      "bytes": 1498,
+      "sha256": "a96670469972398e5a810341f2842117efd16211ce09ae7c28539adb371a61ec"
+    },
+    "Validation/Render-Equivalence/probe-hashes.json": {
+      "bytes": 2584,
+      "sha256": "77b58eb25efa60974c695c6c9a0cbcf217cdb12585d270a491dbef83410a2c67"
+    },
+    "Validation/Render-Equivalence/probe.log": {
+      "bytes": 164,
+      "sha256": "0edf737a383ac4c48142643639098a53cbf0403b6f6c08401904839eda11fd38"
+    },
+    "Validation/Render-Equivalence/probe.py": {
+      "bytes": 6539,
+      "sha256": "731175a1ac828f2791aba359930bc7e289969449d6a250104e8709eb8c4bb41d"
+    },
+    "Validation/Render-Equivalence/run_locked.py": {
+      "bytes": 10377,
+      "sha256": "33795555b83135050d9cecef0819566f1e591aa15e229214569fc87c8fa2c034"
+    },
+    "Validation/Render-Equivalence/trajectory-equivalence.json": {
+      "bytes": 710,
+      "sha256": "2be31c790647ff6bc6898ce4b626c9c4d1c9995c7a5035d7eb95c5cd711b3577"
+    },
+    "Validation/dcd75ac/api-Android/NuGet.Config": {
+      "bytes": 73,
+      "sha256": "e497501960554d323eef45860c14474958accd1ae7f3ae6f95b10e4c1d340401"
+    },
+    "Validation/dcd75ac/api-Android/compile.log": {
+      "bytes": 76,
+      "sha256": "38f5561a0db2a2d26f8462f36e114ced057c189effcd6e87dc5a62a42c06d52e"
+    },
+    "Validation/dcd75ac/api-Android/project/Validation.csproj": {
+      "bytes": 43828,
+      "sha256": "ec59dbb4291f4e5c9a3c7e591e8358c443e6177fc176b56ff06ce035743b526e"
+    },
+    "Validation/dcd75ac/api-Windows/NuGet.Config": {
+      "bytes": 73,
+      "sha256": "e497501960554d323eef45860c14474958accd1ae7f3ae6f95b10e4c1d340401"
+    },
+    "Validation/dcd75ac/api-Windows/compile.log": {
+      "bytes": 76,
+      "sha256": "27b53e579da39bede33410ce6a37011f533011120f2054be4167cb53e02b17fc"
+    },
+    "Validation/dcd75ac/api-Windows/project/Validation.csproj": {
+      "bytes": 46395,
+      "sha256": "642d69c93d5bb2e7c86639a61ce27eb10245a950383c711ee3686d064425325b"
+    },
+    "Validation/dcd75ac/api-iOS/NuGet.Config": {
+      "bytes": 73,
+      "sha256": "e497501960554d323eef45860c14474958accd1ae7f3ae6f95b10e4c1d340401"
+    },
+    "Validation/dcd75ac/api-iOS/compile.log": {
+      "bytes": 76,
+      "sha256": "19950c347b121b09ac2afff0082555b552b592e66d0ef59462c5c002cb52454b"
+    },
+    "Validation/dcd75ac/api-iOS/project/Validation.csproj": {
+      "bytes": 42800,
+      "sha256": "46f2caecb723c46eeca374e3d08e4d2fe52386c0d934f311ff828995778522b8"
+    },
+    "Validation/dcd75ac/final-handoff.json": {
+      "bytes": 3044,
+      "sha256": "1aecd4a142527bfc3670d1026c5317fbf42ca5267308846d48b764e34fb8a296"
+    },
+    "Validation/dcd75ac/final-report/BlenderPilotAdapterProductionTests.log": {
+      "bytes": 1841,
+      "sha256": "1a04a3d603607959c59281dde06303c22b46cf1f6fff74ca4c3fe5689ca18a17"
+    },
+    "Validation/dcd75ac/final-report/PilotFacingCommitProductionTests.log": {
+      "bytes": 281,
+      "sha256": "f69a43921e9078d9af767d68c0eba146b04376722c73a777a354668d4403ea74"
+    },
+    "Validation/dcd75ac/final-report/PilotStarterCompatibilityTests.log": {
+      "bytes": 210,
+      "sha256": "5c34766c810997affd5e7910e4a40baf9b1d0f13a8c005ef06839bf497b73e2b"
+    },
+    "Validation/dcd75ac/final-report/adventure-entry-truth.log": {
+      "bytes": 90,
+      "sha256": "9327600cb75e239b08738306ce624743bbcad379db686ff436b460435dc44ce2"
+    },
+    "Validation/dcd75ac/final-report/adventure-progression.log": {
+      "bytes": 95,
+      "sha256": "7a3ac7abf81c50cd082b343c5e49d9d359c79aa8616ef5f4c461794102c09ea1"
+    },
+    "Validation/dcd75ac/final-report/adventure-results.log": {
+      "bytes": 69,
+      "sha256": "d33644a54879d0972d507f5714e6c4a2910742bc6f8e3ca0e04b8ae225286a43"
+    },
+    "Validation/dcd75ac/final-report/anchored-impact-coverage.log": {
+      "bytes": 2410,
+      "sha256": "2009d27ab0d93f8555fa0e92d66c7dd0de6f406ce329beca9bfb2f7262ff18d5"
+    },
+    "Validation/dcd75ac/final-report/android-lifecycle.log": {
+      "bytes": 77,
+      "sha256": "9b01d0619f5abf31b71a4144ca18c6148f563a73916d3acada6685bed7e21475"
+    },
+    "Validation/dcd75ac/final-report/application-pause-state.log": {
+      "bytes": 33,
+      "sha256": "c43651fb4f0c888dbcc9dc4fd0f432e08473989f93f76b44b571cf2a889f0ee9"
+    },
+    "Validation/dcd75ac/final-report/authored-scenery-production.log": {
+      "bytes": 166,
+      "sha256": "340d0f7529fd03fe295212c1a1cd7927eb7d50504304bdce7dd947311c35304c"
+    },
+    "Validation/dcd75ac/final-report/basic-action-timeline.log": {
+      "bytes": 76,
+      "sha256": "8d6c3cf4264ac185a671de7ef7b48d7a658424832d1b3f3a828355654f398add"
+    },
+    "Validation/dcd75ac/final-report/blender-pilot-pose.log": {
+      "bytes": 1276,
+      "sha256": "9d16d212adf5a6dc2ee0a357bde9dd17bff438be883c75d8b41ce0105a29ff48"
+    },
+    "Validation/dcd75ac/final-report/blessing-damage-production.log": {
+      "bytes": 1929,
+      "sha256": "611d83f47ba84387d0764486bc1bd173f9b1f077facfefbdbbb498413b0a837e"
+    },
+    "Validation/dcd75ac/final-report/blocked-combat-update-production.log": {
+      "bytes": 327,
+      "sha256": "cba81b1b7cbceab6699f3a9f7373d7e51471080536da649dd965c2c7e3acf0f2"
+    },
+    "Validation/dcd75ac/final-report/boss-attack-policy.log": {
+      "bytes": 60,
+      "sha256": "14745586c79fc9f622b0f3c7667d671e4a5bc07e28f9f3253cc0cd80da330ff0"
+    },
+    "Validation/dcd75ac/final-report/boss-sweep-capsule-production.log": {
+      "bytes": 159,
+      "sha256": "846b8d3dc60d02bed214177eaeb6d847df5470614b9dbb911bfa9869fc7a59f8"
+    },
+    "Validation/dcd75ac/final-report/build-presets.log": {
+      "bytes": 177,
+      "sha256": "d4da1b5fc8d100e865c327383ae7a0a90a93db2250ca936923ee0e1649a6fdc9"
+    },
+    "Validation/dcd75ac/final-report/build-size-policy.log": {
+      "bytes": 67,
+      "sha256": "dc62613291f9012aea8e0d0a737c690e1946c208ea5d5d720e65ad86d962d1a4"
+    },
+    "Validation/dcd75ac/final-report/burn-finale-production.log": {
+      "bytes": 1214,
+      "sha256": "14ccc5133f6893585d6f22021579551f8cd46a464d2217503c8e7dd5e055402a"
+    },
+    "Validation/dcd75ac/final-report/camera-visibility.log": {
+      "bytes": 57,
+      "sha256": "9f4494d5f4d85abb06837acb46ec4754c3e5311e995045550ce708522f318850"
+    },
+    "Validation/dcd75ac/final-report/casterchargeproduction.log": {
+      "bytes": 198,
+      "sha256": "68062576029207439ee9eb665b9661118ca04330a32fda3cba5be626fbb9adaf"
+    },
+    "Validation/dcd75ac/final-report/chapter-combat-production.log": {
+      "bytes": 1642,
+      "sha256": "989ce36e9cf0cc3be4e89066a609b96d296b6e9bbc8e8b05101e0ed0b71073fe"
+    },
+    "Validation/dcd75ac/final-report/chapter-entry-production.log": {
+      "bytes": 3162,
+      "sha256": "26c542bdb4cc8a1485b5db2a439a13e99388e6b6ee46995e8036b0269ea5943b"
+    },
+    "Validation/dcd75ac/final-report/chapter-host-production.log": {
+      "bytes": 1496,
+      "sha256": "6c378f050589ec99421f5abb0322c2cbe1dcc5f5aca6e2d107db690c3a3b6836"
+    },
+    "Validation/dcd75ac/final-report/chapter-mobile-support.log": {
+      "bytes": 169,
+      "sha256": "a49e5bc3b22c7df65fee0c942d6e31a003e06f2cee13385bf55f847474b264b0"
+    },
+    "Validation/dcd75ac/final-report/chapter-presentation.log": {
+      "bytes": 79,
+      "sha256": "ede9862c26bfeb4b7a286dc8b85f732b76628a69c27e6f04f7fc68871467c3d7"
+    },
+    "Validation/dcd75ac/final-report/chapter-progression.log": {
+      "bytes": 420,
+      "sha256": "5375a879c1cb41f37384fa1b502f033802adc1caadbcf94e5950ee1de7c1d617"
+    },
+    "Validation/dcd75ac/final-report/chapter-return-time-scale.log": {
+      "bytes": 546,
+      "sha256": "e559a2928281fdf7e64ba9a6f8a9c9b4b705da7593cf07397624e75ad6beed2c"
+    },
+    "Validation/dcd75ac/final-report/chapter-room-geometry.log": {
+      "bytes": 821,
+      "sha256": "d9ea81c5d74ce94c91b5aa104a6bcd343d54e6127db3d726b59867fd4c062b9f"
+    },
+    "Validation/dcd75ac/final-report/chapter-ui-wiring.log": {
+      "bytes": 77,
+      "sha256": "777ef6c77c54432b227b37c5e543d515b3e241ce012c4424200c4726a7600c49"
+    },
+    "Validation/dcd75ac/final-report/chapterexperience.log": {
+      "bytes": 942,
+      "sha256": "28b2b841d6675cb3498ae733970edeceefa514b78b76aae1e84f57cde86575e0"
+    },
+    "Validation/dcd75ac/final-report/chapternodeworldproduction.log": {
+      "bytes": 204,
+      "sha256": "cc7fd9e51aa3c496c62170659be95233a4a37af2fda9f80f635ea36aa40bb6cd"
+    },
+    "Validation/dcd75ac/final-report/chaptersealrouteproduction.log": {
+      "bytes": 566,
+      "sha256": "fcd31446a99bd68aa58772ad68c63b6ece31a00eca2f7a2b66328aaba7c3ab63"
+    },
+    "Validation/dcd75ac/final-report/chest-composite-production.log": {
+      "bytes": 158,
+      "sha256": "dd6fd6e93d665b7a7ff54cd2d758bd8f6fe240fc1da896dbe244a9fbf9eb2682"
+    },
+    "Validation/dcd75ac/final-report/chest-currency-deltas.log": {
+      "bytes": 58,
+      "sha256": "f1518d92eaac8d7c62452cada8fccfd5d9656054e1a0e985a174928453ca9a13"
+    },
+    "Validation/dcd75ac/final-report/chest-pause-back-production.log": {
+      "bytes": 126,
+      "sha256": "01c50771f47f294ea27f4798f2ac5b52a0e8be8745badd9a1bf21444b312cf22"
+    },
+    "Validation/dcd75ac/final-report/chest-reveal-presentation.log": {
+      "bytes": 65,
+      "sha256": "f21152a18e0435ed57ceab57488f2cb260c14c32a09e93e0ef041a5c9ae15d32"
+    },
+    "Validation/dcd75ac/final-report/chest-trial-production.log": {
+      "bytes": 146,
+      "sha256": "3fd70cd16159f80e287d007638b995980ed4ace7c7cacf5543c770532a93256b"
+    },
+    "Validation/dcd75ac/final-report/classtierstructureproduction.log": {
+      "bytes": 222,
+      "sha256": "e3afbff9810ceebce070ca2b73d8773a5fb1ff9d70125a7706962939e22d0dd9"
+    },
+    "Validation/dcd75ac/final-report/collection-compact-geometry.log": {
+      "bytes": 213,
+      "sha256": "c02c4702ef85520c7a1e08e0305b81e75064e39785e09477dd45bef926ef8c3a"
+    },
+    "Validation/dcd75ac/final-report/collection-preview-composition.log": {
+      "bytes": 95,
+      "sha256": "0b64267901b5e192db6ff728feb70ead472e13d57b0cc626ff684b06bf69a7ae"
+    },
+    "Validation/dcd75ac/final-report/collection-render-lifecycle-modern.log": {
+      "bytes": 96,
+      "sha256": "6db2fe11ebbe90e0ae63ac81fba089be5714d0740e247339dd37d627cd4ea7d2"
+    },
+    "Validation/dcd75ac/final-report/collection-render-lifecycle.log": {
+      "bytes": 96,
+      "sha256": "6db2fe11ebbe90e0ae63ac81fba089be5714d0740e247339dd37d627cd4ea7d2"
+    },
+    "Validation/dcd75ac/final-report/collection-stage-recovery-negative.log": {
+      "bytes": 259,
+      "sha256": "fce02784bc8aed60b5573ea6559c9e4022f60fe4e4265d7b455b87060d9b9a82"
+    },
+    "Validation/dcd75ac/final-report/collectionposeisolationproduction.log": {
+      "bytes": 387,
+      "sha256": "5f556e42bbf960a4fcc4da02a513286f2e4fc624bb492489465777513a2c5ef2"
+    },
+    "Validation/dcd75ac/final-report/collectionpreviewpresentationproduction.log": {
+      "bytes": 305,
+      "sha256": "c0dd3057c80d5001311ec290b92fa50c8de191128fec5dfd2e22c296c7a682b7"
+    },
+    "Validation/dcd75ac/final-report/combat-balance.log": {
+      "bytes": 39,
+      "sha256": "3b837de24f84a64c8bee4dcb67aedb2e3070b3f3e04958fe1cfc280d410fdde3"
+    },
+    "Validation/dcd75ac/final-report/combat-opportunity-slot.log": {
+      "bytes": 624,
+      "sha256": "2289995fde1bcadb4f28ca4c0d20ccda13720622aa9b8fb8785810d96b02bcf6"
+    },
+    "Validation/dcd75ac/final-report/combat-opportunity.log": {
+      "bytes": 54,
+      "sha256": "44e30466d5bed89ada1d61a9b52cea3160df352ea17f53dd8355a27b6996d30c"
+    },
+    "Validation/dcd75ac/final-report/combat-pacing-followup.log": {
+      "bytes": 35,
+      "sha256": "af91c31d836019e16d3178a943fd46c424a61353dfc17ce37dd3a2c2cfc77974"
+    },
+    "Validation/dcd75ac/final-report/combat-readability-production.log": {
+      "bytes": 658,
+      "sha256": "081e7a2fb62c55f3826377a9cf3af917cf7210070d074960b4862534cf75a6ce"
+    },
+    "Validation/dcd75ac/final-report/combat-review-events.log": {
+      "bytes": 108,
+      "sha256": "828f3e3b93495edcec86e76523cba3df8422dfbe8f049cfd60ad0bbc7dd401ff"
+    },
+    "Validation/dcd75ac/final-report/combat-review-impact-production.log": {
+      "bytes": 368,
+      "sha256": "80bd63c6baff333814528cce141655c8631b8cfdbb383b380de6b240642a346e"
+    },
+    "Validation/dcd75ac/final-report/combat-review-instrumentation.log": {
+      "bytes": 221,
+      "sha256": "fffa979be385dc075ab491c24e8c92334d51fc16f13f1f3f356b6faf860f5290"
+    },
+    "Validation/dcd75ac/final-report/combat-review-object-id-legacy.log": {
+      "bytes": 119,
+      "sha256": "582a78abaa2942674752bbac4d8765ef4304b8aabecfda6eab2e75ca9055eba2"
+    },
+    "Validation/dcd75ac/final-report/combat-review-object-id-modern-contract.log": {
+      "bytes": 119,
+      "sha256": "582a78abaa2942674752bbac4d8765ef4304b8aabecfda6eab2e75ca9055eba2"
+    },
+    "Validation/dcd75ac/final-report/combat-review-rules.log": {
+      "bytes": 43,
+      "sha256": "8931adb40752e3dc719460804f393c68b4d05f20c126299a6141c8b48a386198"
+    },
+    "Validation/dcd75ac/final-report/combat-sight-traversal.log": {
+      "bytes": 74,
+      "sha256": "7655fb3881528356258666e6ee7e7f25ffced57df9bef01109acf4bf2362532d"
+    },
+    "Validation/dcd75ac/final-report/combat-sight.log": {
+      "bytes": 49,
+      "sha256": "c13769d0200ae188c1fb9c57d9278921aee4f70acaca2e6c0afae6d1d3f1c78c"
+    },
+    "Validation/dcd75ac/final-report/combat-text-layout.log": {
+      "bytes": 55,
+      "sha256": "f0ea690f68506f97a3a6bed90b541349ccc3d2aaf530a06dbfe0a933fca43339"
+    },
+    "Validation/dcd75ac/final-report/combo-resource-budgets.log": {
+      "bytes": 80,
+      "sha256": "c26a0968b1f02f66d6e7caa8c089e4367265ea849fb7fe259910c91d0c134893"
+    },
+    "Validation/dcd75ac/final-report/companion-appearance.log": {
+      "bytes": 419,
+      "sha256": "2c1630dc37ef5af883f083803c3d3bd58b6d69f728788196dcebe7b536ef923c"
+    },
+    "Validation/dcd75ac/final-report/companion-directive.log": {
+      "bytes": 39,
+      "sha256": "f53bc76a3d25db75de6ffd23615b18ce571d2985cfdea6b8aa1d7c0394246974"
+    },
+    "Validation/dcd75ac/final-report/companion-intent-production.log": {
+      "bytes": 1218,
+      "sha256": "aa2a9e6068039eca1822a1c5ff267163cacc460b9d715340fae7e658ffbc80b8"
+    },
+    "Validation/dcd75ac/final-report/companion-path-allocation.log": {
+      "bytes": 2841,
+      "sha256": "1dce357223637701fd4ccfdd2c3acad2adb36de9958efc6a872174db6a1d7e46"
+    },
+    "Validation/dcd75ac/final-report/companion-rules.log": {
+      "bytes": 38,
+      "sha256": "84c6d55afe76dc03f45f61c1f12c9934100cf78a890f8e37c84719f06910109d"
+    },
+    "Validation/dcd75ac/final-report/contract-snapshot-production.log": {
+      "bytes": 125,
+      "sha256": "00170fad3febb1ba66668af393109b704127363392de0a92270aee4eb683b9ca"
+    },
+    "Validation/dcd75ac/final-report/costume-layers.log": {
+      "bytes": 79,
+      "sha256": "8772e7ab5679d251698b35644201bd3b884257bfa08ccda9414fde338b23b4ec"
+    },
+    "Validation/dcd75ac/final-report/costume-recipes.log": {
+      "bytes": 83,
+      "sha256": "48361f3d4d0aac778d1cef23714c4bdac211090c62ad4efda475437ca3376c3a"
+    },
+    "Validation/dcd75ac/final-report/decoration-budget.log": {
+      "bytes": 52,
+      "sha256": "9f98e6e96e6bc00e023a4f371aedeb958ad6b5365b51f6ef19ecf567158f3dcc"
+    },
+    "Validation/dcd75ac/final-report/deferred-room-choice.log": {
+      "bytes": 69,
+      "sha256": "137b8f66031788189b7b3b0cf3a0fd308b29cfb3f0459d5b37f8335bc862adf0"
+    },
+    "Validation/dcd75ac/final-report/dense-finale-production.log": {
+      "bytes": 177,
+      "sha256": "f9869c9307beb1daa6b898bee2ef4ba911a6b8d9658e86a655d7219ce6c7444f"
+    },
+    "Validation/dcd75ac/final-report/desktop-opportunity-hotbar.log": {
+      "bytes": 622,
+      "sha256": "eaa3e7b3089220e735a46bf51866fa217ba4d06d05301ece7532fb2159a77cc5"
+    },
+    "Validation/dcd75ac/final-report/destructible-props.log": {
+      "bytes": 48,
+      "sha256": "98b7fb6a4b605d4e45517c0e56b1d05f0f77a03b345ba01c5a974662b5ad027a"
+    },
+    "Validation/dcd75ac/final-report/destructible-traversal.log": {
+      "bytes": 46,
+      "sha256": "c3d9a4f0fef336fc7d98b9274aeee8c8a942b12ae1070d05a1c8e395f550fb90"
+    },
+    "Validation/dcd75ac/final-report/economy-goal-ui.log": {
+      "bytes": 7778,
+      "sha256": "b713fdcdce534a953e262d1ae29727cb2ced37aa31a97de5b20c079868298d6d"
+    },
+    "Validation/dcd75ac/final-report/economy-growth.log": {
+      "bytes": 1131,
+      "sha256": "0ed8a56be318ab7997561a5af9122bb656dfbf8de59d4bc8a8fb3c30d096af57"
+    },
+    "Validation/dcd75ac/final-report/effectpriorityproduction.log": {
+      "bytes": 158,
+      "sha256": "6e6eeca1d6286af566fcf496750898aeababfa12fa3e488cd7b55840d6bc41de"
+    },
+    "Validation/dcd75ac/final-report/elemental-field-continuity.log": {
+      "bytes": 295,
+      "sha256": "b332bf5cae3986633fbf9c5031f8f17ad28fe53f37a2bcd6c21c7d8b17f45d45"
+    },
+    "Validation/dcd75ac/final-report/elemental-priority-production.log": {
+      "bytes": 346,
+      "sha256": "629cdd1bab78a975614a3236c357789953384c4ffa68c6e224953d1a95c4af19"
+    },
+    "Validation/dcd75ac/final-report/encounter-plans.log": {
+      "bytes": 88,
+      "sha256": "d3b9fb101f27b77314d71a973c12d2b9f567408d73b42c35b68426265a90a8cd"
+    },
+    "Validation/dcd75ac/final-report/enemy-impact-contour.log": {
+      "bytes": 173,
+      "sha256": "0196f14bf00f1b06072126b62eb4b2669b2b6c428c23027480f8dc3ccbc1fc39"
+    },
+    "Validation/dcd75ac/final-report/enemy-kill-rewards.log": {
+      "bytes": 669,
+      "sha256": "4ec8c386e70b2a656dd44a7fc17e91c6edb142e95d9e64a59f4f79899185b4da"
+    },
+    "Validation/dcd75ac/final-report/environment-light-profile.log": {
+      "bytes": 98,
+      "sha256": "ed94e4fae813e5270854dbce20935702f4bef9042d5de3306b4cdb39c6ee2e13"
+    },
+    "Validation/dcd75ac/final-report/environment-readability.log": {
+      "bytes": 129,
+      "sha256": "23817af5cda792fca4e89bbee7cf7b9e008287c3a0d0b1cadbfc50ab1dbc2ac4"
+    },
+    "Validation/dcd75ac/final-report/equipment-appearance-production.log": {
+      "bytes": 404,
+      "sha256": "835fd3490afc16887462c9312034c081e286fc8d7adb64a1603f07dc67227256"
+    },
+    "Validation/dcd75ac/final-report/equipment-attachment-source.log": {
+      "bytes": 131,
+      "sha256": "de35efed700cd0b38c37bc76491099f5f32086a7859e9995917730eb1d812ba3"
+    },
+    "Validation/dcd75ac/final-report/equipment-attachment.log": {
+      "bytes": 124,
+      "sha256": "c5d2542329f38c2a79deea8f433dbf1ece22bf051283d26ebbd18a3185104cc5"
+    },
+    "Validation/dcd75ac/final-report/equipment-comparison.log": {
+      "bytes": 78,
+      "sha256": "3f89fb7c665253111ae224b1d1d340bd49367ebbb09890e14e51d7dfad4a2df1"
+    },
+    "Validation/dcd75ac/final-report/equipment-composition-production.log": {
+      "bytes": 371,
+      "sha256": "4aacc40eadafe274dc4906a711424fccd35e3493770ef6c2da4ef98d89f0064b"
+    },
+    "Validation/dcd75ac/final-report/equipment-lookups.log": {
+      "bytes": 109,
+      "sha256": "f3594457e699c3860ca4af4f17d8e965020ab4e697765cb846cced1ca8dd6cff"
+    },
+    "Validation/dcd75ac/final-report/escape-room-formation.log": {
+      "bytes": 97,
+      "sha256": "1e95fc08499eea2620263f3e41b386df33f13b47975e13f8099fd80c666f9a56"
+    },
+    "Validation/dcd75ac/final-report/expedition-modes.log": {
+      "bytes": 39,
+      "sha256": "26ade850b8004a36792f4a5ab8c191125ed99732675969ed9a3385b246d1c98e"
+    },
+    "Validation/dcd75ac/final-report/explicit-action-persistence.log": {
+      "bytes": 85,
+      "sha256": "0ea66ea3ddf3f11a8255cbf32afe983bfcccfd7ef9a0a4f6ea09307b28385f37"
+    },
+    "Validation/dcd75ac/final-report/fading-combat-effect-lifecycle.log": {
+      "bytes": 186,
+      "sha256": "99aae5b67625c2ac4fa7819e9c3edd3174a9814ba6a4c30437a9ae63e9a13b0b"
+    },
+    "Validation/dcd75ac/final-report/filled-vfx-allocation.log": {
+      "bytes": 701,
+      "sha256": "3f191e1848943864d488a10e04b09b82b96cc46171a30432a9a43f21ef8e39cb"
+    },
+    "Validation/dcd75ac/final-report/filled-vfx.log": {
+      "bytes": 33,
+      "sha256": "339dc289b0c812a78867968aaeac6233bf54cb23360942796316d6728c6476f3"
+    },
+    "Validation/dcd75ac/final-report/game-font-android.log": {
+      "bytes": 95,
+      "sha256": "82b9d11d5174c800d04aec7ed510f7053307713d95c041e644a90fc4a284a8b7"
+    },
+    "Validation/dcd75ac/final-report/game-font-desktop.log": {
+      "bytes": 95,
+      "sha256": "ecbfdd5cdc868b052de4b9b825fee4a72f80b230be3512657baecf0e3dc0952d"
+    },
+    "Validation/dcd75ac/final-report/game-font-ios.log": {
+      "bytes": 95,
+      "sha256": "82b9d11d5174c800d04aec7ed510f7053307713d95c041e644a90fc4a284a8b7"
+    },
+    "Validation/dcd75ac/final-report/growth-navigation-source.log": {
+      "bytes": 110,
+      "sha256": "b9fe152f490d01812adb323f587165f1c0802cfb151c6d17c74fd9b6f46359ef"
+    },
+    "Validation/dcd75ac/final-report/guard-return.log": {
+      "bytes": 677,
+      "sha256": "6dcd5409dcdfd4de56bdb7009eeb7ee1b7589ffff3a384c864ee90fb07fe3bbc"
+    },
+    "Validation/dcd75ac/final-report/guardian-charge-pose.log": {
+      "bytes": 95,
+      "sha256": "d66a3f44174b9e6c96348a061e41a74f4901ebfad257750ffdfd2b52366e89e6"
+    },
+    "Validation/dcd75ac/final-report/hero-pose-commit.log": {
+      "bytes": 264,
+      "sha256": "0c211fa43820a95ed7ca3920856ea1996738e7bf03e7101b6f17693a02048336"
+    },
+    "Validation/dcd75ac/final-report/hold-point-state.log": {
+      "bytes": 58,
+      "sha256": "0085a00f76d9c23596853b58a5ec512b7a60d94ac230340e2e8fc874970caa7f"
+    },
+    "Validation/dcd75ac/final-report/hotbar-reset.log": {
+      "bytes": 91,
+      "sha256": "b7904e01da546745d5ffc45ecec87c9c8750e7124e3b0a5a59a0e1c2f1cc3c68"
+    },
+    "Validation/dcd75ac/final-report/hub-economy.log": {
+      "bytes": 54,
+      "sha256": "8df8d91b74aaef74b4574736c699475b143bbd86e84e560a7932a529d1189af5"
+    },
+    "Validation/dcd75ac/final-report/hub-settlement-geometry.log": {
+      "bytes": 75,
+      "sha256": "9e0cbe2d0b41951902ad489d42f80c0babe46c0d2bc62ecf3b311a1852b6f6c2"
+    },
+    "Validation/dcd75ac/final-report/interface-safety.log": {
+      "bytes": 44,
+      "sha256": "7dc37134a556e6f02f7c491682666f704103954de13acbe6a6e9073741869864"
+    },
+    "Validation/dcd75ac/final-report/large-boss-motion.log": {
+      "bytes": 84,
+      "sha256": "b3a338c847f0312020fd146ee2a8e2ae01a4e24ebcf5cadd0bf81cf8b5524ae5"
+    },
+    "Validation/dcd75ac/final-report/large-boss-phases.log": {
+      "bytes": 29,
+      "sha256": "0a331988bbc82d0314de9214aba63366a7721f923b20f828951a7950128a5510"
+    },
+    "Validation/dcd75ac/final-report/large-boss-shutdown.log": {
+      "bytes": 294,
+      "sha256": "2b4908aec379019f5dcca95175aa2cf97534c4db794fbbecd01cc41b30465c5d"
+    },
+    "Validation/dcd75ac/final-report/level-up-point-feedback.log": {
+      "bytes": 117,
+      "sha256": "95f24d1850dd6e3c6b246c8616b2221637d6079dd79c06e9732b09d4e1a6f67a"
+    },
+    "Validation/dcd75ac/final-report/locomotion-poses.log": {
+      "bytes": 90,
+      "sha256": "93e93fad1d91c19ff088a8f1082377d675d066dc5eb629967aa46411722ff4ca"
+    },
+    "Validation/dcd75ac/final-report/mechanism-evidence-production.log": {
+      "bytes": 223,
+      "sha256": "d1b7c5739fc80aac5686fa7dc217df92061cc2a594dd3788b60041e1cc2d16dc"
+    },
+    "Validation/dcd75ac/final-report/milestone-goal-surface.log": {
+      "bytes": 2181,
+      "sha256": "0f2a7cc68a7816363ed604c9b769160f8383be1497e0f2f16fca426a252ed89f"
+    },
+    "Validation/dcd75ac/final-report/mobile-blessing-preview-production.log": {
+      "bytes": 313,
+      "sha256": "ce8cb8e5a1ae36cc44dca4c1f92bf8682f479f4085729f4a4265d53d1ea76759"
+    },
+    "Validation/dcd75ac/final-report/mobile-camera.log": {
+      "bytes": 76,
+      "sha256": "5f8345cf1f1f96c60526fdc9c428559c8385845b456f0be21c6d46f7c2c3e1e0"
+    },
+    "Validation/dcd75ac/final-report/mobile-collection-layout.log": {
+      "bytes": 56,
+      "sha256": "15a8cc5baf16a3fb8c52677b698866fadaf2afe9616839812399f2ee79fb9217"
+    },
+    "Validation/dcd75ac/final-report/mobile-combat-feedback.log": {
+      "bytes": 42,
+      "sha256": "c4eb229e6abba7f59163eae3c269aada77a39cc9ab2dc2a2201a051236d5356a"
+    },
+    "Validation/dcd75ac/final-report/mobile-inventory-back-production.log": {
+      "bytes": 2023,
+      "sha256": "e8985beb5aece0db7ae43b3bd7b400bbc613684d7d53cb835ccda715782c332d"
+    },
+    "Validation/dcd75ac/final-report/mobile-layout.log": {
+      "bytes": 49,
+      "sha256": "91cd98f8aaa09c15ff0bdd2a7ba9c2fc162a5adead0781acf244796f778c8e94"
+    },
+    "Validation/dcd75ac/final-report/mobile-pause-navigation.log": {
+      "bytes": 57,
+      "sha256": "7ec28cba45afdcda9fcdb24b3e6b0a84c0b520f27631f657b4d6da8f5cbc57fd"
+    },
+    "Validation/dcd75ac/final-report/mobile-room-objective.log": {
+      "bytes": 94,
+      "sha256": "c5cfed54a3c4a595e73ab1cb21356044c8bf1ed3f91a99ba2d434380d37fe799"
+    },
+    "Validation/dcd75ac/final-report/mobile-save-location.log": {
+      "bytes": 86,
+      "sha256": "e8a7a3911e1421096da4118064fbe4db1cd7b5891b0e475ecf849401ea24a1ab"
+    },
+    "Validation/dcd75ac/final-report/mobile-skills-workshop-layout.log": {
+      "bytes": 80,
+      "sha256": "1519a3e38051e2df58ae2f0d5c96fc8411665de69fea7d1c3c8a02d2443611d1"
+    },
+    "Validation/dcd75ac/final-report/mobile-skills.log": {
+      "bytes": 70,
+      "sha256": "d39671288e90dcc0a5655400232a25cf0b7c7ef54a1c533f40b119a37093cc25"
+    },
+    "Validation/dcd75ac/final-report/mobilepinnedtargetproduction.log": {
+      "bytes": 606,
+      "sha256": "0f773a3eb753ac89af1a8d7a56dbd810b1028425d8fddf31c24ff1e6f4849de9"
+    },
+    "Validation/dcd75ac/final-report/mode-rewards.log": {
+      "bytes": 49,
+      "sha256": "9e75adba061ed3c1a8b0f7ffc5541324eac9348409d4f1f51982e76722cfe1c9"
+    },
+    "Validation/dcd75ac/final-report/occlusion-cause-production.log": {
+      "bytes": 77,
+      "sha256": "70cee43ce2dd4957969eebe0ea764be4d91ee021b27dac4e6074ce1e07c1dd76"
+    },
+    "Validation/dcd75ac/final-report/pack-detour-production.log": {
+      "bytes": 152,
+      "sha256": "3aa5c600b6d559dc4fb0e1200b30a66963eb1329e62875cdddc8bc3c7a4998b3"
+    },
+    "Validation/dcd75ac/final-report/panel-readability.log": {
+      "bytes": 66,
+      "sha256": "d6c34e19c59cfeb5a123042fa56ee353eda98c2d75daa3d2bfd454111548b6f4"
+    },
+    "Validation/dcd75ac/final-report/player-finale-tail-production.log": {
+      "bytes": 193,
+      "sha256": "4226bea18f05811aa5244c9fdebc127000e3e12f629fb6d7d6562b6b22509ede"
+    },
+    "Validation/dcd75ac/final-report/player-upgrades.log": {
+      "bytes": 37,
+      "sha256": "e990751a02a48513017237b4775dc4cfb929abf575f7c5b82ceb55cf83810187"
+    },
+    "Validation/dcd75ac/final-report/previewclothproduction.log": {
+      "bytes": 282,
+      "sha256": "b140b95d9bf346c99101869c20322509f330acbee6680b231c7130b9a4dfb522"
+    },
+    "Validation/dcd75ac/final-report/procedural-visuals.log": {
+      "bytes": 76,
+      "sha256": "083dbe37ef75d6c11439d3f2d19e7c709c45a492b2738fd7e12fffebc5e8171b"
+    },
+    "Validation/dcd75ac/final-report/production-touch-lifecycle.log": {
+      "bytes": 1044,
+      "sha256": "3269ccf6688dd3f19820f2def6e5d014167907457afa77a5092b3ea7ac5edc5e"
+    },
+    "Validation/dcd75ac/final-report/progression-attention.log": {
+      "bytes": 179,
+      "sha256": "51462e9bee08d3619f933b25981e525d521fa8a09f25daea4f4cfcaedfcff0b8"
+    },
+    "Validation/dcd75ac/final-report/progression-goal-identity.log": {
+      "bytes": 89,
+      "sha256": "4b702461463e58c4af1055103f52190960dde51c5fe145bb0fdcbc1e455befd4"
+    },
+    "Validation/dcd75ac/final-report/progression-goal-layout.log": {
+      "bytes": 77,
+      "sha256": "37778f8cb1bb9fa67f6f70f02530d9c023411194a6da98d5e91a420f3b103eb8"
+    },
+    "Validation/dcd75ac/final-report/progression-growth.log": {
+      "bytes": 66,
+      "sha256": "c16ca0db06fc5b7584ed56b6a8326133bcf4a96ff6f29671248f76dff1c406f4"
+    },
+    "Validation/dcd75ac/final-report/progression-route-layers.log": {
+      "bytes": 53,
+      "sha256": "09eb9074bd1275a68a5cb5fcd8b8132e2550a146b9bad04ce2a31e27c15c0f23"
+    },
+    "Validation/dcd75ac/final-report/progression.log": {
+      "bytes": 66,
+      "sha256": "9c129800fc26ba2306fb9a5e4abcb21c6e8982c2ba1df9536762e4b03acf9e0b"
+    },
+    "Validation/dcd75ac/final-report/rebalance-progression.log": {
+      "bytes": 70,
+      "sha256": "df707b64cc7ad8abfd19e430652f507eaadd1c64daacacf4642ef47cd50477c6"
+    },
+    "Validation/dcd75ac/final-report/redrock-replay-geometry.log": {
+      "bytes": 4011,
+      "sha256": "71f53bff22fc3e360a52293cc9d2c8ad57175899da7cf9e1b2a492bd31269688"
+    },
+    "Validation/dcd75ac/final-report/reforgeselection.log": {
+      "bytes": 7790,
+      "sha256": "6c8f372a8f1ae1519bf402b9b597d1262d72886132fc021c76e3c59654e79cd3"
+    },
+    "Validation/dcd75ac/final-report/report.json": {
+      "bytes": 92795,
+      "sha256": "f47a0f94ee3d2e12585051cb8531926f901242d4dcca9f5d973e2695491ea9a3"
+    },
+    "Validation/dcd75ac/final-report/reward-viewing-rules.log": {
+      "bytes": 70,
+      "sha256": "cfd6b9290746295aa1ccaed75e60bdf6dc0da7d09e2ea3d0b0753b01525a16a3"
+    },
+    "Validation/dcd75ac/final-report/room-blessing-preview.log": {
+      "bytes": 60,
+      "sha256": "737ca09dd4942bf80a7737002da00d5c319d18f98e20082d888c69501536bc96"
+    },
+    "Validation/dcd75ac/final-report/room-blessing-routes.log": {
+      "bytes": 1300,
+      "sha256": "202e2dd52097756da0c4cecd5e5d1bbc925feeea6fa154a890469477927871b9"
+    },
+    "Validation/dcd75ac/final-report/room-blessing-usability-negative.log": {
+      "bytes": 158,
+      "sha256": "bf1e64b51a899c575ea4489e113f5f0448a5c55a09988b5fca997e1bbb45b2ff"
+    },
+    "Validation/dcd75ac/final-report/room-blessing-usability.log": {
+      "bytes": 122,
+      "sha256": "f32fa284e27f91b62f5af2fd018e62d8533eb96cd51ce39031caa018709cfc58"
+    },
+    "Validation/dcd75ac/final-report/room-chain.log": {
+      "bytes": 111,
+      "sha256": "a6dba90154b706be40761d56baaf6d6628f1174313575a943d7abbb674ce9ffe"
+    },
+    "Validation/dcd75ac/final-report/room-failure-evidence.log": {
+      "bytes": 446,
+      "sha256": "dd9482f3e50425d63447a6ab7c85c1abd69b9bf0b380099339532e9bc2c2762b"
+    },
+    "Validation/dcd75ac/final-report/room-first-choice-production.log": {
+      "bytes": 227,
+      "sha256": "b05e3130ec61c7d40fa97ffdd07e0bf5663b60c798820f13b2aee677964a66f3"
+    },
+    "Validation/dcd75ac/final-report/room-free-seal-host.log": {
+      "bytes": 316,
+      "sha256": "3e0500c1d6893ca4bd41378b74b7f049fdde1fedb06fcc85dc7dd16e8f7666bd"
+    },
+    "Validation/dcd75ac/final-report/room-preview-ui-contract.log": {
+      "bytes": 91,
+      "sha256": "c0f1eca6cf5e8f0121e6335b09cb4b887aa1fbcd236dbd1b126ab8cb9ba38cfd"
+    },
+    "Validation/dcd75ac/final-report/room-seal-hud-production.log": {
+      "bytes": 281,
+      "sha256": "74def0573fa324d462eb1d41799ffd1dbadc20a01c8c4b11152e21ac205dde12"
+    },
+    "Validation/dcd75ac/final-report/room-tactical-los-production.log": {
+      "bytes": 279,
+      "sha256": "c8737ff5ac38636573f79621824e58f1e92255dd4f64e710049fbbe0f66ce828"
+    },
+    "Validation/dcd75ac/final-report/route-skill-navigation.log": {
+      "bytes": 755,
+      "sha256": "2a0d3fa337f8c6fd6aa1e8914aca050eec614cb7e82f18a291a93dbd1b7ecd53"
+    },
+    "Validation/dcd75ac/final-report/run-choices.log": {
+      "bytes": 35,
+      "sha256": "77d11d2a9e05acab20f685fb3e62ff507283e08d042d296742e28b8cb4c43500"
+    },
+    "Validation/dcd75ac/final-report/run-combat-rules.log": {
+      "bytes": 78,
+      "sha256": "e89de44218a2d36975d9db83e106c5e0b97cc3b593a0de26db7f69c51a88af5c"
+    },
+    "Validation/dcd75ac/final-report/run-recap.log": {
+      "bytes": 48,
+      "sha256": "682d5a85d69d985813f3a6e092b3631bc80ba0f85b6ebee3f773bb18890166e1"
+    },
+    "Validation/dcd75ac/final-report/runtime-compile.log": {
+      "bytes": 182,
+      "sha256": "d0e32bd9dff493708a0872296a674610b5858744b11ce02f8863e0d28c89d856"
+    },
+    "Validation/dcd75ac/final-report/safe-exit.log": {
+      "bytes": 95,
+      "sha256": "5960f9c03a0632411eabcc63b2ca41607a47d113840c2c99793d1b549ce9836c"
+    },
+    "Validation/dcd75ac/final-report/safe-save-flow.log": {
+      "bytes": 168,
+      "sha256": "18779ad6a7742dfcef3aa91201fe20ffee68d07cc90cf12dff3ee07d0973af40"
+    },
+    "Validation/dcd75ac/final-report/save-deletion.log": {
+      "bytes": 1028,
+      "sha256": "391d97a9c6bd72735a591b4800a31fcdd69f2f604fd7095e8445e0ce6d0780d5"
+    },
+    "Validation/dcd75ac/final-report/save-idempotence.log": {
+      "bytes": 1341,
+      "sha256": "59cecf112994f83dc36d58d42844f06339e346d95b6a01679291167cde790777"
+    },
+    "Validation/dcd75ac/final-report/scenery-presentation-production.log": {
+      "bytes": 2384,
+      "sha256": "39d5d93c71641af25148393738b9ee8b757a9136a8656b75907e3805d156b6d4"
+    },
+    "Validation/dcd75ac/final-report/scheduled-ticks.log": {
+      "bytes": 29,
+      "sha256": "3acbe441cb1246bd02dd97c24cf63b2b220b088671db7d3e7abe0bd0ed5f7319"
+    },
+    "Validation/dcd75ac/final-report/shatter-availability.log": {
+      "bytes": 563,
+      "sha256": "94b5b3acca8c2bba2a3e6b8c91657e1bdf14e7a22f650ad7412b9600bd396ae8"
+    },
+    "Validation/dcd75ac/final-report/shore-contact-production.log": {
+      "bytes": 309,
+      "sha256": "6cbc92fc87aba9ac7e6fde5b81a15ce5e9b78e4d3a784abc321d93c722623372"
+    },
+    "Validation/dcd75ac/final-report/side-event-production.log": {
+      "bytes": 647,
+      "sha256": "aaf3407f2ae9dc917c75a7d827972f1cb5cc150c1b00701c4ab5f44502a05ca8"
+    },
+    "Validation/dcd75ac/final-report/side-event-rewards.log": {
+      "bytes": 112,
+      "sha256": "cfddc6a0688f0b77d4b648bf5b2959ee8f024b1a739455d5695d6323795b96e8"
+    },
+    "Validation/dcd75ac/final-report/skill-damage-budgets.log": {
+      "bytes": 68,
+      "sha256": "c158217843aa01c0db55d075776848b2e03917aa5cf2e062866bdd8cab1d2423"
+    },
+    "Validation/dcd75ac/final-report/skill-panel-navigation.log": {
+      "bytes": 1860,
+      "sha256": "de438f351ba1cb161341f4ce7b5d5dcaf9643b10b4203e7cbcd8b4e615c4119d"
+    },
+    "Validation/dcd75ac/final-report/skill-readability-production.log": {
+      "bytes": 1832,
+      "sha256": "aa0e8a0027e02aff675cf51cdd3d7b4790f1535c86ab4b9a44e155c87540ca50"
+    },
+    "Validation/dcd75ac/final-report/skill-visual-recipe.log": {
+      "bytes": 70,
+      "sha256": "320bfa2aa62066cbac131c1683add201b1c9387157b3b618a7e3daf5710ce60e"
+    },
+    "Validation/dcd75ac/final-report/skills.log": {
+      "bytes": 66,
+      "sha256": "a097a6146571e110d8bb3f1a9074400c72cb65d340446ad3c65bbe559741f3f3"
+    },
+    "Validation/dcd75ac/final-report/starting-skill-budget.log": {
+      "bytes": 583,
+      "sha256": "e57848a3298b4591f0052a914558687c15e8913bc6e3237efc61b7b2dc1589b7"
+    },
+    "Validation/dcd75ac/final-report/tactical-live-visual.log": {
+      "bytes": 429,
+      "sha256": "4bb3e5deae47bf8a72a231f18ad99d41afdc806836136a1064c83879611e1b3b"
+    },
+    "Validation/dcd75ac/final-report/tactical-room-geometry.log": {
+      "bytes": 114,
+      "sha256": "b6d8bf826108a28c254b9d64b90c8b5827980fdb363dcb5580f535e751900545"
+    },
+    "Validation/dcd75ac/final-report/tactical-room-region.log": {
+      "bytes": 111,
+      "sha256": "a13a020e9aca87503a6950cfc805f10a3422fac39437864ec778c9f096089370"
+    },
+    "Validation/dcd75ac/final-report/tier-reward-bands.log": {
+      "bytes": 72,
+      "sha256": "6479af6b6c74fe8bf305283065913116726bd63f5cba62e0987ad23f78a64cf8"
+    },
+    "Validation/dcd75ac/final-report/touch-release-latch.log": {
+      "bytes": 57,
+      "sha256": "df4c5f23e4ad795002c2655216f5f37faa477bedd89256be4921f991222082e6"
+    },
+    "Validation/dcd75ac/final-report/touch-scroll.log": {
+      "bytes": 104,
+      "sha256": "d5515d6bcaa743bfe6057d34b9d52a283461170cc306132dda6fc10ae36d880d"
+    },
+    "Validation/dcd75ac/final-report/tree-occlusion-registry.log": {
+      "bytes": 223,
+      "sha256": "e713227de49e044535b95c15b8028892de683aef74598e35672c4866d8421df2"
+    },
+    "Validation/dcd75ac/final-report/ui-render-cache-lifecycle.log": {
+      "bytes": 180,
+      "sha256": "26fd7c7c7e533070824a3aa9c7c7480d49e32f28be44313c730e03ff08aeb78e"
+    },
+    "Validation/dcd75ac/final-report/ui-render-cache.log": {
+      "bytes": 183,
+      "sha256": "3ae7b2b041d2032d656417a7477fcd233b106c93fef73b182bc1363f81bab58a"
+    },
+    "Validation/dcd75ac/final-report/upgrade-progression.log": {
+      "bytes": 63,
+      "sha256": "348d4beb2006686475ecf703b708f99c19350096d4cf8107b5723a8dea125b7e"
+    },
+    "Validation/dcd75ac/final-report/visual-motion-envelope.log": {
+      "bytes": 81,
+      "sha256": "57fd771423e7e031a424bd936123708d604f97f2eeb1bd346c9e35ea91bfe914"
+    },
+    "Validation/dcd75ac/final-report/water-flow-production.log": {
+      "bytes": 156,
+      "sha256": "194c66e45acebf2247ed22303ce8f00e95d6cd5f68142c35d8843f33ef1df0af"
+    },
+    "Validation/dcd75ac/final-report/water-presentation.log": {
+      "bytes": 83,
+      "sha256": "0dc79749db5673956c5de9fceec88c84ae2b4da0270176b5899ec1cbb1f5c70d"
+    },
+    "Validation/dcd75ac/final-report/weapon-structure.log": {
+      "bytes": 71,
+      "sha256": "4b0472adf5f0e74d11accbc2e48f00755b99357814c43a83d2c6bec50d282cb2"
+    },
+    "Validation/dcd75ac/final-report/weapon-swing-identity.log": {
+      "bytes": 257,
+      "sha256": "055f23132f31a8a3696f42d4817606a604e78071e2ae995d4dd16942f4a67795"
+    },
+    "Validation/dcd75ac/final-report/weaponfashionstructureproduction.log": {
+      "bytes": 187,
+      "sha256": "494c5644ce459b8f20a95966057f93d5ec2ccfaffff3901c9a6fac607c413a4c"
+    },
+    "Validation/dcd75ac/final-report/world-label-production.log": {
+      "bytes": 87,
+      "sha256": "aa9e860026231ad5efc307029fec56f862ed9f0a313197ad03a2f24920a6e83c"
+    },
+    "Validation/dcd75ac/final-report/world-loot-receipts.log": {
+      "bytes": 73,
+      "sha256": "035db0217e8d3cb0807c2cbd7e35e22402b6dc43af69d6eb522ba202cc4ccfd2"
+    },
+    "Validation/dcd75ac/full.log": {
+      "bytes": 91396,
+      "sha256": "01591b921c6e85e6eed7c7eb913a5c219b12f033a45bb7ffabccf90ae6455e6d"
+    },
+    "Validation/dcd75ac/manifest.json": {
+      "bytes": 33618,
+      "sha256": "6d5954d9f567b065f6b0a44cf963771f2fba12093aed3d29d8bf686e22724937"
+    },
+    "Validation/dcd75ac/original-platform-sync.json": {
+      "bytes": 6961,
+      "sha256": "41cd484eac1b6ccfdf54a736b1e9fd2bb75626c200c37982a2a40511d9fb4710"
+    },
+    "Validation/dcd75ac/parity-protection.json": {
+      "bytes": 71230,
+      "sha256": "99536b0a29c4430d9e8e87c9adaae0f7d08fa3f3501ee44b413872ba80793724"
+    },
+    "Validation/dcd75ac/platform-api-report.json": {
+      "bytes": 95150,
+      "sha256": "fe6b15ffb6e9759d580d8693caf4136969687f67f81cd904d0769ac1ba3fc833"
+    },
+    "Validation/dcd75ac/platform-api-stdout.log": {
+      "bytes": 170,
+      "sha256": "bc437dc1d892b31af905de66b0168bc84d3e56652375625571b8e951486961a0"
+    },
+    "Validation/dcd75ac/platform-sync.json": {
+      "bytes": 6961,
+      "sha256": "41cd484eac1b6ccfdf54a736b1e9fd2bb75626c200c37982a2a40511d9fb4710"
+    },
+    "artifact-manifest.json": {
+      "bytes": 11714,
+      "sha256": "c919ff1d86e58158a737b5462e19417348b725a88ebe6f72bb137a63b5ad55ab"
+    }
+  }
+}

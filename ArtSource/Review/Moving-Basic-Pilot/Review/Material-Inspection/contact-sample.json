@@ -1,0 +1,13 @@
+{
+  "index": 24,
+  "time": 1,
+  "phase": 3.1636374,
+  "speed": 0.9999945,
+  "progress": 0.52,
+  "basic": true,
+  "idle": 0.5,
+  "move": 0.5035085,
+  "speedWeight": 0.9999945,
+  "upperWeight": 1,
+  "scenario": "continuous-forward"
+}

@@ -1,0 +1,24 @@
+{
+  "files": {
+    "PilotFacingCooldownFixture.cs": {
+      "bytes": 6402,
+      "sha256": "1fa77d7e6c6f937870137980c1a734e7a78dce9f9f6fa85d6290be78fa6503fb"
+    },
+    "manifest.json": {
+      "bytes": 32142,
+      "sha256": "4b86b4d0cfcf125384069bd6605aaf6b9376510a1e6d2cb3e58a8f6b02af4e6e"
+    },
+    "prepare_variant.py": {
+      "bytes": 3320,
+      "sha256": "5ce9aab995c122cd5d9d1923a03a3878ccbb02df7c983009319d487c4d484245"
+    },
+    "raw-stdout.log": {
+      "bytes": 1500,
+      "sha256": "a58b6bfb06445146d7d3b060e67a84aeccbeb167c88b4000d1676c9667960ea2"
+    },
+    "run_cooldown_followup.py": {
+      "bytes": 6723,
+      "sha256": "e85284e4fa18339efab81c5f15af5bc9291fe9ff065cff9192a610fe0c504eff"
+    }
+  }
+}
