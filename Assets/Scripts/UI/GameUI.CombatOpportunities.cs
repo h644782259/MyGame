@@ -51,18 +51,18 @@ namespace Emberfall
                 return CombatOpportunityPresentation.Summoner(count,lifetime,SummonedCompanion.CommandOpportunityRemaining(hero));
             }
             var target=hero.CurrentOpportunityTarget;
-            if(target==null||!session.Enemies.Contains(target)||!target.gameObject.activeInHierarchy)return "";
-            var status=target.StatusEffects;if(status==null)return "";
+            var status=target!=null&&session.Enemies.Contains(target)&&target.gameObject.activeInHierarchy?target.StatusEffects:null;
             if(hero.HeroClass==HeroClass.Arcanist)
             {
                 var charge=hero.GetComponent<SkillChargeController>();
                 bool castBlocked=hero.IsJumping||charge!=null&&(charge.IsCharging||charge.ConsumedThisFrame);
                 bool ready=CombatOpportunityPresentation.MeteorReady(session.Progression.Profile.skillRanks[1]>0,
                     hero.SkillCooldownRemaining(1),hero.Energy,GameBalance.SkillEnergyCost(hero.HeroClass,1),castBlocked);
-                return CombatOpportunityPresentation.Arcanist(status.HasFrostMark,status.IsBurning,
-                    hero.Specialization==ElementalistSpecialization.Burn,ready);
+                bool burnRoute=hero.Specialization==ElementalistSpecialization.Burn;
+                return CombatOpportunityPresentation.Arcanist(status!=null&&status.HasFrostMark,status!=null&&status.IsBurning,
+                    burnRoute,burnRoute?ready:hero.CanShatterNow(1));
             }
-            return CombatOpportunityPresentation.Ranger(status.PoisonStacks,status.IsMarked);
+            return status==null?"":CombatOpportunityPresentation.Ranger(status.PoisonStacks,status.IsMarked);
         }
     }
 }
