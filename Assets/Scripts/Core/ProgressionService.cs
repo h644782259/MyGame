@@ -1272,11 +1272,7 @@ namespace Emberfall
 
         public bool ReforgeMechanic(string id, bool inCamp)
         {
-            ItemData existing = FindItem(id);
-            if (!inCamp || existing == null || existing.mechanic == EquipmentMechanic.None || !HasDiscoveredMechanic(existing.mechanic))
-                return Fail("在营地可将已发现配方的机制装备重铸。");
-            if (existing.level >= Profile.level) return Fail("装备已达到当前角色等级。");
-            if (Profile.mechanicMaterials < ReforgeCost) return Fail("重铸需要6枚星烬碎片。");
+            string reason=ReforgeLockReason(id,inCamp);if(reason.Length>0)return Fail(reason);
             GameProfile candidate = Snapshot(); candidate.mechanicMaterials -= ReforgeCost;
             ItemData item = candidate.inventory.Find(x => x.id == id); item.level = candidate.level;
             item.upgradeLevel = 0; item.upgradeBaseInitialized = false; SetRolledStats(item); EnsureUpgradeBasis(item);
@@ -1286,11 +1282,8 @@ namespace Emberfall
 
         public string AscensionLockReason(string id, bool inCamp)
         {
-            ItemData item = FindItem(id);
-            if (!inCamp) return "只能在营地升华机制装备。";
-            if (item == null || item.mechanic == EquipmentMechanic.None || !HasDiscoveredMechanic(item.mechanic) ||
-                BuildCatalog.MechanicClass(item.mechanic) != Profile.heroClass) return "请选择本职业已发现配方的机制装备。";
-            if (item.rarity != Rarity.Epic) return item.rarity == Rarity.Legendary ? "已是传说品质，不会重复升华。" : "升华需要史诗品质机制装备。";
+            if(!inCamp)return "只能在营地升华机制装备。";
+            string reason=MechanicGoalEligibility(id,ProgressionGoalKind.Ascension);if(reason.Length>0)return reason;
             if (HighestAdventureTier < AscensionMilestone) return "任一冒险通关第5阶后开放传说升华。";
             if (Profile.mechanicMaterials < AscensionCost) return "升华需要24枚星烬碎片。";
             return string.Empty;
@@ -1315,10 +1308,7 @@ namespace Emberfall
 
         public bool ToggleMechanicVariant(string id, bool inCamp)
         {
-            ItemData existing = FindItem(id);
-            if (!inCamp || existing == null || (existing.mechanic != EquipmentMechanic.FrostEcho && existing.mechanic != EquipmentMechanic.CinderTrail))
-                return Fail("在营地可切换元素机制装备的互斥变体。");
-            if (!existing.mechanicVariantUnlocked && Profile.mechanicMaterials < VariantCost) return Fail("首次解锁变体需要4枚碎片，之后免费切换。");
+            string reason=VariantLockReason(id,inCamp);if(reason.Length>0)return Fail(reason);
             GameProfile candidate = Snapshot(); ItemData item = candidate.inventory.Find(x => x.id == id);
             if (!item.mechanicVariantUnlocked) candidate.mechanicMaterials -= VariantCost;
             item.mechanicVariantUnlocked = true; item.mechanicVariant = 1 - item.mechanicVariant;
@@ -1457,44 +1447,140 @@ namespace Emberfall
                 }
             }
         }
+        public string MechanicGoalEligibility(string id,ProgressionGoalKind kind)
+        {
+            ItemData item=FindItem(id);
+            if(item==null||item.mechanic==EquipmentMechanic.None||!Enum.IsDefined(typeof(EquipmentMechanic),item.mechanic)||
+                BuildCatalog.MechanicClass(item.mechanic)!=Profile.heroClass||item.slot!=BuildCatalog.MechanicSlot(item.mechanic))return "请选择背包中的本职业机制装备。";
+            if(kind==ProgressionGoalKind.Variant)return HasElementVariant(item)?string.Empty:"这件装备没有元素变体。";
+            if(!HasDiscoveredMechanic(item.mechanic))return "请先登记这件装备的机制配方。";
+            if(kind==ProgressionGoalKind.Ascension&&item.rarity!=Rarity.Epic)
+                return item.rarity==Rarity.Legendary?"已是传说品质，不会重复升华。":"先获取"+BuildCatalog.MechanicName(item.mechanic)+"的史诗装备，再选择升华目标。";
+            if(kind==ProgressionGoalKind.Reforge&&item.level>=Profile.level)return "装备已达到当前角色等级。";
+            return string.Empty;
+        }
+        public string ReforgeLockReason(string id,bool inCamp)
+        {
+            if(!inCamp)return "只能在营地重铸机制装备。";
+            string reason=MechanicGoalEligibility(id,ProgressionGoalKind.Reforge);if(reason.Length>0)return reason;
+            return Profile.mechanicMaterials<ReforgeCost?"重铸需要6枚星烬碎片。":string.Empty;
+        }
+        public string VariantLockReason(string id,bool inCamp)
+        {
+            if(!inCamp)return "只能在营地切换元素机制变体。";
+            string reason=MechanicGoalEligibility(id,ProgressionGoalKind.Variant);if(reason.Length>0)return reason;
+            return !FindItem(id).mechanicVariantUnlocked&&Profile.mechanicMaterials<VariantCost?"首次解锁变体需要4枚碎片，之后免费切换。":string.Empty;
+        }
+        public bool UnlockMechanicVariant(string id,bool inCamp)
+        {
+            string reason=VariantLockReason(id,inCamp);if(reason.Length>0)return Fail(reason);
+            if(FindItem(id).mechanicVariantUnlocked){LastError=string.Empty;return true;}
+            return ToggleMechanicVariant(id,inCamp);
+        }
+        public bool SelectCoreGoal(EquipmentMechanic mechanic,Rarity minimumRarity=Rarity.Common)
+        {
+            if(mechanic==EquipmentMechanic.None||!Enum.IsDefined(typeof(EquipmentMechanic),mechanic)||BuildCatalog.MechanicClass(mechanic)!=Profile.heroClass||
+                (minimumRarity!=Rarity.Common&&minimumRarity!=Rarity.Epic))return Fail("请选择本职业的具体核心目标。");
+            if(Profile.progressionGoal==ProgressionGoalKind.Core&&Profile.progressionGoalMechanic==mechanic&&Profile.progressionGoalMinimumRarity==minimumRarity)
+            {LastError=string.Empty;return true;}
+            GameProfile candidate=Snapshot();candidate.progressionGoal=ProgressionGoalKind.Core;candidate.progressionGoalMechanic=mechanic;
+            candidate.progressionGoalMinimumRarity=minimumRarity;candidate.progressionGoalItemId=null;candidate.progressionGoalLevel=0;candidate.progressionGoalTier=1;
+            return CommitCandidate(candidate);
+        }
         public bool SelectProgressionGoal(ProgressionGoalKind goal,string itemId=null,int tier=0)
         {
             if(!Enum.IsDefined(typeof(ProgressionGoalKind),goal))return Fail("无效目标。");
-            if(goal==ProgressionGoalKind.Variant || goal==ProgressionGoalKind.Ascension)
-            {
-                ItemData item=FindItem(itemId);
-                if(item==null || item.mechanic==EquipmentMechanic.None || BuildCatalog.MechanicClass(item.mechanic)!=Profile.heroClass ||
-                    goal==ProgressionGoalKind.Variant && !HasElementVariant(item))return Fail("请选择背包中的本职业机制装备。");
-            }
-            if(goal==ProgressionGoalKind.Tier && (tier<1||tier>100))return Fail("目标阶数无效。");
-            GameProfile candidate=Snapshot();candidate.progressionGoal=goal;
-            candidate.progressionGoalItemId=goal==ProgressionGoalKind.Variant||goal==ProgressionGoalKind.Ascension?itemId:null;
-            candidate.progressionGoalTier=goal==ProgressionGoalKind.Tier?tier:1;return CommitCandidate(candidate);
+            bool itemGoal=goal==ProgressionGoalKind.Variant||goal==ProgressionGoalKind.Ascension||goal==ProgressionGoalKind.Reforge;
+            if(itemGoal){string reason=MechanicGoalEligibility(itemId,goal);if(reason.Length>0)return Fail(reason);}
+            if(goal==ProgressionGoalKind.Tier&&(tier<1||tier>100))return Fail("目标阶数无效。");
+            int level=goal==ProgressionGoalKind.Reforge?Profile.level:0;
+            if(Profile.progressionGoal==goal&&(goal!=ProgressionGoalKind.Core||Profile.progressionGoalMechanic==EquipmentMechanic.None)&&Profile.progressionGoalItemId==(itemGoal?itemId:null)&&
+                (goal!=ProgressionGoalKind.Tier||Profile.progressionGoalTier==tier)&&Profile.progressionGoalLevel==level)
+            {LastError=string.Empty;return true;}
+            GameProfile candidate=Snapshot();candidate.progressionGoal=goal;candidate.progressionGoalItemId=itemGoal?itemId:null;
+            candidate.progressionGoalTier=goal==ProgressionGoalKind.Tier?tier:1;candidate.progressionGoalLevel=level;
+            candidate.progressionGoalMechanic=EquipmentMechanic.None;candidate.progressionGoalMinimumRarity=Rarity.Common;
+            return CommitCandidate(candidate);
         }
-        public string ProgressionGoalStatus(int runMaterials=0)
+        private ItemData GoalCoreItem(List<ItemData> items)
         {
+            if(items==null)return null;
+            foreach(ItemData item in items)if(item!=null&&item.mechanic==Profile.progressionGoalMechanic&&item.rarity>=Profile.progressionGoalMinimumRarity&&
+                item.slot==BuildCatalog.MechanicSlot(item.mechanic))return item;
+            return null;
+        }
+        public ProgressionGoalState SelectedProgressionGoal(bool inCamp=false)
+        {
+            var goal=new ProgressionGoalState{Identity=Profile.progressionGoal.ToString(),Title="选择一个成长目标",Step="在营地选择目标"};
             ItemData item=FindItem(Profile.progressionGoalItemId);
-            string title,requirement;int cost=0;bool done=false;
             switch(Profile.progressionGoal)
             {
                 case ProgressionGoalKind.Core:
-                    title="首件机制装备";cost=Profile.pendingFirstClearReward||Profile.firstClearRewardClaimed?0:MechanicExchangeCost;
-                    done=Profile.firstClearRewardClaimed||Profile.discoveredMechanics.Count>0;
-                    requirement=Profile.pendingFirstClearReward?"首通自选可领取":"首通任一冒险，或收集12碎片";break;
-                case ProgressionGoalKind.Variant:
-                    title="解锁装备变体";cost=VariantCost;done=item!=null&&item.mechanicVariantUnlocked;
-                    requirement=item==null?"目标装备不在背包":"持有目标装备 · 营地解锁";break;
-                case ProgressionGoalKind.Ascension:
-                    title="装备升华";cost=AscensionCost;done=item!=null&&item.rarity==Rarity.Legendary;
-                    requirement=item==null?"目标装备不在背包":"冒险5阶 "+Math.Min(5,HighestAdventureTier)+"/5"+(item.rarity!=Rarity.Epic&&item.rarity!=Rarity.Legendary?" · 需要史诗品质":"");break;
+                    if(Profile.progressionGoalMechanic==EquipmentMechanic.None)
+                    {goal.Identity+="/legacy";goal.Title="首件机制装备（旧目标）";goal.Done=Profile.firstClearRewardClaimed||Profile.discoveredMechanics.Count>0;goal.Step="请选择要追踪的具体核心；旧目标未指定机制";break;}
+                    goal.Identity+="/"+(int)Profile.progressionGoalMechanic+"/"+(int)Profile.progressionGoalMinimumRarity;
+                    goal.Title="获取"+(Profile.progressionGoalMinimumRarity==Rarity.Epic?"史诗·":"")+BuildCatalog.MechanicName(Profile.progressionGoalMechanic);
+                    item=GoalCoreItem(Profile.inventory);
+                    if(item!=null)
+                    {
+                        goal.Done=true;goal.ItemId=item.id;bool equipped=IsEquipped(Profile,item.id);
+                        goal.Step=equipped?"目标核心已穿戴":item.level>Profile.level?"角色达到 "+item.level+" 级后可穿戴":"目标核心已入手，可穿戴检查路线";
+                        if(!equipped){goal.Action=ProgressionGoalAction.Equip;goal.CanAct=inCamp&&item.level<=Profile.level;}
+                        break;
+                    }
+                    item=GoalCoreItem(Profile.pendingLoot);bool recovery=false;
+                    if(item==null){item=GoalCoreItem(Profile.recoveryLoot);recovery=item!=null;}
+                    if(item!=null)
+                    {goal.ItemId=item.id;goal.Action=recovery?ProgressionGoalAction.ClaimRecovery:ProgressionGoalAction.ClaimPending;goal.CanAct=inCamp&&Profile.inventory.Count<InventoryCapacity;goal.Step=Profile.inventory.Count<InventoryCapacity?"在营地领取指定装备入背包":"先腾出背包位置，再领取目标装备";break;}
+                    bool first=Profile.pendingFirstClearReward&&!Profile.firstClearRewardClaimed;
+                    goal.MaterialCost=first?0:MechanicExchangeCost;goal.Action=first?ProgressionGoalAction.ClaimCore:ProgressionGoalAction.ExchangeCore;
+                    goal.CanAct=inCamp&&CanReceiveProtectedLoot&&(first||Profile.mechanicMaterials>=MechanicExchangeCost);
+                    goal.Step=!CanReceiveProtectedLoot?"先腾出背包或待领取栏位置":first?"首通自选可领取这件核心":"在营地定向兑换这件史诗核心";break;
+                case ProgressionGoalKind.Variant:case ProgressionGoalKind.Ascension:case ProgressionGoalKind.Reforge:
+                    goal.Identity+="/"+Profile.progressionGoalItemId+(Profile.progressionGoal==ProgressionGoalKind.Reforge?"/"+Profile.progressionGoalLevel:"");
+                    goal.ItemId=Profile.progressionGoalItemId;
+                    goal.Title=(Profile.progressionGoal==ProgressionGoalKind.Variant?"解锁变体":Profile.progressionGoal==ProgressionGoalKind.Ascension?"传说升华":"重铸至 "+Profile.progressionGoalLevel+" 级")+" · "+(item==null?"原目标装备":item.name);
+                    if(item==null){goal.Step="原目标装备不在背包；同名装备不会替代它";break;}
+                    goal.Done=Profile.progressionGoal==ProgressionGoalKind.Variant?item.mechanicVariantUnlocked:Profile.progressionGoal==ProgressionGoalKind.Ascension?item.rarity==Rarity.Legendary:item.level>=Profile.progressionGoalLevel;
+                    if(goal.Done){goal.Step="保留当前目标，可自行选择下一目标";break;}
+                    goal.MaterialCost=Profile.progressionGoal==ProgressionGoalKind.Variant?VariantCost:Profile.progressionGoal==ProgressionGoalKind.Ascension?AscensionCost:ReforgeCost;
+                    goal.Action=Profile.progressionGoal==ProgressionGoalKind.Variant?ProgressionGoalAction.UnlockVariant:Profile.progressionGoal==ProgressionGoalKind.Ascension?ProgressionGoalAction.Ascend:ProgressionGoalAction.Reforge;
+                    string reason=Profile.progressionGoal==ProgressionGoalKind.Variant?VariantLockReason(item.id,inCamp):Profile.progressionGoal==ProgressionGoalKind.Ascension?AscensionLockReason(item.id,inCamp):ReforgeLockReason(item.id,inCamp);
+                    goal.CanAct=reason.Length==0;goal.Step=goal.CanAct?"营地可执行这件装备的操作":reason;
+                    if(Profile.progressionGoal==ProgressionGoalKind.Ascension)goal.Step+=" · 冒险5阶 "+Math.Min(5,HighestAdventureTier)+"/5";
+                    break;
                 case ProgressionGoalKind.SecondPreset:
-                    title="第二套配装";done=HasBuildPreset(0)&&HasBuildPreset(1);requirement="营地保存方案 A 与 B";break;
+                    goal.Title="保存第二套配装";goal.Done=HasBuildPreset(0)&&HasBuildPreset(1);goal.Step=goal.Done?"两份方案已保存":"在营地保存方案 A 与 B";goal.Action=ProgressionGoalAction.OpenPresets;goal.CanAct=inCamp;break;
                 case ProgressionGoalKind.Tier:
-                    title="通关第 "+Profile.progressionGoalTier+" 阶";done=HighestAdventureTier>=Profile.progressionGoalTier;
-                    requirement="任一冒险 · 最高 "+HighestAdventureTier+" 阶";break;
-                default:return "选择一个成长目标"+(runMaterials>0?" · 本局 +"+runMaterials+"碎片":"");
+                    goal.Identity+="/"+Profile.progressionGoalTier;goal.Title="通关第 "+Profile.progressionGoalTier+" 阶";goal.Done=HighestAdventureTier>=Profile.progressionGoalTier;goal.Step="任一冒险 · 最高 "+HighestAdventureTier+" 阶";break;
+                case ProgressionGoalKind.ClassTutorial:
+                    goal.Identity+="/"+(int)Profile.heroClass;goal.Title="职业练习";goal.Step=ClassTutorialText;goal.Done=Profile.classTutorialCompleted;break;
             }
-            return title+(done?" ✓ 已完成":"")+" · 碎片 "+Profile.mechanicMaterials+(cost>0?"/"+cost:"")+" · "+requirement+
+            return goal;
+        }
+        public bool ExecuteProgressionGoal(string expectedActionIdentity,bool inCamp)
+        {
+            ProgressionGoalState goal=SelectedProgressionGoal(inCamp);
+            if(goal.ActionIdentity!=expectedActionIdentity)return Fail("目标或下一步已变化，请检查当前操作。");
+            if(goal.Done&&goal.Action==ProgressionGoalAction.None){LastError=string.Empty;return true;}
+            if(!goal.CanAct)return Fail(goal.Step);
+            switch(goal.Action)
+            {
+                case ProgressionGoalAction.ClaimCore:return ClaimFirstClearReward(Profile.progressionGoalMechanic);
+                case ProgressionGoalAction.ExchangeCore:return ExchangeMechanic(Profile.progressionGoalMechanic);
+                case ProgressionGoalAction.ClaimPending:return ClaimPendingLoot(goal.ItemId);
+                case ProgressionGoalAction.ClaimRecovery:return ClaimRecoveryLoot(goal.ItemId);
+                case ProgressionGoalAction.Equip:return Equip(goal.ItemId);
+                case ProgressionGoalAction.UnlockVariant:return UnlockMechanicVariant(goal.ItemId,inCamp);
+                case ProgressionGoalAction.Ascend:return AscendMechanic(goal.ItemId,inCamp);
+                case ProgressionGoalAction.Reforge:return ReforgeMechanic(goal.ItemId,inCamp);
+                default:return Fail("请打开对应营地入口继续。");
+            }
+        }
+        public string ProgressionGoalStatus(int runMaterials=0)
+        {
+            ProgressionGoalState goal=SelectedProgressionGoal(true);
+            return goal.Title+(goal.Done?" ✓ 已完成":"")+" · 碎片 "+Profile.mechanicMaterials+(goal.MaterialCost>0?"/"+goal.MaterialCost:"")+" · "+goal.Step+
                 (runMaterials>0?" · 本局 +"+runMaterials+"碎片":"");
         }
 
@@ -2343,6 +2429,12 @@ namespace Emberfall
             foreach (ItemData item in recovery)
                 if (item.mechanic != EquipmentMechanic.None && !discovered.Contains(item.mechanic)) discovered.Add(item.mechanic);
             profile.discoveredMechanics = discovered;
+            profile.progressionGoalLevel=Clamp(profile.progressionGoalLevel,1,MaximumLevel);
+            if(profile.progressionGoal!=ProgressionGoalKind.Reforge)profile.progressionGoalLevel=0;
+            if(profile.progressionGoalMinimumRarity!=Rarity.Common&&profile.progressionGoalMinimumRarity!=Rarity.Epic)profile.progressionGoalMinimumRarity=Rarity.Common;
+            if(!Enum.IsDefined(typeof(EquipmentMechanic),profile.progressionGoalMechanic)||profile.progressionGoalMechanic!=EquipmentMechanic.None&&BuildCatalog.MechanicClass(profile.progressionGoalMechanic)!=profile.heroClass)
+                profile.progressionGoalMechanic=EquipmentMechanic.None;
+
             if (profile.fashions == null) profile.fashions = new List<FashionData>();
             var validFashions = new List<FashionData>();
             var fashionIds = new HashSet<string>(StringComparer.Ordinal);

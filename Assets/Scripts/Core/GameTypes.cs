@@ -196,7 +196,7 @@ namespace Emberfall
         public int[] equipmentVariants;
     }
 
-    public enum ProgressionGoalKind { None, Core, Variant, Ascension, SecondPreset, Tier }
+    public enum ProgressionGoalKind { None, Core, Variant, Ascension, SecondPreset, Tier, Reforge, ClassTutorial }
 
     [Serializable]
     public class GameProfile
@@ -213,6 +213,9 @@ namespace Emberfall
         public ProgressionGoalKind progressionGoal;
         public string progressionGoalItemId;
         public int progressionGoalTier;
+        public EquipmentMechanic progressionGoalMechanic;
+        public Rarity progressionGoalMinimumRarity;
+        public int progressionGoalLevel;
         public int highestAdventureTier;
         public ElementalistSpecialization specialization;
         public int[] masteryRanks = new int[4];
