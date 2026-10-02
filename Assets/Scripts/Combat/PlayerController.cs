@@ -51,7 +51,7 @@ namespace Emberfall
         private bool lastMeleeDamagedEnemy;
         private float blinkBufferTime, perfectDodgeWindow, counterTime, dodgeShockTime, chargedWardTime, pursuitTime, starterRetry;
         private bool perfectDodgeAwarded, suppressBasicUntilReleased;
-        private float skillBasicRecovery;
+        private SkillBasicRecoveryClock skillBasicRecovery;
         private float classDodgeTime, burnStrideTime, coreWardTime;
         private readonly MasteryCoreRuntime masteryCore = new MasteryCoreRuntime();
         private int nextCastId;
@@ -287,7 +287,7 @@ namespace Emberfall
             float dt = Time.deltaTime;
             if (dt <= 0) return;
             attackCooldown = Mathf.Max(0,attackCooldown - dt);
-            skillBasicRecovery = Mathf.Max(0,skillBasicRecovery - dt);
+            skillBasicRecovery.Advance(dt);
             attackAnimation = Mathf.Max(0,attackAnimation - dt * 4f);
             hurtTimer = Mathf.Max(0,hurtTimer - dt);
             dodgeCooldown = Mathf.Max(0,dodgeCooldown - dt);
@@ -583,7 +583,7 @@ namespace Emberfall
 
         private void BasicAttack()
         {
-            if (TraversalStartedThisFrame || skillBasicRecovery > 0) return;
+            if (TraversalStartedThisFrame || skillBasicRecovery.Blocked) return;
             if (charge != null && (charge.IsCharging || charge.ConsumedThisFrame)) return;
             if ((HeroClass==HeroClass.Arcanist || HeroClass==HeroClass.Summoner) && !ValidAimTarget(AimTarget)) AimTarget=MagicConeTarget();
             FaceAim();
@@ -958,7 +958,7 @@ namespace Emberfall
             return true;
         }
 
-        internal void CancelCombatPose() { skillBasicRecovery = 0; if (model != null) model.CancelAction(); }
+        internal void CancelCombatPose() { skillBasicRecovery.Clear(); if (model != null) model.CancelAction(); }
         internal float CounterOpportunityRemaining { get { return IsDead ? 0 : counterTime; } }
         internal EnemyController CurrentOpportunityTarget { get { return ValidAimTarget(AimTarget) ? AimTarget : null; } }
 
@@ -1153,7 +1153,7 @@ namespace Emberfall
             GameAudio.Play(SoundCue.Cast);
             if (CombatReviewEvents.Enabled) CombatReviewEvents.Emit("skillrelease",CombatReviewObjectId.Get(this),skill:slot);
             if ((HeroClass == HeroClass.Vanguard && slot == 5) || (HeroClass == HeroClass.Ranger && slot == 4)) movementSkillLock = .15f;
-            skillBasicRecovery = SkillDamageBudgets.SkillBasicRecovery(HeroClass, slot, executingChargedSkill);
+            skillBasicRecovery.Begin(HeroClass, slot, executingChargedSkill);
             if (executingChargedSkill) model.ReleaseCharge(slot);
             else model.PlayAction(slot,false);
             attackAnimation = 1;

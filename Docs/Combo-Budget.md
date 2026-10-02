@@ -1,6 +1,6 @@
 # Deterministic combo and resource budget
 
-Generated from the production rule snapshot listed below. The CSV contains 48 scenarios: four classes, levels 20/50/100, two valid recipes per class, and 5-second or 10-second windows. Tests passed 2,383 checks. No Unity player, rendering, physics or measured time-to-kill experiment was run.
+Generated from the production rule snapshot listed below. The CSV contains 48 scenarios: four classes, levels 20/50/100, two valid recipes per class, and 5-second or 10-second windows. Tests passed 2,512 checks. No Unity player, rendering, physics or measured time-to-kill experiment was run.
 
 ## What the numbers mean
 
@@ -106,3 +106,10 @@ Changing any coefficient or event schedule requires regenerating the CSV and thi
 - `Assets/Scripts/Combat/ProjectileVolleyBudget.cs`: `94fd1d71f0f630128656d342a396e301e11fc1e6def135a8dd1ebefb76813492`
 - `Tests/ComboBudgetSimulation.cs`: `e52e63b35450e865f1c47508f914a514190ca16eacbf0f8c65ca2cbb065c3c79`
 - `Tests/ComboBudgetTests.cs`: `a91367d060572c79b796ade5f103a81bc75c4e60033183dcb5d764759375a217`
+
+
+## Recovery boundary validation
+
+The controller and budget host both use the production `SkillBasicRecoveryClock`. Pure clock fixtures cover 30/60/120 Hz and a 200 ms frame: recovery ends on the first gameplay update at or after the nominal boundary, with less than one update of quantization. A 200 ms update releases an ordinary opening recovery once; it does not release charged Vanguard judgment until the next update crosses approximately 238.6 ms. No missed basic attacks or energy are accumulated for later catch-up.
+
+For each fixed input/delta schedule, absent, repeated, accelerated and extended synthetic visual drivers produce the same attack/confirmed-hit-energy signature. These fixtures exercise the actual recovery clock and SkillRuntime, plus source contracts for PlayerController's gate, cancellation and confirmed-hit wiring. They do not execute CombatModel, Unity Update/LateUpdate ordering, real collision, rendered animation, or device input. Visual independence of the integrated Unity scene still needs PlayMode/device acceptance.

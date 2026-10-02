@@ -16,11 +16,11 @@ assert 'if (IsDead) return;' in p and 'if (session.InputBlocked)' in p
 print('PASS: 8 basic action timing wiring contracts')
 
 assert 'model.BasicActionBlocked' not in p
-assert 'TraversalStartedThisFrame || skillBasicRecovery > 0' in b
-assert 'skillBasicRecovery = Mathf.Max(0,skillBasicRecovery - dt);' in p
-assert 'internal void CancelCombatPose() { skillBasicRecovery = 0;' in p
+assert 'TraversalStartedThisFrame || skillBasicRecovery.Blocked' in b
+assert 'skillBasicRecovery.Advance(dt);' in p
+assert 'internal void CancelCombatPose() { skillBasicRecovery.Clear();' in p
 cast=p[p.index('private void CastSkillNow'): ] if 'private void CastSkillNow' in p else p[p.index('if (!skillRuntime.TryConsume(slot, rank'):]
-assert cast.index('skillRuntime.TryConsume(')<cast.index('skillBasicRecovery = SkillDamageBudgets.SkillBasicRecovery(HeroClass, slot, executingChargedSkill)')
+assert cast.index('skillRuntime.TryConsume(')<cast.index('skillBasicRecovery.Begin(HeroClass, slot, executingChargedSkill)')
 assert '!charge.IsCharging && !charge.ConsumedThisFrame' in p
 assert 'if (attackCooldown <= 0) BasicAttack();' in p
 hit=p[p.index('internal void OnBasicAttackHitTarget'):p.index('private void',p.index('internal void OnBasicAttackHitTarget'))]

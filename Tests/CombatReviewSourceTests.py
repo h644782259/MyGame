@@ -7,7 +7,7 @@ assert 'markTarget:lockedTarget,markStrength:.08f+rank*.04f' in s
 hit=fx[fx.index('hitTargets.Add(enemy);'):fx.index('if (companionSource != null) companionSource.OnConfirmedHit(enemy);')]
 assert hit.index('LockedImpactMarkPolicy.ShouldApply') < hit.index('enemy.StatusEffects.Mark(4f, impactMarkStrength)') < hit.index('enemy.TakeDamage(')
 assert 'if (!CombatSight.Direct(previous, enemy.transform.position)) continue;' in fx
-assert 'if (TraversalStartedThisFrame || skillBasicRecovery > 0) return;' in p and 'CancelCombatPose();' in p[p.index('private bool TryBlinkCore'):p.index('private void AdvanceJump')]
+assert 'if (TraversalStartedThisFrame || skillBasicRecovery.Blocked) return;' in p and 'CancelCombatPose();' in p[p.index('private bool TryBlinkCore'):p.index('private void AdvanceJump')]
 assert 'SkillDamageBudgets.AdvancedFirstEvent(heroClass, skill) / (.52f - .30f)' in m
 assert 'if (step == 0) GameAudio.Play(SoundCue.Judgment);' in s and 'rank==3 && step==steps-1) SpawnTail(target,5.2f*range' in s
 assert 'AudioVoicePolicy.Select' in a and 'now - lastImpact < .1f' in a

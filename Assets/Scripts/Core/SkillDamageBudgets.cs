@@ -1,6 +1,18 @@
 using System;
 namespace Emberfall
 {
+    // The combat clock has no animation input or callback. It advances once per
+    // gameplay update and never queues missed attacks after a long frame.
+    public struct SkillBasicRecoveryClock
+    {
+        public float Remaining { get; private set; }
+        public bool Blocked { get { return Remaining > 0; } }
+        public void Begin(HeroClass hero,int skill,bool charged)
+        { Remaining=SkillDamageBudgets.SkillBasicRecovery(hero,skill,charged); }
+        public void Advance(float dt)
+        { if(!float.IsNaN(dt)&&!float.IsInfinity(dt)&&dt>0)Remaining=Math.Max(0,Remaining-dt); }
+        public void Clear() { Remaining=0; }
+    }
     public readonly struct PeriodicSkillBudget
     {
         public readonly float Startup,Duration,Interval,TickCoefficient,FinisherCoefficient;

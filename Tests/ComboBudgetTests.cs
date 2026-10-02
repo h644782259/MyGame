@@ -10,9 +10,56 @@ public static class ComboBudgetTests
     private static int checks;
     private static void Check(bool value,string message){checks++;if(!value)throw new Exception(message);}
     private static bool Near(float a,float b,float tolerance=.003f){return Math.Abs(a-b)<=tolerance;}
+    private static string RecoveryTrace(float[] frames,int visualMode,bool charged)
+    {
+        var clock=new SkillBasicRecoveryClock();clock.Begin(HeroClass.Vanguard,charged?9:0,charged);
+        var runtime=new SkillRuntime(HeroClass.Vanguard);runtime.TryConsume(0,1);
+        float time=0,nextBasic=0,visualAge=0;
+        var events=new List<string>();
+        foreach(float dt in frames)
+        {
+            time+=dt;clock.Advance(dt);
+            // Model drivers are deliberately adversarial: absent, normal, repeated,
+            // accelerated, or extended settling. None is an input to combat time.
+            int advances=visualMode==0?0:visualMode==2?4:1;
+            for(int i=0;i<advances;i++)visualAge+=dt*(visualMode==3?8:visualMode==4?.1f:1);
+            if(!clock.Blocked&&time>=nextBasic)
+            {
+                nextBasic=time+SkillDamageBudgets.BasicInterval(HeroClass.Vanguard);
+                float before=runtime.Energy;
+                runtime.RestoreEnergy(SkillDamageBudgets.BasicEnergyOnHit); // this fixture admits one real hit per attack
+                events.Add(time.ToString("F4",CultureInfo.InvariantCulture)+":"+(runtime.Energy-before).ToString("F4",CultureInfo.InvariantCulture));
+            }
+        }
+        return string.Join(";",events);
+    }
+    private static void RecoveryClockCases()
+    {
+        foreach(float dt in new[]{1f/30,1f/60,1f/120,.2f})
+        foreach(bool charged in new[]{false,true})
+        {
+            var clock=new SkillBasicRecoveryClock();clock.Begin(HeroClass.Vanguard,charged?9:0,charged);
+            float limit=clock.Remaining,elapsed=0;int updates=0;
+            while(clock.Blocked){clock.Advance(dt);elapsed+=dt;updates++;Check(updates<40,"bounded recovery");}
+            Check(elapsed+.00001f>=limit&&elapsed<limit+dt+.00001f,"recovery releases on first gameplay update crossing boundary");
+            float[] frames=Enumerable.Repeat(dt,Math.Max(4,(int)Math.Ceiling(1/dt))).ToArray();
+            string expected=RecoveryTrace(frames,1,charged);
+            for(int mode=0;mode<5;mode++)Check(RecoveryTrace(frames,mode,charged)==expected,"visual driver changes cannot alter attack/energy event signature");
+        }
+        var recovery=new SkillBasicRecoveryClock();recovery.Begin(HeroClass.Vanguard,9,true);float remaining=recovery.Remaining;
+        foreach(float dt in new[]{0f,-1,float.NaN,float.PositiveInfinity})recovery.Advance(dt);
+        Check(recovery.Remaining==remaining,"pause and invalid deltas do not release recovery");
+        recovery.Advance(.2f);Check(recovery.Blocked,"200ms spike does not prematurely release charged judgment");
+        recovery.Advance(.04f);Check(!recovery.Blocked,"next gameplay update releases judgment without queued attacks");
+        recovery.Begin(HeroClass.Vanguard,9,true);recovery.Clear();Check(!recovery.Blocked,"dodge/cancel/death/epoch retirement clear shared clock");
+        recovery.Begin(HeroClass.Vanguard,9,true);recovery.Begin(HeroClass.Vanguard,0,false);
+        Check(Near(recovery.Remaining,.0884f),"a newer successful skill replaces prior pose recovery, preserving old policy");
+        Check(RecoveryTrace(new[]{.2f},0,false).Split(';').Length==1,"200ms frame produces one attack, never catch-up hits or energy");
+    }
     public static string Run(string artifactDirectory=null)
     {
         checks=0;
+        RecoveryClockCases();
         Check(Near(SkillDamageBudgets.SkillBasicRecovery(HeroClass.Ranger,0,false),.0884f),"opening recovery retains nominal 88.4ms");
         Check(Near(SkillDamageBudgets.SkillBasicRecovery(HeroClass.Arcanist,5,false),.1092f),"advanced recovery retains nominal 109.2ms");
         Check(Near(SkillDamageBudgets.SkillBasicRecovery(HeroClass.Ranger,9,true),.1456f),"ultimate recovery retains nominal 145.6ms");
