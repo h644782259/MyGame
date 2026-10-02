@@ -46,6 +46,8 @@ namespace Emberfall
                 float size=MobileControls.Active?48*TouchRatio:42;
                 float tab=(area.width-24)/3;
                 for(int i=0;i<3;i++)if(Button(new Rect(area.x+6+i*(tab+6),area.y+6,tab,size),i==0?"全身":i==1?"武器":"后背",(int)collectionViewing.Mode==i?gold:jade)){collectionViewing.View((CollectionPreviewComposition)i);BlockUITransition();}
+                float actionWidth=(area.width-24)/3;
+                for(int i=0;i<3;i++)if(Button(new Rect(area.x+6+i*(actionWidth+6),area.y+12+size,actionWidth,size),i==0?"待机":i==1?"攻击":"施法",(int)collectionModel.PreviewAction==i?gold:jade))collectionModel.Play((CollectionPreviewAction)i);
                 if(Button(new Rect(area.x+6,area.yMax-size-6,size,size),"左转",jade))collectionViewing.Rotate(-45);
                 if(Button(new Rect(area.xMax-size-6,area.yMax-size-6,size,size),"右转",jade))collectionViewing.Rotate(45);
             }

@@ -55,6 +55,7 @@ namespace Emberfall
         {
             Color accent=GameBalance.RarityColor(fashion.rarity);
             WingSilhouette style=CostumeRecipes.WingStyle(fashion.rarity);
+            if(fashion.rarity==Rarity.Rare)BuildRareWeaponFashion(accent);
             // Small structural ornaments echo the back silhouette; the blade, string and core stay readable.
             if(swordRig!=null)
             {
@@ -70,6 +71,17 @@ namespace Emberfall
             else if(bowRig!=null)
                 for(int side=-1;side<=1;side+=2)
                     CostumeMesh("Fashion bow limb crest",style,fashionWeapon,new Vector3(.025f,side*weaponStructure.BowReach*.78f,.10f),new Vector3(.5f,.26f,.5f),accent,style==WingSilhouette.Crystal?VisualSurface.Crystal:VisualSurface.Wood).localRotation=Quaternion.Euler(0,0,side<0?180:0);
+        }
+        private void BuildRareWeaponFashion(Color accent)
+        {
+            if(swordRig!=null)for(int side=-1;side<=1;side+=2)
+                Part("Rare forked guard tine",PrimitiveType.Cube,WeaponAnchorLocal(WeaponVisualAnchor.SwordGuard)+new Vector3(side*.29f,.13f,0),new Vector3(.055f,.29f,.065f),accent,fashionWeapon,VisualSurface.Metal).localRotation=Quaternion.Euler(0,0,-side*27);
+            else if(staffRig!=null)
+            {
+                for(int side=-1;side<=1;side+=2)CostumeMesh("Rare split focus halo",WingSilhouette.Mechanical,fashionWeapon,WeaponAnchorLocal(WeaponVisualAnchor.StaffCore)+new Vector3(side*.13f,0,0),new Vector3(.32f,.39f,.20f),accent,VisualSurface.Metal).localRotation=Quaternion.Euler(0,side*35,0);
+            }
+            else if(bowRig!=null)for(int side=-1;side<=1;side+=2)
+                Part("Rare recurved bow plate",PrimitiveType.Cube,new Vector3(0,side*weaponStructure.BowReach*.75f,.15f),new Vector3(.10f,.31f,.045f),accent,fashionWeapon,VisualSurface.Wood).localRotation=Quaternion.Euler(side*18,0,side*13);
         }
     }
 }

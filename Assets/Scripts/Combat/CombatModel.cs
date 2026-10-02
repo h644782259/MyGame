@@ -43,6 +43,8 @@ namespace Emberfall
         private Transform wolfJaw;
         private Vector3 companionBodyScale;
         private float phase;
+        private bool isolatedPreview;
+        private float previewTime;
         private float recoilStarted = -10f, recoilStrength;
         private Vector3 recoilDirection;
         private EnemyController enemyOwner;
@@ -895,7 +897,7 @@ namespace Emberfall
             bool acting = t < 1f;
             float stride = Mathf.Sin(gaitPhase) * speed;
             float lift = Mathf.Abs(Mathf.Sin(gaitPhase));
-            float breathing = Mathf.Sin(Time.time * 2f + phase);
+            float breathing = Mathf.Sin((isolatedPreview?previewTime:Time.time) * 2f + phase);
             float landing = Mathf.Pow(lift, 2f);
             transform.localPosition = Vector3.up * (landing * .032f * speed);
             pelvis.localPosition = new Vector3(stride * .024f, .83f, 0);

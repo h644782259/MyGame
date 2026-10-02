@@ -35,6 +35,12 @@ namespace Emberfall
             gameObject.AddComponent<MeshFilter>().sharedMesh = mesh;
             gameObject.AddComponent<MeshRenderer>().sharedMaterial = material;
         }
+        public void SamplePreview(float time,float action)
+        {
+            if(mesh==null||float.IsNaN(time)||float.IsInfinity(time))return;
+            motion=Mathf.Clamp01(action)*.4f;inertiaPitch=inertiaSide=0;
+            Deform(time);mesh.vertices=vertices;mesh.RecalculateNormals();mesh.RecalculateBounds();
+        }
         private void LateUpdate()
         {
             if (mesh == null || Time.deltaTime <= 0) return;
