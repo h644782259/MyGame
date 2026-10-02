@@ -361,8 +361,9 @@ namespace Emberfall
             hasCommandPoint = false;
             commandedTarget = ValidTarget(focus) ? focus : preservePoint ? null : Owner.FocusTarget;
             if (!ValidTarget(commandedTarget)) commandedTarget = preservePoint ? null : AcquireTarget();
-            // Preserve the captured fallback even while the original target is alive.
-            // If it dies during the command, do not silently acquire a bystander.
+            // A confirmed one-shot cast keeps its landing point. The companion's
+            // ongoing enemy override is separate: target loss restores team intent,
+            // while an explicitly empty-ground command retains this point until expiry.
             if (preservePoint)
             { commandedPoint = WorldTraversal.NearestWalkable(CombatSight.GroundPoint(Owner.transform.position,point),NavigationRadius); hasCommandPoint = true; }
             commandHadTarget = commandedTarget != null;
