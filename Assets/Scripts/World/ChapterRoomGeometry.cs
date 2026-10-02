@@ -60,6 +60,16 @@ namespace Emberfall
             return pieces.ToArray();
         }
 
+        // Roster choice is bit 1; mirror remains independent bit 0. Counts/kinds are unchanged.
+        public static Vector3 ForestMobileSpawn(int seed,int index)
+        {
+            if(index<0||index>=6)throw new ArgumentOutOfRangeException(nameof(index));
+            int mirror=(seed&1)==0?1:-1;
+            var points=new[]{new Vector3(-6,0,7),new Vector3(-8,0,1),new Vector3(-5,0,4.5f),
+                new Vector3(5,0,-4),new Vector3(8,0,1),new Vector3(-8.5f,0,6.5f)};
+            Vector3 point=points[index];point.x*=mirror;return point;
+        }
+
         public static bool IsChapterLayout(int layout){return layout>=100&&layout<=105;}
         public static ChapterRoomPlan Plan(ChapterNode node,int room,int seed)
         {

@@ -25,7 +25,7 @@ namespace Emberfall {
  public sealed class SessionStub {
   public ProgressionService Progression;public bool Paused,BackgroundPaused,IsDead,HasStarted=true,Blocked,AllowConfirm=true,ChapterFinished,ChapterRewardPending;
   public bool OpenChapterSelectionAllowed=>HasStarted&&!Paused&&!BackgroundPaused&&!IsDead&&!ChapterFinished;
-  public ChapterNode SelectedChapterNode,ActiveChapterNode;public ChapterDifficulty SelectedChapterDifficulty;public int SelectedChapterTier=1;public bool SelectedChapterLimitedHealing;
+  public ChapterNode SelectedChapterNode,ActiveChapterNode;public ChapterDifficulty SelectedChapterDifficulty;public int SelectedChapterTier=1;public int SelectedChapterTactic=-1;public string SelectedChapterLineupPreview=>"";public bool SelectedChapterLimitedHealing;
   public bool ChapterResultReady=true;public ChapterResultSnapshot ChapterResult;public void ContinueChapterResult(){ChapterResultReady=true;}public void Respawn(){ReturnCalls++;}
   public RunStub ChapterRun=new RunStub();public ChapterRunReceipt Receipt;public int ChapterRewardMaterials=>Receipt==null?0:Receipt.Materials;public int ConfirmCalls,ReturnCalls;
   public bool ConfirmChapterEnter(){ConfirmCalls++;if(!AllowConfirm||!Progression.TryBeginChapterNode(SelectedChapterNode,SelectedChapterDifficulty,SelectedChapterTier,out Receipt))return false;for(int room=0;room<ChapterDefinition.RoomCount(Receipt.Node);room++)for(int i=0;i<(Receipt.Node==ChapterNode.StarPlatform?3:6);i++)if(!Progression.RegisterChapterEnemy(Receipt,room,i,Receipt.Node==ChapterNode.StarPlatform&&i==0))throw new Exception("UI host double must register actual completion budget");ChapterResult=new ChapterResultSnapshot(Receipt.Node,Receipt.Difficulty,Receipt.Tier,Progression.Profile.potions,false,0,0,0,0,false,null,null,0,0);return true;}
@@ -126,11 +126,11 @@ namespace Emberfall {
 }
 class Program{static void Main(string[] args){Console.WriteLine("PASS: "+Emberfall.GameUI.Verify(args[0])+" chapter UI/core replay assertions");}}
 '''
-core=['GameTypes','ProgressionService','ProgressionService.Reforge','ReforgeQuote','ProgressionService.Chapter','ChapterProgression','ChapterResultSnapshot','RoomTactics','CombatBalance','HubTravelRules','MasteryCoreRuntime','TierRewardRules','TierRewardBand','ProgressionGoalState']
+core=['RunChoices','RunChoices.Rooms','RunChoices.Chapter','GameTypes','ProgressionService','ProgressionService.Reforge','ReforgeQuote','ProgressionService.Chapter','ChapterProgression','ChapterResultSnapshot','RoomTactics','CombatBalance','HubTravelRules','MasteryCoreRuntime','TierRewardRules','TierRewardBand','ProgressionGoalState']
 dispatch=member('GameUI.cs','else if (session.IsDead)');shell=shell.replace('DEAD_DISPATCH',dispatch[dispatch.index('{'):])
 close=member('GameUI.cs','private void ClosePanel()');hook='if(CloseChapterSelection())return;'
 assert hook in close,'chapter ClosePanel hook must be integrated before replay'
-files=[root/'Assets/Scripts/Core'/f'{name}.cs' for name in core]+[root/'Assets/Scripts/UI/GameUI.Chapter.cs',root/'Assets/Scripts/UI/ChapterEntryPresentation.cs',root/'Assets/Scripts/UI/MobilePanelLayout.cs',root/'Tests/ProgressionTests.cs']
+files=[root/'Assets/Scripts/Combat/EnemyControlPolicy.cs']+[root/'Assets/Scripts/Core'/f'{name}.cs' for name in core]+[root/'Assets/Scripts/UI/GameUI.Chapter.cs',root/'Assets/Scripts/UI/ChapterEntryPresentation.cs',root/'Assets/Scripts/UI/MobilePanelLayout.cs',root/'Tests/ProgressionTests.cs']
 with tempfile.TemporaryDirectory(prefix='chapter-entry-') as folder:
  out=Path(folder);config=out/'NuGet.Config';config.write_text('<configuration><packageSources><clear /></packageSources></configuration>');env=dict(os.environ,DOTNET_CLI_HOME=str(out/'cli'),DOTNET_NOLOGO='1')
  for legacy in [False,True]:

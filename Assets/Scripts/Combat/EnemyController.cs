@@ -287,6 +287,7 @@ namespace Emberfall
                 ClampPosition();
                 return;
             }
+            if (RegroupMobileSupport(dt,effectiveSpeed)) return;
             if (ReturnToEscapePost(dt,effectiveSpeed,combatTargetPosition)) return;
             if (sidestepTime > 0)
             {
@@ -370,6 +371,10 @@ namespace Emberfall
         private Vector3 WalkForAnimation(Vector3 displacement)
         {
             Vector3 next = WorldTraversal.Move(transform.position,displacement,NavigationRadius);
+            // Only this explicit three-member roster is tethered. Knockback still uses authoritative traversal directly.
+            if(mobileSupplier!=null&&!mobileSupplier.IsDead&&mobileSupplier.isActiveAndEnabled&&
+                (CombatFx.Flat(next-mobileSupplier.transform.position).sqrMagnitude>27.04f||!WorldTraversal.HasLineOfSight(next,mobileSupplier.transform.position)))
+                next=WorldTraversal.Move(transform.position,route.Direction(transform.position,mobileSupplier.transform.position,NavigationRadius)*displacement.magnitude,NavigationRadius);
             Vector3 actual=CombatFx.Flat(next-transform.position);
             walkingDisplacement += actual;
             if(escapePost!=null&&!preparing&&chargeTime<=0&&actual.sqrMagnitude>.000001f)
@@ -686,6 +691,25 @@ namespace Emberfall
         private void ClampPosition()
         {
             transform.position = WorldTraversal.Move(transform.position, Vector3.zero, NavigationRadius);
+        }
+
+        private EnemyController mobileSupplier,mobileFirst,mobileSecond;
+        internal void ConfigureMobileSupport(EnemyController supplier,EnemyController first,EnemyController second)
+        {mobileSupplier=supplier;mobileFirst=first;mobileSecond=second;}
+        private bool RegroupMobileSupport(float dt,float speed)
+        {
+            if(preparing||chargeTime>0)return false;
+            EnemyController partner=mobileFirst!=null&&!mobileFirst.IsDead&&mobileFirst.isActiveAndEnabled?mobileFirst:
+                mobileSecond!=null&&!mobileSecond.IsDead&&mobileSecond.isActiveAndEnabled?mobileSecond:null;
+            if(partner==null)return false;
+            // The ranged provider follows the melee contest group rather than staying at its normal 7.5m range.
+            Vector3 point=partner.transform.position;
+            if(mobileSecond!=null&&mobileSecond!=partner&&!mobileSecond.IsDead&&mobileSecond.isActiveAndEnabled)
+                point=(point+mobileSecond.transform.position)*.5f;
+            if(CombatFx.Flat(transform.position-point).sqrMagnitude<=4f&&WorldTraversal.HasLineOfSight(transform.position,point))return false;
+            Vector3 direction=route.Direction(transform.position,point,NavigationRadius);
+            transform.position=WalkForAnimation(direction*speed*dt);
+            AnimateModel(1,attackAnimation,hurtTime>0);ClampPosition();return true;
         }
 
         private string EscapePostDescription
