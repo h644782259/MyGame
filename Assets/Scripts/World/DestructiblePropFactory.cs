@@ -19,6 +19,9 @@ namespace Emberfall
             Material trim=resources.Material(new Color(.56f,.42f,.23f),false,VisualSurface.Metal);
             if(kind==DestructibleKind.Crate)
             {
+                GameObject pilot=BlenderPilotArt.CreateProp("SupplyCrate",model,Vector3.zero);
+                if(pilot==null)
+                {
                 Part(model,"Weathered crate",PrimitiveType.Cube,new Vector3(0,.52f,0),new Vector3(.86f,1.04f,.84f),body);
                 for(int side=-1;side<=1;side+=2)
                 {
@@ -26,6 +29,7 @@ namespace Emberfall
                     Part(model,"Crate side brace",PrimitiveType.Cube,new Vector3(side*.44f,.52f,0),new Vector3(.055f,.1f,.84f),trim);
                 }
                 Part(model,"Crate lid seam",PrimitiveType.Cube,new Vector3(0,.94f,.44f),new Vector3(.85f,.045f,.04f),trim);
+            }
             }
             else if(kind==DestructibleKind.Pot)
             {
