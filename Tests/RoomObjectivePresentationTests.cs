@@ -23,9 +23,12 @@ public static class RoomObjectivePresentationTests
             float budget=new MobileControlLayout(568,320,163).AdventureStatus.Width-12;
             Check(compact.SupportHint.Length*10<=budget&&compact.Hint.Length*10<=budget,"every target support state and max room count fits compact text budget");
         }
-        var v=View(purify);Check(v.Title.Contains("双印净化")&&v.ProgressText.Contains("0/2")&&v.ProgressText.Contains("0.0/3秒")&&v.Hint.Contains("站入金环"),"initial mobile card explains seal count and time");
+        var halves=new RoomChainState(0);Register(halves);
+        for(int i=0;i<6;i++){halves.AdvanceSeal(0,.25f,true,true,false);halves.AdvanceSeal(1,.25f,true,true,false);}
+        var shared=View(halves);Check(shared.Fraction==.5f&&shared.ProgressText.Contains("3.0/6秒"),"aggregate uses both incomplete seal halves");
+        var v=View(purify);Check(v.Title.Contains("双印净化")&&v.ProgressText.Contains("0/2")&&v.ProgressText.Contains("0.0/6秒")&&v.Hint.Contains("任选A/B"),"initial mobile card explains seal count and time");
         for(int i=0;i<6;i++)purify.Advance(.25f,true,true,false);
-        v=View(purify,true);Check(v.ProgressText.Contains("1.5/3秒")&&v.Fraction==.25f&&v.Hint.Contains("正在累积"),"bar tracks capture rather than room index");
+        v=View(purify,true);Check(v.ProgressText.Contains("1.5/6秒")&&v.Fraction==.25f&&v.Hint.Contains("正在累积"),"bar tracks capture rather than room index");
         Check(View(purify,true,true).Hint.Contains("争夺2敌"),"contest visible");
         Check(View(purify,true,true,true).Hint.Contains("已暂停"),"pause takes precedence");
         Check(View(purify).SupportHint.Contains("援2")&&View(purify).SupportHint.Contains("目标受援"),"support counterplay remains visible during capture");
