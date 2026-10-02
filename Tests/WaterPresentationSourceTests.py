@@ -9,7 +9,10 @@ assert 'new Color(.42f,.28f,.16f),false,VisualSurface.Wood' in tactical
 assert water.count('Ribbon(parent,r,')==3
 assert 'profile.Width,height,shallows' in water and 'profile.DeepWidth,height+.0015f,depth' in water
 assert 'profile.CurrentWidth,height+.003f,current' in water
-assert water.count('false,VisualSurface.Water')==3
+# Three retained opaque depth bands plus one bounded animated current material.
+assert water[:water.index('WaterFlowBands.Create')].count('false,VisualSurface.Water')==3
+assert water.count('false,VisualSurface.Water')==4
+assert 'WaterFlowBands.Create(parent,flow,profile.CurrentWidth*.72f,height+.004f,environment,' in water
 assert 'BuildBridgeWaterContact(lowland,r,new Rect(-1.9f,-2.975f,3.8f,3.86f),.049f)' in w
 assert 'BuildBridgeWaterContact(parent,r,new Rect(-3.4f,-2.5f,6.8f,6),.07f)' in linked
 for token in ['WorldTraversal.','Collider','AddComponent<Light','Time.','Update()']:
