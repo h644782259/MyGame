@@ -155,7 +155,7 @@ namespace Emberfall
         public void ApplyEquipment(ItemData weapon, ItemData armor, ItemData relic)
         {
             if (!isHero || spine == null) return;
-            pilotHasGear = weapon != null || armor != null || relic != null;
+            pilotHasGear = !PilotStarterCompatible(weapon,ItemSlot.Weapon) || !PilotStarterCompatible(armor,ItemSlot.Armor) || !PilotStarterCompatible(relic,ItemSlot.Relic);
             if(pilotHasGear)SetBlenderPilotVisible(false);
             string weaponKey = EquipmentKey(weapon);
             string armorKey = EquipmentKey(armor);
