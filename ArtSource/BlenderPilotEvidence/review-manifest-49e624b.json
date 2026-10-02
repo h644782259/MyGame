@@ -1,0 +1,134 @@
+{
+  "frozenHead": "49e624b3f0729ff44761a262a062dc67b849dd84",
+  "sourceHashes": {
+    "blend": "6588211d349a2e523c7192799a3fb4e52077393115fa925dd38436de365de5e9",
+    "baseline": "9fc1cfe323fe3c03704414eadec8d361c26a0bcabd10f11ea5aa821e911421a1"
+  },
+  "nativeEngine": "Blender 4.3.2 / Cycles CPU single-thread / 128 samples / denoiser off",
+  "geometryChanges": false,
+  "renders": [
+    {
+      "file": "Vanguard-front.png",
+      "camera": [
+        0,
+        -8,
+        3
+      ],
+      "target": [
+        0,
+        0,
+        1.22
+      ],
+      "projection": "ORTHO",
+      "orthographicScale": 3.35,
+      "verticalFovDegrees": null,
+      "resolution": [
+        640,
+        800
+      ],
+      "samples": 128,
+      "seconds": 144.75,
+      "timingSource": "Blender render.log wall time including PNG save"
+    },
+    {
+      "file": "Vanguard-side.png",
+      "camera": [
+        8,
+        0,
+        3
+      ],
+      "target": [
+        0,
+        0,
+        1.22
+      ],
+      "projection": "ORTHO",
+      "orthographicScale": 3.35,
+      "verticalFovDegrees": null,
+      "resolution": [
+        640,
+        800
+      ],
+      "samples": 128,
+      "seconds": 161.76,
+      "timingSource": "Blender render.log wall time including PNG save"
+    },
+    {
+      "file": "Vanguard-back.png",
+      "camera": [
+        0,
+        8,
+        3
+      ],
+      "target": [
+        0,
+        0,
+        1.22
+      ],
+      "projection": "ORTHO",
+      "orthographicScale": 3.35,
+      "verticalFovDegrees": null,
+      "resolution": [
+        640,
+        800
+      ],
+      "samples": 128,
+      "seconds": 131.92,
+      "timingSource": "Blender render.log wall time including PNG save"
+    },
+    {
+      "file": "Combat-distance-new.png",
+      "camera": [
+        0,
+        15.200000729688314,
+        17.80000042214634
+      ],
+      "target": [
+        0,
+        0,
+        0.7
+      ],
+      "projection": "PERSP",
+      "orthographicScale": null,
+      "verticalFovDegrees": 48,
+      "resolution": [
+        800,
+        600
+      ],
+      "samples": 128,
+      "seconds": 119.02
+    },
+    {
+      "file": "Combat-distance-old.png",
+      "camera": [
+        0,
+        15.200000729688314,
+        17.80000042214634
+      ],
+      "target": [
+        0,
+        0,
+        0.7
+      ],
+      "projection": "PERSP",
+      "orthographicScale": null,
+      "verticalFovDegrees": 48,
+      "resolution": [
+        800,
+        600
+      ],
+      "samples": 128,
+      "seconds": 117.98
+    }
+  ],
+  "scope": "Source-art review, not Unity screenshot or quality acceptance. Three atlas-material views; combat pair identical neutral material/camera/light. Baseline meshes reconstructed from actual production export with managed TRS. No runtime/assets saved or changed.",
+  "outputHashes": {
+    "Combat-distance-comparison.png": "164190caddf57407ca73c14c44b5b8db128b238d7f4ccc4669a02068386fbd50",
+    "Combat-distance-new.png": "278f0075cc24c5e9796b2bc6dc5c0d9ef921cd9633fce490d9f99d5b7b8d9e73",
+    "Combat-distance-old.png": "6a549a25bb21cc62e2bce7a8ce575a3bbb9bfba1e24493972707c102f1fab970",
+    "Vanguard-back.png": "4f910628772d0201ff9ee83f2d39e3308b4ec581098259061d36cdb7ce7e7ec2",
+    "Vanguard-front.png": "60eb1c430238fc797c1383c9bcd8250a58a4c7eb9724680c5be95370b6f59631",
+    "Vanguard-side.png": "c5368fbb0d6915612ddcba4d3455c1c5bfb2436d1272d1a8d4c3f406a8de1b77",
+    "Vanguard-static-review.png": "c9acaf848e6f5ec8d4a928419b9315ee6894cfbdfde1a2122d06bb87c0cf7802"
+  }
+}
