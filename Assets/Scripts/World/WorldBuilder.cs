@@ -326,12 +326,8 @@ namespace Emberfall
             var triangles = new List<int>();
             for (int i = 0; i < path.Length; i++)
             {
-                Vector3 before = i == 0 ? path[1] - path[0] : path[i] - path[i-1];
-                Vector3 after = i == path.Length-1 ? before : path[i+1] - path[i];
-                Vector3 direction = (before.normalized + after.normalized).normalized;
-                Vector3 normal = new Vector3(-direction.z, 0, direction.x);
-                Vector3 sectionNormal = new Vector3(-before.z, 0, before.x).normalized;
-                float halfWidth = width * .5f / Mathf.Max(.72f, Vector3.Dot(normal, sectionNormal));
+                Vector3 normal;float miter;RibbonSection(path,i,out normal,out miter);
+                float halfWidth = width * .5f * miter;
                 Vector3 point = path[i]; point.y = height;
                 vertices.Add(point + normal * halfWidth);
                 vertices.Add(point - normal * halfWidth);
