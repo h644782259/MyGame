@@ -31,7 +31,7 @@ namespace Emberfall
     public static class ElementalCombatVfx{public enum Element{Fire,Poison}public static int Clears;public static void OnEnemy(EnemyController e,Element element,float duration){}public static void ClearFire(EnemyController e){Clears++;}}
     public static class CombatFx{public static int CashContacts;public static void BurnContact(PlayerController owner,Vector3 point,bool finale=false){CashContacts++;}public static Vector3 Flat(Vector3 v){v.y=0;return v;}public static void Ring(Vector3 p,float r,Color c,float duration,float width){} }
     public static class CombatSight{public static bool Area(Vector3 a,Vector3 b)=>true;}
-    public static class DestructibleProp{public static void StrikeArea(PlayerController p,Vector3 at,float r,CombatDamage d,int cast){} }
+    public static class DestructibleProp{public static Action OnStrike;public static void StrikeArea(PlayerController p,Vector3 at,float r,CombatDamage d,int cast){OnStrike?.Invoke();} }
     public static class PlayerUpgradeRules{public const float PoisonDetonationTicks=3;}
 }
 public static class BurnFinaleProductionTests
@@ -42,7 +42,7 @@ public static class BurnFinaleProductionTests
     static void Frame(float delta){Time.frameCount++;Time.deltaTime=delta;}
     static EnemyController Create(out PlayerController player)
     {
-        Time.frameCount=0;Time.deltaTime=0;Time.time=0;CombatFx.CashContacts=0;ElementalCombatVfx.Clears=0;player=new PlayerController();GameSession.Instance=new GameSession{Player=player};
+        Time.frameCount=0;Time.deltaTime=0;Time.time=0;CombatFx.CashContacts=0;DestructibleProp.OnStrike=null;ElementalCombatVfx.Clears=0;player=new PlayerController();GameSession.Instance=new GameSession{Player=player};
         var enemy=new EnemyController();enemy.StatusEffects=new EnemyStatusEffects{OwnerEnemy=enemy};enemy.StatusEffects.GetType().GetMethod("Awake",BindingFlags.Instance|BindingFlags.NonPublic).Invoke(enemy.StatusEffects,null);GameSession.Instance.Enemies.Add(enemy);return enemy;
     }
     public static string Run()
@@ -120,6 +120,15 @@ public static class BurnFinaleProductionTests
         Check(owner.BurnCashFeedback(out cashed,out expires)&&cashed==2&&CombatFx.CashContacts==2,"actual final area aggregates two accepted targets into one cast receipt");
         GameSession.Instance.InputBlocked=true;Check(!owner.BurnCashFeedback(out cashed,out expires),"paused feedback is hidden");GameSession.Instance.InputBlocked=false;
         owner.CombatEpoch++;Check(!owner.BurnCashFeedback(out cashed,out expires),"feedback cannot survive a room epoch");
+        enemy=Create(out owner);status=enemy.StatusEffects;status.Burn(owner,3,30);bool broken=false,observed=false;
+        DestructibleProp.OnStrike=()=>CombatImpactBatch.Resolve(()=>observed=broken);enemy.OnDamage=()=>broken=true;
+        owner.ElementalAdvancedArea(Vector3.zero,4,new CombatDamage(100,false),104,true);
+        Check(observed,"actual player area defers prop arbitration until enemy resolution completes");
+        enemy=Create(out owner);bool drained=false;DestructibleProp.OnStrike=()=>{CombatImpactBatch.Resolve(()=>drained=true);owner.CombatEpoch++;};
+        owner.ElementalAdvancedArea(Vector3.zero,4,new CombatDamage(100,false),105,true);Check(drained,"actual player early epoch return still closes impact batch");
+        enemy=Create(out owner);DestructibleProp.OnStrike=()=>{CombatImpactBatch.Resolve(()=>drained=false);throw new InvalidOperationException();};
+        try{owner.ElementalAdvancedArea(Vector3.zero,4,new CombatDamage(100,false),106,true);}catch(InvalidOperationException){}
+        Check(!drained,"actual player exceptional exit still drains batch");
         var gate=new BurnFinaleReceipts();Check(gate.TryEnter(10)&&gate.TryEnter(8)&&!gate.TryEnter(10),"recent out-of-order finale completions retain independent receipts");
         for(int i=11;i<80;i++)Check(gate.TryEnter(i),"new finale receipt accepted within bounded storage");
         Check(!gate.TryEnter(8)&&!gate.TryEnter(10),"evicted old cast receipts never become payable again");gate.Clear();Check(gate.TryEnter(8),"new owner epoch receives a clean receipt scope");

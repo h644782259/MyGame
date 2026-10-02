@@ -413,7 +413,7 @@ namespace Emberfall
                 if (attackCooldown <= 0) BasicAttack();
             }
             model.Animate(movement.magnitude,attackAnimation,hurtTimer > 0);
-            if (charge != null && charge.IsCharging) model.AnimateCharge(charge.Progress);
+            if (charge != null && charge.IsCharging) model.AnimateCharge(charge.Progress,charge.SkillIndex);
         }
 
         // Kept independent of Input so runtime validation can project a known body
@@ -644,6 +644,9 @@ namespace Emberfall
 
         private bool Melee(float range, float arc, CombatDamage damage, float knockback, float stun, float knockdown = 0, bool basic = false, int skillIndex = -1, int castId = 0)
         {
+            CombatImpactBatch.Begin();
+            try
+            {
             if(castId==0)castId=NewCastId();
             lastMeleeDamagedEnemy = false;
             DestructibleProp.StrikeCone(this,transform.position,transform.forward,range,arc,damage,castId);
@@ -672,6 +675,9 @@ namespace Emberfall
             if (CombatReviewEvents.Enabled && !lastMeleeDamagedEnemy) CombatReviewEvents.Emit(basic ? "basicmiss" : "spellmiss",CombatReviewObjectId.Get(this),skill:skillIndex,detail:"melee_release_no_enemy_damage;props_not_counted");
             if (hit && basic) OnBasicAttackHitTarget(firstHitPosition, firstHit, true);
             return hit;
+        
+            }
+            finally {CombatImpactBatch.End();}
         }
 
         // Legacy energy-validation entry point has no confirmed target and does
@@ -827,6 +833,9 @@ namespace Emberfall
         internal void RegisterSkillHit(int castId){if(session!=null&&!session.InputBlocked&&!session.CombatEnded&&!IsDead)masteryCore.SkillHit(castId);}
         internal void ElementalAdvancedArea(Vector3 at, float radius, CombatDamage direct, int castId, bool final)
         {
+            CombatImpactBatch.Begin();
+            try
+            {
             int impactEpoch=CombatEpoch;
             DestructibleProp.StrikeArea(this,at,radius,direct,castId);
             foreach (EnemyController enemy in session.Enemies.ToArray())
@@ -850,6 +859,9 @@ namespace Emberfall
                 enemy.TakeDamage(amount, Vector3.zero, 0, final?.3f:0, critical:direct.IsCritical);
                 if(burnSettlement!=null&&burnSettlement.Apply())RecordBurnCash(castId,impactEpoch,enemy.transform.position);
             }
+        
+            }
+            finally {CombatImpactBatch.End();}
         }
 
         internal void ApplyNovaStatus(EnemyController enemy, int rank)
@@ -945,6 +957,9 @@ namespace Emberfall
 
         internal void HitArea(Vector3 at, float radius, CombatDamage damage, float knockback = 0, float stun = 0, int castId = 0, ProjectileVolleyBudget<EnemyController> volley = null)
         {
+            CombatImpactBatch.Begin();
+            try
+            {
             if(castId==0)castId=NewCastId();
             DestructibleProp.StrikeArea(this,at,radius,damage,castId);
             for (int i = session.Enemies.Count - 1; i >= 0; i--)
@@ -954,6 +969,9 @@ namespace Emberfall
                 Vector3 delta = CombatFx.Flat(enemy.transform.position - at);
                 if (delta.magnitude <= radius + (enemy.IsBoss ? .85f : .4f) + enemy.HitFootprintBonus && CombatSight.Area(at,enemy.transform.position)) { var impact=volley==null?damage:volley.Apply(enemy,damage,true);if(impact.Amount<=0)continue;RegisterSkillHit(castId);ApplySpellDodgeBoon(enemy);enemy.TakeDamage(impact.Amount,delta.normalized,knockback,stun,critical:impact.IsCritical); }
             }
+        
+            }
+            finally {CombatImpactBatch.End();}
         }
 
         internal void SkillDash(Vector3 direction, float distance, float protection)
