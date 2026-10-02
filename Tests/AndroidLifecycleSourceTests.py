@@ -3,7 +3,11 @@ r=Path(__file__).resolve().parents[1]/'Assets/Scripts'
 u=(r/'UI/GameUI.cs').read_text(); lifecycle=(r/'UI/GameUI.Lifecycle.cs').read_text(); expedition=(r/'UI/GameUI.Expedition.cs').read_text(); m=(r/'UI/MobileControls.cs').read_text(); s=(r/'Core/GameSession.cs').read_text(); a=(r/'Core/GameAudio.cs').read_text()
 assert 'GUI.enabled = !session.BackgroundPaused && !LifecycleTouchBlocked && !UITransitionBlocked' in u
 cancel=expedition.split('public void CancelBackgroundInput()',1)[1].split('\n        }',1)[0]
-for token in ['GUIUtility.hotControl=0','GUIUtility.keyboardControl=0','lifecycleRelease.Block','CancelHotbarPointer()','BlockUITransition()']: assert token in cancel,token
+assert 'CancelForegroundInput();' in cancel and 'lifecycleRelease.Block' in cancel
+foreground=expedition.split('public void CancelForegroundInput()',1)[1].split('\n        }',1)[0]
+for token in ['GUIUtility.hotControl=0','GUIUtility.keyboardControl=0','CancelHotbarPointer()','BlockUITransition()']: assert token in foreground,token
+assert 'lifecycleRelease.Block' not in foreground
+assert 'if (BackgroundPaused) ui.CancelBackgroundInput();' in s and 'else ui.CancelForegroundInput();' in s
 assert 'Screen.dpi' in lifecycle and 'Screen.orientation' in lifecycle
 assert 'MobileControls.ResetInput();' in lifecycle and 'CancelBackgroundInput();' in lifecycle
 assert m.index('ui.RefreshTouchViewport()')<m.index('ui.LifecycleTouchBlocked')
