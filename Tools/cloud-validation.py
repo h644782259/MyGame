@@ -351,6 +351,9 @@ def main():
         failed = failed or not passed
         passed = run_check("blender-pilot-pose", [[sys.executable,str(ROOT/"Tools/test-blender-pilot.py")]], dict(env,DOTNET=dotnet), output, report)
         failed = failed or not passed
+        for pilot_test in ["BlenderPilotAdapterProductionTests.py","PilotStarterCompatibilityTests.py"]:
+            passed = run_check(pilot_test[:-3], [[sys.executable,str(ROOT/"Tests"/pilot_test),dotnet]], dict(env,DOTNET=dotnet), output, report)
+            failed = failed or not passed
         if args.compile or args.download_references or args.compile_android:
             try:
                 refs = unity_references(args.download_references)
