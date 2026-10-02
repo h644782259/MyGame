@@ -59,6 +59,10 @@ namespace Emberfall
     internal sealed class FadingCombatEffect : MonoBehaviour
     {
         private LineRenderer line;
+        private GameSession session;
+        private PlayerController playerGeneration;
+        private int epoch;
+        private bool combatBound;
         private Color color;
         private float radius, lifetime, age;
         private bool expand, slash, registered, respectCover;
@@ -69,6 +73,10 @@ namespace Emberfall
         private static void ResetCount() { ActiveCount = 0; }
         public void Setup(LineRenderer renderer, Color value, float size, float duration, bool growing, bool ribbon = false, bool respectCover = false)
         {
+            session = GameSession.Instance;
+            playerGeneration = session != null ? session.Player : null;
+            epoch = playerGeneration != null ? playerGeneration.CombatEpoch : -1;
+            combatBound = session != null && session.HasStarted && playerGeneration != null;
             line = renderer; color = value; radius = size; lifetime = Mathf.Max(.05f, duration); expand = growing; slash = ribbon;
             color.a *= growing ? Mathf.Lerp(.4f,1f,EffectPreferences.EffectsScale) : 1f;
             this.respectCover=respectCover; registered = true; ActiveCount++;
@@ -78,11 +86,22 @@ namespace Emberfall
         private void LateUpdate(){RefreshBoundary();}
         private void Update()
         {
-            age += Time.deltaTime;
+            // Standalone rings/forks have no world parent to retire them. Check the
+            // originating adventure before scaled time: title/death can freeze it.
+            if (combatBound && (session == null || GameSession.Instance != session || !session.HasStarted ||
+                session.IsDead || session.ModeFinished || playerGeneration == null ||
+                session.Player != playerGeneration || playerGeneration.CombatEpoch != epoch))
+            {
+                gameObject.SetActive(false); // Return both the ring and optional bolt leases now.
+                Destroy(gameObject);
+                return;
+            }
+            float dt = combatBound ? Time.deltaTime : Time.unscaledDeltaTime;
+            age += dt;
             float fraction = age / lifetime;
             if (fraction >= 1) { Destroy(gameObject); return; }
             if (expand) transform.localScale = Vector3.one * radius * Mathf.Lerp(slash ? .75f : .4f, 1f, 1f-Mathf.Pow(1f-Mathf.Clamp01(fraction*1.7f),3f));
-            if (slash) transform.Rotate(0,Time.deltaTime*100f*(1f-fraction),0,Space.Self);
+            if (slash) transform.Rotate(0,dt*100f*(1f-fraction),0,Space.Self);
             Color faded = color;
             faded.a *= Mathf.Clamp01((1f - fraction) * 2f);
             line.startColor = line.endColor = faded;
