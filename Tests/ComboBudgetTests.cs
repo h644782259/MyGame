@@ -13,6 +13,16 @@ public static class ComboBudgetTests
     public static string Run(string artifactDirectory=null)
     {
         checks=0;
+        Check(Near(SkillDamageBudgets.SkillBasicRecovery(HeroClass.Ranger,0,false),.0884f),"opening recovery retains nominal 88.4ms");
+        Check(Near(SkillDamageBudgets.SkillBasicRecovery(HeroClass.Arcanist,5,false),.1092f),"advanced recovery retains nominal 109.2ms");
+        Check(Near(SkillDamageBudgets.SkillBasicRecovery(HeroClass.Ranger,9,true),.1456f),"ultimate recovery retains nominal 145.6ms");
+        Check(Near(SkillDamageBudgets.SkillBasicRecovery(HeroClass.Vanguard,9,true),.238636f),"charged judgment retains pre-contact plus recovery window");
+        var held=ComboBudgetSimulation.Run(HeroClass.Vanguard,50,new ComboBudgetSimulation.Recipe("held-after-skill",false,0),.4f);
+        Check(held.BasicHits==1 && held.Hits.First(h=>h.Category=="basic").Time>=.0884f && held.Hits.First(h=>h.Category=="basic").Time<.1f,
+            "held basic releases once at first eligible step, without recovery catch-up burst");
+        var judgment=ComboBudgetSimulation.SkillTimeline(HeroClass.Vanguard,9,3).OrderBy(h=>h.Time).ToArray();
+        Check(Near(judgment[0].Time,.15f)&&judgment[0].Coefficient>judgment[1].Coefficient&&judgment[1].Time>judgment[0].Time,
+            "advanced budget includes early main judgment before smaller sword impacts");
         var rows=ComboBudgetSimulation.StandardRows();Check(rows.Count==48,"four classes, three levels, two recipes and two horizons");
         foreach(var r in rows)
         {
@@ -35,6 +45,12 @@ public static class ComboBudgetTests
             Check(Near(r.EnergySpent,r.Casts.Sum(c=>c.Cost))&&Near(r.EnergyRemaining,100-r.EnergySpent+r.EnergyRestored,.02f),"resource ledger reconciles with actual SkillRuntime energy");
             Check(r.Hits.All(h=>h.Time>=0&&h.Time<=r.Seconds+.0001f&&h.Coefficient>0&&!float.IsNaN(h.Coefficient)),"only delivered finite positive damage enters window");
             Check(Near(r.Category("basic"),r.BasicHits*SkillDamageBudgets.BasicCoefficient(r.Hero),.005f),"basic damage equals confirmed hits times production coefficient");
+            foreach(var basic in r.Hits.Where(h=>h.Category=="basic"))
+            {
+                var latest=r.Casts.LastOrDefault(c=>c.Committed<=basic.Time);
+                if(latest!=null)Check(basic.Time-latest.Committed+.00002f>=SkillDamageBudgets.SkillBasicRecovery(r.Hero,latest.Skill,SkillDamageBudgets.ChargeSeconds(r.Hero,latest.Skill)>0),
+                    "modeled basic cannot precede latest skill's production recovery");
+            }
             Check(Near(r.Damage,r.Category("basic")+r.Category("skill")+r.Category("reaction")+r.Category("poison")+r.Hits.Where(h=>h.Category.StartsWith("pet_")).Sum(h=>h.Coefficient),.01f),"damage categories reconcile to total");
             if(r.Hero==HeroClass.Arcanist)Check(r.Hits.Count(h=>h.Category=="reaction")<=r.Casts.Count(c=>c.Skill==1),"one shatter at most per meteor cast including its echo");
             if(r.Hero==HeroClass.Ranger)Check(r.Hits.Count(h=>h.Category=="reaction")<=r.Casts.Count(c=>c.Skill==0),"one poison detonation at most per shared fan cast");

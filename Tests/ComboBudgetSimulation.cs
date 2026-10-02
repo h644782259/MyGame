@@ -65,6 +65,7 @@ public static class ComboBudgetSimulation
     {
         private readonly HeroClass hero;private readonly Recipe recipe;private readonly Result result;private readonly SkillRuntime runtime;
         private readonly bool basics;private readonly float cancelAt;
+        private float basicRecoveryUntil;
         private readonly List<ScheduledImpact> pending=new List<ScheduledImpact>(); private readonly List<Pet> pets=new List<Pet>();
         private readonly RecentCastGate meteorGate=new RecentCastGate(),poisonGate=new RecentCastGate();
         private readonly OpeningFrostCounter frostCounter=new OpeningFrostCounter();private readonly CombatProcCooldown frostCooldown=new CombatProcCooldown();
@@ -111,7 +112,7 @@ public static class ComboBudgetSimulation
                         break;
                     }
                 }
-                if(basics&&charging<0&&!committedCharge&&time+1e-5f>=nextBasic)
+                if(basics&&charging<0&&!committedCharge&&time+1e-5f>=nextBasic&&time+1e-5f>=basicRecoveryUntil)
                 {
                     nextBasic=time+SkillDamageBudgets.BasicInterval(hero);
                     Hit(SkillDamageBudgets.BasicCoefficient(hero),"basic",-1,0);Restore(SkillDamageBudgets.BasicEnergyOnHit);
@@ -129,6 +130,7 @@ public static class ComboBudgetSimulation
         {
             int rank=result.Ranks[skill];float before=runtime.Energy;
             if(!runtime.TryConsume(skill,rank))return;
+            basicRecoveryUntil=time+SkillDamageBudgets.SkillBasicRecovery(hero,skill,SkillDamageBudgets.ChargeSeconds(hero,skill)>0);
             float spent=before-runtime.Energy;result.EnergySpent+=spent;int cast=++nextCast;
             result.Casts.Add(new Cast{Skill=skill,Rank=rank,Id=cast,Started=started,Committed=time,Cost=spent});
             if(hero==HeroClass.Summoner&&(skill==2||skill==4||skill==9)){Contract(skill,rank,cast);return;}

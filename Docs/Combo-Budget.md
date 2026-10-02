@@ -1,6 +1,6 @@
 # Deterministic combo and resource budget
 
-Generated from the production rule snapshot listed below. The CSV contains 48 scenarios: four classes, levels 20/50/100, two valid recipes per class, and 5-second or 10-second windows. Tests passed 1,602 checks. No Unity player, rendering, physics or measured time-to-kill experiment was run.
+Generated from the production rule snapshot listed below. The CSV contains 48 scenarios: four classes, levels 20/50/100, two valid recipes per class, and 5-second or 10-second windows. Tests passed 2,383 checks. No Unity player, rendering, physics or measured time-to-kill experiment was run.
 
 ## What the numbers mean
 
@@ -9,7 +9,7 @@ Generated from the production rule snapshot listed below. The CSV contains 48 sc
 - One stationary, always-visible, indefinitely surviving target; no incoming attacks, movement, interruption, armor or other target mitigation.
 - Every scheduled area impact lands. Fan arrows, nova shards and ultimate radial arrows use an ideal full-overlap target; the real per-target projectile diminishing/cap helper is applied to fan/shards. This is an overlap upper bound, not a promise that every arrow hits a normal-sized creature.
 - Projectile flight is treated as negligible. No travel/muzzle/terrain misses are simulated. Ground-effect startup, duration, inclusive ticks, finishers and skill charge time are retained.
-- Fixed 0.01-second clock. A priority input opportunity occurs every 0.20 seconds when not charging; this is a declared input recipe, not an invented production global cooldown. Instant skills can coexist with a basic attack. Charge release suppresses basics and new skill input in that step.
+- Fixed 0.01-second clock. A priority input opportunity occurs every 0.20 seconds when not charging; this is a declared input recipe, not an invented production global cooldown. Successful skill releases start the production basic-recovery window: 88.4 ms for skills 0–3, 109.2 ms for skills 4–8, 145.6 ms for ordinary ultimate releases, and about 238.6 ms for charged Vanguard judgment. Held basic input fires once after both this window and its attack interval expire; no catch-up attacks or energy are granted. Charge release also suppresses basics and new skill input in that step.
 - Input and hits at the exact 5/10-second endpoint are included. Damage still scheduled after the endpoint does not enter the damage total. A charge merely begun by the deadline is shown as pending and costs no energy yet.
 - All skills begin ready with 100 energy. Real SkillRuntime controls costs, cooldowns, passive regeneration and its 100-energy cap. Only confirmed basic hits restore the production 8 energy; actual restoration after cap clipping is separately counted.
 - Legal ranks are derived from production level requirements, prerequisites and level-minus-one point budget. Every available first rank is learned first, then recipe priority receives legal upgrades, then remaining skills. No mastery points, selected cores, run blessings, gear mechanisms, critical hits, fashion proc effects, perfect dodges, incoming-damage passives or healing actions are assumed.
@@ -39,24 +39,24 @@ Companions are already in attack range whenever commanded and remain able to att
 |---|---:|---:|---:|---:|---:|---:|---:|
 | Vanguard / cleave_field | 5s | 4 | 11 | 78 / 98.40 | 21.760 | 0.000 | 32.760 |
 | Vanguard / cleave_field | 10s | 6 | 22 | 110 / 100.00 | 32.240 | 0.000 | 54.240 |
-| Vanguard / ultimate_field | 5s | 4 | 9 | 130 / 58.40 | 26.288 | 0.000 | 35.288 |
+| Vanguard / ultimate_field | 5s | 4 | 9 | 130 / 58.40 | 26.710 | 0.000 | 35.710 |
 | Vanguard / ultimate_field | 10s | 5 | 20 | 142 / 100.00 | 32.858 | 0.000 | 52.858 |
-| Arcanist / frost_meteor | 5s | 3 | 10 | 84 / 100.00 | 19.488 | 0.000 | 30.988 |
+| Arcanist / frost_meteor | 5s | 3 | 9 | 84 / 100.00 | 19.488 | 0.000 | 29.838 |
 | Arcanist / frost_meteor | 10s | 4 | 19 | 102 / 100.00 | 26.720 | 0.000 | 48.570 |
-| Arcanist / ultimate_field | 5s | 4 | 8 | 152 / 27.60 | 24.354 | 0.000 | 33.554 |
+| Arcanist / ultimate_field | 5s | 4 | 7 | 152 / 19.60 | 24.354 | 0.000 | 32.404 |
 | Arcanist / ultimate_field | 10s | 5 | 17 | 170 / 82.52 | 37.002 | 0.000 | 56.552 |
-| Ranger / poison_fan | 5s | 3 | 15 | 68 / 100.00 | 17.728 | 0.000 | 29.428 |
-| Ranger / poison_fan | 10s | 4 | 30 | 82 / 100.00 | 30.336 | 0.000 | 53.736 |
+| Ranger / poison_fan | 5s | 3 | 15 | 68 / 100.00 | 17.308 | 0.000 | 29.008 |
+| Ranger / poison_fan | 10s | 4 | 30 | 82 / 100.00 | 29.916 | 0.000 | 53.316 |
 | Ranger / rain_poison | 5s | 4 | 13 | 132 / 89.00 | 30.166 | 0.000 | 40.306 |
-| Ranger / rain_poison | 10s | 5 | 28 | 146 / 100.00 | 43.474 | 0.000 | 65.314 |
+| Ranger / rain_poison | 10s | 5 | 27 | 146 / 100.00 | 43.474 | 0.000 | 64.534 |
 | Summoner / bonded_commands | 5s | 4 | 10 | 102 / 98.00 | 7.104 | 17.441 | 36.045 |
-| Summoner / bonded_commands | 10s | 5 | 20 | 118 / 100.00 | 13.440 | 28.289 | 64.729 |
+| Summoner / bonded_commands | 10s | 5 | 19 | 118 / 100.00 | 13.440 | 28.289 | 63.579 |
 | Summoner / treant_mark | 5s | 5 | 8 | 172 / 7.60 | 2.880 | 21.695 | 33.775 |
-| Summoner / treant_mark | 10s | 7 | 18 | 228 / 51.60 | 17.792 | 40.137 | 78.629 |
+| Summoner / treant_mark | 10s | 7 | 17 | 228 / 43.60 | 17.792 | 40.137 | 77.479 |
 
-The rows compare these declared recipes only. They are not a class-balance ranking: Vanguard shield retaliation and alternative skill packages are omitted, while pets are allowed to stay alive and in range. The 10-second Summoner treant/mark recipe spends228 energy and requires18 confirmed basics plus regeneration; its 40-energy mark commits only at6.92 seconds. Adding the entire mark budget to a 5-second burst would therefore be incorrect.
+The rows compare these declared recipes only. They are not a class-balance ranking: Vanguard shield retaliation and alternative skill packages are omitted, while pets are allowed to stay alive and in range. The 10-second Summoner treant/mark recipe spends 228 energy and lands 17 ideal confirmed basics plus passive regeneration. Pending impacts are listed separately; a spell's full lifetime budget is not added to a shorter burst window.
 
-Vanguard’s ultimate-first recipe yields slightly more modeled 5-second output than the starter recipe (35.288A versus32.760A), but slightly less over10 seconds (52.858A versus54.240A) because charge/energy opportunity costs change the actual casts and basic hits. This does not evaluate the ultimate’s larger area or control value.
+The early Vanguard main judgment uses the production 0.15-second event after the charge commits, ahead of the sword impacts. The regenerated rows include this schedule and shared post-skill basic recovery. Changes from older CSV rows are timing/model corrections, not newly tuned damage coefficients. Visual settling length is not an input to this simulation or the controller's basic recovery gate.
 
 ## Standalone spell analysis before and after the specific budget correction
 
@@ -76,7 +76,7 @@ Thorn’s production tick coefficient changed from0.55 to0.30, retaining the exi
 
 The separate ready rank3 foundation wolf contributes6.240A at5s and12.480A at10s in these no-basic standalone cases. It contributes13.520A through the thorn’s10.85s full window,4.160A through gravity’s2.60s full window, and21.840A through the treant’s17.10s window. The treant appears after1.10s charge, attacks for its actual16-second lifetime, receives one normal command buff, and expires; no spirit, pack, gear cooperation or dodge empowerment is present.
 
-After regenerating all48 rows, non-Summoner rows and every cast/resource/basic-hit/pet-damage column were unchanged. Only the tuned Summoner spell and poison terms changed. The CSV contains corrected production values; the before-values above preserve the isolated diagnostic snapshot.
+The standalone table above preserves the earlier isolated Summoner damage correction. The current 48-row CSV has additionally been regenerated for post-skill basic recovery and early Vanguard judgment; its cast/resource/basic-hit counts can therefore differ from that earlier snapshot. No damage coefficients were changed in this timing revision.
 
 ## Reproduction and checks
 

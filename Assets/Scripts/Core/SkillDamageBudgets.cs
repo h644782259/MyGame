@@ -37,6 +37,14 @@ namespace Emberfall
             return new PeriodicSkillBudget(0,0,1,0,0);
         }
         public const float BasicEnergyOnHit=8f;
+        // Nominal release/recovery timing is gameplay data, not the current model's
+        // animation age. Visual settling may extend beyond these values safely.
+        public static float SkillPoseDuration(HeroClass hero,int skill,bool charged)
+        { return charged && hero==HeroClass.Vanguard && skill==9 ? AdvancedFirstEvent(hero,skill)/(.52f-.30f) : skill==9?1.12f:skill>=4?.84f:.68f; }
+        public static float SkillPoseStart(HeroClass hero,int skill,bool charged)
+        { return charged && hero==HeroClass.Vanguard && skill==9 ? .30f : .52f; }
+        public static float SkillBasicRecovery(HeroClass hero,int skill,bool charged)
+        { return SkillPoseDuration(hero,skill,charged)*(.65f-SkillPoseStart(hero,skill,charged)); }
         public static float BasicCoefficient(HeroClass hero){return hero==HeroClass.Vanguard?1f:hero==HeroClass.Ranger?.78f:1.15f;}
         public static float BasicInterval(HeroClass hero){return hero==HeroClass.Vanguard?.46f:hero==HeroClass.Ranger?.34f:.52f;}
         // Auxiliary values multiply the same rank-scaled advanced cast snapshot.
