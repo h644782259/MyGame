@@ -236,6 +236,7 @@ namespace Emberfall
             InDungeon = false; DungeonCleared = false; IsDead = false;
             equipmentFingerprint = null;
             changingZone = false;
+            UpdateTimeScale();
         }
 
         public bool SaveAsNewSlot()
@@ -382,6 +383,9 @@ namespace Emberfall
                 respawnTimer = 8;
             }
             changingZone = false;
+            // Reset removed terminal chapter/mode gates. Reconcile only after the
+            // saved transition and new world are complete, preserving every other pause gate.
+            UpdateTimeScale();
             return true;
         }
 
