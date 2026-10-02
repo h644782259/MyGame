@@ -11,3 +11,12 @@ Result visibility alone waits on `LargeBossShutdownVisual.IsPresenting` for the 
 Validation entry points (no new aggregate registration required): `ChapterHostProductionTests.py` includes real host reward/receipt/lifecycle-gate regressions and five compiled negative controls; `ChapterEntryProductionTests.py` includes actual UI navigation/result code, real progression persistence and Back/opaque-first controls; `ChapterReturnTimeScaleTests.py` exercises real UI Return/Respawn through filesystem rejection and retry. `ChapterUIWiringTests.py` retains ordinary-mode routing contracts. `ChapterResultSnapshot.cs` is an added compile dependency wherever `ChapterEntryPresentation.cs` or `GameSession.Chapter.cs` is included; the default `chapter-presentation` pure check also needs it.
 
 Managed engine substitutes are explicit. These tests do not establish Unity 6 rendering, screen typography, actual touch feel or device frame timing. The C08 entry layout revision is a separate follow-up.
+
+
+## C08 入口布局（独立跟进）
+
+- 桌面章节内容按 960×660 上限居中；手机/平板三节点卡固定在详情滚动区上方，返回、兑换、确认仍固定底部。568×320 下卡片与操作按钮均保留 48 逻辑单位触控高度。
+- 林庭树形、赤岩阶石、星台十字星使用共用程序图形，不依赖额外字体。当前选择文字与“最高通关”分开，三难度标记直接读取实际最高完成难度。
+- 当前难度、阶数、治疗摘要相邻；目标、实际机制和共源材料奖励默认显示，故事手动展开。共享首核说明遵循任意节点完成及 pending/claimed 状态，不再错误承诺“无全局首核”。
+- 实际 `GameUI.Chapter` 托管回放覆盖 568/667/800/1024 × 1/1.8/3 缩放、固定节点/底栏、故事展开、宽屏居中，以及原有保存失败、Back、结果演出和下一节点路径。旧节点随滚动及旧桌面原点布局分别编译并精确击中负对照。
+- 此为生产方法/矩形与状态验证；未运行 Unity 6 字体渲染、设备触控或画面评审。

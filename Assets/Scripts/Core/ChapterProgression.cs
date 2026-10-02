@@ -26,7 +26,7 @@ namespace Emberfall
             if(node==ChapterNode.Redrock)return difficulty==ChapterDifficulty.Normal?"猎杀金环目标后撤离，无护援":
                 "守岗敌人形成交火，需要选择突破路线"+(difficulty==ChapterDifficulty.Heroic?"；单条热涌短线受墙阻挡，可绕端点":"");
             return difficulty==ChapterDifficulty.Normal?"70%与35%血量阶段的单束扫射，破坏安全锚可制造暴露":
-                "完整扫射后追加一次2.2秒预警攻击；有效打断进入2秒恢复、无易伤，破坏全部锚进入6秒暴露、受伤+35%"+(difficulty==ChapterDifficulty.Heroic?"；扫向、起始角与安全锚位置按本局种子变化，始终单束":"");
+                "首段有效打断进入2秒恢复、无易伤；破坏全部锚进入6秒暴露、受伤+35%，两者均取消本阶段追加。未反制则扫射恢复后追加：2.2秒预警锁向、4秒单束扫射、2秒恢复；追加无新锚，只能打断"+(difficulty==ChapterDifficulty.Heroic?"；扫向、起始角与安全锚位置按本局种子变化，始终单束":"");
         }
         public static float HealthMultiplier(ChapterDifficulty difficulty){return difficulty==ChapterDifficulty.Hard?1.2f:difficulty==ChapterDifficulty.Heroic?1.35f:1f;}
         public static float DamageMultiplier(ChapterDifficulty difficulty){return difficulty==ChapterDifficulty.Hard?1.15f:difficulty==ChapterDifficulty.Heroic?1.25f:1f;}

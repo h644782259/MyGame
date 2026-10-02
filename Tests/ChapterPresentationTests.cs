@@ -21,7 +21,7 @@ public static class ChapterPresentationTests
                 int repeat=ChapterProgression.MaterialReward(node,tier);
                 Check(first.Contains("完成奖励 "+(repeat+1)+" 碎片")&&first.Contains("首次1"),"first reward follows shared tier bands plus one fixed shard");
                 Check(first.Contains(ChapterDefinition.DifficultyMechanic(node,diff)),"exact production difficulty mechanic described");
-                Check(first.Contains("难度不加乘")&&first.Contains("无全局首通核心或宝箱"),"old reward promises not inherited");
+                Check(first.Contains("难度不加乘")&&first.Contains("不发旧副本宝箱")&&first.Contains("节点完成可领取共享一次首通核心"),"actual shared first-core eligibility and no legacy chest");
                 Check(first.Contains(limited?"初始3次":"携带药剂"),"healing rules are independent");
                 p.chapterFirstRewardMask=1<<(int)node;
                 string replay=ChapterEntryPresentation.Preview(p,node,diff,tier,limited);
@@ -32,6 +32,11 @@ public static class ChapterPresentationTests
         }
         Check(ChapterEntryPresentation.Preview(p,ChapterNode.ForestCourt,ChapterDifficulty.Hard,1,false).Contains("生命 ×1.2 / 伤害 ×1.15"),"hard multipliers match actual core values");
         Check(ChapterEntryPresentation.Preview(p,ChapterNode.ForestCourt,ChapterDifficulty.Heroic,1,false).Contains("生命 ×1.35 / 伤害 ×1.25"),"heroic multipliers match actual core values");
+        Check(ChapterDefinition.DifficultyMechanic(ChapterNode.StarPlatform,ChapterDifficulty.Hard).Contains("追加无新锚，只能打断"),"boss follow-up preview matches actual counter opportunities");
+        p.pendingFirstClearReward=true;
+        Check(ChapterEntryPresentation.Preview(p,ChapterNode.ForestCourt,ChapterDifficulty.Normal,1,false).Contains("已待领取；本次不重复"),"pending first core never advertised as second reward");
+        p.firstClearRewardClaimed=true;
+        Check(!ChapterEntryPresentation.Preview(p,ChapterNode.StarPlatform,ChapterDifficulty.Normal,1,false).Contains("首通核心"),"claimed shared core not advertised again");
         return "PASS: "+checks+" chapter presentation, shared definitions and reward-boundary checks";
     }
 }

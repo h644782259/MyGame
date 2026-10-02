@@ -73,10 +73,18 @@ namespace Emberfall {
    foreach(float logicalWidth in new[]{568,667,800,1024})foreach(float ratio in new[]{1f,1.8f,3f}){
     ui.width=logicalWidth*ratio;ui.height=320*ratio;ui.TouchRatio=ratio;ui.buttons.Clear();ui.texts.Clear();int measured=GUIStyle.Measurements;ui.DrawChapterSelection();
     check(GUIStyle.Measurements>measured&&ui.content.height>=ui.viewport.height,"body uses measured scroll content");
-    int footer=0,nodeButtons=0;foreach(var b in ui.buttons){check(b.rect.height>=48*ratio-.01f,"all chapter choices keep 48-unit touch height");if(!b.scroll){footer++;check(b.rect.y>=ui.viewport.yMax&&b.rect.x>=0&&b.rect.xMax<=ui.width&&b.rect.yMax<=ui.height,"footer stays below body and inside viewport");}else if(b.text.StartsWith("林庭")||b.text.StartsWith("赤岩")||b.text.StartsWith("星台"))nodeButtons++;}
+    int footer=0,nodeButtons=0;foreach(var b in ui.buttons){check(b.rect.height>=48*ratio-.01f,"all chapter choices keep 48-unit touch height");bool nodeCard=b.text.StartsWith("林庭")||b.text.StartsWith("赤岩")||b.text.StartsWith("星台");if(nodeCard){nodeButtons++;check(!b.scroll&&b.rect.yMax+35*ratio<=ui.viewport.y+.01f,"FIXED_NODES must remain above scrolling details and show completion badges");}else if(!b.scroll){footer++;check(b.rect.y>=ui.viewport.yMax&&b.rect.x>=0&&b.rect.xMax<=ui.width&&b.rect.yMax<=ui.height,"footer stays below body and inside viewport");}}
     check(footer==3&&nodeButtons==3,"three nodes and all fixed navigation actions remain reachable");
+    check(ui.texts.Contains("最高通关 · 普通")&&ui.texts.Contains("尚未通关"),"completion shown independently from current selected node");
+    check(!ui.texts.Contains(ChapterEntryPresentation.Story(ui.session.SelectedChapterNode)),"story collapsed while goal mechanism and reward remain visible");
     check(ui.buttons.Exists(b=>b.text.StartsWith("星台")&&!b.enabled)&&ui.buttons.Exists(b=>b.text.StartsWith("英雄")&&!b.enabled),"locked node and heroic render disabled using shared core eligibility");
    }
+   ui.click="展开故事线索";ui.DrawChapterSelection();ui.texts.Clear();ui.DrawChapterSelection();check(ui.chapterStoryExpanded&&ui.texts.Contains(ChapterEntryPresentation.Story(ui.session.SelectedChapterNode)),"story expands inside measured body without changing entry");
+   ui.SelectChapterNode(ChapterNode.ForestCourt);check(!ui.chapterStoryExpanded,"node selection resets optional story only");ui.SelectChapterNode(ChapterNode.Redrock);
+   MobileControls.Active=false;ui.width=1600;ui.height=900;ui.buttons.Clear();ui.DrawChapterSelection();
+   var centered=ui.ChapterRect(ui.ChapterPanelGeometry().Body,1);check(centered.x==336&&centered.y==188,"CENTERED_CHAPTER desktop content centered in wide viewport");
+   MobileControls.Active=true;ui.width=568;ui.height=320;ui.TouchRatio=1;
+   string preview=ChapterEntryPresentation.Preview(p.Profile,ChapterNode.ForestCourt,ChapterDifficulty.Normal,1,false);check(preview.Contains("节点完成可领取共享一次首通核心")&&!preview.Contains("无全局首通核心"),"first forest preview shares actual first-core eligibility");
    ui.session.AllowConfirm=true;check(ui.ConfirmSelectedChapter()&&ui.panel==Panel.None&&!ui.session.Blocked,"successful actual core Begin closes entry once");
    // Real filesystem rejection and actual core Complete, reached through production result retry method.
    ui.session.ChapterFinished=true;ui.session.ChapterRewardPending=true;ui.session.ActiveChapterNode=ChapterNode.Redrock;
@@ -138,3 +146,22 @@ with tempfile.TemporaryDirectory(prefix='chapter-entry-') as folder:
  result=subprocess.run([dotnet,str(project.parent/'bin/Debug/net8.0/Validation.dll'),str(out/'opaque-saves')],env=env,capture_output=True,text=True)
  assert result.returncode and 'System.Exception: BOSS_EXIT_OVERLAY' in result.stdout+result.stderr,result.stdout+result.stderr
  print('PASS: old opaque-first result compiled and failed exact boss-exit UI assertion')
+
+ # Force the prior origin-aligned desktop placement; compile before checking the precise oracle.
+ mutated=out/'OldOrigin.cs';mutated.write_text(current.replace('return new Rect(x+area.X*u,y+area.Y*u,area.Width*u,area.Height*u);','return new Rect(area.X*u,area.Y*u,area.Width*u,area.Height*u);'))
+ project=cv.write_project(out/'old-origin',[mutated if f==chapter else f for f in files],program=shell.replace('CLOSE',close))
+ subprocess.run([dotnet,'build',str(project),'--configfile',str(config),'-v:q'],env=env,check=True,stdout=subprocess.DEVNULL)
+ result=subprocess.run([dotnet,str(project.parent/'bin/Debug/net8.0/Validation.dll'),str(out/'origin-saves')],env=env,capture_output=True,text=True)
+ assert result.returncode and 'System.Exception: CENTERED_CHAPTER' in result.stdout+result.stderr,result.stdout+result.stderr
+ print('PASS: old origin-aligned desktop compiled and failed exact centering oracle')
+
+ # Recreate the old node-in-scroll ownership using the production cards unchanged.
+ insertion='            float cardWidth=(layout.Body.Width-16)/3;'
+ old_scroll=current.replace(insertion,'            BeginTouchScroll("legacy-node-scroll",ChapterRect(layout.Body,u),chapterScroll,new Rect(0,0,layout.Body.Width*u,600*u));\n'+insertion)
+ old_scroll=old_scroll.replace('            Rect body=ChapterRect(new MobilePanelLayout.Area(layout.Body.X,layout.Body.Y+88','            EndTouchScroll();\n            Rect body=ChapterRect(new MobilePanelLayout.Area(layout.Body.X,layout.Body.Y+88')
+ mutated=out/'OldScrollingNodes.cs';mutated.write_text(old_scroll)
+ project=cv.write_project(out/'old-scrolling-nodes',[mutated if f==chapter else f for f in files],program=shell.replace('CLOSE',close))
+ subprocess.run([dotnet,'build',str(project),'--configfile',str(config),'-v:q'],env=env,check=True,stdout=subprocess.DEVNULL)
+ result=subprocess.run([dotnet,str(project.parent/'bin/Debug/net8.0/Validation.dll'),str(out/'scroll-saves')],env=env,capture_output=True,text=True)
+ assert result.returncode and 'System.Exception: FIXED_NODES' in result.stdout+result.stderr,result.stdout+result.stderr
+ print('PASS: old node-scroll ownership compiled and failed exact fixed-node oracle')
