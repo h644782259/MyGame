@@ -16,7 +16,7 @@ namespace Emberfall
         public bool IsDead { get; private set; }
         public int DungeonWave { get; private set; }
         public int DungeonTier { get; private set; } = 1;
-        public int TotalWaves { get { return RoomChainRun!=null?5:3; } }
+        public int TotalWaves { get { return ChapterActive?2:RoomChainRun!=null?5:3; } }
         public float ArenaRadius { get { return InDungeon ? 18f : 22f; } }
         public bool DungeonCleared { get; private set; }
         public int PendingLootCount { get { return pendingLoot.Count; } }
@@ -241,6 +241,7 @@ namespace Emberfall
         public bool SaveAsNewSlot()
         {
             if (!HasStarted || IsDead) return false;
+            if(ChapterActive&&(!ChapterFinished||ChapterRewardPending)){Notify("请先结束章节挑战，再另存角色。");return false;}
             if (!SaveBeforeLeaving()) return false;
             bool saved = Progression.SaveAsNewSlot();
             Notify(saved ? "已另存为新存档。原进度保留，后续自动保存到新存档。" : Progression.LastError);
@@ -268,10 +269,11 @@ namespace Emberfall
             if (InputBlocked) return;
             if(ModeRun!=null){TickArenaRun();if(InputBlocked)return;}
             if(RoomChainRun!=null)TickRoomTactics();
+            if(ChapterActive)TickChapterRun();
             if (!InputBlocked)
             {
                 if (Input.GetKeyDown(KeyCode.F) || MobileControls.ConsumePotion()) DrinkPotion();
-                if (Input.GetKeyDown(KeyCode.T)) { if(NearRoomExit)EnterNextRoom();else if (InDungeon) { if (DungeonCleared) ReturnToCamp(); else Notify("先击败本轮敌人；按 H 可放弃副本返回营地。"); } else EnterDungeon(); }
+                if (Input.GetKeyDown(KeyCode.T)) { if(NearChapterExit)EnterNextChapterRoom();else if(NearRoomExit)EnterNextRoom();else if (InDungeon) { if (DungeonCleared) ReturnToCamp(); else Notify("先击败本轮敌人；按 H 可放弃副本返回营地。"); } else EnterDungeon(); }
                 if (Input.GetKeyDown(KeyCode.H)) ReturnToCamp();
             }
             if(InDungeon && reinforcementQueue.Count>0 && Enemies.Count<=6)TrySpawnReinforcements();
@@ -346,7 +348,7 @@ namespace Emberfall
         {
             // Preserve the old adventure before destroying anything. Staged load
             // and committed hub travel already supply a durable target snapshot.
-            if (!loadingSaveSnapshot && !SaveBeforeLeaving()) return false;
+            if (!loadingSaveSnapshot && !enteringChapter && !SaveBeforeLeaving()) return false;
             changingZone = true;
             int previousCombatEpoch = Player.CombatEpoch;
             if (waveRoutine != null) { StopCoroutine(waveRoutine); waveRoutine = null; }
@@ -360,17 +362,19 @@ namespace Emberfall
             InDungeon = dungeon;
             DungeonCleared = false;
             DungeonWave = 0;
-            DungeonTier = Mathf.Clamp(SelectedDungeonTier, 1, MaximumDungeonTier);
+            DungeonTier = enteringChapter ? chapterReceipt.Tier : Mathf.Clamp(SelectedDungeonTier, 1, MaximumDungeonTier);
             ResetExpedition(dungeon);
-            world = WorldBuilder.Build(dungeon ? ZoneKind.Dungeon : ZoneKind.Wilderness, DungeonLayout, Progression.HighestAdventureTier,CurrentHub);
-            Player.Teleport(dungeon&&RoomChainRun!=null?TacticalRoomGeometry.Entrance:new Vector3(0,0,dungeon?-9:-10));
+            if(ChapterActive){chapterPlan=ChapterRoomGeometry.Plan(ActiveChapterNode,ChapterRoomIndex,ChapterSeed);DungeonLayout=chapterPlan.Layout;}
+            world = WorldBuilder.Build(dungeon ? ZoneKind.Dungeon : ZoneKind.Wilderness, DungeonLayout, Progression.HighestAdventureTier,CurrentHub,ChapterSeed);
+            if(!dungeon)WorldBuilder.ApplyChapterLandmark(world,Progression.Profile.chapterCompletedMask);
+            Player.Teleport(ChapterActive?chapterPlan.Entrance:dungeon&&RoomChainRun!=null?TacticalRoomGeometry.Entrance:new Vector3(0,0,dungeon?-9:-10));
             Player.RefreshStats(true);
             if(dungeon)Player.ResetCooldownsForDungeonEntry();
             Camera.main.GetComponent<AdventureCamera>().Snap();
             if (dungeon)
             {
                 DungeonWave = 1;
-                if(RoomChainRun!=null)BeginRoomChainScene();else if(ModeRun!=null)BeginArenaScene();else {SpawnDungeonWave();BuildSideEvent();}
+                if(ChapterActive)BeginChapterRoom();else if(RoomChainRun!=null)BeginRoomChainScene();else if(ModeRun!=null)BeginArenaScene();else {SpawnDungeonWave();BuildSideEvent();}
             }
             else
             {
@@ -452,6 +456,7 @@ namespace Emberfall
             OnExpeditionEnemyKilled(enemy);
             RecordArenaDefeat(enemy);
             RecordRoomDefeat(enemy);
+            RecordChapterDefeat(enemy);
             int level = Progression.Profile.level;
             int experience = boss ? 100 + level * 12 : (InDungeon ? 22 : 16) + level * 2;
             int gold = boss ? 85 + DungeonTier * 20 : Random.Range(7, 15) + level;
@@ -469,9 +474,10 @@ namespace Emberfall
             transientObjects.Add(enemy.gameObject);
             // Capture real callback mutations; unchanged rewards do not rotate backups.
             Progression.Save();
+            if(ChapterActive)FinalizeChapterBoss();
             if(RoomChainRun!=null)FinalizeRoomChain();
             if(ModeRun!=null)FinalizeArenaResult();
-            if (InDungeon && ModeRun==null && RoomChainRun==null && !changingZone && Enemies.Count == 0 && !DungeonCleared)
+            if (InDungeon && !ChapterActive && ModeRun==null && RoomChainRun==null && !changingZone && Enemies.Count == 0 && !DungeonCleared)
             {
                 TrySpawnReinforcements();
                 if(Enemies.Count==0 && reinforcementQueue.Count==0) waveRoutine=StartCoroutine(NextWave());
@@ -508,6 +514,7 @@ namespace Emberfall
             IsDead = true;
             if(ModeRun!=null)ModeRun.Fail(ExpeditionModeFailure.PlayerDefeated);
             if(RoomChainRun!=null)RoomChainRun.Fail();
+            if(ChapterActive){ChapterRun.Fail();Progression.CancelChapterRun();}
             pendingRoomChoice.Cancel();
             DungeonSelectionOpen = false;
             LastRunSummary = BuildRunSummary(false);
