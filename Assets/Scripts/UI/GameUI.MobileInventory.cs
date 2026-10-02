@@ -157,6 +157,7 @@ namespace Emberfall
                 {
                     string status = levelLocked ? "需 " + item.level + " 级" : "Lv." + item.level;
                     at += DrawMobileParagraph(10, at, contentWidth - 26, status + " · " + (equipped ? "穿戴中" : GameBalance.SlotName(item.slot)) + (item.locked ? " · 已锁" : ""), 14, levelLocked ? gold : muted);
+                    if(item.mechanic!=EquipmentMechanic.None)at+=DrawMobileParagraph(10,at,contentWidth-26,MechanicBadgePresentation.Title(item,session.Progression.Profile.heroClass),13,levelLocked?muted:gold,true);
                     DrawMobileParagraph(10, at, contentWidth - 26, "评分 " + MobileEquipmentScore(item).ToString("0.#") + (IsEquipmentUpgrade(item) ? "  ↑ 可提升" : ""), 14, levelLocked?muted:pale, true);
                     Badge(new Rect(row.xMax - 14 * u, row.y + 10 * u, 8 * u, 8 * u), IsEquipmentUpgrade(item) && !reviewedEquipment.Contains(item.id));
                 }
@@ -187,6 +188,7 @@ namespace Emberfall
             height = 16 + MeasureMobileParagraph(ItemTitle(MobileEquipmentPreview(item)), width - 26, 16, true) +
                 Mathf.Max(MeasureMobileParagraph(level + GameBalance.SlotName(item.slot) + locked, width - 26, 14), MeasureMobileParagraph(level + "穿戴中" + locked, width - 26, 14)) +
                 MeasureMobileParagraph("评分 " + MobileEquipmentScore(item).ToString("0.#") + (IsEquipmentUpgrade(item) ? "  ↑ 可提升" : ""), width - 26, 14, true);
+            if(item.mechanic!=EquipmentMechanic.None)height+=MeasureMobileParagraph(MechanicBadgePresentation.Title(item,session.Progression.Profile.heroClass),width-26,13,true);
             mobileRowHeights[item.id] = height;
             return height;
         }
@@ -240,6 +242,12 @@ namespace Emberfall
             y += MobileDetailParagraph(draw, 8, y, available, MobileAttributeLine("生命", current == null ? 0 : current.health, preview.health), 16, pale, true) + 8;
             y += MobileDetailParagraph(draw, 8, y, available, "评分不含机制价值 · 换装自动继承部位强化", 14, muted) + 8;
             y += MobileDetailParagraph(draw, 8, y, available, EquipmentComparisonPresentation.Changes(current,item,progression.Profile.heroClass), 15, gold, true) + 8;
+            if(item.mechanic!=EquipmentMechanic.None)
+            {
+                y += MobileDetailParagraph(draw,8,y,available,MechanicBadgePresentation.Title(item,progression.Profile.heroClass),16,gold,true)+4;
+                y += MobileDetailParagraph(draw,8,y,available,"收益 · "+MechanicBadgePresentation.Benefit(item,progression.Profile.heroClass),14,jade)+4;
+                y += MobileDetailParagraph(draw,8,y,available,"代价 · "+MechanicBadgePresentation.Cost(item,progression.Profile.heroClass),14,gold)+8;
+            }
             y += MobileDetailParagraph(draw, 8, y, available, "换装后机制：" + EquipmentComparisonPresentation.Description(item,progression.Profile.heroClass), 14, item.mechanic == EquipmentMechanic.None ? muted : gold) + 8;
             if (!worn && !EquipmentComparisonPresentation.SameMechanism(current,item,progression.Profile.heroClass))
                 y += MobileDetailParagraph(draw, 8, y, available, "当前机制：" + EquipmentComparisonPresentation.Description(current,progression.Profile.heroClass), 14, muted) + 8;

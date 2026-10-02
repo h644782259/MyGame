@@ -7,12 +7,14 @@ namespace Emberfall
     public static class UIIconAtlas
     {
         private static readonly Dictionary<int, Texture2D> cache = new Dictionary<int, Texture2D>();
-        public static Texture2D Skill(HeroClass hero, int skill)
+        public static Texture2D Skill(HeroClass hero, int skill) { return Skill(hero, skill, 48); }
+        public static Texture2D Skill(HeroClass hero, int skill, int requestedSize)
         {
-            int key = (int)hero * 10 + skill;
+            int rasterSize = SkillIconPresentation.RasterSize(requestedSize);
+            int key = rasterSize * 1000 + (int)hero * 10 + skill;
             Texture2D texture;
             if (cache.TryGetValue(key, out texture)) return texture;
-            var ink = new Icon(GameBalance.ClassColor(hero));
+            var ink = new Icon(GameBalance.ClassColor(hero), rasterSize);
             if (hero == HeroClass.Summoner && skill != 3 && skill != 6 && skill != 8 && skill != 9)
             {
                 if (skill == 0)
@@ -138,7 +140,8 @@ namespace Emberfall
             private const int Size = 64;
             private readonly Color[] pixels = new Color[Size * Size];
             public Color color;
-            public Icon(Color tint) { color = tint; }
+            private readonly int outputSize;
+            public Icon(Color tint, int size = 64) { color = tint; outputSize = size; }
             private void Plot(int x, int y, float alpha)
             {
                 if (alpha <= 0 || x < 0 || y < 0 || x >= Size || y >= Size) return;
@@ -148,6 +151,7 @@ namespace Emberfall
             }
             public void Line(float ax, float ay, float bx, float by, float thickness)
             {
+                if (outputSize < 64) thickness = Mathf.Max(thickness, SkillIconPresentation.MinimumStroke(outputSize));
                 Vector2 a = V(ax, ay), d = V(bx - ax, by - ay);
                 for (int y = 0; y < Size; y++) for (int x = 0; x < Size; x++)
                 {
@@ -179,8 +183,22 @@ namespace Emberfall
             }
             public Texture2D Finish(string name)
             {
-                var texture = new Texture2D(Size, Size, TextureFormat.RGBA32, false) { name = name, filterMode = FilterMode.Bilinear, wrapMode = TextureWrapMode.Clamp, hideFlags = HideFlags.HideAndDontSave };
-                texture.SetPixels(pixels); texture.Apply(false, true); return texture;
+                Color[] output = pixels;
+                if (outputSize != Size)
+                {
+                    output = new Color[outputSize * outputSize];
+                    for(int y=0;y<outputSize;y++)for(int x=0;x<outputSize;x++)
+                    {
+                        Color sum=Color.clear;int count=0;
+                        int left=x*Size/outputSize,right=(x+1)*Size/outputSize,top=y*Size/outputSize,bottom=(y+1)*Size/outputSize;
+                        for(int py=top;py<bottom;py++)for(int px=left;px<right;px++){sum+=pixels[py*Size+px];count++;}
+                        Color value=sum/Mathf.Max(1,count);
+                        if(value.a<.16f)value=Color.clear;
+                        output[y*outputSize+x]=value;
+                    }
+                }
+                var texture = new Texture2D(outputSize, outputSize, TextureFormat.RGBA32, false) { name = name, filterMode = FilterMode.Bilinear, wrapMode = TextureWrapMode.Clamp, hideFlags = HideFlags.HideAndDontSave };
+                texture.SetPixels(output); texture.Apply(false, true); return texture;
             }
         }
     }
