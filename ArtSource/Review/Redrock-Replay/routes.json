@@ -8,7 +8,7 @@
     "Assets/Scripts/Core/RoomTactics.cs": "f6639acd369783c85b63338c616fe3365d8f54d95d015f46775e58ff98ad7743",
     "Tests/DestructibleTraversalTests.cs": "de407d16f35f12a0319571379a1db036945225798e1840461a229edd23ae5eed",
     "Tests/ChapterGeometryFixture.cs": "4ef2debe201a91199d13fba9bf9b8dac0abac3d25e4cf697ca92c4c705f7caa8",
-    "Assets/Scripts/Core/GameSession.Chapter.cs": "77c12d8804b34406173bf3a0fef95ccd8c2c9a721c2a23ed1b98c8483df1cd4e"
+    "Assets/Scripts/Core/GameSession.Chapter.cs": "24aaab6cec3ca081da0a798aa66620ed9d561b3a01ed4df252a3ab831540a12a"
   },
   "fixtures": "Redrock roomIndex 1, Hard/Heroic crossfire host placement; probe radius 0.65 m; spawn markers use admission-clearance radii, not runtime enemy radii; no transient hazard active.",
   "variants": [
