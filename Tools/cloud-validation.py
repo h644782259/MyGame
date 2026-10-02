@@ -324,7 +324,7 @@ def main():
         failed = failed or not passed
         passed = run_check("chest-pause-back-production", [[sys.executable, str(ROOT / "Tests/ChestPauseBackProductionTests.py"), dotnet]], env, output, report)
         failed = failed or not passed
-        for name, script in [("companion-intent-production","CompanionIntentProductionTests.py"),("contract-snapshot-production","ContractSnapshotProductionTests.py"),("filled-vfx-allocation","FilledVfxAllocationTests.py"),("side-event-production","SideEventProductionTests.py"),("skill-readability-production","SkillReadabilityProductionTests.py"),("milestone-goal-surface","MilestoneGoalSurfaceTests.py")]:
+        for name, script in [("companion-intent-production","CompanionIntentProductionTests.py"),("contract-snapshot-production","ContractSnapshotProductionTests.py"),("filled-vfx-allocation","FilledVfxAllocationTests.py"),("side-event-production","SideEventProductionTests.py"),("skill-readability-production","SkillReadabilityProductionTests.py"),("milestone-goal-surface","MilestoneGoalSurfaceTests.py"),("skill-panel-navigation","SkillPanelNavigationProductionTests.py")]:
             passed = run_check(name, [[sys.executable,str(ROOT/"Tests"/script),dotnet]], dict(env,DOTNET=dotnet), output, report)
             failed = failed or not passed
         if args.compile or args.download_references or args.compile_android:
