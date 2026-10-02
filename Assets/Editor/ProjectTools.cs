@@ -39,11 +39,16 @@ namespace Emberfall.Editor
             PlayerSettings.SetScriptingBackend(UnityEditor.Build.NamedBuildTarget.Standalone, ScriptingImplementation.Mono2x);
             PlayerSettings.SetApiCompatibilityLevel(UnityEditor.Build.NamedBuildTarget.Standalone, ApiCompatibilityLevel.NET_Standard_2_0);
             EditorBuildSettings.scenes = new[] { new EditorBuildSettingsScene(ScenePath, true) };
-            QualitySettings.shadowDistance = 65;
-            QualitySettings.shadows = ShadowQuality.All;
-            QualitySettings.shadowResolution = ShadowResolution.High;
-            QualitySettings.antiAliasing = 4;
-            QualitySettings.pixelLightCount = 4;
+            // Android keeps the selected quality tier (including user/device overrides).
+            // These desktop defaults must not overwrite Android Medium on import, Play, or build.
+            if (EditorUserBuildSettings.activeBuildTarget != BuildTarget.Android)
+            {
+                QualitySettings.shadowDistance = 65;
+                QualitySettings.shadows = ShadowQuality.All;
+                QualitySettings.shadowResolution = ShadowResolution.High;
+                QualitySettings.antiAliasing = 4;
+                QualitySettings.pixelLightCount = 4;
+            }
             IncludeRuntimeShaders();
             AppIconSetup.Apply();
         }

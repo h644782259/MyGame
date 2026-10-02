@@ -41,6 +41,26 @@ class AndroidPlatformTests(unittest.TestCase):
                 for path in ['lib/arm64-v8a/libil2cpp.so','lib/arm64-v8a/libunity.so','lib/armeabi-v7a/libunity.so']:archive.writestr(path,b'test-fixture-not-a-binary')
             result=build_debug.inspect_zip(apk)
             self.assertEqual(result['abis'],['arm64-v8a','armeabi-v7a'])
+    def test_android_bootstrap_keeps_quality_but_initializes_assets(self):
+        # Static branch contract only: Unity import/Play execution remains unverified.
+        source=(ROOT/'Assets/Editor/ProjectTools.cs').read_text()
+        ensure=source.split('public static void EnsureSettings()',1)[1].split('private static void IncludeRuntimeShaders()',1)[0]
+        guard='if (EditorUserBuildSettings.activeBuildTarget != BuildTarget.Android)'
+        before, guarded=ensure.split(guard,1)
+        desktop, after=guarded.split('}',1)
+        self.assertNotIn('QualitySettings.',before)
+        self.assertNotIn('QualitySettings.',after)
+        self.assertEqual(desktop.count('QualitySettings.'),5)
+        self.assertIn('QualitySettings.antiAliasing = 4;',desktop)
+        self.assertIn('QualitySettings.shadowDistance = 65;',desktop)
+        self.assertIn('IncludeRuntimeShaders();',after)
+        self.assertIn('AppIconSetup.Apply();',after)
+        self.assertIn('EditorBuildSettings.scenes =',before)
+        builder=(ROOT/'Assets/Editor/AndroidDevelopmentBuild.cs').read_text()
+        self.assertNotIn('QualitySettings.',builder)
+        self.assertIn('PlayerSettings.colorSpace = ColorSpace.Linear;',before)
+        self.assertIn('NamedBuildTarget.Android,ScriptingImplementation.IL2CPP',builder)
+
     def test_module_layout(self):
         self.assertEqual(str(preflight.module_root(Path('/opt/unity/Editor/Unity'))),'/opt/unity/Editor/Data/PlaybackEngines/AndroidPlayer')
         self.assertEqual(str(preflight.module_root(Path('/Unity.app/Contents/MacOS/Unity'))),'/Unity.app/Contents/PlaybackEngines/AndroidPlayer')
