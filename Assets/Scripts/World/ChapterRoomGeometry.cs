@@ -101,8 +101,17 @@ namespace Emberfall
         public static bool TrySpawn(ChapterRoomPlan plan,int index,List<Vector3> occupied,float radius,out Vector3 point)
         {
             point=Vector3.zero;
-            if(plan==null||index<0||index>=MaximumEnemies||float.IsNaN(radius)||float.IsInfinity(radius)||radius<=0||radius>1.3f)return false;
-            Vector3 desired=plan.SpawnCandidates[index];
+            if(plan==null||index<0||index>=MaximumEnemies)return false;
+            return TrySpawnAt(plan,plan.SpawnCandidates[index],occupied,radius,out point);
+        }
+        // Formation hosts can request a role position while retaining the exact shared
+        // arrival, reachability, radius and spacing checks used by normal room spawns.
+        public static bool TrySpawnAt(ChapterRoomPlan plan,Vector3 desired,List<Vector3> occupied,float radius,out Vector3 point)
+        {
+            point=Vector3.zero;
+            if(plan==null||float.IsNaN(radius)||float.IsInfinity(radius)||radius<=0||radius>1.3f||
+                float.IsNaN(desired.x)||float.IsNaN(desired.y)||float.IsNaN(desired.z)||
+                float.IsInfinity(desired.x)||float.IsInfinity(desired.y)||float.IsInfinity(desired.z))return false;
             for(int attempt=0;attempt<64;attempt++)
             {
                 float a=(attempt*137.50776f+(plan.Seed&255))*(Mathf.PI/180f);
