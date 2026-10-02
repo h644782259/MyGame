@@ -6,20 +6,32 @@ ROOT=Path(__file__).resolve().parents[1]
 def once(s,a,b):
     assert s.count(a)==1,a
     return s.replace(a,b,1)
+def member(s,sig):
+    a=s.index(sig);b=s.index('{',a)+1;n=1
+    while n:n+=(s[b]=='{')-(s[b]=='}');b+=1
+    return s[a:b]
 def main():
     parser=argparse.ArgumentParser();parser.add_argument('dotnet_path',nargs='?');parser.add_argument('--dotnet');args=parser.parse_args();dotnet=args.dotnet or args.dotnet_path or os.environ.get('DOTNET','dotnet')
     fixture=(ROOT/'Tests/FilledVfxAllocationTests.cs').read_text();fixture='using System;using System.Linq;using System.Collections.Generic;using System.Reflection;using UnityEngine;'+fixture[fixture.index('namespace Emberfall'):]
-    fixture=fixture.replace('sealed class PlayerController','sealed partial class PlayerController')
+    fixture=fixture.replace(member(fixture,'public static class CombatSight'),'').replace('    public enum CombatSightKind { Area }','')
+    math=(ROOT/'Tests/DestructibleTraversalTests.cs').read_text()
+    fixture=fixture.replace(member(fixture,'public struct Vector2'),member(math,'public struct Vector2'))
+    fixture=fixture.replace('public struct Vector3\n','public partial struct Vector3\n').replace('public static class Mathf\n','public static partial class Mathf\n')
+    fixture=once(fixture,'public static class CombatFx{','public static partial class CombatFx{')
+    mathShell=(ROOT/'Tests/AnchoredImpactCoverageTests.cs').read_text().split('public static class AnchoredImpactCoverageTests')[0]
+    fixture=fixture.replace('sealed class PlayerController' ,'sealed partial class PlayerController')
     sequence=(ROOT/'Assets/Scripts/Combat/AdvancedSkillSequence.cs').read_text();ranger=sequence[sequence.index('        private void Ranger()'):];start=ranger.index('                case 9:')+len('                case 9:');end=ranger.index('                    break;',start);event=ranger[start:end]
     opening=(ROOT/'Assets/Scripts/Combat/PlayerController.cs').read_text();opening=opening[opening.index('else {var field=SkillDamageBudgets.EarlyField(HeroClass,rank);CombatArea.Spawn(this,session,target,4.3f*range'):];opening=opening[opening.index('{')+1:opening.index('}')];
-    files=['Core/SkillVisualRecipe','Core/FilledVfxRecipes','Core/FilledVfxPlacement','Core/CombatVisualBudget','Core/DecorationBudget','Core/SkillDamageBudgets','Combat/CombatDamage','Combat/FilledSkillVfx','Combat/AnchoredImpactMesh','Combat/CombatVisualLease','Combat/DecorationLease']
-    cases=[('current',None),('old-poison-recipe','actual non-poison arrow rain must request the independent arrow recipe'),('old-reject-priority','new main silhouette must evict old sustained mesh'),('old-independent-arrows','all ultimate arrow events must share one visual owner'),('old-relocated-primary','primary actual impact anchor must not relocate to clear ground')]
+    files=['Core/SkillVisualRecipe','Core/FilledVfxRecipes','Core/FilledVfxPlacement','Core/CombatVisualBudget','Core/DecorationBudget','Core/SkillDamageBudgets','Combat/CombatDamage','Combat/FilledSkillVfx','Combat/AnchoredImpactMesh','Combat/CombatVisualLease','Combat/DecorationLease','Core/CombatSightRules','Combat/CombatSight','World/WorldTraversal']
+    cases=[('current',None),('old-empty-anchored','EMPTY_REQUIRED_SHAPE: actual primary/contact requires positive area'),('old-poison-recipe','actual non-poison arrow rain must request the independent arrow recipe'),('old-reject-priority','new main silhouette must evict old sustained mesh'),('old-independent-arrows','all ultimate arrow events must share one visual owner'),('old-relocated-primary','primary actual impact anchor must not relocate to clear ground')]
     with tempfile.TemporaryDirectory(prefix='combat-readability-') as temporary:
         for name,expected in cases:
-            folder=Path(temporary)/name;folder.mkdir();(folder/'Fixture.cs').write_text(fixture)
+            folder=Path(temporary)/name;folder.mkdir();(folder/'Fixture.cs').write_text(fixture);(folder/'MathShell.cs').write_text(mathShell)
             for file in files:
                 s=(ROOT/('Assets/Scripts/'+file+'.cs')).read_text()
-                if name=='old-reject-priority' and file=='Core/CombatVisualBudget':
+                if name=='old-empty-anchored' and file=='Combat/AnchoredImpactMesh':
+                    s=once(s,'CombatSight.VisualTriangle(origin,a,b,c)','CombatSight.VisualFootprint(origin,(a+b+c)/3,Mathf.Max(CombatFx.Flat(a-(a+b+c)/3).magnitude,Mathf.Max(CombatFx.Flat(b-(a+b+c)/3).magnitude,CombatFx.Flat(c-(a+b+c)/3).magnitude))+.131f)')
+                if name=='old-reject-priority'  and file=='Core/CombatVisualBudget':
                     start=s.index('            while(tickets.Count>=maximum)');end=s.index('            var result=',start);s=s[:start]+'            if(tickets.Count>=maximum)return null;\n'+s[end:]
                 if name=='old-relocated-primary' and file=='Combat/FilledSkillVfx':
                     for label in ['"Landing base",true','"Primary "+type,true','"Contact flash",true']:s=once(s,label,label.replace(',true',''))

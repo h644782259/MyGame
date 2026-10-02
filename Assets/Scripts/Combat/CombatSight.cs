@@ -24,6 +24,8 @@ namespace Emberfall
         // just its origin, must fit on the damage-visible side of solid cover.
         public static bool VisualFootprint(Vector3 origin,Vector3 point,float extent)
         { return Area(origin,point)&&WorldTraversal.HasClearVisualFootprint(origin,point,extent); }
+        public static bool VisualTriangle(Vector3 origin,Vector3 a,Vector3 b,Vector3 c)
+        { return WorldTraversal.HasClearVisualTriangle(origin,a,b,c); }
         public static bool Direct(Vector3 origin,Vector3 target){return Reach(CombatSightKind.Direct,origin,target);}
         public static bool Area(Vector3 center,Vector3 target){return Reach(CombatSightKind.Area,center,target);}
         public static bool Chain(Vector3 previous,Vector3 target){return Reach(CombatSightKind.Chain,previous,target);}
