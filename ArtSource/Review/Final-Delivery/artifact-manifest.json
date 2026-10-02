@@ -1,0 +1,89 @@
+{
+  "scope": "Final frozen source/archive delivery checkpoint; packaged198 running; no Library mutation",
+  "files": {
+    "Archive-QA/audit_source_zip.py": {
+      "bytes": 13622,
+      "sha256": "898dfb7ad7b08e866c027176c82ead8c7748bca61aedad6b13fd578b3be8e37d"
+    },
+    "Archive-QA/guid-history.json": {
+      "bytes": 6044,
+      "sha256": "7fffca8c3455710af743041155603c67e7c73284fe0444d4e2333aecc792b3a2"
+    },
+    "Archive-QA/safety-controls.json": {
+      "bytes": 287,
+      "sha256": "a9eac865dc352b93f5f3359b3386b69bdb728ae26cc8197a9811d13026b78a71"
+    },
+    "Archive-QA/static-audit.json": {
+      "bytes": 29616,
+      "sha256": "a5e784944defb4202398d82784d249421e0c6af507874f490d4b3f4f8c6131d5"
+    },
+    "Emberfall-Android-Source-b1104bb.zip": {
+      "bytes": 29504810,
+      "sha256": "798871e7592c640323377b14c69f0f74729468f402341058409789984603d012"
+    },
+    "PR21-27\u66f4\u65b0\u8bf4\u660e.txt": {
+      "bytes": 3290,
+      "sha256": "05da9347d8965366c4a884ae81c35f2fb8bb488d488d05a2a4ebf32b943b6ef5"
+    },
+    "Platform-Inventories/Android-source-inventory.json": {
+      "bytes": 284725,
+      "sha256": "bd37352f99baa080c95d93c6f2cac6afb0ecd7bf676b95dd24b922207c1e7a21"
+    },
+    "Platform-Inventories/Windows-source-inventory.json": {
+      "bytes": 281597,
+      "sha256": "4f35c02bfbe23a90ed0f95c26794dfd29b5b4081e48d517e8a211eee09146079"
+    },
+    "Platform-Inventories/iOS-source-inventory.json": {
+      "bytes": 284457,
+      "sha256": "d79af7d40c960e45915f4cf76285a2b03e584d28e312ce89f1aa8f08539fe57f"
+    },
+    "Platform-Inventories/platform-inventory-summary.json": {
+      "bytes": 9046,
+      "sha256": "0e37ba598fafd858bc140584036efa61930f4b3b0e6d212465b3e24eee2c0494"
+    },
+    "README.md": {
+      "bytes": 2915,
+      "sha256": "94d4ccedf9baa21082d21699665133798a1dfad94a0ad6d72a0e9f6627c22843"
+    },
+    "asset-inventory.csv": {
+      "bytes": 12065,
+      "sha256": "24cdd04ec108099851a249152c91ceed4da8841bf86e45336c6399aa83be8ba4"
+    },
+    "asset-preview-manifest.json": {
+      "bytes": 5198,
+      "sha256": "8263f03cc313242220f7f6a3859ab08d479d7bde1a181d6cc258217d64e611c6"
+    },
+    "inventory-platforms.py": {
+      "bytes": 2469,
+      "sha256": "ea3674c271ba2da30005bf4cf0c67449609332a3535703dfbfc1dde5336d6dc4"
+    },
+    "manifest-b1104bb.json": {
+      "bytes": 4635,
+      "sha256": "b3154f4ae6a82a465c9f016ab6bf1db04415afa2e5ff1625c1b88f30e737b9ad"
+    },
+    "metadata-final-b1104bb.json": {
+      "bytes": 4332,
+      "sha256": "4bd346692924c3f8b0baec858ac8a30e65d058aa3c75326cd2f79266f71d4eb1"
+    },
+    "native-media-final.json": {
+      "bytes": 1737,
+      "sha256": "4f6cee70fe0af3f620dbcdffba49df317047eaeaf6bb612613630ececf1f0527"
+    },
+    "package.py": {
+      "bytes": 3398,
+      "sha256": "d98802e8cc11cd923e176f1abdd506a21e708be7fb99f91470763ffa200c4630"
+    },
+    "pr21-24-source-records.json": {
+      "bytes": 12790,
+      "sha256": "78a9cd27a188987fe152d70f9b2bf8c86cd4c04ccd1b91a1bae89d1e91750f58"
+    },
+    "source-inventory.json": {
+      "bytes": 175040,
+      "sha256": "542e3fa0faa5c0b2d6a42c605f94ba18f4717b4025a8e23ea1fa45258b86ff76"
+    },
+    "\u4ea4\u4ed8\u4e0e\u9a8c\u6536\u8bf4\u660e.txt": {
+      "bytes": 4042,
+      "sha256": "f10f2cf55265f3564521b420c8017b8693341e389254af3189566bd6c2764b5a"
+    }
+  }
+}

@@ -1,0 +1,778 @@
+{
+  "startedUtc": "2026-10-02T21:36:13.453540+00:00",
+  "archive": "/workspace/scratch/android-final-delivery/Emberfall-Android-Source-b1104bb.zip",
+  "scriptSha256": "898dfb7ad7b08e866c027176c82ead8c7748bca61aedad6b13fd578b3be8e37d",
+  "packagingFailures": [],
+  "sourceFindings": [
+    {
+      "kind": "invalid_guid",
+      "detail": {
+        "meta": "Assets/Scripts/Combat/WeaponVisualLinks.cs.meta",
+        "guid": "68a6e6a74a54417a8f1162a6ff67f5dc4",
+        "length": 33,
+        "references": [],
+        "asset": "Assets/Scripts/Combat/WeaponVisualLinks.cs",
+        "csharpSource": true
+      }
+    },
+    {
+      "kind": "invalid_guid",
+      "detail": {
+        "meta": "Assets/Scripts/Core/FilledVfxPlacement.cs.meta",
+        "guid": "a61004eb35a84c3c821b82421b504a5cf",
+        "length": 33,
+        "references": [],
+        "asset": "Assets/Scripts/Core/FilledVfxPlacement.cs",
+        "csharpSource": true
+      }
+    }
+  ],
+  "limitations": [
+    "No Unity Editor, importer, asset deserialization, subasset/fileID resolution, font rendering, package download, compilation, APK or device test.",
+    "Resources and GUID reachability is a conservative static inclusion graph, not proof of runtime execution. Dynamic resource expressions are listed, not guessed.",
+    "Git blob identities and inventory SHA256 prove archive fidelity, not source correctness."
+  ],
+  "sourceCommit": "b1104bbd05e4f7f360ace83ec6d8ccc16ed1b0e1",
+  "sourceTree": "23b01b626afd7eabffd8d1d8ba1941af3348fab1",
+  "archiveSha256": "798871e7592c640323377b14c69f0f74729468f402341058409789984603d012",
+  "trackedCount": 1152,
+  "zipEntries": 1153,
+  "gitNormalizationExceptions": [
+    {
+      "path": "Tests/Run-CompileCheck.ps1",
+      "kind": "CRLF checkout bytes match committed LF blob after declared eol conversion",
+      "archiveSha256": "2a9112ae6095eaeac911de3aa780566e6cc0a787596fa42419320fdf9a22061b",
+      "gitBlob": "5afe60357948a9583ad2e799e8cf6e99192a755f"
+    },
+    {
+      "path": "Tests/Run-InstallerTests.ps1",
+      "kind": "CRLF checkout bytes match committed LF blob after declared eol conversion",
+      "archiveSha256": "08c6fdb56ba0747a8333f5efb5b8c86560beefdab8384a243c194a76b598df05",
+      "gitBlob": "096d6df49f6c7fba33a079154811aebe1f33c942"
+    },
+    {
+      "path": "Tests/Run-ProgressionTests.ps1",
+      "kind": "CRLF checkout bytes match committed LF blob after declared eol conversion",
+      "archiveSha256": "5364f0ba0a18b2e47ee51048452e31370a1bf724aaf467b5dfc11c5d8db41bbc",
+      "gitBlob": "510f2aab8333562125698f3354104a58f3ebda4e"
+    },
+    {
+      "path": "Tests/Run-SkillRuntimeTests.ps1",
+      "kind": "CRLF checkout bytes match committed LF blob after declared eol conversion",
+      "archiveSha256": "c47ce58970229b7ebb6485a1020cfafedc601acd55b65054414969aac92399de",
+      "gitBlob": "f9bc60b743097b262469e4f52e39f3027d567362"
+    },
+    {
+      "path": "Tools/Build-Windows.ps1",
+      "kind": "CRLF checkout bytes match committed LF blob after declared eol conversion",
+      "archiveSha256": "6bc21621c02aa43701050c0577070a2cf6b4448de34793ecff284c4850b3f0b7",
+      "gitBlob": "921362c2d73bf659e869bc56d06c045dbcfb1697"
+    },
+    {
+      "path": "Tools/Open-Unity.ps1",
+      "kind": "CRLF checkout bytes match committed LF blob after declared eol conversion",
+      "archiveSha256": "90ac2ae675d9b66486a131585c01f3161b2c4463cf00b39db8993eff495a4c74",
+      "gitBlob": "90d15eea7fee2b52bb1d0d3b5d78835cbd40f5fe"
+    },
+    {
+      "path": "Tools/Package-Release.ps1",
+      "kind": "CRLF checkout bytes match committed LF blob after declared eol conversion",
+      "archiveSha256": "a22c9f464134621c3819eaff57bdfe614094f6fea387afa920ac48844e256ddb",
+      "gitBlob": "db3a79c4113c032755efa68876e8f886d6d6f751"
+    },
+    {
+      "path": "Tools/Run-VisualValidation.ps1",
+      "kind": "CRLF checkout bytes match committed LF blob after declared eol conversion",
+      "archiveSha256": "dc02b74655bec7fb0a5718d03f9a0165caea3721364ef3c6a38c3430f0014d54",
+      "gitBlob": "97e6bc0d15ee6495fde424b3e2fb66c746ffa88e"
+    }
+  ],
+  "verifiedSourceFiles": 1152,
+  "casefoldCollisions": [],
+  "metadata": {
+    "assetFiles": 606,
+    "folders": 12,
+    "missingMeta": [],
+    "orphanMeta": [],
+    "invalidGuids": [
+      {
+        "meta": "Assets/Scripts/Combat/WeaponVisualLinks.cs.meta",
+        "guid": "68a6e6a74a54417a8f1162a6ff67f5dc4",
+        "length": 33,
+        "references": [],
+        "asset": "Assets/Scripts/Combat/WeaponVisualLinks.cs",
+        "csharpSource": true
+      },
+      {
+        "meta": "Assets/Scripts/Core/FilledVfxPlacement.cs.meta",
+        "guid": "a61004eb35a84c3c821b82421b504a5cf",
+        "length": 33,
+        "references": [],
+        "asset": "Assets/Scripts/Core/FilledVfxPlacement.cs",
+        "csharpSource": true
+      }
+    ],
+    "duplicateGuids": {}
+  },
+  "resources": {
+    "keys": {
+      "BlenderPilot/EmberfallPilot_Atlas": [
+        "Assets/Resources/BlenderPilot/EmberfallPilot_Atlas.png"
+      ],
+      "BlenderPilot/EmberfallPilot_MetallicSmoothness": [
+        "Assets/Resources/BlenderPilot/EmberfallPilot_MetallicSmoothness.png"
+      ],
+      "BlenderPilot/Pilot_Atlas_Standard": [
+        "Assets/Resources/BlenderPilot/Pilot_Atlas_Standard.mat"
+      ],
+      "BlenderPilot/StarEmberCampfire": [
+        "Assets/Resources/BlenderPilot/StarEmberCampfire.fbx"
+      ],
+      "BlenderPilot/StarcoreSword": [
+        "Assets/Resources/BlenderPilot/StarcoreSword.fbx"
+      ],
+      "BlenderPilot/SupplyCrate": [
+        "Assets/Resources/BlenderPilot/SupplyCrate.fbx"
+      ],
+      "BlenderPilot/Vanguard": [
+        "Assets/Resources/BlenderPilot/Vanguard.fbx"
+      ],
+      "BlenderPilot/WayfarerTent": [
+        "Assets/Resources/BlenderPilot/WayfarerTent.fbx"
+      ],
+      "FilledSpell": [
+        "Assets/Resources/FilledSpell.shader"
+      ],
+      "Fonts/EmberfallWorldLabels-LICENSE": [
+        "Assets/Resources/Fonts/EmberfallWorldLabels-LICENSE.txt"
+      ],
+      "Fonts/EmberfallWorldLabels": [
+        "Assets/Resources/Fonts/EmberfallWorldLabels.otf"
+      ],
+      "Fonts/LICENSE": [
+        "Assets/Resources/Fonts/LICENSE.txt"
+      ],
+      "Fonts/NotoSansSC-Regular": [
+        "Assets/Resources/Fonts/NotoSansSC-Regular.otf"
+      ],
+      "ThreatBoundary": [
+        "Assets/Resources/ThreatBoundary.shader"
+      ]
+    },
+    "loads": [
+      {
+        "source": "Assets/Editor/WorldLabelValidation.cs",
+        "line": 15,
+        "method": "Load",
+        "expression": "GameFont.WorldLabelPath",
+        "key": "Fonts/EmberfallWorldLabels",
+        "targets": [
+          "Assets/Resources/Fonts/EmberfallWorldLabels.otf"
+        ],
+        "classification": "path-exists"
+      },
+      {
+        "source": "Assets/Scripts/Combat/BlenderPilotVisual.cs",
+        "line": 14,
+        "method": "Load",
+        "expression": "\"BlenderPilot/Pilot_Atlas_Standard\"",
+        "key": "BlenderPilot/Pilot_Atlas_Standard",
+        "targets": [
+          "Assets/Resources/BlenderPilot/Pilot_Atlas_Standard.mat"
+        ],
+        "classification": "path-exists"
+      },
+      {
+        "source": "Assets/Scripts/Combat/BlenderPilotVisual.cs",
+        "line": 34,
+        "method": "Load",
+        "expression": "\"BlenderPilot/\" + name",
+        "classification": "dynamic-unresolved"
+      },
+      {
+        "source": "Assets/Scripts/Combat/BlenderPilotVisual.cs",
+        "line": 94,
+        "method": "Load",
+        "expression": "\"BlenderPilot/Vanguard\"",
+        "key": "BlenderPilot/Vanguard",
+        "targets": [
+          "Assets/Resources/BlenderPilot/Vanguard.fbx"
+        ],
+        "classification": "path-exists"
+      },
+      {
+        "source": "Assets/Scripts/Combat/BlenderPilotVisual.cs",
+        "line": 108,
+        "method": "LoadAll",
+        "expression": "\"BlenderPilot/Vanguard\"",
+        "key": "BlenderPilot/Vanguard",
+        "targets": [
+          "Assets/Resources/BlenderPilot/Vanguard.fbx"
+        ],
+        "classification": "path-exists"
+      },
+      {
+        "source": "Assets/Scripts/Combat/FilledSkillVfx.cs",
+        "line": 69,
+        "method": "Load",
+        "expression": "\"FilledSpell\"",
+        "key": "FilledSpell",
+        "targets": [
+          "Assets/Resources/FilledSpell.shader"
+        ],
+        "classification": "path-exists"
+      },
+      {
+        "source": "Assets/Scripts/Combat/LargeExpeditionBoss.cs",
+        "line": 187,
+        "method": "Load",
+        "expression": "\"ThreatBoundary\"",
+        "key": "ThreatBoundary",
+        "targets": [
+          "Assets/Resources/ThreatBoundary.shader"
+        ],
+        "classification": "path-exists"
+      },
+      {
+        "source": "Assets/Scripts/Combat/ThreatVisualStyle.cs",
+        "line": 9,
+        "method": "Load",
+        "expression": "\"ThreatBoundary\"",
+        "key": "ThreatBoundary",
+        "targets": [
+          "Assets/Resources/ThreatBoundary.shader"
+        ],
+        "classification": "path-exists"
+      },
+      {
+        "source": "Assets/Scripts/Combat/WeaponVisualLinks.cs",
+        "line": 72,
+        "method": "Load",
+        "expression": "\"FilledSpell\"",
+        "key": "FilledSpell",
+        "targets": [
+          "Assets/Resources/FilledSpell.shader"
+        ],
+        "classification": "path-exists"
+      },
+      {
+        "source": "Assets/Scripts/UI/GameFont.cs",
+        "line": 16,
+        "method": "Load",
+        "expression": "BundledUiPath",
+        "key": "Fonts/NotoSansSC-Regular",
+        "targets": [
+          "Assets/Resources/Fonts/NotoSansSC-Regular.otf"
+        ],
+        "classification": "path-exists"
+      },
+      {
+        "source": "Assets/Scripts/UI/GameFont.cs",
+        "line": 33,
+        "method": "Load",
+        "expression": "WorldLabelPath",
+        "key": "Fonts/EmberfallWorldLabels",
+        "targets": [
+          "Assets/Resources/Fonts/EmberfallWorldLabels.otf"
+        ],
+        "classification": "path-exists"
+      }
+    ],
+    "duplicateKeys": {},
+    "limits": "Only literal arguments and local const string values resolved; LoadAll FBX subassets/type compatibility require Unity import."
+  },
+  "guidReferences": {
+    "references": [
+      {
+        "source": "Assets/Resources/BlenderPilot/Pilot_Atlas_Standard.mat",
+        "line": 11,
+        "guid": "0000000000000000f000000000000000",
+        "classification": "built-in",
+        "context": "m_Shader: {fileID: 46, guid: 0000000000000000f000000000000000, type: 0}",
+        "builtinKind": "Unity built-in resources",
+        "reachableFromEnabledSceneOrResources": true
+      },
+      {
+        "source": "Assets/Resources/BlenderPilot/Pilot_Atlas_Standard.mat",
+        "line": 23,
+        "guid": "9d4471f98232b94b5ad8c2a6e6870914",
+        "classification": "resolved",
+        "context": "m_Texture: {fileID: 2800000, guid: 9d4471f98232b94b5ad8c2a6e6870914, type: 3}",
+        "targets": [
+          "Assets/Resources/BlenderPilot/EmberfallPilot_Atlas.png"
+        ],
+        "reachableFromEnabledSceneOrResources": true
+      },
+      {
+        "source": "Assets/Resources/BlenderPilot/Pilot_Atlas_Standard.mat",
+        "line": 27,
+        "guid": "6e189d1688bc62fcefd2faa1f7a140fc",
+        "classification": "resolved",
+        "context": "m_Texture: {fileID: 2800000, guid: 6e189d1688bc62fcefd2faa1f7a140fc, type: 3}",
+        "targets": [
+          "Assets/Resources/BlenderPilot/EmberfallPilot_MetallicSmoothness.png"
+        ],
+        "reachableFromEnabledSceneOrResources": true
+      },
+      {
+        "source": "ProjectSettings/EditorBuildSettings.asset",
+        "line": 10,
+        "guid": "2c4c9e4709fc4b56abf9e1c3e8397f25",
+        "classification": "resolved",
+        "context": "guid: 2c4c9e4709fc4b56abf9e1c3e8397f25",
+        "targets": [
+          "Assets/Scenes/Main.unity"
+        ],
+        "reachableFromEnabledSceneOrResources": false
+      },
+      {
+        "source": "ProjectSettings/GraphicsSettings.asset",
+        "line": 9,
+        "guid": "0000000000000000f000000000000000",
+        "classification": "built-in",
+        "context": "m_Shader: {fileID: 69, guid: 0000000000000000f000000000000000, type: 0}",
+        "builtinKind": "Unity built-in resources",
+        "reachableFromEnabledSceneOrResources": false
+      },
+      {
+        "source": "ProjectSettings/GraphicsSettings.asset",
+        "line": 12,
+        "guid": "0000000000000000f000000000000000",
+        "classification": "built-in",
+        "context": "m_Shader: {fileID: 74, guid: 0000000000000000f000000000000000, type: 0}",
+        "builtinKind": "Unity built-in resources",
+        "reachableFromEnabledSceneOrResources": false
+      },
+      {
+        "source": "ProjectSettings/GraphicsSettings.asset",
+        "line": 15,
+        "guid": "0000000000000000f000000000000000",
+        "classification": "built-in",
+        "context": "m_Shader: {fileID: 64, guid: 0000000000000000f000000000000000, type: 0}",
+        "builtinKind": "Unity built-in resources",
+        "reachableFromEnabledSceneOrResources": false
+      },
+      {
+        "source": "ProjectSettings/GraphicsSettings.asset",
+        "line": 18,
+        "guid": "0000000000000000f000000000000000",
+        "classification": "built-in",
+        "context": "m_Shader: {fileID: 62, guid: 0000000000000000f000000000000000, type: 0}",
+        "builtinKind": "Unity built-in resources",
+        "reachableFromEnabledSceneOrResources": false
+      },
+      {
+        "source": "ProjectSettings/GraphicsSettings.asset",
+        "line": 21,
+        "guid": "0000000000000000f000000000000000",
+        "classification": "built-in",
+        "context": "m_Shader: {fileID: 75, guid: 0000000000000000f000000000000000, type: 0}",
+        "builtinKind": "Unity built-in resources",
+        "reachableFromEnabledSceneOrResources": false
+      },
+      {
+        "source": "ProjectSettings/GraphicsSettings.asset",
+        "line": 24,
+        "guid": "0000000000000000f000000000000000",
+        "classification": "built-in",
+        "context": "m_Shader: {fileID: 105, guid: 0000000000000000f000000000000000, type: 0}",
+        "builtinKind": "Unity built-in resources",
+        "reachableFromEnabledSceneOrResources": false
+      },
+      {
+        "source": "ProjectSettings/GraphicsSettings.asset",
+        "line": 27,
+        "guid": "0000000000000000f000000000000000",
+        "classification": "built-in",
+        "context": "m_Shader: {fileID: 102, guid: 0000000000000000f000000000000000, type: 0}",
+        "builtinKind": "Unity built-in resources",
+        "reachableFromEnabledSceneOrResources": false
+      },
+      {
+        "source": "ProjectSettings/GraphicsSettings.asset",
+        "line": 30,
+        "guid": "0000000000000000f000000000000000",
+        "classification": "built-in",
+        "context": "- {fileID: 7, guid: 0000000000000000f000000000000000, type: 0}",
+        "builtinKind": "Unity built-in resources",
+        "reachableFromEnabledSceneOrResources": false
+      },
+      {
+        "source": "ProjectSettings/GraphicsSettings.asset",
+        "line": 31,
+        "guid": "0000000000000000f000000000000000",
+        "classification": "built-in",
+        "context": "- {fileID: 15104, guid: 0000000000000000f000000000000000, type: 0}",
+        "builtinKind": "Unity built-in resources",
+        "reachableFromEnabledSceneOrResources": false
+      },
+      {
+        "source": "ProjectSettings/GraphicsSettings.asset",
+        "line": 32,
+        "guid": "0000000000000000f000000000000000",
+        "classification": "built-in",
+        "context": "- {fileID: 15105, guid: 0000000000000000f000000000000000, type: 0}",
+        "builtinKind": "Unity built-in resources",
+        "reachableFromEnabledSceneOrResources": false
+      },
+      {
+        "source": "ProjectSettings/GraphicsSettings.asset",
+        "line": 33,
+        "guid": "0000000000000000f000000000000000",
+        "classification": "built-in",
+        "context": "- {fileID: 15106, guid: 0000000000000000f000000000000000, type: 0}",
+        "builtinKind": "Unity built-in resources",
+        "reachableFromEnabledSceneOrResources": false
+      },
+      {
+        "source": "ProjectSettings/GraphicsSettings.asset",
+        "line": 34,
+        "guid": "0000000000000000f000000000000000",
+        "classification": "built-in",
+        "context": "- {fileID: 10753, guid: 0000000000000000f000000000000000, type: 0}",
+        "builtinKind": "Unity built-in resources",
+        "reachableFromEnabledSceneOrResources": false
+      },
+      {
+        "source": "ProjectSettings/GraphicsSettings.asset",
+        "line": 35,
+        "guid": "0000000000000000f000000000000000",
+        "classification": "built-in",
+        "context": "- {fileID: 10770, guid: 0000000000000000f000000000000000, type: 0}",
+        "builtinKind": "Unity built-in resources",
+        "reachableFromEnabledSceneOrResources": false
+      },
+      {
+        "source": "ProjectSettings/GraphicsSettings.asset",
+        "line": 36,
+        "guid": "0000000000000000f000000000000000",
+        "classification": "built-in",
+        "context": "- {fileID: 10783, guid: 0000000000000000f000000000000000, type: 0}",
+        "builtinKind": "Unity built-in resources",
+        "reachableFromEnabledSceneOrResources": false
+      },
+      {
+        "source": "ProjectSettings/GraphicsSettings.asset",
+        "line": 37,
+        "guid": "0000000000000000f000000000000000",
+        "classification": "built-in",
+        "context": "- {fileID: 46, guid: 0000000000000000f000000000000000, type: 0}",
+        "builtinKind": "Unity built-in resources",
+        "reachableFromEnabledSceneOrResources": false
+      },
+      {
+        "source": "ProjectSettings/GraphicsSettings.asset",
+        "line": 38,
+        "guid": "0000000000000000f000000000000000",
+        "classification": "built-in",
+        "context": "- {fileID: 10755, guid: 0000000000000000f000000000000000, type: 0}",
+        "builtinKind": "Unity built-in resources",
+        "reachableFromEnabledSceneOrResources": false
+      },
+      {
+        "source": "ProjectSettings/GraphicsSettings.asset",
+        "line": 50,
+        "guid": "0000000000000000f000000000000000",
+        "classification": "built-in",
+        "context": "m_SpritesDefaultMaterial: {fileID: 10754, guid: 0000000000000000f000000000000000, type: 0}",
+        "builtinKind": "Unity built-in resources",
+        "reachableFromEnabledSceneOrResources": false
+      },
+      {
+        "source": "ProjectSettings/ProjectSettings.asset",
+        "line": 305,
+        "guid": "c1e4717aef44476c8a427f3a8810f43b",
+        "classification": "resolved",
+        "context": "m_Icon: {fileID: 2800000, guid: c1e4717aef44476c8a427f3a8810f43b, type: 3}",
+        "targets": [
+          "Assets/Art/EmberfallIcon.png"
+        ],
+        "reachableFromEnabledSceneOrResources": false
+      },
+      {
+        "source": "ProjectSettings/ProjectSettings.asset",
+        "line": 312,
+        "guid": "c1e4717aef44476c8a427f3a8810f43b",
+        "classification": "resolved",
+        "context": "m_Icon: {fileID: 2800000, guid: c1e4717aef44476c8a427f3a8810f43b, type: 3}",
+        "targets": [
+          "Assets/Art/EmberfallIcon.png"
+        ],
+        "reachableFromEnabledSceneOrResources": false
+      },
+      {
+        "source": "ProjectSettings/ProjectSettings.asset",
+        "line": 317,
+        "guid": "c1e4717aef44476c8a427f3a8810f43b",
+        "classification": "resolved",
+        "context": "m_Icon: {fileID: 2800000, guid: c1e4717aef44476c8a427f3a8810f43b, type: 3}",
+        "targets": [
+          "Assets/Art/EmberfallIcon.png"
+        ],
+        "reachableFromEnabledSceneOrResources": false
+      },
+      {
+        "source": "ProjectSettings/ProjectSettings.asset",
+        "line": 322,
+        "guid": "c1e4717aef44476c8a427f3a8810f43b",
+        "classification": "resolved",
+        "context": "m_Icon: {fileID: 2800000, guid: c1e4717aef44476c8a427f3a8810f43b, type: 3}",
+        "targets": [
+          "Assets/Art/EmberfallIcon.png"
+        ],
+        "reachableFromEnabledSceneOrResources": false
+      },
+      {
+        "source": "ProjectSettings/ProjectSettings.asset",
+        "line": 327,
+        "guid": "c1e4717aef44476c8a427f3a8810f43b",
+        "classification": "resolved",
+        "context": "m_Icon: {fileID: 2800000, guid: c1e4717aef44476c8a427f3a8810f43b, type: 3}",
+        "targets": [
+          "Assets/Art/EmberfallIcon.png"
+        ],
+        "reachableFromEnabledSceneOrResources": false
+      },
+      {
+        "source": "ProjectSettings/ProjectSettings.asset",
+        "line": 332,
+        "guid": "c1e4717aef44476c8a427f3a8810f43b",
+        "classification": "resolved",
+        "context": "m_Icon: {fileID: 2800000, guid: c1e4717aef44476c8a427f3a8810f43b, type: 3}",
+        "targets": [
+          "Assets/Art/EmberfallIcon.png"
+        ],
+        "reachableFromEnabledSceneOrResources": false
+      },
+      {
+        "source": "ProjectSettings/ProjectSettings.asset",
+        "line": 337,
+        "guid": "c1e4717aef44476c8a427f3a8810f43b",
+        "classification": "resolved",
+        "context": "m_Icon: {fileID: 2800000, guid: c1e4717aef44476c8a427f3a8810f43b, type: 3}",
+        "targets": [
+          "Assets/Art/EmberfallIcon.png"
+        ],
+        "reachableFromEnabledSceneOrResources": false
+      }
+    ],
+    "counts": {
+      "built-in": 18,
+      "resolved": 10
+    },
+    "unresolved": [],
+    "roots": [
+      "Assets/Resources/BlenderPilot/EmberfallPilot_Atlas.png",
+      "Assets/Resources/BlenderPilot/EmberfallPilot_MetallicSmoothness.png",
+      "Assets/Resources/BlenderPilot/Pilot_Atlas_Standard.mat",
+      "Assets/Resources/BlenderPilot/StarEmberCampfire.fbx",
+      "Assets/Resources/BlenderPilot/StarcoreSword.fbx",
+      "Assets/Resources/BlenderPilot/SupplyCrate.fbx",
+      "Assets/Resources/BlenderPilot/Vanguard.fbx",
+      "Assets/Resources/BlenderPilot/WayfarerTent.fbx",
+      "Assets/Resources/FilledSpell.shader",
+      "Assets/Resources/Fonts/EmberfallWorldLabels-LICENSE.txt",
+      "Assets/Resources/Fonts/EmberfallWorldLabels.otf",
+      "Assets/Resources/Fonts/LICENSE.txt",
+      "Assets/Resources/Fonts/NotoSansSC-Regular.otf",
+      "Assets/Resources/ThreatBoundary.shader",
+      "Assets/Scenes/Main.unity"
+    ],
+    "reachableAssets": [
+      "Assets/Resources/BlenderPilot/EmberfallPilot_Atlas.png",
+      "Assets/Resources/BlenderPilot/EmberfallPilot_MetallicSmoothness.png",
+      "Assets/Resources/BlenderPilot/Pilot_Atlas_Standard.mat",
+      "Assets/Resources/BlenderPilot/StarEmberCampfire.fbx",
+      "Assets/Resources/BlenderPilot/StarcoreSword.fbx",
+      "Assets/Resources/BlenderPilot/SupplyCrate.fbx",
+      "Assets/Resources/BlenderPilot/Vanguard.fbx",
+      "Assets/Resources/BlenderPilot/WayfarerTent.fbx",
+      "Assets/Resources/FilledSpell.shader",
+      "Assets/Resources/Fonts/EmberfallWorldLabels-LICENSE.txt",
+      "Assets/Resources/Fonts/EmberfallWorldLabels.otf",
+      "Assets/Resources/Fonts/LICENSE.txt",
+      "Assets/Resources/Fonts/NotoSansSC-Regular.otf",
+      "Assets/Resources/ThreatBoundary.shader",
+      "Assets/Scenes/Main.unity"
+    ]
+  },
+  "buildScenes": [
+    {
+      "enabled": true,
+      "path": "Assets/Scenes/Main.unity",
+      "guid": "2c4c9e4709fc4b56abf9e1c3e8397f25",
+      "pathAndGuidValid": true
+    }
+  ],
+  "projectVersion": "m_EditorVersion: 6000.6.3f1\nm_EditorVersionWithRevision: 6000.6.3f1 (45d8eee7de74)",
+  "packageManifest": {
+    "dependencies": {
+      "com.unity.modules.audio": "1.0.0",
+      "com.unity.modules.imgui": "1.0.0",
+      "com.unity.modules.imageconversion": "1.0.0",
+      "com.unity.modules.screencapture": "1.0.0",
+      "com.unity.modules.jsonserialize": "1.0.0",
+      "com.unity.modules.physics": "1.0.0",
+      "com.unity.modules.particlesystem": "1.0.0",
+      "com.unity.modules.ui": "1.0.0",
+      "com.unity.modules.uielements": "1.0.0",
+      "com.unity.modules.terrain": "1.0.0",
+      "com.unity.modules.terrainphysics": "1.0.0",
+      "com.unity.modules.animation": "1.0.0"
+    }
+  },
+  "packageLockPresent": true,
+  "pins": {
+    "ProjectSettings/ProjectVersion.txt": "87289075c168cdd875e46a5fc308d15c686987848a70c7ce47faf40196ac0e20",
+    "Packages/manifest.json": "110fe699e587abfb6c2da5a6aa56e27a1514db6573a7f733e76dc500ff3a1937",
+    "ProjectSettings/EditorBuildSettings.asset": "dd3da63619d8e7a98a65a040a65ae47166eeb6649af49ff785cc007d8ce3343b"
+  },
+  "protectedFiles": [
+    {
+      "path": "Assets/Resources/Fonts/EmberfallWorldLabels.otf",
+      "sha256": "768a642e815400a732b0071d78f979273ee8582b9d4d83cc42eb894888ef7199",
+      "matchesLedger": true
+    },
+    {
+      "path": "Assets/Resources/Fonts/NotoSansSC-Regular.otf",
+      "sha256": "faa6c9df652116dde789d351359f3d7e5d2285a2b2a1f04a2d7244df706d5ea9",
+      "matchesLedger": true
+    },
+    {
+      "path": "ProjectSettings/AudioManager.asset",
+      "sha256": "9543c41dbfc7d3951217c4dd9481ed026eb8e529b85ecf4463969a0fea747729",
+      "matchesLedger": true
+    },
+    {
+      "path": "ProjectSettings/ClusterInputManager.asset",
+      "sha256": "40e65dd214bf254955d2c8829ca8ce2130fd3510485560ce012e9a1ddd93e623",
+      "matchesLedger": true
+    },
+    {
+      "path": "ProjectSettings/DynamicsManager.asset",
+      "sha256": "785919ec02924b9125bd572087d9e3ceb1844b1cceb3ff6144c1c1f56cd79047",
+      "matchesLedger": true
+    },
+    {
+      "path": "ProjectSettings/EditorBuildSettings.asset",
+      "sha256": "dd3da63619d8e7a98a65a040a65ae47166eeb6649af49ff785cc007d8ce3343b",
+      "matchesLedger": true
+    },
+    {
+      "path": "ProjectSettings/EditorSettings.asset",
+      "sha256": "4b842c80c4e630b6cb5416b817aba84b97014072e1ab555b08742344687ccdf5",
+      "matchesLedger": true
+    },
+    {
+      "path": "ProjectSettings/GraphicsSettings.asset",
+      "sha256": "8406c7231061723d6f4bb2097fd0dfc18dea407fcf435932fc96eb29b401f842",
+      "matchesLedger": true
+    },
+    {
+      "path": "ProjectSettings/InputManager.asset",
+      "sha256": "d65386e419bbd4f204486ff8d636729fe2e39a97114309e60e3ae93b07452edc",
+      "matchesLedger": true
+    },
+    {
+      "path": "ProjectSettings/MemorySettings.asset",
+      "sha256": "25fb3fdd1ce94347ccdcf23d5d5e446055ca81d8b3756a7df85d614645a71ac4",
+      "matchesLedger": true
+    },
+    {
+      "path": "ProjectSettings/MultiplayerManager.asset",
+      "sha256": "aba89fd1a1ddad182727ad82727e536d27372e90328a8196da2a4560398983dd",
+      "matchesLedger": true
+    },
+    {
+      "path": "ProjectSettings/NavMeshAreas.asset",
+      "sha256": "7ebbf8f53b8033104e1878b95ca07a28d0954092d81c220f14196a42f651e658",
+      "matchesLedger": true
+    },
+    {
+      "path": "ProjectSettings/Physics2DSettings.asset",
+      "sha256": "7280037ac908e26d4519825446c92c80a8520308016b171522760b535aadcbc0",
+      "matchesLedger": true
+    },
+    {
+      "path": "ProjectSettings/PhysicsCoreProjectSettings2D.asset",
+      "sha256": "bedc5339a832c60dc3f11b84abc4f4384dbfa20b0cd9ad6c444b907e751fc35e",
+      "matchesLedger": true
+    },
+    {
+      "path": "ProjectSettings/PresetManager.asset",
+      "sha256": "29c125923fe6e29f90190d4fce1c82d660e7051546e2c9d02908d18c9cf2436c",
+      "matchesLedger": true
+    },
+    {
+      "path": "ProjectSettings/ProjectAuditorSettings.asset",
+      "sha256": "9e68444b9bda981e2927a98df9edf69ea88362f0c6b7f3c81b39b9d515d2a416",
+      "matchesLedger": true
+    },
+    {
+      "path": "ProjectSettings/ProjectSettings.asset",
+      "sha256": "e11291079c80bc65949eba8378163b6ccda83e9683cb28b4533344808d77be6f",
+      "matchesLedger": true
+    },
+    {
+      "path": "ProjectSettings/ProjectVersion.txt",
+      "sha256": "87289075c168cdd875e46a5fc308d15c686987848a70c7ce47faf40196ac0e20",
+      "matchesLedger": true
+    },
+    {
+      "path": "ProjectSettings/QualitySettings.asset",
+      "sha256": "f774942e3870af6accba1513516fcdfa7743cadeb658146300ee94e7e8527682",
+      "matchesLedger": true
+    },
+    {
+      "path": "ProjectSettings/TagManager.asset",
+      "sha256": "996628fdc904025b83606bbfbda4fe08c0bbe916475146110e77cdc2f22c2013",
+      "matchesLedger": true
+    },
+    {
+      "path": "ProjectSettings/TimeManager.asset",
+      "sha256": "3396f52fdc16d445024e01d7a2d99db6f0a37569d1d73c0302e9ffb857d90287",
+      "matchesLedger": true
+    },
+    {
+      "path": "ProjectSettings/UnityConnectSettings.asset",
+      "sha256": "bfd9b4ad7ba0f6044f0957cd427df1d8e49dcf9453fdfc35dac74c64bbffa8f3",
+      "matchesLedger": true
+    },
+    {
+      "path": "ProjectSettings/VFXManager.asset",
+      "sha256": "d2937fe93ff49c2ce60f888056b70ebc0a1df7dd5e22dab3fa41678c2a3f3858",
+      "matchesLedger": true
+    },
+    {
+      "path": "ProjectSettings/VersionControlSettings.asset",
+      "sha256": "e199cdfa6a8f2bf33cfd47e549198f13e3eb2a5099e908fdb4e0f14d939ccc6b",
+      "matchesLedger": true
+    }
+  ],
+  "fonts": [
+    {
+      "path": "Assets/Resources/Fonts/EmberfallWorldLabels.otf",
+      "bytes": 17584,
+      "sha256": "768a642e815400a732b0071d78f979273ee8582b9d4d83cc42eb894888ef7199",
+      "sfntHeader": "4f54544f",
+      "validSfntMagic": true
+    },
+    {
+      "path": "Assets/Resources/Fonts/NotoSansSC-Regular.otf",
+      "bytes": 8331336,
+      "sha256": "faa6c9df652116dde789d351359f3d7e5d2285a2b2a1f04a2d7244df706d5ea9",
+      "sfntHeader": "4f54544f",
+      "validSfntMagic": true
+    }
+  ],
+  "cleanRoom": {
+    "usedFreshTemporaryRoot": true,
+    "extractedFiles": 1153,
+    "extractionDeletedAfterAudit": false,
+    "retainedRoot": "/workspace/scratch/archive-audit/final-b1104bb/extracted"
+  },
+  "rawGitBlobBytesExact": false,
+  "packagingPassed": true,
+  "staticSourceClean": false,
+  "completedUtc": "2026-10-02T21:36:14.265016+00:00"
+}

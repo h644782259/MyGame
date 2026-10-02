@@ -1,0 +1,32 @@
+《星烬纪元》最终交付说明（最终冻结源码，PR21–27）
+
+本包是 Unity Android 工程源码，不是可安装 APK。编辑器版本由 ProjectSettings/ProjectVersion.txt 固定为 6000.6.3f1。Windows／iOS 最终 main 与 Android 来源提交，以 SOURCE-DELIVERY.json 为准；PR27 已合并，Windows main 为 ace3109c23485d7f145d372b8cb3c24bd79abe89，iOS main 为 a9caf3776d80439c7c559202b531dc4a3df4518e；两者树与验证候选完全一致。Android 同步源码为 b1104bbd05e4f7f360ace83ec6d8ccc16ed1b0e1。
+
+本轮新增
+沿真实章节目标与服务追踪同一角色和首件核心装备：一级新档／原始旧档迁移、目标经验、首次共享核心、装备及槽位升级、金币不足时的部分重铸、技能重置、旧预设恢复、重载及返回失败后重试。未复现生产缺陷，因此只增加测试和说明，运行时代码、画面、字体及平台设置不变。
+此前已合并的自由顺序净化封印、托管分配优化、默认关闭的移动普攻试点随对应源码保留。试点不会由本次交付自动启用。
+
+已实际验证
+198/198 注册检查通过，默认 JIT，测试期间源码变更列表为空；八条四职业新档／旧档旅程共 3,684 条断言，72 次章节尝试，六个负向变异均编译成功后命中指定失败断言。三平台 256 份运行时源码 API 编译通过，使用缓存的 Unity 2021.3.33 引用。这不是 Unity 6 编译或运行。
+检查过金币、材料、点数预算、同一装备 ID、永久槽位等级、首通领取状态，以及真实 System.IO 的临时路径拒绝与主备存档损坏。不是磁盘耗尽或 File.Replace 中途断电测试；专精投入为零，不涵盖非零专精退款。
+
+需要后续实机验收
+1. 在具备有效授权和 Android Build Support 的 Unity 6000.6.3f1 环境，按 Docs/Android-Development.md 完成预检和开发包构建。本环境缺少 Editor、SDK/NDK 和对应工具，未生成 APK/AAB。
+2. 用原生 JsonUtility 载入新档及旧档；测试后台／恢复、强制终止、失败重试，确认真实引擎生命周期与存档落盘行为。
+3. API 26／36 ARM64 设备上检查双横屏、刘海和安全区、中文字体、同时移动／攻击、取消触摸、返回键、温升、内存和长战斗帧率。
+4. 在真实战斗中比较目标优先级、地图可达性、怪物协作、连续局变化和推进取舍。种子与托管回归证明不能替代玩家体验。
+5. 移动普攻试点继续默认关闭；若人工启用，按 Docs/Moving-Basic-Pilot.md 验收转向、脚底、装备兼容、全身／武器／背部预览。PR25 旧 FBX 的严格 0.1mm 分数帧失败保持原结论。本包已包含 PR27 的新 FBX，在 4,923 个 Blender 离散采样中通过同一阈值。该结果仍不证明 Unity 导入后精度。
+
+阅读入口
+Docs/Integrated-Player-Journey.md：精确旅程、复现命令及替身边界。
+Docs/Expedition-Free-Seals.md：远征封印行为。
+Docs/Moving-Basic-Pilot.md：移动普攻试点与验收边界。
+Docs/Android-Development.md：Android 配置与构建流程。
+Tests/ 与 Tools/：回归及验证工具；Assets/：运行时源码、资源及 meta；ArtSource/：创作源文件与离线审阅材料。
+source-inventory.json：完整归档源文件的字节数和 SHA256。
+asset-inventory.csv：美术、创作源文件及视频清单。
+native-media.json：已核对的现有 Library 资源身份，由父任务组织最终原生链接。
+
+离线视频属于 Blender／作者场景重建，不是 Unity 录像。移动普攻审阅 ZIP 解压后打开 Review.html；不要把该审阅 ZIP 当作 Android 工程包。原生五动作及 VFX 前后视频也保留各自身份，不被源码附件覆盖。
+
+发布核查提示：两份既有 C# .meta（WeaponVisualLinks、FilledVfxPlacement）的 GUID 为33位；没有发现序列化引用，也没有在本轮改写。此静态缺陷已记录，不等于已证明 Unity 会构建失败；原生导入行为仍待验收。

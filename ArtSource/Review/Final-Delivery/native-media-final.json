@@ -1,0 +1,54 @@
+{
+  "scope": "Existing native Library identities verified by read/title search; no Library write",
+  "items": [
+    {
+      "name": "Comparison-combat.mp4",
+      "library_file_id": "libfile_5b0d9c67652c8191b9fa4f19f36e17a3",
+      "file_id": "file_00000000615881f6a40ebded901463f2",
+      "bytes": 1000794,
+      "version": null
+    },
+    {
+      "name": "Emberfall-Moving-Basic-Review-dcd75ac.zip",
+      "library_file_id": "libfile_8ba5275b7b688191922491b6bd7b2100",
+      "file_id": "file_00000000bc4481f69246fb8483acaf5f",
+      "bytes": 16682358,
+      "version": null
+    },
+    {
+      "name": "Emberfall-VFX-After.mp4",
+      "library_file_id": "libfile_b8a23ef702988191b128ff4a217961fe",
+      "file_id": "file_0000000082bc81f595c82ab90dac0036",
+      "bytes": 462159,
+      "version": null
+    },
+    {
+      "name": "Emberfall-VFX-Before.mp4",
+      "library_file_id": "libfile_adb7df25cc20819182a5b0bae049eddc",
+      "file_id": "file_0000000007c4820c8919d696208eba3b",
+      "bytes": 286963,
+      "version": null
+    },
+    {
+      "name": "Emberfall-Pilot-Vanguard.png",
+      "library_file_id": "libfile_bc87b3106e608191815e29a393209943",
+      "file_id": "file_00000000872c81f6b67b59587de81885",
+      "bytes": 1776874,
+      "version": null
+    },
+    {
+      "name": "Emberfall-Pilot-Five-Actions.mp4",
+      "library_file_id": "libfile_76d18a4f1a6481918fb375670d78a3d2",
+      "file_id": "file_00000000eb2c81f5b526f6d70a5774f8",
+      "bytes": 246143,
+      "version": null
+    },
+    {
+      "name": "Emberfall-Pilot-Props.png",
+      "library_file_id": "libfile_b9a90194160c8191ad1b53e88b9ed2f3",
+      "file_id": "file_00000000ba3c81f58560045e3b1950e7",
+      "bytes": 3334532,
+      "version": null
+    }
+  ]
+}

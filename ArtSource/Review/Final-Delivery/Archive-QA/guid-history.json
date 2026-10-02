@@ -1,0 +1,146 @@
+[
+  {
+    "repo": "/workspace/emberfall_fbx_fidelity",
+    "commit": "9ff275279b553695d7e0057f11e9e265dff615ff",
+    "findings": [
+      {
+        "file": "Assets/Scripts/Combat/WeaponVisualLinks.cs.meta",
+        "guid": "68a6e6a74a54417a8f1162a6ff67f5dc4",
+        "length": 33,
+        "sha256": "38f1a042c30032ca2d53f5efb9528d7106aceb91ceaeeeef906624d047547bde",
+        "allLiteralOccurrences": [
+          "9ff275279b553695d7e0057f11e9e265dff615ff:Assets/Scripts/Combat/WeaponVisualLinks.cs.meta:2:guid: 68a6e6a74a54417a8f1162a6ff67f5dc4"
+        ]
+      },
+      {
+        "file": "Assets/Scripts/Core/FilledVfxPlacement.cs.meta",
+        "guid": "a61004eb35a84c3c821b82421b504a5cf",
+        "length": 33,
+        "sha256": "ce6658a77d5cc77c824abf706eb05d841a5a62059f7a52d7c01a8307dd6d04a7",
+        "allLiteralOccurrences": [
+          "9ff275279b553695d7e0057f11e9e265dff615ff:Assets/Scripts/Core/FilledVfxPlacement.cs.meta:2:guid: a61004eb35a84c3c821b82421b504a5cf"
+        ]
+      }
+    ]
+  },
+  {
+    "repo": "/workspace/emberfall_fbx_fidelity",
+    "commit": "ace3109c23485d7f145d372b8cb3c24bd79abe89",
+    "findings": [
+      {
+        "file": "Assets/Scripts/Combat/WeaponVisualLinks.cs.meta",
+        "guid": "68a6e6a74a54417a8f1162a6ff67f5dc4",
+        "length": 33,
+        "sha256": "38f1a042c30032ca2d53f5efb9528d7106aceb91ceaeeeef906624d047547bde",
+        "allLiteralOccurrences": [
+          "ace3109c23485d7f145d372b8cb3c24bd79abe89:Assets/Scripts/Combat/WeaponVisualLinks.cs.meta:2:guid: 68a6e6a74a54417a8f1162a6ff67f5dc4"
+        ]
+      },
+      {
+        "file": "Assets/Scripts/Core/FilledVfxPlacement.cs.meta",
+        "guid": "a61004eb35a84c3c821b82421b504a5cf",
+        "length": 33,
+        "sha256": "ce6658a77d5cc77c824abf706eb05d841a5a62059f7a52d7c01a8307dd6d04a7",
+        "allLiteralOccurrences": [
+          "ace3109c23485d7f145d372b8cb3c24bd79abe89:Assets/Scripts/Core/FilledVfxPlacement.cs.meta:2:guid: a61004eb35a84c3c821b82421b504a5cf"
+        ]
+      }
+    ]
+  },
+  {
+    "repo": "/workspace/emberfall_ios_fbx_fidelity",
+    "commit": "d78d8516555791673345f6a46623796e7c729b4b",
+    "findings": [
+      {
+        "file": "Assets/Scripts/Combat/WeaponVisualLinks.cs.meta",
+        "guid": "68a6e6a74a54417a8f1162a6ff67f5dc4",
+        "length": 33,
+        "sha256": "38f1a042c30032ca2d53f5efb9528d7106aceb91ceaeeeef906624d047547bde",
+        "allLiteralOccurrences": [
+          "d78d8516555791673345f6a46623796e7c729b4b:Assets/Scripts/Combat/WeaponVisualLinks.cs.meta:2:guid: 68a6e6a74a54417a8f1162a6ff67f5dc4"
+        ]
+      },
+      {
+        "file": "Assets/Scripts/Core/FilledVfxPlacement.cs.meta",
+        "guid": "a61004eb35a84c3c821b82421b504a5cf",
+        "length": 33,
+        "sha256": "ce6658a77d5cc77c824abf706eb05d841a5a62059f7a52d7c01a8307dd6d04a7",
+        "allLiteralOccurrences": [
+          "d78d8516555791673345f6a46623796e7c729b4b:Assets/Scripts/Core/FilledVfxPlacement.cs.meta:2:guid: a61004eb35a84c3c821b82421b504a5cf"
+        ]
+      }
+    ]
+  },
+  {
+    "repo": "/workspace/emberfall_ios_fbx_fidelity",
+    "commit": "a9caf3776d80439c7c559202b531dc4a3df4518e",
+    "findings": [
+      {
+        "file": "Assets/Scripts/Combat/WeaponVisualLinks.cs.meta",
+        "guid": "68a6e6a74a54417a8f1162a6ff67f5dc4",
+        "length": 33,
+        "sha256": "38f1a042c30032ca2d53f5efb9528d7106aceb91ceaeeeef906624d047547bde",
+        "allLiteralOccurrences": [
+          "a9caf3776d80439c7c559202b531dc4a3df4518e:Assets/Scripts/Combat/WeaponVisualLinks.cs.meta:2:guid: 68a6e6a74a54417a8f1162a6ff67f5dc4"
+        ]
+      },
+      {
+        "file": "Assets/Scripts/Core/FilledVfxPlacement.cs.meta",
+        "guid": "a61004eb35a84c3c821b82421b504a5cf",
+        "length": 33,
+        "sha256": "ce6658a77d5cc77c824abf706eb05d841a5a62059f7a52d7c01a8307dd6d04a7",
+        "allLiteralOccurrences": [
+          "a9caf3776d80439c7c559202b531dc4a3df4518e:Assets/Scripts/Core/FilledVfxPlacement.cs.meta:2:guid: a61004eb35a84c3c821b82421b504a5cf"
+        ]
+      }
+    ]
+  },
+  {
+    "repo": "/workspace/emberfall_android_fbx_fidelity",
+    "commit": "6ec16d8602e59225ea12987da24c141bf0eb7812",
+    "findings": [
+      {
+        "file": "Assets/Scripts/Combat/WeaponVisualLinks.cs.meta",
+        "guid": "68a6e6a74a54417a8f1162a6ff67f5dc4",
+        "length": 33,
+        "sha256": "38f1a042c30032ca2d53f5efb9528d7106aceb91ceaeeeef906624d047547bde",
+        "allLiteralOccurrences": [
+          "6ec16d8602e59225ea12987da24c141bf0eb7812:Assets/Scripts/Combat/WeaponVisualLinks.cs.meta:2:guid: 68a6e6a74a54417a8f1162a6ff67f5dc4"
+        ]
+      },
+      {
+        "file": "Assets/Scripts/Core/FilledVfxPlacement.cs.meta",
+        "guid": "a61004eb35a84c3c821b82421b504a5cf",
+        "length": 33,
+        "sha256": "ce6658a77d5cc77c824abf706eb05d841a5a62059f7a52d7c01a8307dd6d04a7",
+        "allLiteralOccurrences": [
+          "6ec16d8602e59225ea12987da24c141bf0eb7812:Assets/Scripts/Core/FilledVfxPlacement.cs.meta:2:guid: a61004eb35a84c3c821b82421b504a5cf"
+        ]
+      }
+    ]
+  },
+  {
+    "repo": "/workspace/emberfall_android_fbx_fidelity",
+    "commit": "b1104bbd05e4f7f360ace83ec6d8ccc16ed1b0e1",
+    "findings": [
+      {
+        "file": "Assets/Scripts/Combat/WeaponVisualLinks.cs.meta",
+        "guid": "68a6e6a74a54417a8f1162a6ff67f5dc4",
+        "length": 33,
+        "sha256": "38f1a042c30032ca2d53f5efb9528d7106aceb91ceaeeeef906624d047547bde",
+        "allLiteralOccurrences": [
+          "b1104bbd05e4f7f360ace83ec6d8ccc16ed1b0e1:Assets/Scripts/Combat/WeaponVisualLinks.cs.meta:2:guid: 68a6e6a74a54417a8f1162a6ff67f5dc4"
+        ]
+      },
+      {
+        "file": "Assets/Scripts/Core/FilledVfxPlacement.cs.meta",
+        "guid": "a61004eb35a84c3c821b82421b504a5cf",
+        "length": 33,
+        "sha256": "ce6658a77d5cc77c824abf706eb05d841a5a62059f7a52d7c01a8307dd6d04a7",
+        "allLiteralOccurrences": [
+          "b1104bbd05e4f7f360ace83ec6d8ccc16ed1b0e1:Assets/Scripts/Core/FilledVfxPlacement.cs.meta:2:guid: a61004eb35a84c3c821b82421b504a5cf"
+        ]
+      }
+    ]
+  }
+]

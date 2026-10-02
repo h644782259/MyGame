@@ -1,0 +1,17 @@
+[
+  {
+    "case": "traversal",
+    "rejected": true,
+    "exactGuard": "Unsafe ZIP path"
+  },
+  {
+    "case": "duplicate",
+    "rejected": true,
+    "exactGuard": "Duplicate ZIP member"
+  },
+  {
+    "case": "symlink",
+    "rejected": true,
+    "exactGuard": "Nonregular ZIP member"
+  }
+]

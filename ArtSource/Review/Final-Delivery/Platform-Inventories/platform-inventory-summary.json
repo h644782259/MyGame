@@ -1,0 +1,189 @@
+{
+  "createdUtc": "2026-10-02T21:36:55.869238+00:00",
+  "scope": "Tracked source bytes; not Unity import or platform build",
+  "platforms": {
+    "Windows": {
+      "platform": "Windows",
+      "head": "ace3109c23485d7f145d372b8cb3c24bd79abe89",
+      "tree": "94f1573001a84805a595fc62adf5d1484f36a13a",
+      "trackedFiles": 1139,
+      "trackedBytes": 30321415,
+      "clean": true,
+      "gitAttributeConversions": [
+        {
+          "path": "Tests/Run-CompileCheck.ps1",
+          "gitBlob": "5afe60357948a9583ad2e799e8cf6e99192a755f",
+          "archiveRawBlob": "a7c3d41e6b0e0c0d24e496532b1ca74c3d21112f",
+          "attributes": "Tests/Run-CompileCheck.ps1: text: set\nTests/Run-CompileCheck.ps1: eol: crlf"
+        },
+        {
+          "path": "Tests/Run-InstallerTests.ps1",
+          "gitBlob": "096d6df49f6c7fba33a079154811aebe1f33c942",
+          "archiveRawBlob": "0c9321b03b614244e266c3cc73200e5cc584b183",
+          "attributes": "Tests/Run-InstallerTests.ps1: text: set\nTests/Run-InstallerTests.ps1: eol: crlf"
+        },
+        {
+          "path": "Tests/Run-ProgressionTests.ps1",
+          "gitBlob": "510f2aab8333562125698f3354104a58f3ebda4e",
+          "archiveRawBlob": "f2d91ee6a48bb8e66b3223272879d1f96f6c4af0",
+          "attributes": "Tests/Run-ProgressionTests.ps1: text: set\nTests/Run-ProgressionTests.ps1: eol: crlf"
+        },
+        {
+          "path": "Tests/Run-SkillRuntimeTests.ps1",
+          "gitBlob": "f9bc60b743097b262469e4f52e39f3027d567362",
+          "archiveRawBlob": "713a87213108b94f6157d1b15d03c618b5b5bc2d",
+          "attributes": "Tests/Run-SkillRuntimeTests.ps1: text: set\nTests/Run-SkillRuntimeTests.ps1: eol: crlf"
+        },
+        {
+          "path": "Tools/Build-Windows.ps1",
+          "gitBlob": "921362c2d73bf659e869bc56d06c045dbcfb1697",
+          "archiveRawBlob": "fac85cbc2879ea0dc9b20f10c8a610f5f94495d6",
+          "attributes": "Tools/Build-Windows.ps1: text: set\nTools/Build-Windows.ps1: eol: crlf"
+        },
+        {
+          "path": "Tools/Open-Unity.ps1",
+          "gitBlob": "90d15eea7fee2b52bb1d0d3b5d78835cbd40f5fe",
+          "archiveRawBlob": "d7cf57c1a387006b130eab021447c3df60d8ca0e",
+          "attributes": "Tools/Open-Unity.ps1: text: set\nTools/Open-Unity.ps1: eol: crlf"
+        },
+        {
+          "path": "Tools/Package-Release.ps1",
+          "gitBlob": "db3a79c4113c032755efa68876e8f886d6d6f751",
+          "archiveRawBlob": "9979987e15cd58c95ca59d54befe005718f1f402",
+          "attributes": "Tools/Package-Release.ps1: text: set\nTools/Package-Release.ps1: eol: crlf"
+        },
+        {
+          "path": "Tools/Run-VisualValidation.ps1",
+          "gitBlob": "97e6bc0d15ee6495fde424b3e2fb66c746ffa88e",
+          "archiveRawBlob": "262948a61a202db77ee43e5081cbe19f4cdd00d0",
+          "attributes": "Tools/Run-VisualValidation.ps1: text: set\nTools/Run-VisualValidation.ps1: eol: crlf"
+        }
+      ],
+      "inventorySha256": "4f35c02bfbe23a90ed0f95c26794dfd29b5b4081e48d517e8a211eee09146079"
+    },
+    "iOS": {
+      "platform": "iOS",
+      "head": "a9caf3776d80439c7c559202b531dc4a3df4518e",
+      "tree": "11f578a722280201fbd5d17b8b617d9dfa84aef1",
+      "trackedFiles": 1150,
+      "trackedBytes": 38670178,
+      "clean": true,
+      "gitAttributeConversions": [
+        {
+          "path": "Tests/Run-CompileCheck.ps1",
+          "gitBlob": "5afe60357948a9583ad2e799e8cf6e99192a755f",
+          "archiveRawBlob": "a7c3d41e6b0e0c0d24e496532b1ca74c3d21112f",
+          "attributes": "Tests/Run-CompileCheck.ps1: text: set\nTests/Run-CompileCheck.ps1: eol: crlf"
+        },
+        {
+          "path": "Tests/Run-InstallerTests.ps1",
+          "gitBlob": "096d6df49f6c7fba33a079154811aebe1f33c942",
+          "archiveRawBlob": "0c9321b03b614244e266c3cc73200e5cc584b183",
+          "attributes": "Tests/Run-InstallerTests.ps1: text: set\nTests/Run-InstallerTests.ps1: eol: crlf"
+        },
+        {
+          "path": "Tests/Run-ProgressionTests.ps1",
+          "gitBlob": "510f2aab8333562125698f3354104a58f3ebda4e",
+          "archiveRawBlob": "f2d91ee6a48bb8e66b3223272879d1f96f6c4af0",
+          "attributes": "Tests/Run-ProgressionTests.ps1: text: set\nTests/Run-ProgressionTests.ps1: eol: crlf"
+        },
+        {
+          "path": "Tests/Run-SkillRuntimeTests.ps1",
+          "gitBlob": "f9bc60b743097b262469e4f52e39f3027d567362",
+          "archiveRawBlob": "713a87213108b94f6157d1b15d03c618b5b5bc2d",
+          "attributes": "Tests/Run-SkillRuntimeTests.ps1: text: set\nTests/Run-SkillRuntimeTests.ps1: eol: crlf"
+        },
+        {
+          "path": "Tools/Build-Windows.ps1",
+          "gitBlob": "921362c2d73bf659e869bc56d06c045dbcfb1697",
+          "archiveRawBlob": "fac85cbc2879ea0dc9b20f10c8a610f5f94495d6",
+          "attributes": "Tools/Build-Windows.ps1: text: set\nTools/Build-Windows.ps1: eol: crlf"
+        },
+        {
+          "path": "Tools/Export-iOS.ps1",
+          "gitBlob": "e02022c20b5dd7a24b650a805f018b233b732aa1",
+          "archiveRawBlob": "1d42692bedb9999a1831e7f649a9534d123fb814",
+          "attributes": "Tools/Export-iOS.ps1: text: set\nTools/Export-iOS.ps1: eol: crlf"
+        },
+        {
+          "path": "Tools/Open-Unity.ps1",
+          "gitBlob": "90d15eea7fee2b52bb1d0d3b5d78835cbd40f5fe",
+          "archiveRawBlob": "d7cf57c1a387006b130eab021447c3df60d8ca0e",
+          "attributes": "Tools/Open-Unity.ps1: text: set\nTools/Open-Unity.ps1: eol: crlf"
+        },
+        {
+          "path": "Tools/Package-Release.ps1",
+          "gitBlob": "db3a79c4113c032755efa68876e8f886d6d6f751",
+          "archiveRawBlob": "9979987e15cd58c95ca59d54befe005718f1f402",
+          "attributes": "Tools/Package-Release.ps1: text: set\nTools/Package-Release.ps1: eol: crlf"
+        },
+        {
+          "path": "Tools/Run-VisualValidation.ps1",
+          "gitBlob": "97e6bc0d15ee6495fde424b3e2fb66c746ffa88e",
+          "archiveRawBlob": "262948a61a202db77ee43e5081cbe19f4cdd00d0",
+          "attributes": "Tools/Run-VisualValidation.ps1: text: set\nTools/Run-VisualValidation.ps1: eol: crlf"
+        }
+      ],
+      "inventorySha256": "d79af7d40c960e45915f4cf76285a2b03e584d28e312ce89f1aa8f08539fe57f"
+    },
+    "Android": {
+      "platform": "Android",
+      "head": "b1104bbd05e4f7f360ace83ec6d8ccc16ed1b0e1",
+      "tree": "23b01b626afd7eabffd8d1d8ba1941af3348fab1",
+      "trackedFiles": 1152,
+      "trackedBytes": 38683070,
+      "clean": true,
+      "gitAttributeConversions": [
+        {
+          "path": "Tests/Run-CompileCheck.ps1",
+          "gitBlob": "5afe60357948a9583ad2e799e8cf6e99192a755f",
+          "archiveRawBlob": "a7c3d41e6b0e0c0d24e496532b1ca74c3d21112f",
+          "attributes": "Tests/Run-CompileCheck.ps1: text: set\nTests/Run-CompileCheck.ps1: eol: crlf"
+        },
+        {
+          "path": "Tests/Run-InstallerTests.ps1",
+          "gitBlob": "096d6df49f6c7fba33a079154811aebe1f33c942",
+          "archiveRawBlob": "0c9321b03b614244e266c3cc73200e5cc584b183",
+          "attributes": "Tests/Run-InstallerTests.ps1: text: set\nTests/Run-InstallerTests.ps1: eol: crlf"
+        },
+        {
+          "path": "Tests/Run-ProgressionTests.ps1",
+          "gitBlob": "510f2aab8333562125698f3354104a58f3ebda4e",
+          "archiveRawBlob": "f2d91ee6a48bb8e66b3223272879d1f96f6c4af0",
+          "attributes": "Tests/Run-ProgressionTests.ps1: text: set\nTests/Run-ProgressionTests.ps1: eol: crlf"
+        },
+        {
+          "path": "Tests/Run-SkillRuntimeTests.ps1",
+          "gitBlob": "f9bc60b743097b262469e4f52e39f3027d567362",
+          "archiveRawBlob": "713a87213108b94f6157d1b15d03c618b5b5bc2d",
+          "attributes": "Tests/Run-SkillRuntimeTests.ps1: text: set\nTests/Run-SkillRuntimeTests.ps1: eol: crlf"
+        },
+        {
+          "path": "Tools/Build-Windows.ps1",
+          "gitBlob": "921362c2d73bf659e869bc56d06c045dbcfb1697",
+          "archiveRawBlob": "fac85cbc2879ea0dc9b20f10c8a610f5f94495d6",
+          "attributes": "Tools/Build-Windows.ps1: text: set\nTools/Build-Windows.ps1: eol: crlf"
+        },
+        {
+          "path": "Tools/Open-Unity.ps1",
+          "gitBlob": "90d15eea7fee2b52bb1d0d3b5d78835cbd40f5fe",
+          "archiveRawBlob": "d7cf57c1a387006b130eab021447c3df60d8ca0e",
+          "attributes": "Tools/Open-Unity.ps1: text: set\nTools/Open-Unity.ps1: eol: crlf"
+        },
+        {
+          "path": "Tools/Package-Release.ps1",
+          "gitBlob": "db3a79c4113c032755efa68876e8f886d6d6f751",
+          "archiveRawBlob": "9979987e15cd58c95ca59d54befe005718f1f402",
+          "attributes": "Tools/Package-Release.ps1: text: set\nTools/Package-Release.ps1: eol: crlf"
+        },
+        {
+          "path": "Tools/Run-VisualValidation.ps1",
+          "gitBlob": "97e6bc0d15ee6495fde424b3e2fb66c746ffa88e",
+          "archiveRawBlob": "262948a61a202db77ee43e5081cbe19f4cdd00d0",
+          "attributes": "Tools/Run-VisualValidation.ps1: text: set\nTools/Run-VisualValidation.ps1: eol: crlf"
+        }
+      ],
+      "inventorySha256": "bd37352f99baa080c95d93c6f2cac6afb0ecd7bf676b95dd24b922207c1e7a21"
+    }
+  }
+}

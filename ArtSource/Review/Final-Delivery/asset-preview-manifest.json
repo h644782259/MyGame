@@ -1,0 +1,98 @@
+{
+  "finalAndroidSource": "b1104bbd05e4f7f360ace83ec6d8ccc16ed1b0e1",
+  "pilotDefaultOff": true,
+  "VFXProposalInstalled": false,
+  "UnityValidated": false,
+  "items": [
+    {
+      "name": "Comparison-combat.mp4",
+      "library_file_id": "libfile_5b0d9c67652c8191b9fa4f19f36e17a3",
+      "file_id": "file_00000000615881f6a40ebded901463f2",
+      "bytes": 1000794,
+      "version": null,
+      "category": "PR25 authoring reconstruction; not Unity footage",
+      "sourceEvidenceCommit": "dc1a51397cdad37f69ae1cc6c2ca4ac5e90bb945",
+      "currentSourceRelation": "Packed .blend/curves unchanged by PR27; archived FBX FAIL remains historical",
+      "sha256": "c8740cd7b1a1d7f90f2b6e90dfa645b98c5cdcafa5b382a9d90fc9506ac7c1c8",
+      "localVerifiedFile": "/workspace/emberfall_moving_pilot_evidence/ArtSource/Review/Moving-Basic-Pilot/Review/Comparison-combat.mp4"
+    },
+    {
+      "name": "Emberfall-Moving-Basic-Review-dcd75ac.zip",
+      "library_file_id": "libfile_8ba5275b7b688191922491b6bd7b2100",
+      "file_id": "file_00000000bc4481f69246fb8483acaf5f",
+      "bytes": 16682358,
+      "version": null,
+      "category": "Historical PR25 review package, not Android game source",
+      "sourceEvidenceCommit": "dc1a51397cdad37f69ae1cc6c2ca4ac5e90bb945",
+      "currentSourceRelation": "Contains historical strict FBX FAIL; current PR27 discrete PASS is separately archived",
+      "sha256": "c0a11d169e1eda337c3ee89ad7cf947a1c767106ff2105871f5f2d78687a985a",
+      "localVerifiedFile": "/workspace/emberfall_moving_pilot_evidence/ArtSource/Review/Deliverables/Emberfall-Moving-Basic-Review-dcd75ac.zip"
+    },
+    {
+      "name": "Emberfall-VFX-After.mp4",
+      "library_file_id": "libfile_b8a23ef702988191b128ff4a217961fe",
+      "file_id": "file_0000000082bc81f595c82ab90dac0036",
+      "bytes": 462159,
+      "version": null,
+      "category": "Uninstalled visual proposal",
+      "currentSourceRelation": "Before pinned to03422ab; After is not installed in combat; neither is Unity footage",
+      "sha256": "ebb499929dc237964fbebe47663b652c1da2363942f6f587c95f67d9687654a6",
+      "localVerifiedFile": "/workspace/emberfall_android_fbx_fidelity/ArtSource/Review/Emberfall-VFX-After.mp4"
+    },
+    {
+      "name": "Emberfall-VFX-Before.mp4",
+      "library_file_id": "libfile_adb7df25cc20819182a5b0bae049eddc",
+      "file_id": "file_0000000007c4820c8919d696208eba3b",
+      "bytes": 286963,
+      "version": null,
+      "category": "Historical production VFX reconstruction",
+      "currentSourceRelation": "Before pinned to03422ab; After is not installed in combat; neither is Unity footage",
+      "sha256": "749f7545a8df6b5b53b87867fafaa9d8c5460311af9bc4f1c2c9defff11ea1d2",
+      "localVerifiedFile": "/workspace/emberfall_android_fbx_fidelity/ArtSource/Review/Emberfall-VFX-Before.mp4"
+    },
+    {
+      "name": "Emberfall-Pilot-Vanguard.png",
+      "library_file_id": "libfile_bc87b3106e608191815e29a393209943",
+      "file_id": "file_00000000872c81f6b67b59587de81885",
+      "bytes": 1776874,
+      "version": null,
+      "category": "Historical PR21 authored pilot preview",
+      "currentSourceRelation": "Before PR22 mesh refinement and PR25 moving-basic adapter; not current complete animation/Unity acceptance",
+      "sha256": "b7afb461ddd815f3a628e25281b49f3fee005a4a0536075cb054c6fb21c3e22c",
+      "localVerifiedFile": "/workspace/emberfall_android_fbx_fidelity/ArtSource/Review/Emberfall-Pilot-Vanguard.png"
+    },
+    {
+      "name": "Emberfall-Pilot-Five-Actions.mp4",
+      "library_file_id": "libfile_76d18a4f1a6481918fb375670d78a3d2",
+      "file_id": "file_00000000eb2c81f5b526f6d70a5774f8",
+      "bytes": 246143,
+      "version": null,
+      "category": "Historical PR21 authored pilot preview",
+      "currentSourceRelation": "Before PR22 mesh refinement and PR25 moving-basic adapter; not current complete animation/Unity acceptance",
+      "sha256": "3b31d314e80b0f47e125de132d661873b434de2fe1ba02526817a8827a8d88c1",
+      "localVerifiedFile": "/workspace/emberfall_android_fbx_fidelity/ArtSource/Review/Emberfall-Pilot-Five-Actions.mp4"
+    },
+    {
+      "name": "Emberfall-Pilot-Props.png",
+      "library_file_id": "libfile_b9a90194160c8191ad1b53e88b9ed2f3",
+      "file_id": "file_00000000ba3c81f58560045e3b1950e7",
+      "bytes": 3334532,
+      "version": null,
+      "category": "Original authored prop preview",
+      "currentSourceRelation": "Prop assets unchanged by PR22\u201327; not Unity appearance acceptance",
+      "sha256": "beeb6e7fb084d8bd8581987cc85f6a7639f8646199f87fb0ca224b2d1c4748b3",
+      "localVerifiedFile": "/workspace/emberfall_android_fbx_fidelity/ArtSource/Review/Emberfall-Pilot-Props.png"
+    }
+  ],
+  "currentFBXEvidence": {
+    "commit": "53419f05d865b00f20d000d1b2cad53c66ab3fa4",
+    "package": "Emberfall-FBX-Fidelity-43039f5.zip",
+    "bytes": 4380600,
+    "sha256": "6b4d42b337cc3985ab3f99cf4ea179d6314cd0b2de25565b07a63372a70268d2",
+    "strictDiscreteSamples": 4923,
+    "thresholdM": 0.0001,
+    "passed": true,
+    "continuousTimeBound": false
+  },
+  "hashScope": "SHA256 values identify retained local source artifacts; Library metadata identity/size checked, not downloaded again for binary comparison"
+}

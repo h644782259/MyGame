@@ -1,0 +1,105 @@
+{
+  "sourceCommit": "b1104bbd05e4f7f360ace83ec6d8ccc16ed1b0e1",
+  "sourceBranch": "codex/android-fbx-fidelity",
+  "windowsMain": "ace3109c23485d7f145d372b8cb3c24bd79abe89",
+  "iosMain": "a9caf3776d80439c7c559202b531dc4a3df4518e",
+  "windowsMainTree": "94f1573001a84805a595fc62adf5d1484f36a13a",
+  "iosMainTree": "11f578a722280201fbd5d17b8b617d9dfa84aef1",
+  "reviewedTreeEqualsMain": true,
+  "fullSuite": {
+    "passed": true,
+    "passedCount": 198,
+    "totalCount": 198,
+    "startedUtc": "20261002T210639438743Z",
+    "completedUtc": "2026-10-02T21:23:24.317573+00:00",
+    "report": "/workspace/scratch/fbx-fidelity-validation/43039f5/final-report/report.json",
+    "reportSha256": "d184a54bbd66e1ee73119d239c72fa06ca9c1934bf051c8e4e6b905dfa5dd1b6",
+    "log": "/workspace/scratch/fbx-fidelity-validation/43039f5/full.log",
+    "sourceChangedDuringRun": [],
+    "runtimeSourceCount": 256,
+    "allSourceManifestSha256": "acba32af290ea63cd8c5489eb22126e36e877b6dd50162a5d3a75075a0509ffd"
+  },
+  "platformAPI": {
+    "passed": true,
+    "report": "/workspace/scratch/fbx-fidelity-validation/43039f5/platform-api-report.json",
+    "runtimeParity": true,
+    "runtimeManifestSha256": "f2c717aa5858cc7df8d248a82e3a13627136982146fdf546adf85f50b1e5df52",
+    "platformHeadsAfterRun": [
+      {
+        "head": "43039f5f121fadec57b3744cc38a833b80b237db",
+        "tree": "94f1573001a84805a595fc62adf5d1484f36a13a",
+        "runtimeAndArtUnchangedDuringRun": true,
+        "trackedStatus": ""
+      },
+      {
+        "head": "719564e2265c5a79a17300a6f084623c0ab1ce7f",
+        "tree": "11f578a722280201fbd5d17b8b617d9dfa84aef1",
+        "runtimeAndArtUnchangedDuringRun": true,
+        "trackedStatus": ""
+      },
+      {
+        "head": "b1104bbd05e4f7f360ace83ec6d8ccc16ed1b0e1",
+        "tree": "23b01b626afd7eabffd8d1d8ba1941af3348fab1",
+        "runtimeAndArtUnchangedDuringRun": true,
+        "trackedStatus": ""
+      }
+    ]
+  },
+  "parityProtection": {
+    "report": "/workspace/scratch/fbx-fidelity-validation/43039f5/parity-protection.json",
+    "passed": true,
+    "runtimeAndMetaFiles": 516,
+    "artAndPilotAssetFiles": 70,
+    "artManifestSha256": "f1b31341cbb0f7c9a95b4b7857f21a07d9dc070653ef4687b3b4604c48fcc768",
+    "changedPaths": [
+      "ArtSource/BlenderPilot/build_vanguard.py",
+      "ArtSource/BlenderPilot/export-manifest.json",
+      "ArtSource/BlenderPilot/export_vanguard_fbx.py",
+      "ArtSource/BlenderPilot/validation-fbx-motion.json",
+      "Assets/Resources/BlenderPilot/Vanguard.fbx",
+      "Docs/FBX-Sampling-Fidelity.md"
+    ],
+    "changedArtPaths": [
+      "ArtSource/BlenderPilot/build_vanguard.py",
+      "ArtSource/BlenderPilot/export-manifest.json",
+      "ArtSource/BlenderPilot/export_vanguard_fbx.py",
+      "ArtSource/BlenderPilot/validation-fbx-motion.json",
+      "Assets/Resources/BlenderPilot/Vanguard.fbx"
+    ],
+    "unchangedArtCount": 65,
+    "runtimeImporterBlendUnchanged": true,
+    "platforms": [
+      {
+        "path": "/workspace/emberfall_ios_fbx_fidelity",
+        "head": "719564e2265c5a79a17300a6f084623c0ab1ce7f",
+        "roundBase": "d78d8516555791673345f6a46623796e7c729b4b",
+        "protectedVsRoundBase": 24,
+        "protectedVsPriorOriginalLedger": 24,
+        "syncedPaths": 6
+      },
+      {
+        "path": "/workspace/emberfall_android_fbx_fidelity",
+        "head": "b1104bbd05e4f7f360ace83ec6d8ccc16ed1b0e1",
+        "roundBase": "6ec16d8602e59225ea12987da24c141bf0eb7812",
+        "protectedVsRoundBase": 24,
+        "protectedVsPriorOriginalLedger": 24,
+        "syncedPaths": 6
+      }
+    ]
+  },
+  "includesPR26": true,
+  "deliveryStatus": "Final overnight code freeze selected by parent; Library replacement remains parent-owned",
+  "evidence": "https://github.com/h644782259/emberfall_win/tree/53419f05d865b00f20d000d1b2cad53c66ab3fa4/ArtSource/Review/FBX-Fidelity",
+  "hostedCI": "empty; local evidence only",
+  "includesPR27": true,
+  "knownSourceMetadataFindings": [
+    {
+      "path": "Assets/Scripts/Combat/WeaponVisualLinks.cs.meta",
+      "finding": "pre-existing33hex GUID, no serialized references found; nativeUnity behavior unverified"
+    },
+    {
+      "path": "Assets/Scripts/Core/FilledVfxPlacement.cs.meta",
+      "finding": "pre-existing33hex GUID, no serialized references found; nativeUnity behavior unverified"
+    }
+  ]
+}
