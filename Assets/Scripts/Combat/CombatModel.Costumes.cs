@@ -99,7 +99,61 @@ namespace Emberfall
                 else Part("Tailored shoulder mantle",PrimitiveType.Sphere,new Vector3(0,0,.04f),new Vector3(heroClass==HeroClass.Ranger?.4f:.25f,.15f,.35f),cloth,shoulder,VisualSurface.Cloth);
             }
             Part("Costume fastening",PrimitiveType.Sphere,new Vector3(0,1.49f,.42f),Vector3.one*(.1f+look.Tier*.017f),look.Accent,equipmentArmor,VisualSurface.Metal);
+            BuildClassTierGeometry(look);
             BuildClassUpgradeGeometry(look);
+        }
+        // Item level selects construction, independently of rarity pigment and upgrade insignia.
+        // Every piece belongs to a replaced equipment root; no extra chest layer or relic overlap.
+        private void BuildClassTierGeometry(EquipmentAppearance look)
+        {
+            Color cloth=GameBalance.ClassColor(heroClass)*.66f,lining=GameBalance.ClassColor(heroClass)*.9f;
+            Color wood=new Color(.30f,.20f,.12f);int tier=look.Tier;
+            if(heroClass==HeroClass.Arcanist)
+            {
+                for(int side=-1;side<=1;side+=2)
+                {
+                    Part("Scholar split side lining",PrimitiveType.Cube,new Vector3(side*.31f,.63f,.15f),new Vector3(.16f,.92f,.055f),lining,equipmentArmor,VisualSurface.Cloth).localRotation=Quaternion.Euler(0,side*32,side*5);
+                    if(tier>=2)Part("Raised scholar collar",PrimitiveType.Cube,new Vector3(side*.23f,1.57f,.06f),new Vector3(.12f,.25f,.27f),cloth,equipmentArmor,VisualSurface.Cloth).localRotation=Quaternion.Euler(-10,0,side*13);
+                    if(tier>=3)Part("Split scholar rear stole",PrimitiveType.Cube,new Vector3(side*.22f,.81f,-.30f),new Vector3(.23f,1.13f,.05f),cloth,equipmentArmor,VisualSurface.Cloth).localRotation=Quaternion.Euler(7,0,-side*7);
+                    if(tier>=4)Part("Arch scholar star ray",PrimitiveType.Cube,new Vector3(side*.26f,1.40f,.39f),new Vector3(.055f,.29f,.055f),look.Metal,equipmentArmor,VisualSurface.Metal).localRotation=Quaternion.Euler(0,0,side*42);
+                }
+                if(tier>=3)CostumeMesh("Scholar orbit yoke",WingSilhouette.Mechanical,equipmentArmor,new Vector3(0,1.46f,.31f),new Vector3(.37f,.23f,.20f),look.Metal,VisualSurface.Metal);
+                if(tier>=4)Part("Arch scholar under-robe hem",PrimitiveType.Cube,new Vector3(0,.26f,-.06f),new Vector3(.54f,.30f,.18f),lining,equipmentArmor,VisualSurface.Cloth);
+            }
+            else if(heroClass==HeroClass.Ranger)
+            {
+                Part("Hunter quiver harness",PrimitiveType.Cube,new Vector3(.29f,1.39f,-.28f),new Vector3(.09f,.64f,.08f),wood,equipmentArmor,VisualSurface.Cloth).localRotation=Quaternion.Euler(0,0,-17);
+                if(tier>=2)
+                {
+                    for(int i=0;i<2;i++)Part("Hunter quiver retaining hoop",PrimitiveType.Cube,new Vector3(.34f,1.22f+i*.31f,-.36f),new Vector3(.31f,.07f,.30f),wood,equipmentArmor,VisualSurface.Wood);
+                    Part("Hunter offside utility flap",PrimitiveType.Cube,new Vector3(-.30f,.89f,.14f),new Vector3(.17f,.34f,.08f),cloth,equipmentArmor,VisualSurface.Cloth).localRotation=Quaternion.Euler(0,0,-13);
+                }
+                if(tier>=3)for(int i=0;i<3;i++)Part("Hunter layered hip tab",PrimitiveType.Cube,new Vector3(-.31f-i*.035f,.99f-i*.12f,.20f),new Vector3(.21f,.20f,.045f),i%2==0?lining:cloth,equipmentArmor,VisualSurface.Cloth).localRotation=Quaternion.Euler(0,0,-15-i*7);
+                if(tier>=4)
+                {
+                    Part("Master hunter raised left guard",PrimitiveType.Cube,new Vector3(-.10f,.12f,-.05f),new Vector3(.35f,.14f,.32f),wood,equipmentLeftShoulder,VisualSurface.Wood).localRotation=Quaternion.Euler(0,0,14);
+                    for(int i=0;i<2;i++)Part("Master hunter quiver rail",PrimitiveType.Cube,new Vector3(.22f+i*.24f,1.48f,-.36f),new Vector3(.035f,.53f,.04f),look.Metal,equipmentArmor,VisualSurface.Metal);
+                }
+            }
+            else if(heroClass==HeroClass.Summoner)
+            {
+                for(int side=-1;side<=1;side+=2)
+                {
+                    Part("Split contract shawl tail",PrimitiveType.Cube,new Vector3(side*.29f,1.24f,-.17f),new Vector3(.23f,.57f,.055f),cloth,equipmentArmor,VisualSurface.Cloth).localRotation=Quaternion.Euler(12,0,-side*18);
+                    if(tier>=2)Part("Hanging contract tablet",PrimitiveType.Cube,new Vector3(side*.27f,1.23f,.36f),new Vector3(.13f,.28f,.06f),wood,equipmentArmor,VisualSurface.Wood).localRotation=Quaternion.Euler(0,0,side*9);
+                    if(tier>=3)CostumeMesh("Divided contract shoulder fan",WingSilhouette.Feather,side<0?equipmentLeftShoulder:equipmentRightShoulder,new Vector3(side*.16f,.13f,-.09f),new Vector3(.8f,.45f,.9f),lining,VisualSurface.Foliage).localRotation=Quaternion.Euler(12,0,side*105);
+                }
+                if(tier>=3)
+                {
+                    equipmentHead=GearRoot("Equipped contract crown forks",headRig);
+                    for(int side=-1;side<=1;side+=2)
+                    {
+                        Part("Contract crown outer fork",PrimitiveType.Capsule,new Vector3(side*.36f,.49f,-.10f),new Vector3(.055f,.19f,.06f),wood,equipmentHead,VisualSurface.Wood).localRotation=Quaternion.Euler(-12,0,side*39);
+                        if(tier>=4)Part("Elder contract crown branch",PrimitiveType.Capsule,new Vector3(side*.46f,.60f,-.10f),new Vector3(.045f,.17f,.05f),wood,equipmentHead,VisualSurface.Wood).localRotation=Quaternion.Euler(0,0,-side*28);
+                    }
+                }
+                if(tier>=4)for(int side=-1;side<=1;side+=2)Part("Elder contract split clasp",PrimitiveType.Cube,new Vector3(side*.16f,1.50f,.34f),new Vector3(.12f,.19f,.06f),look.Metal,equipmentArmor,VisualSurface.Metal).localRotation=Quaternion.Euler(0,0,side*24);
+            }
         }
     }
 }

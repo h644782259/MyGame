@@ -26,7 +26,7 @@ namespace Emberfall
         private Transform fashionWings, fashionWeapon;
         private string fashionWingsId, fashionWeaponId;
         private Transform equipmentWeapon, equipmentArmor, equipmentRelic;
-        private Transform equipmentLeftShoulder, equipmentRightShoulder;
+        private Transform equipmentLeftShoulder, equipmentRightShoulder, equipmentHead;
         private string equipmentWeaponKey, equipmentArmorKey, equipmentRelicKey;
         private LineRenderer bowstring;
         private HeroClass heroClass;
@@ -173,6 +173,8 @@ namespace Emberfall
                 if (equipmentArmor != null) { equipmentArmor.gameObject.SetActive(false); Destroy(equipmentArmor.gameObject); }
                 if (equipmentLeftShoulder != null) { equipmentLeftShoulder.gameObject.SetActive(false); Destroy(equipmentLeftShoulder.gameObject); }
                 if (equipmentRightShoulder != null) { equipmentRightShoulder.gameObject.SetActive(false); Destroy(equipmentRightShoulder.gameObject); }
+                if(equipmentHead!=null){equipmentHead.gameObject.SetActive(false);Destroy(equipmentHead.gameObject);}
+                equipmentHead=null;
                 equipmentArmor = null;
                 equipmentLeftShoulder = equipmentRightShoulder = null;
                 SetBaseCostumeVisible(armor == null);
