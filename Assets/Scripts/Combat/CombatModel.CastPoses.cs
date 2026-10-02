@@ -6,8 +6,10 @@ namespace Emberfall
         // Pose identity follows the actual skill, never its palette or damage values.
         // Reuses the same nominal timeline and recovery sampler as committed attacks.
         private void ApplyCasterSkillPose(float t)
+        { ApplyCasterSkillPose(t,actionSkill); }
+        private void ApplyCasterSkillPose(float t,int skill)
         {
-            CasterPoseFamily family=CasterPoseRecipe.For(heroClass,actionSkill);
+            CasterPoseFamily family=CasterPoseRecipe.For(heroClass,skill);
             Vector3 back=new Vector3(-7,-13,-3),release=new Vector3(9,16,3);
             Vector3 rightReady=new Vector3(-96,-12,25),rightCast=new Vector3(-73,17,12);
             Vector3 staffReady=new Vector3(55,0,-18),staffCast=new Vector3(103,0,-5);

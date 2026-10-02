@@ -972,8 +972,10 @@ namespace Emberfall
             if (decoration != null) decoration.Rotate(0, dt * (acting ? 145f : 42f), 0, Space.Self);
         }
 
-        public void AnimateCharge(float progress)
+        public void AnimateCharge(float progress) { AnimateCharge(progress,actionSkill); }
+        public void AnimateCharge(float progress,int skill)
         {
+            if(float.IsNaN(progress)||float.IsInfinity(progress))return;
             if (!isHero || spine == null) return;
             float ready = .3f + .7f * Mathf.SmoothStep(0, 1, Mathf.Clamp01(progress));
             spine.localRotation = Quaternion.Euler(-7f * ready, -12f * ready, 0);
@@ -988,11 +990,11 @@ namespace Emberfall
             }
             else if (heroClass == HeroClass.Arcanist || heroClass == HeroClass.Summoner)
             {
-                rightArm.localRotation = Quaternion.Euler(-105f * ready, -12, 25);
-                rightElbow.localRotation = Quaternion.Euler(-32f * ready, 0, 0);
-                staffRig.localRotation = Quaternion.Euler(Mathf.Lerp(12, 80, ready), 0, -15);
-                leftArm.localRotation = Quaternion.Euler(-66f * ready, 8, -28);
-                leftElbow.localRotation = Quaternion.Euler(-72f * ready, 0, 0);
+                // Charge samples the same family curve up to the exact committed release
+                // coordinate; the caller supplies the real skill before actionSkill changes.
+                spine.localRotation=Quaternion.identity;
+                float poseTime=SkillDamageBudgets.SkillPoseStart(heroClass,skill,true)*Mathf.SmoothStep(0,1,Mathf.Clamp01(progress));
+                ApplyCasterSkillPose(poseTime,skill);
                 if (castingOrb != null) castingOrb.localScale = Vector3.one * Mathf.Lerp(.23f, .49f, ready);
             }
             else
