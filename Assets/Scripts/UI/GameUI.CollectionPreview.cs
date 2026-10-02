@@ -17,6 +17,8 @@ namespace Emberfall
             else if(collectionOwner!=session.Player){ReleaseCollectionPreview();collectionOwner=session.Player;}
         }
         private void OnDisable(){ReleaseCollectionPreview();}
+        private void OnApplicationFocus(bool focused){if(focused&&collectionModel!=null)collectionModel.Invalidate();}
+        private void OnApplicationPause(bool paused){if(!paused&&collectionModel!=null)collectionModel.Invalidate();}
         private void ReleaseCollectionPreview()
         {if(collectionModel!=null)collectionModel.Dispose();collectionModel=null;collectionTrial=null;collectionOwner=null;collectionNotice=null;collectionReceiptKey=null;collectionPreviewYaw=20;mobileFashionPreview=true;}
         private void TrialFashion(FashionSlot slot,Rarity rarity)

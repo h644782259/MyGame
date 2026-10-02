@@ -6,7 +6,7 @@ assert 'CombatModel.Hero(' in p and 'model.ApplyEquipment(' in p and 'model.Appl
 assert 'finally {UnityEngine.Random.state=random;}' in p
 assert 'c.enabled=false' in p and 'behaviour.enabled=false' in p
 assert 'camera.enabled=false' in p and 'camera.cullingMask=1<<PreviewLayer' in p and 'light.cullingMask=1<<PreviewLayer' in p
-assert 'new RenderTexture(384,480,16)' in p and '1f/30f' in p
+assert 'new RenderTexture(384,480,16)' in p and 'state.ShouldRender(true,Time.frameCount)' in p and 'texture.IsCreated()' in p
 assert 'texture.Release()' in p and 'stage.SetActive(false)' in p
 assert 'ReleaseCollectionPreview();' in base and 'private void OnDisable(){ReleaseCollectionPreview();}' in ui
 assert 'EquipmentComparisonPresentation.Receipt(reward)' in ui
