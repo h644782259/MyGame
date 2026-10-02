@@ -140,8 +140,7 @@ namespace Emberfall
         {
             Rect safe = MobileControls.SafeArea;
             ObserveTouchViewport(safe);
-            scale = Mathf.Min(safe.width / 1280f, safe.height / 720f);
-            scale = Mathf.Max(.3f, scale);
+            scale = HudLogicalScale.For(safe.width, safe.height);
             width = safe.width / scale;
             height = safe.height / scale;
             guiOffset = new Vector2(safe.x, Screen.height - safe.yMax);
@@ -1424,8 +1423,8 @@ namespace Emberfall
             ItemStat(r.x+18,r.y+238,"生命",preview.health,equipped==null?0:equipped.health,isEquipped);
             string mechanic=EquipmentComparisonPresentation.Changes(equipped,item,progression.Profile.heroClass);
             Rect mechanism=new Rect(r.x+18,r.y+270,r.width-36,42);
-            Text(mechanism,mechanic,13,gold,false,true);
-            DrawPersistentMechanismDetail(new Rect(r.x+18,r.y+316,r.width-36,39),equipped,item);
+            if(mechanism.Contains(Mouse))tooltip=mechanic;
+            DrawPersistentMechanismDetail(new Rect(r.x+18,r.y+270,r.width-36,85),equipped,item);
             if(Button(new Rect(r.x+292,r.y+17,114,25),item.locked?"已锁定":"锁定",item.locked?gold:muted,true,"锁定后不可出售，仍可穿戴。")){bool locked=!item.locked;Feedback(progression.SetItemLocked(item.id,locked),locked?"已锁定":"已解锁");}
             bool canEquip = item.level <= progression.Profile.level && !isEquipped;
             string equipCaption = isEquipped ? "已装备" : !canEquip ? "需要 Lv." + item.level : "装备此物品";
@@ -1776,6 +1775,7 @@ namespace Emberfall
         private void ClosePanel()
         {
             if(CloseChapterSelection())return;
+            if(CloseRouteSkill())return;
             if(CloseMobileInventoryDetail())return;
             if(CloseMobileSkillDetail())return;
             if(CloseProgressionGoalSurface())return;
