@@ -2019,6 +2019,13 @@ namespace Emberfall
             return CommitCandidate(candidate);
         }
 
+        public bool ResetHotbarKeys()
+        {
+            GameProfile candidate = Snapshot();
+            candidate.hotbarKeys = (int[])GameBalance.DefaultHotbarKeys.Clone();
+            return CommitCandidate(candidate);
+        }
+
         public bool SetHotbarKey(int slot, int keyCode)
         {
             if (slot < 0 || slot >= GameBalance.HotbarSize) return Fail("无效的快捷栏位置。");

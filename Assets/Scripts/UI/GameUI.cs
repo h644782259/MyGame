@@ -1595,10 +1595,7 @@ namespace Emberfall
             if (rebindingSlot >= 0) Text(new Rect(w.x + 27, w.y + 360, 787, 27), "等待 " + GameBalance.KeyName(p.hotbarKeys[rebindingSlot]) + " 槽的新按键…  /  Esc 取消", 14, gold, true);
             if (Button(new Rect(w.x + 24, w.y + 437, 350, 39), "恢复默认 12345 / ZXCVB", gold, rebindingSlot < 0))
             {
-                bool restored = true;
-                for (int i = 0; i < GameBalance.HotbarSize; i++)
-                    if (!session.Progression.SetHotbarKey(i, GameBalance.DefaultHotbarKeys[i])) { restored = false; break; }
-                Feedback(restored, "已恢复默认技能按键");
+                Feedback(session.Progression.ResetHotbarKeys(), "已恢复默认技能按键");
             }
             if (Button(new Rect(w.x + 397, w.y + 437, 419, 39), bindingReturnPause ? "返回暂停菜单" : bindingReturnPanel == Panel.Controls ? "返回操作指南" : "返回技能研习", jade)) ClosePanel();
         }
