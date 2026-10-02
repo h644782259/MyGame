@@ -22,11 +22,19 @@ namespace Emberfall
         private FilledVfxKind kind;
         private Color tint;
         private float age,life,size;
-        private bool registered;
+        private bool registered, confirmedFinale;
+        private int finaleCast;
+        private float terminalAge;
+        private static readonly System.Collections.Generic.List<FilledSkillVfx> finales=new System.Collections.Generic.List<FilledSkillVfx>();
+        internal static void SkipFinales(GameSession game)
+        {if(game==null)return;foreach(var fx in finales.ToArray())if(fx!=null&&fx.owner==game.Player)fx.Retire();}
+        internal static void ConfirmFinale(PlayerController hero,int castId)
+        {foreach(var fx in finales)if(fx!=null&&fx.owner==hero&&fx.epoch==hero.CombatEpoch&&fx.finaleCast==castId)fx.confirmedFinale=true;}
         private CombatVisualLease lease;
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetAssets()
         {
+            finales.Clear();
             if(crescent!=null)Destroy(crescent);if(crystal!=null)Destroy(crystal);if(flame!=null)Destroy(flame);
             if(sword!=null)Destroy(sword);if(lightning!=null)Destroy(lightning);if(arcane!=null)Destroy(arcane);if(rupture!=null)Destroy(rupture);if(arcaneShard!=null)Destroy(arcaneShard);
             if(arrow!=null)Destroy(arrow);if(vine!=null)Destroy(vine);arrow=vine=null;
@@ -69,10 +77,11 @@ namespace Emberfall
             fx.Add(crescent,new Vector3(0,.08f,-.1f),Vector3.one*fx.size*.88f,Quaternion.Euler(8,-16*swingSide,0),.02f,0,swingSide);
             for(int i=0;i<4;i++)fx.Add(crystal,new Vector3((i-1.5f)*.25f,.1f,.8f)*fx.size,new Vector3(.09f,.4f,.12f)*fx.size,Quaternion.Euler(85,i*33,0),.02f+i*.018f,4,i);
         }
-        public static void Impact(PlayerController hero,Vector3 at,float radius,FilledVfxKind type,Color color,CombatVisualPriority priority=CombatVisualPriority.ActionBody)
+        public static void Impact(PlayerController hero,Vector3 at,float radius,FilledVfxKind type,Color color,CombatVisualPriority priority=CombatVisualPriority.ActionBody,int castId=0)
         {
             if(type!=FilledVfxKind.Ice&&type!=FilledVfxKind.Fire&&type!=FilledVfxKind.Summon&&type!=FilledVfxKind.Sword&&type!=FilledVfxKind.Lightning&&type!=FilledVfxKind.Arcane)return;
             var fx=Create(hero,at,Vector3.forward,type,radius,color,type==FilledVfxKind.Fire?.8f:1.05f,priority:priority);if(fx==null)return;
+            if(priority==CombatVisualPriority.Finale&&castId!=0){fx.finaleCast=castId;finales.Add(fx);}
             float unit=Mathf.Min(1.6f,fx.size*.55f);
             // Allocate landing base, identity silhouette and contact flash BEFORE repeated ornaments.
             // Add's actual budget is still the last authority: mobile 10, reduced 7.
@@ -143,7 +152,7 @@ namespace Emberfall
         internal static void BurnContact(PlayerController hero,Vector3 at,bool finale)
         {
             var fx=Create(hero,at,Vector3.forward,FilledVfxKind.Fire,.4f,new Color(1,.56f,.16f),.32f,
-                priority:finale?CombatVisualPriority.Finale:CombatVisualPriority.RealContact);
+                priority:CombatVisualPriority.RealContact);
             if(fx==null)return;
             fx.Add(rupture,Vector3.up*.1f,new Vector3(.35f,.2f,.35f),Quaternion.identity,0,5,0,.4f,"Burn real contact",true);
             fx.Add(flame,Vector3.zero,new Vector3(.22f,.6f,.22f),Quaternion.identity,0,2,0,.25f,"Burn contact ember",true);
@@ -178,7 +187,15 @@ namespace Emberfall
         private void Update()
         {
             var game=GameSession.Instance;
-            if(owner==null||owner.IsDead||owner.CombatEpoch!=epoch||game==null||game.Player!=owner||!game.HasStarted||game.ModeFinished){Retire();return;}
+            if(owner==null||owner.IsDead||owner.CombatEpoch!=epoch||game==null||game.Player!=owner||!game.HasStarted){Retire();return;}
+            if(game.ModeFinished)
+            {
+                if(!confirmedFinale){Retire();return;}
+                terminalAge+=Time.unscaledDeltaTime;age+=Time.unscaledDeltaTime;
+                if(terminalAge>=.65f||age>=life){Retire();return;}
+                for(int i=0;i<count;i++)Animate(pieces[i]);
+                return; // Visual-only: no scheduled combat or reward callbacks.
+            }
             if(game.InputBlocked||Time.deltaTime<=0)return;
             age+=Time.deltaTime;if(age>=life){Retire();return;}
             for(int i=0;i<count;i++)Animate(pieces[i]);
@@ -216,7 +233,7 @@ namespace Emberfall
         }
         private void Register(){if(registered)return;registered=true;active++;}
         private void Release(){if(!registered)return;registered=false;active=Mathf.Max(0,active-1);}
-        private void OnDisable(){Release();}
+        private void OnDisable(){finales.Remove(this);Release();}
         private void OnEnable()
         {
             if(!gameObject.activeInHierarchy||owner==null||registered)return;
