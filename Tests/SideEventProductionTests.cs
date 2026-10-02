@@ -30,6 +30,7 @@ public static class SideEventProductionTests
   game.Begin();game.Register(a,b);game.Progression.FailWrite=true;game.Kill(a);game.Kill(b);
   var old=game.Progression;game.Progression=new ProgressionService();game.TrySettleSideEventRewards();
   Check(game.Progression.Materials==0&&old.Materials==2,"explicit discard/load cannot credit another profile");
+  game.DiscardForeign();Check(!game.SideEventRewardPending,"successful profile replacement clears explicitly discarded foreign pending");
   Check(SideEventRun.HasRoomCapacity(6)&&!SideEventRun.HasRoomCapacity(7),"two optional enemies respect total room limit eight");
   return "PASS: "+n+" actual side-event host failure/duplicate/death/epoch/old-room/retry checks (managed substitutes, not Unity)";
  }
@@ -56,6 +57,7 @@ namespace Emberfall
   private void Notify(string text){}private void RecordCombatAction(string key){}private void LogSystem(string text){}
   public void Begin(){IsDead=false;RoomChainRun=new RoomState();sideEventRun=new SideEventRun(SideEventContext,Player,Player.CombatEpoch,Guid.NewGuid().ToString("N"));}
   public void Register(EnemyController a,EnemyController b){sideEventEnemies.Add(a);sideEventEnemies.Add(b);sideEventRun.Register(a);sideEventRun.Register(b);}
+  public void DiscardForeign(){DiscardForeignSideEventRewards();}
   public void Kill(EnemyController enemy){RecordSideEventDefeat(enemy);}
   public void ChangeRoom(){AbandonSideEvent();RoomChainRun=new RoomState();Player.CombatEpoch++;}
  }

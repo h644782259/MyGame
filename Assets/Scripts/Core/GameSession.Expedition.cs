@@ -173,6 +173,8 @@ namespace Emberfall
             }
             return true;
         }
+        private void DiscardForeignSideEventRewards()
+        {pendingSideRewards.RemoveAll(pending=>!object.ReferenceEquals(pending.Source,Progression));}
         private void TickSideEvent()
         {
             if(SideEventAvailable&&!sideEventOfferShown)
