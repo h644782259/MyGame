@@ -2,7 +2,9 @@
 
 Frozen Windows `43039f5f121fadec57b3744cc38a833b80b237db`, iOS `719564e2265c5a79a17300a6f084623c0ab1ce7f`, Android `b1104bbd05e4f7f360ace83ec6d8ccc16ed1b0e1`. Bases are merged PR26 Windows `9ff275279b553695d7e0057f11e9e265dff615ff`, iOS `d78d8516555791673345f6a46623796e7c729b4b` and Android `6ec16d8602e59225ea12987da24c141bf0eb7812`.
 
-Actual Blender 4.3.2 scoped evidence is complete. The frozen full198/API/parity checks are running; no terminal aggregate claim is made at this checkpoint.
+Actual Blender 4.3.2 scoped evidence is complete. The frozen registered aggregate passed **198/198**, default JIT, UTC 2026-10-02 21:06:39.438743 to 21:23:24.317573, with `sourceChangedDuringRun: []`. Terminal report SHA-256: `d184a54bbd66e1ee73119d239c72fa06ca9c1934bf051c8e4e6b905dfa5dd1b6`. This covers the registered aggregate, not every repository script.
+
+Actual three-platform API compilation passed for 256 sources each using cached Unity 2021.3.33 references. Six synchronized paths, 516 runtime/meta files and 70 art/source files match. Five art/source paths change this round (four updates and one new helper); the other 65 remain byte-identical to base. Runtime, importer and packed .blend remain unchanged. Both mobile platforms preserve 24 protected files against this round’s base and the original ledger. Final rehash confirms frozen heads are clean and unchanged. See `Validation/43039f5/final-handoff.json` and the unmodified reports/logs. These checks do not execute Unity 6 or build a platform package.
 
 Read `Experiment/README.md` for the measured domains, rejected experiments, exact output hash, file/key cost and native Unity boundaries. Original experiment scripts/reports/logs are retained unmodified. `Inputs/` retains the prior production-policy sampled states and original FBX. The unchanged packed source .blend remains in this branch at `ArtSource/BlenderPilot/Emberfall-Pilot-Vanguard.blend`. Scratch scripts retain their actual execution paths; those paths are provenance, not an assertion that they exist on another host. The candidate's standalone exporter accepts explicit input/output paths.
 
