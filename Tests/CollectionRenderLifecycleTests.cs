@@ -108,6 +108,13 @@ public static class CollectionRenderLifecycleTests
             Check(Live<Material>()==0&&Live<Texture2D>()==0&&Live<RenderTexture>()==0&&Live<Light>()==1,
                 "recovered stage has normal idempotent disposal ownership");
         }
+        CombatModel.ImportedGroups=true;
+        var imported=new CollectionModelPreview();imported.SetComposition(CollectionPreviewComposition.Weapon);Time.frameCount++;Draw(imported);
+        var importedCamera=UnityEngine.Object.FindObjectsOfType<Camera>()[0];
+        Check(Math.Abs(importedCamera.transform.position.x-6)<.0001f,"weapon composition frames actual imported sword renderer bounds");
+        imported.SetComposition(CollectionPreviewComposition.Back);Time.frameCount++;Draw(imported);
+        Check(importedCamera.transform.position.x < -1,"back composition includes actual imported back renderer bounds");
+        imported.Dispose();CombatModel.ImportedGroups=false;
         UnityEngine.Object.Destroy(world.gameObject);Time.unscaledDeltaTime=0;SystemInfo.SupportedSamples=4;
         return "PASS: "+checks+" production preview lifecycle checks (managed resource fixture, not Unity rendering)";
     }
@@ -119,8 +126,8 @@ namespace Emberfall
     public class FashionData{public string id;public FashionSlot slot;public Rarity rarity;}
     public class CombatModel:MonoBehaviour
     {
-        public static int Builds;
-        public static CombatModel Hero(Transform parent,HeroClass hero){Builds++;var go=new GameObject();go.transform.SetParent(parent,false);go.AddComponent<Renderer>();return go.AddComponent<CombatModel>();}
+        public static bool ImportedGroups;public static int Builds;
+        public static CombatModel Hero(Transform parent,HeroClass hero){Builds++;var go=new GameObject();go.transform.SetParent(parent,false);go.AddComponent<Renderer>();if(ImportedGroups){foreach(var name in new[]{"Vanguard_Sword","Vanguard_Back"}){var part=new GameObject(name);part.transform.SetParent(go.transform,false);part.AddComponent<Renderer>().FixedBounds=new Bounds(new Vector3(name=="Vanguard_Sword"?6:-4,2,0),new Vector3(2,1,1));}}return go.AddComponent<CombatModel>();}
         public void ApplyEquipment(ItemData weapon,ItemData armor,ItemData relic){}
         public void ApplyFashion(FashionData wings,FashionData weapon){}
         bool configured;public static int Samples;public static float LastTime,LastProgress,PoseExtent;public static CollectionPreviewAction LastAction;
@@ -199,7 +206,7 @@ namespace UnityEngine
     }
     public class Light:Component{public LightType type;public float intensity;public Color color;public int cullingMask;public LightShadows shadows;}
     public class Collider:Component{public bool enabled;}
-    public class Renderer:Component{public bool enabled=true,receiveShadows;public Material sharedMaterial;public Rendering.ShadowCastingMode shadowCastingMode;public Bounds bounds=>new Bounds(transform.position+Vector3.up,Vector3.one*(1+CombatModel.PoseExtent));}
+    public class Renderer:Component{public bool enabled=true,receiveShadows;public Material sharedMaterial;public Rendering.ShadowCastingMode shadowCastingMode;public Bounds? FixedBounds;public Bounds bounds=>FixedBounds??new Bounds(transform.position+Vector3.up,Vector3.one*(1+CombatModel.PoseExtent));}
     public class LineRenderer:Renderer{public bool useWorldSpace;public int positionCount;public float startWidth,endWidth;public void SetPosition(int i,Vector3 v){}}
     public static class RenderSettings{public static Rendering.AmbientMode ambientMode;public static Color ambientLight;public static bool fog;}
     public enum HideFlags{HideAndDontSave}public enum CameraClearFlags{SolidColor}public enum LightType{Directional}public enum LightShadows{None}
@@ -218,7 +225,7 @@ namespace UnityEngine
         public static Vector3 operator-(Vector3 a,Vector3 b)=>new Vector3(a.x-b.x,a.y-b.y,a.z-b.z);
         public static Vector3 operator*(Vector3 a,float b)=>new Vector3(a.x*b,a.y*b,a.z*b);
     }
-    public struct Bounds{public Vector3 center,extents;public Bounds(Vector3 c,Vector3 size){center=c;extents=size*.5f;}public void Encapsulate(Bounds bounds){}}
+    public struct Bounds{public Vector3 center,extents;public Bounds(Vector3 c,Vector3 size){center=c;extents=size*.5f;}public void Encapsulate(Bounds b){var lo=new Vector3(Math.Min(center.x-extents.x,b.center.x-b.extents.x),Math.Min(center.y-extents.y,b.center.y-b.extents.y),Math.Min(center.z-extents.z,b.center.z-b.extents.z));var hi=new Vector3(Math.Max(center.x+extents.x,b.center.x+b.extents.x),Math.Max(center.y+extents.y,b.center.y+b.extents.y),Math.Max(center.z+extents.z,b.center.z+b.extents.z));center=(hi+lo)*.5f;extents=(hi-lo)*.5f;}}
     public static class Mathf
     {public const float PI=(float)Math.PI;public static float Sin(float a)=>(float)Math.Sin(a);public static float Cos(float a)=>(float)Math.Cos(a);public static float Clamp01(float a)=>Math.Max(0,Math.Min(1,a));public static int Clamp(int a,int l,int h)=>Math.Max(l,Math.Min(h,a));public static float Abs(float v)=>Math.Abs(v);public static float Pow(float a,float b)=>(float)Math.Pow(a,b);public static float Sqrt(float v)=>(float)Math.Sqrt(v);public static float Max(params float[] args){float m=args[0];foreach(float v in args)m=Math.Max(m,v);return m;}}
 }
