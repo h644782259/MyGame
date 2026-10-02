@@ -344,7 +344,10 @@ def main():
                 report["checks"].append({"name": "reference-compile-setup", "passed": False, "error": str(error)})
                 failed = True
         if args.unity_editor:
-            managed = args.unity_editor.resolve().parent / "Data/Managed"
+            editor = args.unity_editor.resolve()
+            contents = editor.parent.parent if editor.parent.name == "MacOS" else editor.parent / "Data"
+            host_define = "UNITY_EDITOR_OSX" if editor.parent.name == "MacOS" else "UNITY_EDITOR_WIN" if editor.suffix.lower() == ".exe" else "UNITY_EDITOR_LINUX"
+            managed = contents / "Managed"
             modules = managed / "UnityEngine"
             if not (modules / "UnityEngine.CoreModule.dll").is_file():
                 report["checks"].append({"name": "exact-unity-compile", "passed": False,
@@ -356,22 +359,22 @@ def main():
                     ("runtime", "UNITY_STANDALONE;UNITY_STANDALONE_WIN"),
                     ("ios-runtime", "UNITY_IOS"),
                     ("android-runtime", "UNITY_ANDROID"),
-                    ("editor", "UNITY_EDITOR;UNITY_EDITOR_LINUX"),
-                    ("android-editor", "UNITY_EDITOR;UNITY_EDITOR_LINUX;UNITY_ANDROID"),
-                    ("ios-editor", "UNITY_EDITOR;UNITY_EDITOR_LINUX;UNITY_IOS"),
+                    ("editor", "UNITY_EDITOR;" + host_define),
+                    ("android-editor", "UNITY_EDITOR;" + host_define + ";UNITY_ANDROID"),
+                    ("ios-editor", "UNITY_EDITOR;" + host_define + ";UNITY_IOS"),
                     ("visual-validation", "EMBERFALL_VISUAL_VALIDATION;UNITY_STANDALONE;UNITY_STANDALONE_WIN"),
                 ]:
                     name = "exact-unity-" + variant + "-compile"
                     refs = list(modules.glob("UnityEngine*.dll"))
                     sources = sorted((ROOT / "Assets/Scripts").rglob("*.cs"))
-                    defines = "UNITY_6000_0_OR_NEWER;UNITY_6000_6_OR_NEWER;" + extra_defines
+                    defines = "UNITY_2023_1_OR_NEWER;UNITY_6000_0_OR_NEWER;UNITY_6000_4_OR_NEWER;UNITY_6000_6_OR_NEWER;" + extra_defines
                     if variant in ("editor", "android-editor", "ios-editor"):
                         refs += list(modules.glob("UnityEditor*.dll"))
                         refs += list(managed.glob("UnityEditor*.dll"))
                         if variant == "android-editor":
-                            refs += list((args.unity_editor.resolve().parent / "Data/PlaybackEngines/AndroidPlayer").glob("**/UnityEditor.Android.Extensions.dll"))
+                            refs += list((contents / "PlaybackEngines/AndroidPlayer").glob("**/UnityEditor.Android.Extensions.dll"))
                         if variant == "ios-editor":
-                            refs += list((args.unity_editor.resolve().parent / "Data/PlaybackEngines/iOSSupport").glob("**/UnityEditor.iOS.Extensions*.dll"))
+                            refs += list((contents / "PlaybackEngines/iOSSupport").glob("**/UnityEditor.iOS.Extensions*.dll"))
                         refs = list({p.resolve():p for p in refs}.values())
                         sources += sorted((ROOT / "Assets/Editor").rglob("*.cs"))
                     elif variant == "visual-validation":
@@ -400,6 +403,7 @@ def main():
 
 def source_hashes():
     sources = sorted((ROOT / "Assets").rglob("*.cs")) + sorted((ROOT / "Tests").glob("*.cs"))
+    sources += sorted((ROOT / "Tests").glob("*.py")) + sorted((ROOT / "Tools").glob("*.py")) + [ROOT / "Tests/Run-CloudValidation.sh"]
     return {str(path.relative_to(ROOT)): hashlib.sha256(path.read_bytes()).hexdigest() for path in sources}
 
 
