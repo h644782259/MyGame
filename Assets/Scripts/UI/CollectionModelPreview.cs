@@ -68,7 +68,7 @@ namespace Emberfall
             avatar.transform.localRotation=Quaternion.Euler(0,state.Yaw,0);
             avatar.transform.localScale=Vector3.one;
             if(framingDirty){FrameModel();framingDirty=false;}
-            model.SamplePreview(motion.Time,motion.Action,motion.Progress);
+            model.SamplePreview(motion.Time,motion.Action,motion.Progress,motion.OrbitYaw);
 
             turnRing.localRotation=Quaternion.Euler(0,motion.RingYaw,0);
             RenderIsolated();state.Rendered(Time.frameCount);

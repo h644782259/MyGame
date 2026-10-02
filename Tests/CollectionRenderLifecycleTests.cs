@@ -125,7 +125,7 @@ namespace Emberfall
         public void ApplyFashion(FashionData wings,FashionData weapon){}
         bool configured;public static int Samples;public static float LastTime,LastProgress,PoseExtent;public static CollectionPreviewAction LastAction;
         public void ConfigurePreview(){configured=true;}
-        public void SamplePreview(float time,CollectionPreviewAction action,float progress){if(!configured)throw new Exception("preview must configure isolation before sampling");Samples++;LastTime=time;LastAction=action;LastProgress=progress;PoseExtent=action==CollectionPreviewAction.Idle?.01f*(float)Math.Sin(time):.5f*(float)Math.Sin(progress*Math.PI);}
+        public void SamplePreview(float time,CollectionPreviewAction action,float progress,float mechanicalYaw=float.NaN){if(!configured)throw new Exception("preview must configure isolation before sampling");Samples++;LastTime=time;LastAction=action;LastProgress=progress;PoseExtent=action==CollectionPreviewAction.Idle?.01f*(float)Math.Sin(time):.5f*(float)Math.Sin(progress*Math.PI);}
         public void Animate(float a,float b,bool c){}
     }
 }

@@ -38,19 +38,21 @@ namespace Emberfall
             CollectionPreviewComposition composition=rotate?collectionViewing.Mode:trial==null?CollectionPreviewComposition.Full:trial.slot==FashionSlot.Wings?CollectionPreviewComposition.Back:CollectionPreviewComposition.Weapon;
             collectionModel.SetComposition(composition);
             collectionModel.SetYaw(rotate?collectionViewing.Yaw:collectionPreviewYaw);
-            collectionModel.SetViewport(area.width*Mathf.Abs(GUI.matrix.m00),area.height*Mathf.Abs(GUI.matrix.m11),MobileControls.Active);
+            CollectionPreviewLayout controls=rotate&&!MobileControls.Active?CollectionPreviewLayout.Desktop(new MobilePanelLayout.Area(area.x,area.y,area.width,area.height)):null;
+            Rect viewport=controls==null?area:PreviewControlRect(controls.Model,Vector2.zero,1);
+            collectionModel.SetViewport(viewport.width*Mathf.Abs(GUI.matrix.m00),viewport.height*Mathf.Abs(GUI.matrix.m11),MobileControls.Active);
             Texture image=collectionModel.Render(progression.Profile.heroClass,progression.Equipped(ItemSlot.Weapon),progression.Equipped(ItemSlot.Armor),progression.Equipped(ItemSlot.Relic),wings,weapon);
-            Fill(area,new Color(.035f,.06f,.09f));if(image!=null)GUI.DrawTexture(area,image,MobileControls.Active&&composition!=CollectionPreviewComposition.Full?ScaleMode.ScaleAndCrop:ScaleMode.ScaleToFit,false);
-            if(rotate)
-            {
-                float size=MobileControls.Active?48*TouchRatio:42;
-                float tab=(area.width-24)/3;
-                for(int i=0;i<3;i++)if(Button(new Rect(area.x+6+i*(tab+6),area.y+6,tab,size),i==0?"全身":i==1?"武器":"后背",(int)collectionViewing.Mode==i?gold:jade)){collectionViewing.View((CollectionPreviewComposition)i);BlockUITransition();}
-                float actionWidth=(area.width-24)/3;
-                for(int i=0;i<3;i++)if(Button(new Rect(area.x+6+i*(actionWidth+6),area.y+12+size,actionWidth,size),i==0?"待机":i==1?"攻击":"施法",(int)collectionModel.PreviewAction==i?gold:jade))collectionModel.Play((CollectionPreviewAction)i);
-                if(Button(new Rect(area.x+6,area.yMax-size-6,size,size),"左转",jade))collectionViewing.Rotate(-45);
-                if(Button(new Rect(area.xMax-size-6,area.yMax-size-6,size,size),"右转",jade))collectionViewing.Rotate(45);
-            }
+            Fill(area,new Color(.035f,.06f,.09f));if(image!=null)GUI.DrawTexture(viewport,image,ScaleMode.ScaleToFit,false);
+            if(controls!=null)DrawCollectionControls(controls,Vector2.zero,1);
+        }
+        private static Rect PreviewControlRect(MobilePanelLayout.Area area,Vector2 origin,float scale)
+        {return new Rect((area.X-origin.x)*scale,(area.Y-origin.y)*scale,area.Width*scale,area.Height*scale);}
+        private void DrawCollectionControls(CollectionPreviewLayout layout,Vector2 origin,float scale)
+        {
+            for(int i=0;i<3;i++)if(Button(PreviewControlRect(layout.Button(0,i),origin,scale),i==0?"全身":i==1?"武器":"后背",(int)collectionViewing.Mode==i?gold:jade)){collectionViewing.View((CollectionPreviewComposition)i);BlockUITransition();}
+            for(int i=0;i<3;i++)if(Button(PreviewControlRect(layout.Button(1,i),origin,scale),i==0?"待机":i==1?"攻击":"施法",(int)collectionModel.PreviewAction==i?gold:jade))collectionModel.Play((CollectionPreviewAction)i);
+            if(Button(PreviewControlRect(layout.Button(2,0),origin,scale),"左转",jade))collectionViewing.Rotate(-45);
+            if(Button(PreviewControlRect(layout.Button(2,1),origin,scale),"右转",jade))collectionViewing.Rotate(45);
         }
         private string CollectionTrialTitle
         {get{return collectionTrial==null?"当前外观":ProgressionService.FashionName(collectionTrial.slot,collectionTrial.rarity)+" · 试穿";}}
@@ -100,7 +102,8 @@ namespace Emberfall
         private void DrawMobileCollectionPreview(MobilePanelLayout layout)
         {
             var progression=session.Progression;
-            DrawCollectionModel(MobilePanelRect(layout.BodyLeft),collectionTrial,true);
+            var previewLayout=CollectionPreviewLayout.Mobile(layout.BodyLeft,layout.BodyRight);
+            DrawCollectionModel(MobilePanelRect(previewLayout.Model),collectionTrial,true);
             string source="";
             for(int i=0;i<2;i++)
             {
@@ -108,10 +111,12 @@ namespace Emberfall
                 source+=(i==0?"翅膀":"武器")+"属性来源 · "+(best==null?"无":best.name+"\n"+ProgressionService.FashionBonus(slot,best.rarity))+"\n";
             }
             string detail=(string.IsNullOrEmpty(mobileFashionStatus)?"":mobileFashionStatus+"\n\n")+CollectionTrialTitle+"\n"+CollectionTrialState+"\n\n"+source;
-            float width=layout.BodyRight.Width-26,total=MeasureMobileParagraph(detail,width,14)+76;
+            float width=layout.BodyRight.Width-26,detailTop=previewLayout.ControlsBottom-layout.BodyRight.Y+16;
+            float total=detailTop+MeasureMobileParagraph(detail,width,14)+76;
             mobilePreviewTextScroll=BeginTouchScroll("mobile-fashion-preview",MobilePanelRect(layout.BodyRight),mobilePreviewTextScroll,
                 new Rect(0,0,(width+10)*TouchRatio,Mathf.Max(layout.BodyRight.Height,total)*TouchRatio));
-            float textEnd=DrawMobileParagraph(8,8,width,detail,14,pale)+16;
+            DrawCollectionControls(previewLayout,new Vector2(layout.BodyRight.X,layout.BodyRight.Y),TouchRatio);
+            float textEnd=DrawMobileParagraph(8,detailTop,width,detail,14,pale)+16;
             if(Button(TouchRect(8,textEnd,width,48),"恢复当前外观",muted)){collectionTrial=null;collectionViewing.Restore();collectionNotice=null;BlockUITransition();}
             EndTouchScroll();
             if(Button(MobilePanelRect(layout.FooterButton(0,3)),"浏览收藏",jade)){mobileFashionPreview=false;BlockUITransition();return;}

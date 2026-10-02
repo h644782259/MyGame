@@ -14,7 +14,7 @@ namespace Emberfall
             if(previewOrbit!=null)previewOrbitRest=previewOrbit.localRotation;
             if(decoration!=null)previewDecorationRest=decoration.localRotation;
         }
-        public void SamplePreview(float time,CollectionPreviewAction action,float progress)
+        public void SamplePreview(float time,CollectionPreviewAction action,float progress,float mechanicalYaw=float.NaN)
         {
             if(!isolatedPreview||!isHero||float.IsNaN(time)||float.IsInfinity(time)||float.IsNaN(progress)||float.IsInfinity(progress))return;
             previewTime=time;
@@ -24,7 +24,9 @@ namespace Emberfall
             actionAge=Mathf.Clamp01(progress);
             AnimateHero(0,0,false,0);
             if(decoration!=null)decoration.localRotation=previewDecorationRest*Quaternion.Euler(0,time*42,0);
-            if(previewOrbit!=null)previewOrbit.localRotation=previewOrbitRest*Quaternion.Euler(0,0,time*16);
+            // The host owns a separate wrapped angle: its 16-degree orbit must not
+            // inherit the 120s breathing/cloth clock reset. Framing uses static time=0.
+            if(previewOrbit!=null)previewOrbit.localRotation=previewOrbitRest*Quaternion.Euler(0,0,float.IsNaN(mechanicalYaw)?time*16:mechanicalYaw);
             if(tailoredCloth!=null)tailoredCloth.SamplePreview(time,action==CollectionPreviewAction.Idle?0:Mathf.Sin(Mathf.Clamp01(progress)*Mathf.PI));
         }
     }
