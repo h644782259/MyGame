@@ -57,10 +57,14 @@ namespace Emberfall
                     int a=start+i*2,b=a+2;
                     if(side==1){topTriangles.Add(a);topTriangles.Add(a+1);topTriangles.Add(b);topTriangles.Add(a+1);topTriangles.Add(b+1);topTriangles.Add(b);}
                     else{topTriangles.Add(a);topTriangles.Add(b);topTriangles.Add(a+1);topTriangles.Add(a+1);topTriangles.Add(b);topTriangles.Add(b+1);}
-                    // Both banks remain visible from either bank/camera side without a special shader.
-                    int[] face={a,b,a+1,a+1,b,b+1,a+1,b,a,b+1,b,a+1};lineTriangles.AddRange(face);
+                    // Back faces are added with independent vertices below to retain lit normals.
+                    int[] face={a,b,a+1,a+1,b,b+1};lineTriangles.AddRange(face);
                 }
             }
+            int frontVertices=line.Count,frontIndices=lineTriangles.Count;
+            for(int i=0;i<frontVertices;i++)line.Add(line[i]);
+            for(int i=0;i<frontIndices;i+=3)
+            {lineTriangles.Add(lineTriangles[i+2]+frontVertices);lineTriangles.Add(lineTriangles[i+1]+frontVertices);lineTriangles.Add(lineTriangles[i]+frontVertices);}
             Geometry(parent,r,name+" shore damp seam",wet,topTriangles,damp);
             Geometry(parent,r,name+" shore vertical waterline",line,lineTriangles,damp);
         }
