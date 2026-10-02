@@ -16,7 +16,7 @@ namespace Emberfall
         public bool IsDead { get; private set; }
         public int DungeonWave { get; private set; }
         public int DungeonTier { get; private set; } = 1;
-        public int TotalWaves { get { return ChapterActive?2:RoomChainRun!=null?5:3; } }
+        public int TotalWaves { get { return ChapterActive?ChapterDefinition.RoomCount(ActiveChapterNode):RoomChainRun!=null?5:3; } }
         public float ArenaRadius { get { return InDungeon ? 18f : 22f; } }
         public bool DungeonCleared { get; private set; }
         public int PendingLootCount { get { return pendingLoot.Count; } }
@@ -460,17 +460,20 @@ namespace Emberfall
 
         public void OnEnemyKilled(EnemyController enemy)
         {
-            if (enemy == null || !AdventureResultPolicy.AcceptsKill(HasStarted,CombatEnded,Enemies.Contains(enemy)) || !Enemies.Remove(enemy)) return;
+            if (enemy == null || !AdventureResultPolicy.AcceptsKill(HasStarted,CombatEnded,Enemies.Contains(enemy))) return;
+            int chapterExperience=0;bool chapterKill=ChapterActive;
+            if(chapterKill&&!RecordChapterDefeat(enemy,out chapterExperience))return;
+            if(!Enemies.Remove(enemy))return;
             Vector3 position = enemy.transform.position;
             bool boss = enemy.IsBoss;
             OnExpeditionEnemyKilled(enemy);
             RecordArenaDefeat(enemy);
             RecordRoomDefeat(enemy);
-            RecordChapterDefeat(enemy);
             int level = Progression.Profile.level;
             int experience = boss ? 100 + level * 12 : (InDungeon ? 22 : 16) + level * 2;
             int gold = boss ? 85 + DungeonTier * 20 : Random.Range(7, 15) + level;
             if(InDungeon&&!boss) { float share=Mathf.Clamp(6f/Mathf.Max(6,wavePopulation),.5f,1f);experience=Mathf.RoundToInt(experience*share);gold=Mathf.Max(1,Mathf.RoundToInt(gold*share)); }
+            if(chapterKill)experience=chapterExperience;
             Progression.GrantEnemyKillReward(gold, experience);
             LogSystem("+" + gold + " 金币 · +" + experience + " 经验");
             SpawnFloatingText(position + Vector3.up * 2, "+" + experience + " XP  +" + gold + " G", new Color(.95f, .83f, .4f));
