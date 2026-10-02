@@ -1,0 +1,24 @@
+{
+  "sourceCommit": "0f788008c9794de4bd50b8b7fa2136692a54d567",
+  "runtimeCandidate": "57445429957bbc2c65a471e7ae5affeb9df841c3",
+  "windowsMain": "55d621f06068dd7ff2c3dd77ab6b0376303581d3",
+  "iosMain": "de5bbbf8ec8631c055ed653a3dc6fdf56d056246",
+  "fullSuite": {
+    "checks": 189,
+    "passed": true,
+    "testedHead": "e325c904ab5ee1a45aaf354cbaf3556677b407d9",
+    "reportSha256": "ad23b50a1ecee64a83179fd08fb12b7802f664457253f3a99bf8423bd6566e6e",
+    "sourceChangedDuringRun": []
+  },
+  "sourceOnly": true,
+  "unityEditorVerified": false,
+  "apkProduced": false,
+  "deviceVerified": false,
+  "includesPR23": false,
+  "deliveryChange": "Docs/Art-Replay-Refinement.md only; runtime/assets/platform settings unchanged",
+  "trackedFiles": 1125,
+  "filename": "Emberfall-Android-Source-0f78800.zip",
+  "bytes": 29356488,
+  "sha256": "972d523321dd953e70da32cbe038a1988d7ee296349e605f926f158da2f7abfb",
+  "entries": 1126
+}
