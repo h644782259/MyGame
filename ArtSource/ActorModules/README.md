@@ -1,5 +1,7 @@
 # Blender rigid actor modules — finite batch 2
 
+**Evidence correction (E review):** the original `Constructions/` images and original construction inventory preserved from the first PR exports include some renderer-disabled legacy parts. They are historical authoring evidence and must not be used to infer actual equipped mesh visibility or precise occlusion. The exporter now filters `Renderer.enabled`; corrected evidence is saved separately under `EnabledReview/`, without overwriting the historic images. These new pictures are still managed-construction Blender renders, not Unity captures.
+
 Original scripted geometry made in Blender 4.3.2, with no Meshy, paid assets, external artwork or textures. This batch replaces selected **rigid mesh pieces**, not complete characters or animation clips. Production uses the existing factories and existing joint transforms, source materials, equipment dimensions and palette. The incomplete Vanguard FBX pilot remains separately default-off.
 
 ## Covered construction calls

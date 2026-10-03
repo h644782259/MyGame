@@ -1,7 +1,8 @@
 """Check actual exported static construction/module use and wolf leg overlap; not animation acceptance."""
 from pathlib import Path
 import json,hashlib,sys
-geometry=Path(sys.argv[1]);destination=Path(__file__).parent
+geometry=Path(sys.argv[1]);destination=Path(sys.argv[2]) if len(sys.argv)>2 else Path(__file__).parent
+destination.mkdir(parents=True,exist_ok=True)
 cases=json.loads(geometry.read_text());report=[]
 for c in cases:
  names={}
