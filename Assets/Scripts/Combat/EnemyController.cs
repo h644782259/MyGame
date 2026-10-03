@@ -99,7 +99,7 @@ namespace Emberfall
         }
 
         public void ConfigurePracticeTarget()
-        { if(session==null||!session.PracticeActive)return;DisplayName=session.PracticeRecord.HasSupplier&&Kind==EnemyKind.Wisp?"试招供能者 · 减伤30%":DisplayName+" · 试招"; }
+        { if(session==null||!session.PracticeActive)return;if(!session.PracticeRecord.UsesEnemyAI)MaxHealth=Health=1000000;DisplayName=session.PracticeRecord.HasSupplier&&Kind==EnemyKind.Wisp?"试招供能者 · 减伤30%":DisplayName+" · 试招"; }
 
         public void ConfigureArenaBoss(int pattern)
         {

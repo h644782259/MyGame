@@ -28,7 +28,7 @@ namespace Emberfall
             if(!Started||Finished)return;
             KillOrder.Add(identity+" @ "+Elapsed.ToString("0.00")+"s");
             if(supplier&&SupplyBrokenAt<0){SupplyBrokenAt=Elapsed;Mechanism("断供");}
-            if(cleared){ObjectiveCompleted=true;Finish("目标全部击败");}
+            if(cleared&&UsesEnemyAI){ObjectiveCompleted=true;Finish("目标全部击败");}
         }
         public void PlayerDefeated(){if(!Finished){Survived=false;Finish("角色倒下 · 记录提前结束");}}
         public float Elapsed { get; private set; }

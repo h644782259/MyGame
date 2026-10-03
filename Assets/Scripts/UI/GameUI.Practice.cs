@@ -10,7 +10,7 @@ namespace Emberfall
         private int practiceSeconds=10;
         private void DrawPracticeChoices(ref float y,float width,float unit,bool draw,bool enabled,ProgressionService.BuildDraft draft)
         {
-            BuildPlanParagraph(ref y,width,unit,"营地试招：临时角色实际战斗，不保存、不获奖励。当前拥有装备；可使用尚未应用的合法草稿。目标使用当前等级真实生命、护甲与控制规则；准备后点击开始。受压场景敌人会实际攻击。",muted,draw);
+            BuildPlanParagraph(ref y,width,unit,"营地试招：临时角色实际战斗，不保存、不获奖励。当前拥有装备；可使用尚未应用的合法草稿。旧三场为百万生命持续训练靶；新增受压场景使用当前等级真实生命并实际攻击。所有场景保留护甲与控制规则；准备后点击开始。",muted,draw);
             DraftButton(ref y,width,unit,"计时："+practiceSeconds+"秒 · 点击切换10/60秒",enabled,draw,()=>practiceSeconds=practiceSeconds==10?60:10);
             string[] names={"静止单目标","持续移动目标","前排 + 后排供能","守卫 + 魔灵 · 受压","前排 + 供能者 · 受压"};
             for(int i=0;i<5;i++){int index=i;DraftButton(ref y,width,unit,"试招 · "+names[i],enabled,draw,()=>session.BeginPractice((CampPracticeScenario)index,practiceSeconds,draft));}

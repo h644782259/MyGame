@@ -526,7 +526,7 @@ namespace Emberfall
 
         public void OnPlayerDied()
         {
-            if(PracticeActive){PracticeRecord.PlayerDefeated();EndPractice("角色倒下 · 记录提前结束");return;}
+            if(PracticeActive){PracticeRecord.PlayerDefeated();return;}
             if (IsDead) return;
             IsDead = true;
             if(ModeRun!=null)ModeRun.Fail(ExpeditionModeFailure.PlayerDefeated);
