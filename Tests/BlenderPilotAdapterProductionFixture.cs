@@ -91,13 +91,15 @@ namespace Emberfall{
  public class EquipmentAppearance{public int Tier;public EquipmentAppearance(ItemData item){}}
  public sealed partial class CombatModel{
  private string equipmentWeaponKey,equipmentArmorKey,equipmentRelicKey;private Transform equipmentWeapon,equipmentArmor,equipmentLeftShoulder,equipmentRightShoulder,equipmentHead,equipmentRelic;private LineRenderer bowstring;
+ // F3 weapon geometry is outside pilot admission/pose ownership; actual F3 factory has its own suite.
+ private void ApplyWeaponArt(ItemData weapon){}
  public void ApplyFashion(object a,object b){}private void RefreshWeaponFashion(){}private void SetBaseCostumeVisible(bool on){}
  private Transform NewGear(string label){var g=new GameObject(label);g.transform.SetParent(transform);g.AddComponent<Renderer>();return g.transform;}
  private void BuildEquipmentWeapon(EquipmentAppearance a){equipmentWeapon=NewGear("built equipment weapon");}private void BuildEquipmentArmor(EquipmentAppearance a){equipmentArmor=NewGear("built equipment armor");}private void BuildEquipmentRelic(EquipmentAppearance a){equipmentRelic=NewGear("built equipment relic");}
  }
  public class Profile{public int level=1,masteryCore=-1;public int[] masteryRanks=new int[4];}public class Progression{public Profile Profile=new Profile();public PlayerStats GetStats()=>new PlayerStats();public object EquippedFashion(FashionSlot slot)=>null;public ItemData Equipped(ItemSlot slot)=>null;}
  public class GameSession{public bool CombatEnded,HasStarted=true;public int Deaths;public Progression Progression=new Progression();public bool HasBlessing(RunBlessing b)=>false;public void RecordIncomingDamage(string s,float d){}public void RecordCombatAction(string s){}public void SpawnFloatingText(Vector3 p,string s,Color c){}public void OnPlayerDied(){Deaths++;CombatEnded=true;}}
- public enum RunBlessing{RiskContract}public enum SoundCue{Hit}public static class GameAudio{public static void Play(SoundCue s){}}public static class AdvancedSkillVfx{public static void Rune(PlayerController h,Vector3 p,float r,Color c,float t,int n){}}public static class CombatFx{public static void Ring(Vector3 p,float r,Color c,float t){}}
+ public enum RunBlessing{RiskContract}public enum SoundCue{Hit}public static class GameAudio{public static void Play(SoundCue s){}}public static class AdvancedSkillVfx{public static void Rune(PlayerController h,Vector3 p,float r,Color c,float t,int n,bool follows=false,int identity=0){}}public static class CombatFx{public static void Ring(Vector3 p,float r,Color c,float t){}}
  public static class CombatReviewEvents{public static bool Enabled;public static void Emit(string k,int id,float amount=0,string detail=null){}}public static class CombatReviewObjectId{public static int Get(object x)=>1;}public static class WorldTraversal{public static Vector3 NearestWalkable(Vector3 p,float r)=>p;}
  public static class SummonedCompanion{public static void RefreshBuild(PlayerController p){}}public class BuildMastery{public int Core,Tier;public void Configure(int c,int n){}public float WardReduction;public void Reset(){}public float DamageTaken(float x)=>0;}
  public class CancelState{public void Cancel(){}public void Clear(){}}public class RunBonus{public float IncomingDamageMultiplier(float f)=>1;}public class PlayerStats{public float Armor,MaxHealth=100;}
