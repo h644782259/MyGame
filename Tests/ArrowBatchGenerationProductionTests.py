@@ -19,7 +19,7 @@ public enum HeroClass{Vanguard,Arcanist,Ranger,Summoner}public class EnemyContro
 public struct CombatDamage{public float Amount;public static CombatDamage operator*(CombatDamage d,float n){d.Amount*=n;return d;}}
 public static class SkillDamageBudgets{public static int AdvancedSteps(HeroClass h,int s,int r)=>3;public static float AdvancedInterval(HeroClass h,int s)=>.1f;public static float AdvancedFirstEvent(HeroClass h,int s)=>0;public static float AdvancedImpact(HeroClass h,int s,int r,int step)=>1;public static int RadialArrowCount(HeroClass h,int s,int r)=>12;public const float RadialArrowCoefficient=1;}
 public static class CombatProjectile{public static void Friendly(PlayerController h,GameSession s,Vector3 a,Vector3 b,CombatDamage d,Color c,bool p,bool arrow,bool basic,float size,float speed,int castId){}}
-public static class AdvancedSkillVfx{public static void Rune(params object[] values){} }
+public class AdvancedSkillVfx{public static AdvancedSkillVfx Healing(PlayerController h,float r,Color c,float life,int detail,System.Func<bool> active)=>new AdvancedSkillVfx();public void Stop(){}public static void Rune(params object[] values){} }
 internal sealed class SequenceProbe:MonoBehaviour {
 FIELDS
 public FilledSkillVfx.ArrowBatchHandle Handle=>arrowBatch;

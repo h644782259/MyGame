@@ -266,6 +266,7 @@ namespace Emberfall
 
         private void Update()
         {
+            if(PracticeActive){TickPractice();return;}
             if(HasStarted)TickSideEvent();
             if (InputBlocked) return;
             if(ModeRun!=null){TickArenaRun();if(InputBlocked)return;}
@@ -333,6 +334,7 @@ namespace Emberfall
 
         public void ReturnToCamp()
         {
+            if(PracticeActive){EndPractice("主动离开 · 记录提前结束");return;}
             if (!HasStarted || IsDead) return;
             if (!DungeonCleared && !ModeFinished)
             {
@@ -460,6 +462,7 @@ namespace Emberfall
 
         public void OnEnemyKilled(EnemyController enemy)
         {
+            if(PracticeActive){if(enemy!=null&&Enemies.Remove(enemy))enemy.BeginDeath();return;}
             if (enemy == null || !AdventureResultPolicy.AcceptsKill(HasStarted,CombatEnded,Enemies.Contains(enemy))) return;
             int chapterExperience=0;bool chapterKill=ChapterActive;
             if(chapterKill&&!RecordChapterDefeat(enemy,out chapterExperience))return;
@@ -523,6 +526,7 @@ namespace Emberfall
 
         public void OnPlayerDied()
         {
+            if(PracticeActive){EndPractice("角色倒下 · 记录提前结束");return;}
             if (IsDead) return;
             IsDead = true;
             if(ModeRun!=null)ModeRun.Fail(ExpeditionModeFailure.PlayerDefeated);
@@ -675,6 +679,7 @@ namespace Emberfall
 
         public bool TryCollectGroundLoot(string itemId, bool feedback = true)
         {
+            if(PracticeActive)return false;
             PendingLoot pending;
             if (string.IsNullOrEmpty(itemId) || !pendingLoot.TryGetValue(itemId, out pending) || pending.Collecting) return false;
             pending.Collecting = true;
@@ -703,6 +708,9 @@ namespace Emberfall
 
         public bool SaveBeforeLeaving()
         {
+            if(PracticeActive)
+            {try{EndPractice("保存或离开 · 试招结束，恢复原角色");}
+             catch(System.Exception exception){Debug.LogException(exception);Notify("试招收尾出现异常，请重试保存退出。");return false;}}
             if (!HasStarted) return true;
             if(!TrySettleSideEventRewards())return false;
             if(DungeonRewardPending&&!TrySettleDungeonReward())return false;
@@ -817,6 +825,7 @@ namespace Emberfall
         private void OnApplicationQuit() { SaveOnApplicationQuit(); }
         private void OnDestroy()
         {
+            if(PracticeActive)EndPractice("会话关闭");
             if (Instance != this) return;
             Application.wantsToQuit -= CanQuitSafely;
             PreserveWorldLoot();

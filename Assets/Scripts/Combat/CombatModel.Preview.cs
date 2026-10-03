@@ -20,10 +20,19 @@ namespace Emberfall
             if(!isolatedPreview||!isHero||float.IsNaN(time)||float.IsInfinity(time)||float.IsNaN(progress)||float.IsInfinity(progress))return;
             previewTime=time;
             actionBasic=action==CollectionPreviewAction.Attack && heroClass!=HeroClass.Ranger;
-            actionSkill=heroClass==HeroClass.Summoner?2:heroClass==HeroClass.Arcanist?1:heroClass==HeroClass.Ranger?2:0;
-            actionDuration=action==CollectionPreviewAction.Idle?0:1;
+            actionSkill=action==CollectionPreviewAction.Move?-3:heroClass==HeroClass.Summoner?2:heroClass==HeroClass.Arcanist?1:heroClass==HeroClass.Ranger?2:0;
+            actionDuration=action==CollectionPreviewAction.Idle||action==CollectionPreviewAction.Move?0:1;
             actionAge=Mathf.Clamp01(progress);
             AnimateHero(0,0,false,0);
+            if(action==CollectionPreviewAction.Move)
+            {
+                // Bounded pose-only two-step demonstration; no controller/root-motion dispatch.
+                float step=Mathf.Sin(Mathf.Clamp01(progress)*Mathf.PI*4);
+                leftLeg.localRotation=Quaternion.Euler(step*28,0,-2);rightLeg.localRotation=Quaternion.Euler(-step*28,0,2);
+                leftKnee.localRotation=Quaternion.Euler(Mathf.Max(0,-step)*38,0,0);rightKnee.localRotation=Quaternion.Euler(Mathf.Max(0,step)*38,0,0);
+                leftArm.localRotation=Quaternion.Euler(-step*14,0,-8);rightArm.localRotation=Quaternion.Euler(step*14,0,8);
+                transform.localPosition+=Vector3.forward*(Mathf.Sin(Mathf.Clamp01(progress)*Mathf.PI)*.45f);
+            }
             // Preview shows a complete draw/release/reload; live basic commits at contact.
             if(heroClass==HeroClass.Ranger && arrowRig!=null && action==CollectionPreviewAction.Attack)
                 arrowRig.gameObject.SetActive(progress < BasicActionTimeline.BowRelease || progress >= BasicActionTimeline.ArrowReload);

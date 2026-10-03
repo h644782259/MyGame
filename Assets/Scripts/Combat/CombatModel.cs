@@ -915,23 +915,24 @@ namespace Emberfall
             if (actionDuration > 0 && Time.frameCount != actionStartedFrame) actionAge = Mathf.Min(actionAge + dt, actionDuration);
             float t = actionDuration > 0 ? actionAge / actionDuration : 1f;
             bool acting = t < 1f;
-            if (!(acting && actionBasic && actionSkill == -2))
+            if (!(acting && actionBasic && actionSkill == -2) && !(isolatedPreview && actionSkill == -3))
             { if (SampleBlenderPilot(acting,t,hurt)) return; }
             else SetBlenderPilotVisible(false);
             float stride = Mathf.Sin(gaitPhase) * speed;
             float lift = Mathf.Abs(Mathf.Sin(gaitPhase));
             float breathing = Mathf.Sin((isolatedPreview?previewTime:Time.time) * 2f + phase);
+            HeroMotionStyle motionStyle=HeroMotionStyle.For(heroClass);
             float landing = Mathf.Pow(lift, 2f);
-            transform.localPosition = Vector3.up * (landing * .032f * speed);
+            transform.localPosition = Vector3.up * (landing * .032f * speed * motionStyle.Bob);
             pelvis.localPosition = new Vector3(stride * .024f, .83f, 0);
             pelvis.localRotation = Quaternion.Euler(0, stride * -4f, stride * 2f);
             leftLeg.localRotation = Quaternion.Euler(stride * 30f, 0, -2f);
             rightLeg.localRotation = Quaternion.Euler(-stride * 30f, 0, 2f);
             leftKnee.localRotation = Quaternion.Euler(Mathf.Max(0, -stride) * 42f, 0, 0);
             rightKnee.localRotation = Quaternion.Euler(Mathf.Max(0, stride) * 42f, 0, 0);
-            spine.localPosition = new Vector3(0, 1.12f + breathing * .009f, hurt ? -.035f : 0);
-            spine.localRotation = Quaternion.Euler(speed * 5f, stride * 4f, -stride * 1.5f);
-            headRig.localRotation = Quaternion.Euler(-speed * 3f, -stride * 3f, stride);
+            spine.localPosition = new Vector3(0, 1.12f - motionStyle.Crouch + breathing * .009f, hurt ? -.035f : 0);
+            spine.localRotation = Quaternion.Euler(speed * 5f * motionStyle.Torso, stride * 4f * motionStyle.Torso, -stride * 1.5f * motionStyle.Torso);
+            headRig.localRotation = Quaternion.Euler(-speed * 3f * motionStyle.Torso, -stride * 3f * motionStyle.Torso + (acting ? 0 : breathing * motionStyle.Observation), stride * motionStyle.Torso);
             leftArm.localRotation = Quaternion.Euler(-stride * 18f, 0, -8f);
             rightArm.localRotation = Quaternion.Euler(stride * 18f, 0, 8f);
             leftElbow.localRotation = Quaternion.Euler(-12f, 0, 0);

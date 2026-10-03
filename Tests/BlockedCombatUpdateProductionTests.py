@@ -64,7 +64,9 @@ def main():
             projectile = projectile[projectile.index('    internal sealed class CombatProjectile'):projectile.index('    internal sealed class CombatArea')]
             (directory / 'ProjectileMethods.cs').write_text('using UnityEngine;namespace Emberfall{public partial class CombatProjectile{' + (without_simulation_gate(method(projectile, 'void Update()')) if old == 'projectile' else method(projectile, 'void Update()')) + '}}')
             (directory / 'ExistingMathSubstitutes.cs').write_text(fixture)
-            for source in ['Assets/Scripts/World/WorldTraversal.cs', 'Assets/Scripts/Combat/EnemyImpactRegion.cs', 'Tests/BlockedCombatUpdateProductionTests.cs']:
+            catalog=(ROOT/'Assets/Scripts/Core/GameTypes.cs').read_text();start=catalog.index('public static float ConcentratedVenomCoefficient(');end=catalog.index('\n',start)
+            (directory/'ActualVenomBudget.cs').write_text('namespace Emberfall{public static class BuildCatalog{'+catalog[start:end]+'}}')
+            for source in ['Assets/Scripts/Core/ThreatAdmissionPolicy.cs', 'Assets/Scripts/Core/DestructiblePropRules.cs', 'Assets/Scripts/Combat/ConcentratedVenomRules.cs', 'Assets/Scripts/World/WorldTraversal.cs', 'Assets/Scripts/Combat/EnemyImpactRegion.cs', 'Tests/BlockedCombatUpdateProductionTests.cs']:
                 (directory / Path(source).name).write_text((ROOT / source).read_text())
             (directory / 'Program.cs').write_text('System.Console.WriteLine(BlockedCombatUpdateProductionTests.Run());')
             (directory / 'NuGet.Config').write_text('<configuration><packageSources><clear /></packageSources></configuration>')

@@ -1,6 +1,7 @@
 // Actual room host/state/traversal; scene, save IO and unrelated systems are explicit doubles.
 using System;using System.Collections.Generic;using UnityEngine;using Emberfall;
 namespace UnityEngine {
+ public static class Debug {public static void LogException(Exception error)=>throw new InvalidOperationException("Ordinary room fixture raised a lifecycle exception",error);}
  public class Object {public static void Destroy(Object o){if(o is GameObject g)g.SetActive(false);}}
  public class MonoBehaviour:Object {}
  public class GameObject:Object {public string name;public bool activeInHierarchy=true;public Transform transform;public GameObject(string n=""){name=n;transform=new Transform{gameObject=this};}public void SetActive(bool on){activeInHierarchy=on;}}
@@ -26,6 +27,7 @@ namespace Emberfall {
  }
  public class ChapterDouble {public bool DoorUnlocked;public RoomObjective Objective;public int Seals;public float Progress;}
  public sealed partial class GameSession:MonoBehaviour {
+  public bool PracticeActive=>false;public void EndPractice(string reason)=>throw new System.InvalidOperationException("Room seal fixture must not enter practice exit");public float PracticeSupportMultiplier(EnemyController e)=>throw new System.InvalidOperationException("Room seal fixture must not enter practice support");
   public RoomChainState RoomChainRun;public PlayerController Player=new PlayerController();public List<EnemyController> Enemies=new List<EnemyController>();
   public SaveDouble Progression=new SaveDouble();public ChoiceDouble RunChoices=new ChoiceDouble();
   public bool Paused,BackgroundPaused,IsDead,HasStarted=true,InDungeon=true;public bool InputBlocked=>Paused||BackgroundPaused||IsDead;

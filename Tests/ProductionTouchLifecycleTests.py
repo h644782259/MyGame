@@ -48,6 +48,8 @@ namespace Emberfall {
  public class SkillChargeController {public void Cancel(){}}
  public class PlayerStub {public T GetComponent<T>() where T:class=>null;}
  public sealed class GameSession {
+  // This replay exercises ordinary adventure touch lifecycle, never practice.
+  public bool PracticeActive=>false;
   public GameUI ui;public bool BackgroundPaused;public PlayerStub Player;
   public bool InputBlocked,DungeonSelectionOpen,IsNearDungeonEntrance;public bool NearChapterExit;public bool NearRoomExit=true,SideEventAvailable,IsInCamp,InDungeon;public HubNpcKind NearbyHubNpc;
   public void EnterNextRoom(){SuspendInputs();}

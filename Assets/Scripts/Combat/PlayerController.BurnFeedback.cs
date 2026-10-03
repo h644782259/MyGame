@@ -15,10 +15,10 @@ namespace Emberfall
             burnFeedbackTargets++;burnFeedbackAt=Time.time;
             CombatFx.BurnContact(this,point,true);
         }
-        internal bool BurnCashFeedback(out int targets,out float remaining)
+        internal bool BurnCashFeedback(out int targets,out float remaining,bool includeBlocked=false)
         {
             targets=0;remaining=0;
-            if(IsDead||session==null||session.Player!=this||session.InputBlocked||!session.HasStarted||burnFeedbackEpoch!=CombatEpoch||burnFeedbackTargets<=0)return false;
+            if(IsDead||session==null||session.Player!=this||!includeBlocked&&session.InputBlocked||!session.HasStarted||burnFeedbackEpoch!=CombatEpoch||burnFeedbackTargets<=0)return false;
             remaining=Mathf.Max(0,2f-(Time.time-burnFeedbackAt));
             if(remaining<=0)return false;
             targets=burnFeedbackTargets;return true;

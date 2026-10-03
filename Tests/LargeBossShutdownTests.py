@@ -12,7 +12,16 @@ with tempfile.TemporaryDirectory(prefix='boss-shutdown-') as d:
  negative=subprocess.run([dotnet,'run','--project',str(p/'Test.csproj'),'--no-restore'],env=env,text=True,capture_output=True)
  if negative.returncode==0 or 'real chassis/core/petals dismantle separately' not in negative.stdout+negative.stderr:raise AssertionError(negative.stdout+negative.stderr)
  print('PASS scaled-clock mutation fails actual zero-timescale settlement assertion')
-session=(r/'Assets/Scripts/Core/GameSession.cs').read_text();kill=session[session.index('public void OnEnemyKilled('):];assert kill.index('Enemies.Remove(enemy)')<kill.index('Progression.GrantEnemyKillReward')<kill.index('enemy.BeginDeath()')
+session=(r/'Assets/Scripts/Core/GameSession.cs').read_text()
+# Check ordering in the ordinary reward-bearing branch. Practice has a separate
+# no-reward BeginDeath early return; it must not become the visual-entry anchor.
+a=session.index('public void OnEnemyKilled(');b=session.index('{',a)+1;depth=1
+while depth:depth+=(session[b]=='{')-(session[b]=='}');b+=1
+kill=session[a:b]
+ordinary=kill.index('if (enemy == null || !AdventureResultPolicy.AcceptsKill')
+assert 'if(PracticeActive)' in kill[:ordinary] and 'return;' in kill[:ordinary]
+kill=kill[ordinary:]
+assert kill.index('Enemies.Remove(enemy)')<kill.index('Progression.GrantEnemyKillReward')<kill.index('enemy.BeginDeath()')
 enemy=(r/'Assets/Scripts/Combat/EnemyController.cs').read_text();assert 'if(model!=null&&model.TryBeginLargeBossShutdown()){gameObject.SetActive(false);Destroy(gameObject);return;}' in enemy
 visual=(r/'Assets/Scripts/Combat/LargeBossShutdownVisual.cs').read_text();assert 'FilledSkillVfx.SkipFinales(game)' in visual;assert 'GrantEnemyKillReward' not in visual and 'TakeDamage(' not in visual
 print('PASS reward/exactly-once guard remains before visual entry; large host immediately disables; shutdown has no reward/damage API')

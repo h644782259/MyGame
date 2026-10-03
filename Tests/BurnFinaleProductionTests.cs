@@ -20,7 +20,7 @@ namespace Emberfall
         public enum ThreatTier{Normal,Elite}public ThreatTier Tier;public bool IsDead,IsBoss,IsStunned;public float HitFootprintBonus,ControlStunRemaining;public EnemyStatusEffects StatusEffects;
         public float Health=10000;public bool IgnoreDamage;public Action OnDamage;public readonly List<DamageEvent> Hits=new List<DamageEvent>();
         public class DamageEvent{public float Amount;public bool Impact,Critical;}
-        public void TakeDamage(float value,Vector3 offset,float knockback=0,float stun=0,bool impact=true,bool critical=false){if(IsDead||IgnoreDamage)return;Hits.Add(new DamageEvent{Amount=value,Impact=impact,Critical=critical});Health-=Math.Max(1,value*.5f);if(Health<=0)IsDead=true;OnDamage?.Invoke();}
+        public void TakeDamage(float value,Vector3 offset,float knockback=0,float stun=0,bool impact=true,bool critical=false,int practiceCastId=0){if(IsDead||IgnoreDamage)return;Hits.Add(new DamageEvent{Amount=value,Impact=impact,Critical=critical});Health-=Math.Max(1,value*.5f);if(Health<=0)IsDead=true;OnDamage?.Invoke();}
         public void Provoke(){}public float ApplyControl(float duration)=>duration;
     }
     public sealed partial class PlayerController:MonoBehaviour

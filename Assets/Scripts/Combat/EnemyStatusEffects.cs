@@ -50,6 +50,9 @@ namespace Emberfall
         private bool wasDown;
         private float airborneTime, airborneDuration, airborneHeight, airborneRecovery;
 
+        internal event System.Action VisualStateChanged;
+        private void NotifyVisualState(){var changed=VisualStateChanged;if(changed!=null)changed();}
+
         private void Awake() { enemy = GetComponent<EnemyController>(); }
         public void Slow(float duration, float strength)
         {
@@ -66,12 +69,14 @@ namespace Emberfall
             // Boss armor blocks hard freeze, not the frost-mark/shatter opportunity.
             if (enemy.IsBoss) frostMarkTime = Mathf.Max(frostMarkTime, duration + 2f);
             Slow(duration + 2, .4f);
+            NotifyVisualState();
         }
         public void FrostMark(float duration)
         {
             if (enemy == null || enemy.IsDead || duration <= 0) return;
             frostMarkTime = Mathf.Max(frostMarkTime, duration);
             Slow(duration, .15f);
+            NotifyVisualState();
         }
 
         public bool TryShatter(PlayerController source, int castId)
@@ -105,6 +110,7 @@ namespace Emberfall
         {
             markTime = Mathf.Max(markTime, duration);
             markStrength = Mathf.Max(markStrength, Mathf.Clamp(vulnerability, 0, .3f));
+            NotifyVisualState();
             enemy.Provoke();
         }
         public void Poison(PlayerController source, float duration, float damagePerTick)
@@ -138,6 +144,7 @@ namespace Emberfall
         {
             if (!HasFrostMark) return false;
             frozenTime = frostMarkTime = 0;
+            NotifyVisualState();
             return true;
         }
 
@@ -259,6 +266,7 @@ namespace Emberfall
             downTime = Mathf.Max(0, downTime - dt);
             frozenTime = Mathf.Max(0, frozenTime - dt);
             frostMarkTime = Mathf.Max(0, frostMarkTime - dt);
+            NotifyVisualState();
             // Both clocks see this frame before a damage callback can open a
             // choice menu. Unclaimed events stay queued until combat resumes.
             AdvanceBurnClock(dt);

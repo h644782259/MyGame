@@ -64,7 +64,7 @@ class SceneryPresentationProductionTests {
    Check(accents.Length==(dungeon?0:2),"factory creates exactly two town accents and none in dungeons");
    Check(points.All(l=>l.shadows==LightShadows.None&&l.renderMode==LightRenderMode.ForceVertex),"actual point lights remain unshadowed vertex accents");
    if(!dungeon){for(int i=0;i<2;i++)Check(accents.Any(l=>Near(l.transform.position,HubSettlementPlan.Npc(i)+new Vector3(0,2.5f,1))),"accent lights follow actual NPC positions");}
-   if(!dungeon&&hub>0){var insets=Named(root,"Gate approach inset");Check(insets.Length==6,"town portal invokes six focus insets");Check(insets.All(t=>Near(t.localScale,new Vector3(.15f,.009f,.20f))&&Near(t.localPosition.y,.05f)&&t.GetComponent<CameraOcclusionSurface>()==null&&Surface(t.GetComponent<Renderer>())==VisualSurface.Metal),"portal focus is flush opaque Metal without occlusion registration");}
+   if(!dungeon&&hub>0){var insets=Named(root,"Gate approach inset");Check(insets.Length==6,"town portal invokes six focus insets");Check(insets.All(t=>Near(t.localScale,new Vector3(.24f,.009f,.27f))&&Near(t.localPosition.y,.05f)&&t.GetComponent<CameraOcclusionSurface>()==null&&Surface(t.GetComponent<Renderer>())==VisualSurface.Metal),"portal focus is flush opaque Metal without occlusion registration");}
    Check(root.GetComponentsInChildren<Collider>(true).Length==0&&root.GetComponentsInChildren<Rigidbody>(true).Length==0,"environment construction adds no physics components");Dispose(root);
   }
   Console.WriteLine("PASS: environment partition "+(n-start)+" production material/light/focus checks");
@@ -110,7 +110,7 @@ class SceneryPresentationProductionTests {
    Check(WorldTraversal.circles.Count(c=>Near(c.p,p)&&Near(c.radius,.43f))==1&&WorldTraversal.boxes.Count(b=>Near(b.p,p+new Vector3(0,0,.65f))&&Near(b.size.x,1.4f)&&Near(b.size.y,.5f))==1,"each NPC registers body and role-prop footprint exactly once");
    Check(Surface(head.GetComponent<Renderer>())==VisualSurface.Skin&&Named(npc.gameObject,"NPC tunic").All(t=>Surface(t.GetComponent<Renderer>())==VisualSurface.Cloth),"actual NPC Skin and Cloth material categories");
    string roleProp=i==0?"Merchant stocked shelf":i==1?"Forged anvil face":"Turning exchange star chart";
-   Check(Named(npc.gameObject,roleProp).Length==(i==0?3:1),"role-specific merchant smith exchange props remain present");
+   Check(Named(npc.gameObject,roleProp).Length==(i==0?2:1),"role-specific merchant smith exchange props remain present");
    if(i==0)Check(Named(npc.gameObject,roleProp).All(t=>Surface(t.GetComponent<Renderer>())==VisualSurface.Wood),"merchant shelves retain Wood category");
    if(i==1)Check(Surface(Named(npc.gameObject,roleProp).Single().GetComponent<Renderer>())==VisualSurface.Metal,"smith anvil retains Metal category");
    var arm=(Transform)Field(npc,"arm");var left=(Transform)Field(npc,"otherArm");var dial=(Transform)Field(npc,"dial");Check(arm!=null&&left!=null&&(i==2)==(dial!=null),"actual NPC initializer binds articulated arms and exchange dial");

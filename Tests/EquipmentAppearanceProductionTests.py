@@ -14,12 +14,12 @@ namespace UnityEngine {
  public class Texture{} public enum ScaleMode{ScaleToFit}public struct Matrix{public float m00,m11;}public static class GUI{public static Matrix matrix=new Matrix{m00=1,m11=1};public static void DrawTexture(Rect r,Texture t,ScaleMode s,bool b){}}
 }
 namespace Emberfall {
- public enum ItemSlot{Weapon,Armor,Relic}public enum FashionSlot{Wings,Weapon}public enum CollectionPreviewComposition{Full}
+ public enum ItemSlot{Weapon,Armor,Relic}public enum FashionSlot{Wings,Weapon}public enum CollectionPreviewComposition{Full}public enum CollectionPreviewAction{Idle,Attack,Cast,Move}
  public class ItemData{public string id;public ItemSlot slot;public int rank;}
  public class FashionData{}public class Profile{public int heroClass;}
  public class Progression{public Profile Profile=new Profile();public ItemData[] items={new ItemData(),new ItemData(),new ItemData()};public FashionData[] fashions={new FashionData(),new FashionData()};public int calls;public ItemData Equipped(ItemSlot s)=>items[(int)s];public FashionData EquippedFashion(FashionSlot s)=>fashions[(int)s];public ItemData PreviewEquippedItem(ItemData i){calls++;return new ItemData{id=i.id,slot=i.slot,rank=7};}public int SlotUpgradeRank(ItemSlot s)=>7;}
  public class Session{public Progression Progression=new Progression();}public static class MobileControls{public static bool Active;}
- public class CollectionModelPreview{public static int Created;public CollectionModelPreview(){Created++;}public ItemData[] items;public FashionData wings,weapon;public int renders;public float yaw;public bool fixedFrame;public void SetComposition(CollectionPreviewComposition c){}public void SetYaw(float y){yaw=y;}public void SetEquipmentFraming(bool a,bool b){fixedFrame=a;}public void SetViewport(float x,float y,bool b){}public Texture Render(int h,ItemData w,ItemData a,ItemData r,FashionData f,FashionData g){items=new[]{w,a,r};wings=f;weapon=g;renders++;return null;}}
+ public class CollectionModelPreview{public static int Created;public CollectionModelPreview(){Created++;}public ItemData[] items;public FashionData wings,weapon;public int renders;public float yaw;public bool fixedFrame;public void SetComposition(CollectionPreviewComposition c){}public void SetYaw(float y){yaw=y;}public void SetEquipmentFraming(bool a,bool b){fixedFrame=a;}public int highlight=-1;public CollectionPreviewAction action;public void SetEquipmentHighlight(int slot){highlight=slot;}public void Play(CollectionPreviewAction a){action=a;}public void SetViewport(float x,float y,bool b){}public Texture Render(int h,ItemData w,ItemData a,ItemData r,FashionData f,FashionData g){items=new[]{w,a,r};wings=f;weapon=g;renders++;return null;}}
  public sealed partial class GameUI{
  Session session=new Session();Color jade,gold,muted;CollectionModelPreview collectionModel;string click,copy;int blocks;bool scrolling;Rect scrollViewport,scrollContent,note;int clippedButtons;
  Vector2 BeginTouchScroll(string key,Rect viewport,Vector2 position,Rect content){scrolling=true;scrollViewport=viewport;scrollContent=content;return position;}void EndTouchScroll(){scrolling=false;}
@@ -28,11 +28,15 @@ namespace Emberfall {
  public static void Main(){var ui=new GameUI();var p=ui.session.Progression;var rect=new Rect(0,0,420,340);var candidate=new ItemData{id="new",slot=ItemSlot.Weapon,rank=0};
  Check(!ui.DrawEquipmentAppearanceDetail(rect,candidate,1)&&CollectionModelPreview.Created==0,"lazy closed preview");ui.equipmentAppearanceOpen=true;
  for(int slot=0;slot<3;slot++){candidate.slot=(ItemSlot)slot;candidate.id="new"+slot;ui.DrawEquipmentAppearanceDetail(rect,candidate,1);Check(object.ReferenceEquals(ui.collectionModel.items[slot],p.items[slot]),"current exact loadout");ui.click="候选装备";ui.DrawEquipmentAppearanceDetail(rect,candidate,1);Check(ui.collectionModel.items[slot].id==candidate.id&&ui.collectionModel.items[slot].rank==7,"candidate uses inherited detached preview");for(int j=0;j<3;j++)if(j!=slot)Check(object.ReferenceEquals(ui.collectionModel.items[j],p.items[j]),"other slots retained");Check(candidate.rank==0&&p.items[slot].id==null,"source loadout and candidate unchanged");Check(ui.collectionModel.wings==p.fashions[0]&&ui.collectionModel.weapon==p.fashions[1]&&ui.copy.Contains("覆盖"),"real cosmetics with explicit override");Check(ui.collectionModel.fixedFrame&&ui.collectionModel.yaw==20,"fixed framing both views");}
- Check(CollectionModelPreview.Created==1,"single renderer reused");ui.click="战斗视距";ui.DrawEquipmentAppearanceDetail(rect,candidate,1);Check(ui.equipmentAppearanceDetail,"detail distance toggle");ui.click="返回属性";ui.DrawEquipmentAppearanceDetail(rect,candidate,1);Check(!ui.equipmentAppearanceOpen&&ui.collectionModel==null,"close releases renderer");
+ Check(CollectionModelPreview.Created==1,"single renderer reused");
+ Check(ui.collectionModel.highlight==(int)candidate.slot,"only compared equipment slot selected for highlight");
+ ui.click="短移动（表现）";ui.DrawEquipmentAppearanceDetail(rect,candidate,1);Check(ui.collectionModel.action==CollectionPreviewAction.Move,"move button calls isolated sampler");
+ ui.click="普攻（表现）";ui.DrawEquipmentAppearanceDetail(rect,candidate,1);Check(ui.collectionModel.action==CollectionPreviewAction.Attack,"attack button calls isolated sampler");
+ Check(ui.copy.Contains("不造成伤害、召唤、耗能或写存档"),"presentation action scope explained");ui.click="战斗观看";ui.DrawEquipmentAppearanceDetail(rect,candidate,1);Check(ui.equipmentAppearanceDetail,"detail distance toggle");ui.click="返回属性";ui.DrawEquipmentAppearanceDetail(rect,candidate,1);Check(!ui.equipmentAppearanceOpen&&ui.collectionModel==null,"close releases renderer");
  foreach(float scale in new[]{.75f,1f,1.5f})foreach(int width in new[]{568,800,1136}){
  var layout=new MobilePanelLayout(width,320);var body=width==568?layout.TabbedBody:layout.Right;var viewport=new Rect(body.X*scale,body.Y*scale,body.Width*scale,body.Height*scale);
  ui.equipmentAppearanceOpen=true;ui.clippedButtons=0;ui.DrawMobileEquipmentAppearance(viewport,candidate,scale);
- Check(!ui.scrolling&&ui.clippedButtons==4,"all four preview controls enclosed by balanced body scroll");
+ Check(!ui.scrolling&&ui.clippedButtons==6,"all six preview controls enclosed by balanced body scroll");
  Check(ui.scrollViewport.yMax<=layout.Footer.Y*scale,"preview clip ends before fixed footer on short landscape");
  Check(ui.note.yMax<=ui.scrollContent.height&&ui.note.y>=0,"override explanation must fit scrollable content");
  ui.equipmentAppearanceScroll=new Vector2(0,ui.scrollContent.height-ui.scrollViewport.height);ui.DrawMobileEquipmentAppearance(viewport,candidate,scale);
@@ -57,7 +61,7 @@ with tempfile.TemporaryDirectory() as d:
  print('PASS compiled raw-item negative control fails inherited-preview oracle')
 
  # Compile old height budgeting: all controls remain, but explanation extends beyond available content.
- (p/'Actual.cs').write_text(src.replace('Mathf.Max(viewport.height,360*u)','viewport.height'))
+ (p/'Actual.cs').write_text(src.replace('Mathf.Max(viewport.height,410*u)','viewport.height'))
  result=subprocess.run(cmd,capture_output=True,text=True)
  assert result.returncode and 'override explanation must fit scrollable content' in result.stderr,result.stdout+result.stderr
  print('PASS compiled short-body budget control fails exact cosmetic explanation containment oracle')

@@ -153,10 +153,10 @@ namespace Emberfall
                 return;
             }
             float barWidth = mobile ? 362 : 282;
-            hotbarBounds = new Rect((width - barWidth) * .5f, height - (mobile ? 177 : 141), barWidth, mobile ? 165 : 129);
+            hotbarBounds = new Rect((width - barWidth) * .5f, height - (mobile ? 177 : 165), barWidth, mobile ? 165 : 153);
             for (int slot = 0; slot < hotbarSlots.Length; slot++)
                 hotbarSlots[slot] = new Rect(hotbarBounds.x + 10 + (slot % 5) * (mobile ? 69 : 53),
-                    hotbarBounds.y + 27 + (1 - slot / 5) * (mobile ? 65 : 50), mobile ? 64 : 48, mobile ? 61 : 46);
+                    hotbarBounds.y + (mobile ? 27 : 39) + (1 - slot / 5) * (mobile ? 65 : 62), mobile ? 64 : 48, mobile ? 61 : 46);
         }
 
         private bool PauseUtilityVisible {get{return panel==Panel.Controls&&controlsReturnPause||panel==Panel.SaveLocation&&saveReturnPause||panel==Panel.Bindings&&(bindingReturnPause||bindingReturnPanel==Panel.Controls&&controlsReturnPause)||panel==Panel.TravelMap&&travelReturnPause;}}
@@ -167,6 +167,7 @@ namespace Emberfall
             ReconcileMobileScroll();
             ReconcileCollectionPreview();
             if (session == null || session.BackgroundPaused) return;
+            if(session.PracticeActive){if(Input.GetKeyDown(KeyCode.Escape))session.EndPractice("主动离开 · 记录提前结束");return;}
             ReconcileBuildPlanSurface();
             ReconcileProgressionGoalSurface();
             bool gameplayBackAllowed=GameplayBackAllowed;
@@ -267,6 +268,8 @@ namespace Emberfall
             {
                 DrawExitConfirmation();GUI.matrix=oldMatrix;GUI.color=oldColor;GUI.contentColor=oldContentColor;GUI.enabled=oldEnabled;return;
             }
+            if(session.PracticeActive)
+            { DrawPracticeCombatHUD();DrawPracticeOverlay();GUI.matrix=oldMatrix;GUI.color=oldColor;GUI.contentColor=oldContentColor;GUI.enabled=oldEnabled;return; }
             HandleBindingInput();
 
             if (!session.HasStarted)
@@ -758,6 +761,7 @@ namespace Emberfall
             DrawHotbar();
             DrawCompanionCommands();
             Text(new Rect(hotbarBounds.x-170,hotbarBounds.y-22,622,18),CurrentCombatOpportunity(),12,gold,true,false,TextAnchor.MiddleCenter);
+            Text(new Rect(hotbarBounds.x-170,hotbarBounds.y-43,622,18),CurrentCombatResult(),11,pale,true,false,TextAnchor.MiddleCenter);
             DrawChargeProgress();
             DrawDungeonStatus();
             DrawEdgeActions();
@@ -912,6 +916,10 @@ namespace Emberfall
                 bool actionable=false;
                 string actionCaption=mobile?"":DesktopSkillOpportunityCaption(skill,locked,lacksEnergy,cooldown,out actionable);
                 Rect slot = hotbarSlots[slotIndex];
+                // Dedicated clock row is never replaced by cooldown/failure/result captions.
+                var window=mobile||locked||session.Player==null?default(CombatOpportunityState):session.Player.SkillOpportunityWindow(skill);
+                if(window.Window)Text(new Rect(slot.x,slot.y-12,slot.width,11),window.Caption,8,window.Actionable?jade:muted,true,false,TextAnchor.MiddleCenter);
+
                 Color accent = empty ? muted : potion ? gold : GameBalance.ClassColor(p.heroClass);
                 Fill(slot, locked ? new Color(.04f, .06f, .085f) : card);
                 Border(slot, new Color(accent.r, accent.g, accent.b, locked ? .23f : .55f));

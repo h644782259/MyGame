@@ -8,7 +8,7 @@ import shutil
 if (out/'export').exists():shutil.rmtree(out/'export')
 subprocess.run([sys.executable,str(root/'ArtSource/VanguardActions/export_rig.py'),str(out),dotnet],check=True)
 sys.argv=['x',dotnet];ns={'__file__':str(root/'Tests/EquipmentCompositionProductionTests.py')};exec((root/'Tests/EquipmentCompositionProductionTests.py').read_text().split('with tempfile.TemporaryDirectory')[0],ns);extract=ns['extract'];p=out/'export'
-for file in ['Combat/VanguardActionLibrary','Combat/CombatModel.VanguardArt','Core/LocomotionPoseState','Core/VisualMotionEnvelope','Core/BasicActionTimeline']:
+for file in ['Combat/VanguardActionLibrary','Combat/CombatModel.VanguardArt','Core/LocomotionPoseState','Core/HeroMotionStyle','Core/VisualMotionEnvelope','Core/BasicActionTimeline']:
  (p/(file.split('/')[-1]+'.cs')).write_text((root/'Assets/Scripts'/(file+'.cs')).read_text())
 # Remove only the named optional pose boundary; this exporter loads the real adapter.
 boundary=p/'OptionalPilotBoundary.cs';boundary.write_text(boundary.read_text().replace('private void ConfigureVanguardArt() {}',''))

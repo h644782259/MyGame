@@ -5,7 +5,7 @@ using UnityEngine;
 namespace Emberfall
 {
     public enum EnemyKind{Goblin,Guardian,Slime,Wisp}
-    public sealed partial class EnemyController:MonoBehaviour{public bool IsDead,IsBoss;public EnemyKind Kind;public EnemyStatusEffects StatusEffects;}
+    public sealed partial class EnemyController:MonoBehaviour{private ThreatAdmissionPolicy threatAdmission;private int threatMember;public bool IsDead,IsBoss;public EnemyKind Kind;public EnemyStatusEffects StatusEffects;}
     public partial class EnemyStatusEffects:MonoBehaviour
     {
         private EnemyController enemy;private Transform model;private CombatModel knockdownModel;private bool wasDown;

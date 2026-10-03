@@ -109,7 +109,7 @@ namespace Emberfall
             }
             var layout = MobilePanelGeometry();
             string title = chestDetails ? "奖励规则" : revealed ? complete ? "星光已归你所有" : "封印正在苏醒" : "遗迹馈赠";
-            string subtitle = chestDetails ? "三份宝箱机会相同" : revealed ? complete ? ChestRevealPresentation.Outcome(reward) : "已保存奖励 · 未选宝箱逐渐封存" : "选一个开启 · 开启后其余关闭";
+            string subtitle = chestDetails ? (session.Progression.Profile.pendingChestReveal && session.Progression.LastChestReward != null && session.Progression.LastChestReward.rulesRevision == 0 ? "旧版奖励 · 新开箱规则见下" : "兵装 / 羽翼 / 补给") : revealed ? complete ? ChestRevealPresentation.Outcome(reward) : "已保存奖励 · 未选宝箱逐渐封存" : "选一个开启 · 开启后其余关闭";
             if (DrawMobilePanelChrome(layout, title, subtitle, true, true)) return;
             if (chestDetails) DrawMobileChestDetails(layout);
             else if (revealed) DrawMobileChestResult(layout, reward, accent, complete);
@@ -145,7 +145,7 @@ namespace Emberfall
                 var tile = MobileCollectionLayout.ChestCard(width, i);
                 Rect cardRect = TouchRect(tile.X, tile.Y + errorHeight, tile.Width, tile.Height);
                 Fill(cardRect, new Color(.055f, .08f, .11f)); Border(cardRect, new Color(.36f, .48f, .53f));
-                Text(TouchRect(tile.X + 10, errorHeight + 7, tile.Width - 20, 20), i == 0 ? "I" : i == 1 ? "II" : "III", TouchFont(14), muted);
+                Text(TouchRect(tile.X + 10, errorHeight + 7, tile.Width - 20, 20), ProgressionService.ChestChoiceName(i), TouchFont(14), muted);
                 DrawRewardChest(TouchRect(tile.X + 8, errorHeight + 19, tile.Width - 16, 100), false, 1, 0);
                 var action = MobileCollectionLayout.ChestAction(width, i);
                 if (Button(TouchRect(action.X, action.Y + errorHeight, action.Width, action.Height), "开启", gold,
@@ -203,10 +203,7 @@ namespace Emberfall
         private void DrawMobileChestDetails(MobilePanelLayout layout)
         {
             int minimum = TierRewardRules.ChestGoldMinimum(session.Progression.Profile.pendingChestTier);
-            string details = "每次只开启一份，三份机会完全相同。\n\n" +
-                "金币 " + minimum + "～" + (minimum + 40) + "，另有机会获得时装。\n" + MobileChestOddsText + "\n\n" +
-                "以上为每次开启的绝对概率。重复时装转金币并额外增加星纹，每次开启均增加星纹。\n\n" +
-                "未开启的宝箱随角色存档保留。奖励先保存再展示；跳过动画不会重新抽取。";
+            string details = ProgressionService.DungeonChestRules(session.Progression.Profile.pendingChestTier, session.Progression.Profile.pendingChestReveal ? session.Progression.LastChestReward : null);
             float width = layout.Body.Width - 34;
             float total = MeasureMobileParagraph(details, width, 15) + 24;
             mobileChestScroll = BeginTouchScroll("mobile-chest-details", MobilePanelRect(layout.Body), mobileChestScroll,

@@ -169,7 +169,7 @@ namespace Emberfall
                 Vector3 p = new Vector3(i % 2 == 0 ? -4.4f : 4.4f, 0, i < 2 ? -8 : -12);
                 Material stone = r.Material(new Color(.18f,.22f,.28f));
                 Material glow = r.Material(colors[i] * (progress > i ? 1f : .6f), true);
-                Primitive(facilities, names[i] + " plinth", PrimitiveType.Cylinder, p + Vector3.up*.35f, new Vector3(.9f,.35f,.9f), stone);
+                Primitive(facilities, names[i] + " plinth", PrimitiveType.Cylinder, p + Vector3.up*.35f, new Vector3(i==2?.96f:i==1?.74f:.9f,.35f,i==2?.65f:i==1?.96f:.9f), stone);
                 AuthoredFixedScenery.Crest(facilities,names[i],p+Vector3.up*.76f,stone);
                 Crystal(facilities, r, p + Vector3.up * (1.1f + Mathf.Min(progress,5)*.06f), .35f + Mathf.Min(progress,5)*.025f, glow);
                 Label(facilities, names[i], labels[i], p + Vector3.up*2.1f, .055f, colors[i], false);
@@ -393,19 +393,19 @@ namespace Emberfall
             Ring(parent, r, "Gate frame", p + Vector3.up * 2.1f, 1.85f, .2f, stone, true);
             GameObject inner = Ring(parent, r, "Gate light", p + new Vector3(0,2.1f,-.05f), 1.63f, .055f, glow, true);
             inner.AddComponent<WorldMotion>().spin = new Vector3(0,0,16);
-            for (int i = 0; i < 8; i++)
+            for (int i = 0; i < 4; i++)
             {
-                float angle = i * Mathf.PI / 4;
+                float angle = i * Mathf.PI / 2;
                 Vector3 point = p + new Vector3(Mathf.Cos(angle)*1.85f, 2.1f+Mathf.Sin(angle)*1.85f, -.09f);
                 Crystal(parent,r,point,.23f,glow);
             }
-            Crystal(parent,r,p+new Vector3(0,2.2f,0),.6f,glow);
+            // Keep the arch opening clear; four large compass accents identify travel.
             PointLight(parent, p + new Vector3(0,2,0), glow.color, 1.6f, EnvironmentLightProfile.PortalRange);
             BuildPortalFocus(parent,r,p);
-            for (int i=0;i<11;i++)
+            for (int i=0;i<4;i++)
             {
-                float angle=i*2.3999f;
-                GameObject mote=Primitive(parent,"Starlight",PrimitiveType.Sphere,p+new Vector3(Mathf.Cos(angle)*1.2f,.5f+(i%5)*.65f,Mathf.Sin(angle)*.3f),Vector3.one*.055f,glow);
+                float angle=i*Mathf.PI*.5f;
+                GameObject mote=Primitive(parent,"Starlight",PrimitiveType.Sphere,p+new Vector3(Mathf.Cos(angle)*1.8f,2.1f+Mathf.Sin(angle)*1.8f,-.15f),Vector3.one*.055f,glow);
                 WorldMotion motion=mote.AddComponent<WorldMotion>(); motion.bob=.18f; motion.speed=1.5f+i*.1f;
             }
         }

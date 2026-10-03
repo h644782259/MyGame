@@ -16,15 +16,15 @@ with tempfile.TemporaryDirectory(prefix='fixed-scenery-') as directory:
  (p/'Boundary.cs').write_text(re.sub(r'public enum WingSilhouette.*?\n','',s))
  (p/'Tests.cs').write_text((harness/'FixedSceneryProductionTests.cs').read_text())
  project=p/'Test.csproj';project.write_text('<Project Sdk="Microsoft.NET.Sdk"><PropertyGroup><TargetFramework>net8.0</TargetFramework><OutputType>Exe</OutputType><NuGetAudit>false</NuGetAudit><NoWarn>0649;0414</NoWarn></PropertyGroup></Project>');(p/'NuGet.Config').write_text('<configuration><packageSources><clear /></packageSources></configuration>')
- env=dict(os.environ,F4_ROOT=str(root),DOTNET_CLI_HOME=str(p/'cli'),DOTNET_NOLOGO='1',DOTNET_CLI_TELEMETRY_OPTOUT='1')
+ env=dict(os.environ,F4_ROOT=str(root),F4_OUTPUT=str(root/"Tests/TestResults/FixedScenery-Latest"),DOTNET_CLI_HOME=str(p/'cli'),DOTNET_NOLOGO='1',DOTNET_CLI_TELEMETRY_OPTOUT='1')
  for args in [['restore',str(project),'--configfile',str(p/'NuGet.Config'),'-v:q'],['build',str(project),'--no-restore','-v:q'],[str(p/'bin/Debug/net8.0/Test.dll')]]:
   q=subprocess.run([dotnet]+args,env=env,capture_output=True,text=True);print(q.stdout,q.stderr);assert q.returncode==0
 
 import gzip
-snapshot=root/"ArtSource/FixedScenery/factory-snapshots.json"
-(root/"ArtSource/FixedScenery/factory-snapshots.json.gz").write_bytes(gzip.compress(snapshot.read_bytes(),mtime=0))
+snapshot=root/"Tests/TestResults/FixedScenery-Latest/factory-snapshots.json"
+(root/"Tests/TestResults/FixedScenery-Latest/factory-snapshots.json.gz").write_bytes(gzip.compress(snapshot.read_bytes(),mtime=0))
 snapshot.unlink()
 
-snapshot=root/"ArtSource/FixedScenery/factory-before-snapshots.json"
-(root/"ArtSource/FixedScenery/factory-before-snapshots.json.gz").write_bytes(gzip.compress(snapshot.read_bytes(),mtime=0))
+snapshot=root/"Tests/TestResults/FixedScenery-Latest/factory-before-snapshots.json"
+(root/"Tests/TestResults/FixedScenery-Latest/factory-before-snapshots.json.gz").write_bytes(gzip.compress(snapshot.read_bytes(),mtime=0))
 snapshot.unlink()

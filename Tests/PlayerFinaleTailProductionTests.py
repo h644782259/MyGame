@@ -19,13 +19,15 @@ parts=(r/'Tests/CombatReadabilityVisualTests.cs').read_text()
 # Keep complete production branch bodies unchanged; fixture supplies only omitted engine/scheduler context.
 extra='namespace Emberfall{'+''.join(member(parts,k) for k in ['public enum ElementalistSpecialization','public enum HeroClass','public static class CombatBalance','public static class CombatProjectile'])+'''
 public class EnemyController:MonoBehaviour {public bool IsDead,IsBoss,IgnoreDamage;public float HitFootprintBonus,Health=10000;public int Hits;public Action OnDamage;
-public void TakeDamage(float damage,Vector3 direction,float knockback=0,float stun=0,bool critical=false){if(IsDead||IgnoreDamage||GameSession.Instance.ModeFinished)return;float old=Health;Health=Math.Max(0,Health-damage);Hits++;IsDead=Health<=0;if(Health<old)OnDamage?.Invoke();}}
+public void TakeDamage(float damage,Vector3 direction,float knockback=0,float stun=0,bool critical=false,int practiceCastId=0){if(IsDead||IgnoreDamage||GameSession.Instance.ModeFinished)return;float old=Health;Health=Math.Max(0,Health-damage);Hits++;IsDead=Health<=0;if(Health<old)OnDamage?.Invoke();}}
 public class ProjectileVolleyBudget<T>{public CombatDamage Apply(T e,CombatDamage damage,bool area)=>damage;}
 public static class DestructibleProp{public static void StrikeArea(PlayerController owner,Vector3 at,float radius,CombatDamage damage,int castId){}}
-public static class AdvancedSkillVfx{public static void Rune(params object[] values){}}
+// Healing is outside these non-healing finale routes; a non-null use is a fixture failure.
+public class AdvancedSkillVfx{public static void Rune(params object[] values){}public void Stop(){throw new Exception("unexpected healing anchor in finale fixture");}}
 public sealed partial class PlayerController{GameSession session=>GameSession.Instance;int id;int NewCastId()=>++id;void RegisterSkillHit(int castId){}void ApplySpellDodgeBoon(EnemyController enemy){}
 '''+hit+'''}
 public class FinaleProducer {
+private AdvancedSkillVfx healingAura; // Actual OnDisable dependency; always null for tested non-healing routes.
 PlayerController owner;GameSession session;FilledSkillVfx.ArrowBatchHandle arrowBatch;int step=8,steps=9,rank=1,skill=9,castId=73;HeroClass heroClass=HeroClass.Ranger;Vector3 target,forward=Vector3.forward;float range=1;Color color=new Color(1,1,1);CombatDamage damage=new CombatDamage(10,false);
 public FinaleProducer(PlayerController hero){owner=hero;session=GameSession.Instance;arrowBatch=FilledSkillVfx.BeginArrowBatch(owner,target,6f*range,color,priority:CombatVisualPriority.ActionBody,castId:castId);}
 public void ArrowFinal(){'''+event+'''}
@@ -63,6 +65,7 @@ Console.WriteLine("PASS: "+n+" actual finale producers/HitArea/visual lifecycle 
 '''
 with tempfile.TemporaryDirectory(prefix='player-finale-tail-') as tmp:
  p=Path(tmp)
+ (p/'BuildCatalogDamage.cs').write_text('namespace Emberfall{public static class BuildCatalog{'+member((r/'Assets/Scripts/Core/GameTypes.cs').read_text(),'public static float CinderTrailTickMultiplier(')+'}}')
  for f in ['Core/CombatImpactBatch','Core/CombatVisualBudget','Core/FilledVfxRecipes','Core/FilledVfxPlacement','Core/SkillVisualRecipe','Core/SkillDamageBudgets','Combat/CombatDamage','Combat/CombatVisualLease','Combat/FilledSkillVfx','Combat/AnchoredImpactMesh']:(p/(Path(f).name+'.cs')).write_text((r/('Assets/Scripts/'+f+'.cs')).read_text())
  (p/'Shell.cs').write_text(s);(p/'Producers.cs').write_text('using System;using UnityEngine;'+extra);(p/'Tests.cs').write_text(test)
  (p/'NuGet.Config').write_text('<configuration><packageSources><clear /></packageSources></configuration>');project=p/'Test.csproj';project.write_text('<Project Sdk="Microsoft.NET.Sdk"><PropertyGroup><TargetFramework>net8.0</TargetFramework><OutputType>Exe</OutputType><NoWarn>0649;0414</NoWarn></PropertyGroup></Project>')

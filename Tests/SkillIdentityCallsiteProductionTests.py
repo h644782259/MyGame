@@ -6,7 +6,7 @@ root=Path(__file__).resolve().parents[1]
 # Reuse only the clearly bounded Unity/resource doubles from the integration runner.
 setup=(root/'Tests/AuthoredSpellIntegrationTests.py').read_text().split('with tempfile.TemporaryDirectory',1)[0]
 ns={'__file__':str(root/'Tests/AuthoredSpellIntegrationTests.py')};exec(setup,ns);stubs=ns['s']
-stubs=stubs.replace('public bool IsDead;public int CombatEpoch;', 'public bool IsDead;public int CombatEpoch;public float MaxHealth=100,Healed,Energy;public void Heal(float n){Healed+=n;}public void RestoreSkillEnergy(float n){Energy+=n;}')
+stubs=stubs.replace('public bool IsDead;public int CombatEpoch;', 'public bool IsDead;public int CombatEpoch;public float Health=1,MaxHealth=100,Healed,Energy;public void Heal(float n){float delta=Math.Min(n,MaxHealth-Health);Health+=delta;Healed+=delta;}public void RestoreSkillEnergy(float n){Energy+=n;}')
 stubs=stubs.replace('public static class CombatFx{','public static class CombatFx{public static void Ring(params object[] args){}').replace('public static Vector3 forward=>','public static Vector3 right=>new Vector3(1,0,0);public static Vector3 forward=>')
 source=(root/'Assets/Scripts/Combat/AdvancedSkillSequence.cs').read_text();a=source.index('        private void Healing()');b=source.index('        private void Vanguard()',a);method=source[a:b]
 # Release-mode flag is an explicit input; the Healing body and loaded identity are production code.
@@ -88,7 +88,7 @@ using System;using System.Linq;using System.Collections.Generic;using Emberfall;
 namespace Emberfall{
  public enum HeroClass{Vanguard,Arcanist,Ranger,Summoner}public enum CombatVisualPriority{ActionBody,RealContact}
  public struct CombatDamage{public float Amount;public bool IsCritical;public static CombatDamage operator*(CombatDamage d,float n){d.Amount*=n;return d;}}
- public class EnemyController:MonoBehaviour{public bool IsDead,Invulnerable;public float Health=100;public int Attempts;public void TakeDamage(float n,Vector3 f,float knockback=0,float stun=0,bool critical=false){Attempts++;if(!Invulnerable&&!IsDead){Health-=n;if(Health<=0)IsDead=true;}}}
+ public class EnemyController:MonoBehaviour{public bool IsDead,Invulnerable;public float Health=100;public int Attempts;public void TakeDamage(float n,Vector3 f,float knockback=0,float stun=0,bool critical=false,int practiceCastId=0){Attempts++;if(!Invulnerable&&!IsDead){Health-=n;if(Health<=0)IsDead=true;}}}
  public static class SkillDamageBudgets{public static float AdvancedImpact(HeroClass h,int s,int r,int step)=>1;public static float AdvancedAuxiliary(HeroClass h,int s,int r)=>1;}
  public static class SummonerDamageRules{public const float ImpulseCoefficient=1;}
  public static class DestructibleProp{public static void StrikeCone(params object[] a){}}

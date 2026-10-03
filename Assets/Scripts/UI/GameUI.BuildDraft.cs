@@ -4,9 +4,12 @@ namespace Emberfall
     public sealed partial class GameUI
     {
         private ProgressionService.BuildDraft allocationDraft;
+        private bool draftShowUnchanged=true;
+        private Vector2 draftSummaryScroll;
         private void OpenAllocationDraft()
         {
             allocationDraft=session.Progression.BeginBuildDraft(session.IsInCamp);
+            draftShowUnchanged=true;draftSummaryScroll=Vector2.zero;
             buildPlanScroll=Vector2.zero;CancelMobileScroll();BlockUITransition();
         }
         private void CancelAllocationDraft()
@@ -32,8 +35,14 @@ namespace Emberfall
             Box(BuildPlanRect(layout.Frame,unit),gold,false);
             Text(BuildPlanRect(layout.Header,unit),"营地配点草稿 · 尚未应用",Mathf.RoundToInt(21*unit),pale,true);
             float contentWidth=layout.Body.Width-18;
+            string summary=allocationDraft==null?"":allocationDraft.ChangeSummary;
+            var summaryRect=new Rect(layout.Body.X*unit,layout.Body.Y*unit,layout.Body.Width*unit,86*unit);
+            float summaryHeight=Mathf.Max(86,Style(14,true,true).CalcHeight(new GUIContent(summary),contentWidth));
+            draftSummaryScroll=BeginTouchScroll("draft-fixed-summary",summaryRect,draftSummaryScroll,new Rect(0,0,contentWidth*unit,summaryHeight*unit));
+            Text(new Rect(0,0,contentWidth*unit,summaryHeight*unit),summary,Mathf.RoundToInt(14*unit),gold,true,true);EndTouchScroll();
+            var bodyRect=new Rect(layout.Body.X*unit,(layout.Body.Y+94)*unit,layout.Body.Width*unit,(layout.Body.Height-94)*unit);
             float contentHeight=DrawAllocationDraftContent(contentWidth,unit,false);
-            buildPlanScroll=BeginTouchScroll("build-draft",BuildPlanRect(layout.Body,unit),buildPlanScroll,new Rect(0,0,contentWidth*unit,Mathf.Max(layout.Body.Height,contentHeight)*unit));
+            buildPlanScroll=BeginTouchScroll("build-draft",bodyRect,buildPlanScroll,new Rect(0,0,contentWidth*unit,Mathf.Max(layout.Body.Height-94,contentHeight)*unit));
             DrawAllocationDraftContent(contentWidth,unit,true);EndTouchScroll();
             if(Button(BuildPlanRect(layout.FooterButton(0,2),unit),"取消草稿",jade))
             {CancelAllocationDraft();CancelMobileScroll();BlockUITransition();return true;}
@@ -53,18 +62,24 @@ namespace Emberfall
             BuildPlanParagraph(ref y,width,unit,"所有 +/- 仅修改临时草稿；取消不会改变角色、存档或方案。应用不会回复生命、能量或刷新冷却。",muted,draw);
             var before=session.Progression.GetStats();var after=draft.Stats;
             BuildPlanParagraph(ref y,width,unit,"属性预览（当前 → 草稿）\n伤害 "+before.Damage.ToString("0.0")+" → "+after.Damage.ToString("0.0")+" · 生命上限 "+before.MaxHealth.ToString("0")+" → "+after.MaxHealth.ToString("0")+"\n护甲 "+before.Armor.ToString("0.0")+" → "+after.Armor.ToString("0.0")+" · 暴击 "+before.CritChance.ToString("P0")+" → "+after.CritChance.ToString("P0")+" · 移速 "+before.MoveSpeed.ToString("0.0")+" → "+after.MoveSpeed.ToString("0.0"),pale,draw);
+            DrawPracticeChoices(ref y,width,unit,draw,fresh,draft);
             DraftButton(ref y,width,unit,"撤销上一步",draft.CanUndo&&fresh,draw,()=>draft.Undo());
+            DraftButton(ref y,width,unit,draftShowUnchanged?"折叠未改项目":"展开未改项目",true,draw,()=>draftShowUnchanged=!draftShowUnchanged);
             for(int i=0;i<GameBalance.SkillCount;i++)
             {
+                if(!draftShowUnchanged&&!draft.SkillChanged(i))continue;
                 int index=i;string name=GameBalance.SkillName(session.Progression.Profile.heroClass,i);
-                BuildPlanParagraph(ref y,width,unit,name+" · "+draft.SkillRank(i)+"阶",pale,draw,true);
+                BuildPlanParagraph(ref y,width,unit,(draft.SkillChanged(i)?"已改 · ":"")+name+" · "+draft.SkillRank(i)+"阶",draft.SkillChanged(i)?gold:pale,draw,true);
                 DraftAdjustment(ref y,width,unit,draw,fresh?draft.SkillChangeReason(i,-1):"草稿已过期",fresh?draft.SkillChangeReason(i,1):"草稿已过期",()=>draft.ChangeSkill(index,-1),()=>draft.ChangeSkill(index,1));
+                if(draft.SkillChanged(i))BuildPlanParagraph(ref y,width,unit,draft.SkillChangeEffects(i),gold,draw);
                 if(draft.SkillRank(i)==0)BuildPlanParagraph(ref y,width,unit,"未学：请先在技能页解锁1阶。",muted,draw);
             }
             BuildPlanParagraph(ref y,width,unit,"精通 · 当前等级单项上限 "+ProgressionService.MasteryCap(draft.Level),gold,draw,true);
             for(int i=0;i<4;i++)
             {
+                if(!draftShowUnchanged&&!draft.MasteryChanged(i))continue;
                 int index=i;
+                if(draft.MasteryChanged(i))BuildPlanParagraph(ref y,width,unit,"已改 · "+draft.OriginalMasteryRank(i)+" → "+draft.MasteryRank(i)+"点\n"+BuildCatalog.MasteryDescription((MasteryType)i),gold,draw);
                 BuildPlanParagraph(ref y,width,unit,BuildCatalog.MasteryName((MasteryType)i)+" · "+draft.MasteryRank(i)+"点 · "+draft.CoreThreshold(i)+(draft.Core==i?" · 当前核心":""),pale,draw,true);
                 DraftAdjustment(ref y,width,unit,draw,fresh?draft.MasteryChangeReason(i,-1):"草稿已过期",fresh?draft.MasteryChangeReason(i,1):"草稿已过期",()=>draft.ChangeMastery(index,-1),()=>draft.ChangeMastery(index,1));
                 DraftButton(ref y,width,unit,draft.Core==i?"关闭此核心":"选择此核心",fresh&&draft.MasteryRank(i)>=MasteryCoreRules.InitialInvestment,draw,()=>draft.SelectCore(draft.Core==index?-1:index));

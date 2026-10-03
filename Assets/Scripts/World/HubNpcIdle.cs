@@ -6,7 +6,10 @@ namespace Emberfall
     {
         private Transform arm,otherArm,dial;private int role;private float age,angle;
         public void Initialize(int kind,Transform right,Transform left,Transform ornament)
-        {role=kind;arm=right;otherArm=left;dial=ornament;}
+        {role=kind;arm=right;otherArm=left;dial=ornament;
+            // Establish the tool/working silhouette before the first Update (including paused entry).
+            if(arm!=null)arm.localRotation=Quaternion.Euler(role==1?-38:role==2?-35:-18,0,-8);
+            if(otherArm!=null)otherArm.localRotation=Quaternion.Euler(role==2?-28:role==1?-12:0,0,8);}
         private void Update()
         {
             if(Time.deltaTime<=0)return;age+=Time.deltaTime;

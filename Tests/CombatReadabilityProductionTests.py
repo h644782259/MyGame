@@ -27,6 +27,7 @@ def main():
     with tempfile.TemporaryDirectory(prefix='combat-readability-') as temporary:
         for name,expected in cases:
             folder=Path(temporary)/name;folder.mkdir();(folder/'Fixture.cs').write_text(fixture);(folder/'MathShell.cs').write_text(mathShell)
+            (folder/'BuildCatalogDamage.cs').write_text('namespace Emberfall{public static class BuildCatalog{'+member((ROOT/'Assets/Scripts/Core/GameTypes.cs').read_text(),'public static float CinderTrailTickMultiplier(')+'}}')
             for file in files:
                 s=(ROOT/('Assets/Scripts/'+file+'.cs')).read_text()
                 if name=='old-empty-anchored' and file=='Combat/AnchoredImpactMesh':

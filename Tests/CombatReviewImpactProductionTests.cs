@@ -5,13 +5,13 @@ namespace UnityEngine {
  public struct Color{public Color(float r,float g,float b,float a=1){}}
  public struct Vector3 {public float x,y,z;public Vector3(float a,float b,float c){x=a;y=b;z=c;}}
  internal class Transform {public Vector3 position;}
- internal class GameObject {public bool Destroyed;}
+ internal class GameObject {public bool Destroyed,activeInHierarchy=true;}
  public static class Mathf {public static float Max(float a,float b)=>Math.Max(a,b);public static int Min(int a,int b)=>Math.Min(a,b);}
 }
 namespace Emberfall {
  public static class Trace {public static List<string> Events=new List<string>();}
  internal class Status {public void Mark(float seconds,float strength){Trace.Events.Add("mark");}}
- internal class EnemyController {public float Health=10,ProjectileHitRadius=.5f;public bool IsDead=>Health<=0;public Transform transform=new Transform();public Status StatusEffects=new Status();public bool Visible=true;public void TakeDamage(float amount,Vector3 d,float stagger,bool critical=false){Trace.Events.Add("damage");Health=Math.Max(0,Health-amount);}}
+ internal class EnemyController {public GameObject gameObject=new GameObject();public float Health=10,ProjectileHitRadius=.5f;public bool IsDead=>Health<=0;public Transform transform=new Transform();public Status StatusEffects=new Status();public bool Visible=true;public void TakeDamage(float amount,Vector3 d,float stagger,bool critical=false,int practiceCastId=0){Trace.Events.Add("damage");Health=Math.Max(0,Health-amount);}}
  internal class PlayerController {public void RegisterSkillHit(int id){Trace.Events.Add("skillhit");}public float ResolveSkillImpact(EnemyController e,int skill,int id,float damage,bool critical,float multiplier)=>damage;public void OnBasicAttackHitTarget(Vector3 p,EnemyController e,bool hit){}public void HitArea(Vector3 p,float r,CombatDamage d,float a,float b,int cast,ProjectileVolleyBudget<EnemyController> volley){}}
  internal class SummonedCompanion {public float Loss;public void OnConfirmedHit(EnemyController e){Trace.Events.Add("companion");}public void RecordEmpoweredHit(EnemyController e,float loss,bool empowered){Loss=loss;Trace.Events.Add("feedback");}}
  internal class GameSession {public List<EnemyController> Enemies=new List<EnemyController>();}
@@ -21,7 +21,7 @@ namespace Emberfall {
  public static class CombatReviewEvents {public static bool Enabled=false;public static void Emit(string name,int owner,int target,float loss,int skill,string detail){}}
  public static class CombatReviewObjectId {public static int Get(object o)=>1;}
  internal partial class CombatProjectile {
-  public GameSession session=new GameSession();public PlayerController owner=new PlayerController();public SummonedCompanion companionSource;public bool empoweredCompanionShot=true,pierce=true,basicAttack,energyAwarded;public EnemyController impactMarkTarget;public float impactMarkStrength=.2f,radius=.1f,explosionRadius;public CombatDamage damage=4,explosionDamage=0;public int skillIndex=7,castId=1;public ProjectileVolleyBudget<EnemyController> volley;
+  public bool concentrated;public GameSession session=new GameSession();public PlayerController owner=new PlayerController();public SummonedCompanion companionSource;public bool empoweredCompanionShot=true,pierce=true,basicAttack,energyAwarded;public EnemyController impactMarkTarget;public float impactMarkStrength=.2f,radius=.1f,explosionRadius;public CombatDamage damage=4,explosionDamage=0;public int skillIndex=7,castId=1;public ProjectileVolleyBudget<EnemyController> volley;
   public Transform transform=new Transform{position=new Vector3(10,0,0)};public GameObject gameObject=new GameObject();public Vector3 direction;public Color color;public HashSet<EnemyController> hitTargets=new HashSet<EnemyController>();void Destroy(GameObject o){o.Destroyed=true;}
  }
  public static class CombatReviewImpactProductionTests {

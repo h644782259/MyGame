@@ -187,7 +187,7 @@ namespace Emberfall
             var fx=Create(hero,at,Vector3.forward,FilledVfxKind.Vine,radius,color,1.05f,priority:CombatVisualPriority.SustainedBackground);if(fx==null)return;
             for(int i=0;i<3;i++)fx.Add(vine,Vector3.zero,new Vector3(radius*.5f,1,radius*.5f),Quaternion.Euler(0,i*120,0),0,0,0,radius,"Poison branch vine",true);
         }
-        public static void Charge(Transform parent,PlayerController hero,Vector3 at,float radius,Color color,float duration,int identity=0,bool protectionEnvelope=false)
+        public static void Charge(Transform parent,PlayerController hero,Vector3 at,float radius,Color color,float duration,int identity=0,bool protectionEnvelope=false,int protectionStyle=0)
         {
             var fx=Create(hero,at,Vector3.forward,FilledVfxKind.Charge,Mathf.Min(radius,3.5f),color,duration,parent,CombatVisualPriority.SustainedBackground);if(fx==null)return;
             Mesh authored=identity==1?identityBlade:identity==2?identityFork:identity==3?identityContract:identity==4?identityProtection:null;
@@ -197,10 +197,20 @@ namespace Emberfall
                 // Ordinary charge/contact envelopes keep their original dimensions.
                 float width=fx.size*.55f,height=width;
                 if(protectionEnvelope&&identity==4){width=Mathf.Max(width,2.6f);height=Mathf.Max(height,2.6f);}
-                fx.Add(authored,Vector3.up*.08f,new Vector3(width,height,width),Quaternion.identity,0,protectionEnvelope&&identity==4?20:18,identity,
+                fx.Add(authored,Vector3.up*.08f,new Vector3(width,height,width),Quaternion.identity,0,protectionEnvelope&&identity==4?20:18,protectionEnvelope&&identity==4?Mathf.Clamp(protectionStyle,0,3):identity,
                     protectionEnvelope&&identity==4?Mathf.Max(fx.size*.8f,width*.7f):fx.size*.8f,"Identity preparation",true);return;
             }
             for(int i=0;i<3;i++)fx.Add(crescent,Vector3.up*(.18f+i*.2f),new Vector3(fx.size*.65f,.8f,fx.size*.65f),Quaternion.Euler(i*12,i*120,0),0,6,i);
+        }
+        // Only called after the real health mutation. No unconditional success flash at full HP.
+        internal static void HealingPulse(PlayerController hero,Color color,Transform recipient=null)
+        {
+            if(hero==null)return;
+            if(recipient==null){Charge(hero.transform,hero,hero.transform.position,2.6f,color,.32f,4,true,3);return;}
+            // Companion success is a short low contact accent at the actual recipient,
+            // not a player-sized shield or a claim that the caster was healed.
+            var fx=Create(hero,recipient.position,Vector3.forward,FilledVfxKind.Charge,.8f,color,.32f,recipient,CombatVisualPriority.RealContact);
+            if(fx!=null)fx.Add(identityProtection??crescent,Vector3.up*.06f,new Vector3(.8f,.6f,.8f),Quaternion.identity,0,20,3,.8f,"Companion actual healing",true);
         }
         // Visual endpoints consume the actual caller's release/hit position; no target search or damage lives here.
         internal static bool IdentityContact(PlayerController hero,Vector3 at,Vector3 forward,float radius,Color color,int identity,CombatVisualPriority priority=CombatVisualPriority.ActionBody)
@@ -310,7 +320,17 @@ namespace Emberfall
             // Placement reserved the complete motion footprint once. Do not toggle a whole
             // primary silhouette each frame when a growing bounds circle grazes a wall.
             Color color=tint;if(p.Motion==17)color.a*=local<.07f?1:local<.14f?.48f:local<.22f?.82f:.55f;if(p.Secondary)color.a*=.55f*Mathf.Clamp01((.62f-local)/.2f);color.a*=f.Opacity*(kind==FilledVfxKind.Charge?.35f:.9f)*Mathf.Lerp(.55f,1,EffectPreferences.EffectsScale);
-            block.SetColor("_Color",color);block.SetFloat("_Opacity",f.Opacity);block.SetFloat("_Progress",t);
+            float opacity=f.Opacity;
+            if(p.Motion==20)
+            {
+                // Keep the certified body envelope full-sized from birth. Distinction
+                // comes from light/UV bands, never shrinking bars through the actor.
+                float intensity=p.Phase<.5f?.30f:p.Phase<1.5f?(local<.28f?Mathf.Lerp(.62f,.20f,local/.28f):.20f):p.Phase<2.5f?.18f:.58f*Mathf.Clamp01(1-local/.32f);
+                color=tint;color.a*=intensity*Mathf.Lerp(.55f,1,EffectPreferences.EffectsScale);
+                opacity=p.Phase<2.5f?1:Mathf.Clamp01(1-local/.32f);
+            }
+            block.SetColor("_Color",color);block.SetFloat("_Opacity",opacity);block.SetFloat("_Progress",t);
+            block.SetFloat("_EnvelopeMode",p.Motion==20?p.Phase+1:0);block.SetFloat("_EnvelopeAge",local);
             block.SetFloat("_Style",kind==FilledVfxKind.Fire||kind==FilledVfxKind.Summon?1:.35f);p.Renderer.SetPropertyBlock(block);
         }
         private void Register(){if(registered)return;registered=true;active++;}
@@ -332,7 +352,7 @@ namespace Emberfall
         }
         private void ClearPieces()
         {
-            block.SetColor("_Color",new Color(0,0,0,0));block.SetFloat("_Opacity",0);block.SetFloat("_Progress",0);block.SetFloat("_Style",0);
+            block.SetColor("_Color",new Color(0,0,0,0));block.SetFloat("_Opacity",0);block.SetFloat("_Progress",0);block.SetFloat("_Style",0);block.SetFloat("_EnvelopeMode",0);block.SetFloat("_EnvelopeAge",0);
             for(int i=0;i<allocated;i++)
             {
                 var p=pieces[i];if(p==null)continue;

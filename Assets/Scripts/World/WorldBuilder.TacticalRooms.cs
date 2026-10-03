@@ -24,7 +24,8 @@ namespace Emberfall
             GameObject root=new GameObject("Room capture boundary");root.transform.position=position;
             WorldResources r=root.AddComponent<WorldResources>();Material gold=r.Material(chapterSeal?new Color(.18f,.25f,.27f):new Color(1,.8f,.25f),!chapterSeal);
             Ring(root.transform,r,"Stand inside",position+Vector3.up*.08f,RoomTacticalRegion.CaptureRadius,.09f,gold,false);
-            Crystal(root.transform,r,position+Vector3.up*.6f,.35f,gold);
+            // Lift the existing objective crown above feet; the exact capture boundary stays unchanged.
+            Crystal(root.transform,r,position+Vector3.up*.85f,.45f,gold);
             return root;
         }
         public static GameObject MakeSideEventCrystal(Vector3 position)

@@ -16,7 +16,7 @@ namespace Emberfall
         public int DungeonLayout { get; private set; }
         public int DungeonEntryLevel { get; private set; } = 2;
         public string LastRunSummary { get; private set; } = "";
-        public bool IsInCamp { get { return HasStarted && !InDungeon && !IsDead && Player != null && (Vector3.Distance(Player.transform.position, new Vector3(0,0,-10)) < 7f || NearbyHubNpc!=HubNpcKind.None); } }
+        public bool IsInCamp { get { return !PracticeActive && HasStarted && !InDungeon && !IsDead && Player != null && (Vector3.Distance(Player.transform.position, new Vector3(0,0,-10)) < 7f || NearbyHubNpc!=HubNpcKind.None); } }
         public bool SideEventAvailable { get { return InDungeon && !ChapterActive && ModeRun==null && (RoomChainRun==null || RoomChainRun.Room.Index==RoomTactics.EventRoom(runSeed)&&!RoomChainRun.Finished) && !DungeonCleared && sideCrystal!=null && !sideEventStarted && Player != null && Vector3.Distance(Player.transform.position, sideEventPosition) < 3.5f; } }
         private int runSeed, wavePopulation;
         private readonly Queue<EncounterSpawn> reinforcementQueue=new Queue<EncounterSpawn>();
@@ -98,6 +98,7 @@ namespace Emberfall
 
         public void RecordCombatAction(string key)
         {
+            if(PracticeActive){PracticeRecord.Mechanism(key);return;}
             if (string.IsNullOrEmpty(key)) return;
             int tutorialBit=key=="普攻回能"?1:key=="完美闪避"?2:key=="换装"?8:0;
             if(tutorialBit!=0&&(Progression.Profile.tutorialMask&tutorialBit)==0) { if(Progression.RecordTutorialEvidence(tutorialBit))LogSystem("实战试炼完成一项 · "+key); }
@@ -106,6 +107,7 @@ namespace Emberfall
         public bool ClassTutorialVisible {get{return Progression.Profile.classTutorialCompleted || (Progression.Profile.heroClass==HeroClass.Summoner ? Player!=null && (SummonedCompanion.Count(Player)>0 || SummonedCompanion.Count(Player,true)>0) : Progression.ClassTutorialUsable);}}
         public void RecordClassTutorial(HeroClass hero)
         {
+            if(PracticeActive)return;
             if(!HasStarted || Player==null || IsDead || Progression.Profile.classTutorialCompleted)return;
             if(Progression.RecordClassTutorialEvidence(hero))LogSystem("实战试炼 · "+Progression.ClassTutorialText);
         }

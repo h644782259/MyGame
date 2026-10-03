@@ -31,6 +31,12 @@ namespace Emberfall
 
         private enum AttackType { Melee, Bolt, Slam, Charge, Fan }
         private GameSession session;
+        private ThreatAdmissionPolicy threatAdmission;
+        private int threatMember;
+        internal void ConfigureThreatAdmission(ThreatAdmissionPolicy policy,int member)
+        {threatAdmission=policy;threatMember=member;}
+        private bool AdmitThreatAttack()
+        {return threatAdmission==null||threatAdmission.Request(threatMember,Time.time);}
         private CombatModel model;
         private LargeExpeditionBoss largeBoss;
         private float speed, damage, attackCooldown, windup, stunTime, hurtTime, attackAnimation, patrolPhase;
@@ -87,9 +93,13 @@ namespace Emberfall
             attackCooldown = Random.Range(.5f,1.2f);
             model = CombatModel.Enemy(transform,kind,boss);
             StatusEffects = gameObject.AddComponent<EnemyStatusEffects>();
+            EnemyStatusVisual.Attach(this);
             BuildHealthBar();
             guardArmorVisual=GuardArmorVisual.Attach(this);
         }
+
+        public void ConfigurePracticeTarget()
+        { if(session==null||!session.PracticeActive)return;MaxHealth=Health=1000000;DisplayName=session.PracticeRecord.Scenario==CampPracticeScenario.FrontAndSupplier&&Kind==EnemyKind.Wisp?"试招供能者 · 减伤30%":"试招目标 · 实际伤害"; }
 
         public void ConfigureArenaBoss(int pattern)
         {
@@ -154,7 +164,7 @@ namespace Emberfall
             return obj.transform;
         }
 
-        public void TakeDamage(float amount, Vector3 direction, float knockback = 0f, float stun = 0f, bool impact = true, bool critical = false, System.Action<float> actualHealthLoss = null)
+        public void TakeDamage(float amount, Vector3 direction, float knockback = 0f, float stun = 0f, bool impact = true, bool critical = false, System.Action<float> actualHealthLoss = null, int practiceCastId = 0)
         {
             if (session == null || !AdventureResultPolicy.AcceptsDamage(session.HasStarted,session.CombatEnded) || IsDead || amount <= 0 || float.IsNaN(amount) || float.IsInfinity(amount)) return;
             amount *= session.RoomSupportMultiplier(this)*session.ChapterSupportMultiplier(this);
@@ -164,6 +174,7 @@ namespace Emberfall
             amount*=armorMultiplier;
             float previousHealth = Health;
             Health = Mathf.Max(0,Health-amount);
+            if(session.PracticeActive)session.PracticeRecord.ConfirmedHealthLoss(previousHealth-Health,practiceCastId);
             if(actualHealthLoss!=null&&Health<previousHealth)actualHealthLoss(previousHealth-Health);
             if(guardArmorVisual!=null&&Health<previousHealth)guardArmorVisual.RecordImpact(armorMultiplier<1,preparing);
             if (CombatReviewEvents.Enabled) CombatReviewEvents.Emit("damage","0",CombatReviewObjectId.Get(this),previousHealth-Health,detail:"enemy_health_loss");
@@ -249,9 +260,11 @@ namespace Emberfall
 
         private void Update()
         {
+            if(threatAdmission!=null&&session!=null&&(session.InputBlocked||session.Paused))threatAdmission.Withdraw(threatMember);
             if (session == null || session.Player == null || IsDead || !session.HasStarted || session.Paused || session.IsDead) return;
             if (largeBoss != null && (session.InputBlocked || largeBoss.State.Phase == LargeBossPhase.Finished)) return;
             if (session.InputBlocked) return;
+            if(session.PracticeActive && session.MovePracticeTarget(this)){transform.position=WorldTraversal.Move(transform.position,knockVelocity*Time.deltaTime,NavigationRadius);knockVelocity=Vector3.Lerp(knockVelocity,Vector3.zero,Mathf.Min(1,Time.deltaTime*12f));stunTime=Mathf.Max(0,stunTime-Time.deltaTime);hurtTime=Mathf.Max(0,hurtTime-Time.deltaTime);controlPolicy.Advance(Time.deltaTime);AnimateModel(session.PracticeRecord.Scenario==CampPracticeScenario.Moving?.7f:0,0,hurtTime>0);return;}
             float dt = Time.deltaTime;
             if (dt <= 0) return;
             walkingDisplacement = Vector3.zero;
@@ -341,7 +354,9 @@ namespace Emberfall
                 float range = IsBoss ? (approach ? BossAttackPolicy.ChargeRange : BossAttackPolicy.EngageRange) : Kind==EnemyKind.Wisp ? 7.5f : Kind==EnemyKind.Guardian ? 2.5f : 1.8f;
                 if (IsBoss && arenaBossPattern == 1 && !advanceBudget.FallbackActive) range = Mathf.Min(range, BossAttackPolicy.CloseRange);
                 bool attackPath = IsBoss ? CanUseBossAttack(SelectBossMove(distance, combatTargetPosition), combatTargetPosition) : Kind == EnemyKind.Wisp ? WorldTraversal.HasLineOfSight(transform.position, combatTargetPosition) : WorldTraversal.HasGroundPath(transform.position, combatTargetPosition, .12f);
-                if (distance <= range && attackCooldown <= 0 && attackPath) BeginAttack();
+                bool ready = distance <= range && attackCooldown <= 0 && attackPath;
+                if (!ready && threatAdmission != null) threatAdmission.Withdraw(threatMember);
+                if (ready && BeginAttack()) { }
                 else if (Kind==EnemyKind.Wisp && distance<4.5f && attackPath)
                 {
                     transform.position = WalkForAnimation(-delta.normalized * effectiveSpeed * dt);
@@ -442,12 +457,12 @@ namespace Emberfall
                 CanUseBossAttack(BossAttackPolicy.Move.Charge, target), CanUseBossAttack(BossAttackPolicy.Move.Fan, target));
         }
 
-        private void BeginAttack()
+        private bool BeginAttack()
         {
             Vector3 target = companionTarget != null ? companionTarget.transform.position : session.Player.transform.position;
             comboRemaining = IsEnraged ? 1 : 0;
             AttackType next = IsBoss ? ToAttack(SelectBossMove(CombatFx.Flat(target - transform.position).magnitude, target)) : Kind == EnemyKind.Wisp ? AttackType.Bolt : Kind == EnemyKind.Guardian ? AttackType.Slam : AttackType.Melee;
-            PrepareAttack(next, false, target);
+            return PrepareAttack(next, false, target);
         }
 
         private void BeginComboAttack(float distance, Vector3 target)
@@ -462,8 +477,9 @@ namespace Emberfall
             PrepareAttack(ToAttack(next), true, target);
         }
 
-        private void PrepareAttack(AttackType type, bool followUp, Vector3 target)
+        private bool PrepareAttack(AttackType type, bool followUp, Vector3 target)
         {
+            if (!AdmitThreatAttack()) return false;
             advanceBudget.Reset();
             attackNumber++;
             if (IsBoss) { BossAttackPolicy.Move move = ToMove(type); repeatedMove = repeatedMove > 0 && previousMove == move ? repeatedMove+1 : 1; previousMove = move; }
@@ -478,6 +494,7 @@ namespace Emberfall
             CreateWarning();
             if (IsBoss) session.SpawnMechanismText(transform.position + Vector3.up * 3.1f,
                 CanBeSkillInterrupted ? "青色符号 · 可打断" : "无打断符号 · 霸体恢复", CanBeSkillInterrupted ? new Color(.35f, 1f, .85f) : new Color(1f, .48f, .25f));
+            return true;
         }
 
         private float ImpactRadius { get { return attackType == AttackType.Slam ? (IsBoss ? BossAttackPolicy.SlamRadius : 3f) : 1.55f; } }
@@ -558,8 +575,9 @@ namespace Emberfall
                     }
                     else
                     {
-                        CombatProjectile.Hostile(session, muzzle, Quaternion.Euler(0, -7, 0) * attackForward, damage * .75f, 7.5f, sourceName: DisplayName);
-                        CombatProjectile.Hostile(session, muzzle, Quaternion.Euler(0, 7, 0) * attackForward, damage * .75f, 7.5f, sourceName: DisplayName);
+                        System.Action volleyEnded=threatAdmission==null?null:threatAdmission.LaunchVolley(threatMember,2);
+                        CombatProjectile.Hostile(session, muzzle, Quaternion.Euler(0, -7, 0) * attackForward, damage * .75f, 7.5f, sourceName: DisplayName,onEnded:volleyEnded);
+                        CombatProjectile.Hostile(session, muzzle, Quaternion.Euler(0, 7, 0) * attackForward, damage * .75f, 7.5f, sourceName: DisplayName,onEnded:volleyEnded);
                     }
                 }
             }
@@ -594,6 +612,7 @@ namespace Emberfall
 
         private void FinishAttack()
         {
+            if(threatAdmission!=null)threatAdmission.Finish(threatMember);
             activeChargePose = false;
             if (IsBoss && attackType == AttackType.Charge && !chargeHit) { comboRemaining = 0; attackCooldown = 2.1f; return; }
             if (IsBoss && comboRemaining > 0) { comboDelay = BossAttackPolicy.ComboGap; attackCooldown = 0; }
@@ -676,6 +695,7 @@ namespace Emberfall
 
         private void CancelAttack(bool interrupted = false)
         {
+            if(threatAdmission!=null){threatAdmission.Withdraw(threatMember);if(preparing||IsDead)threatAdmission.Release(threatMember);}
             bool activeAttack = preparing || chargeTime > 0 || largeBoss != null && largeBoss.State.Interruptible;
             preparing = false;
             activeChargePose = false;
@@ -754,10 +774,11 @@ namespace Emberfall
             healthFill.localPosition=new Vector3((fraction-1)*width*.5f,0,-.012f);
         }
 
-        private void OnDisable() { CancelAttack(); if (largeBoss != null) largeBoss.StopEncounter(); }
+        private void OnDisable() { if(threatAdmission!=null)threatAdmission.Release(threatMember); CancelAttack(); if (largeBoss != null) largeBoss.StopEncounter(); }
 
         private void OnDestroy()
         {
+            if(threatAdmission!=null)threatAdmission.Release(threatMember);
             if(warning!=null) Destroy(warning);
             if(healthBackgroundMaterial!=null) Destroy(healthBackgroundMaterial);
             if(healthFillMaterial!=null) Destroy(healthFillMaterial);

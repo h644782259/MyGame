@@ -14,6 +14,9 @@ namespace Emberfall
     }
     public partial class GameSession
     {
+        // This suite executes ordinary room queries only; practice has its own host suite.
+        public bool PracticeActive=>false;
+        public float PracticeSupportMultiplier(EnemyController enemy){throw new Exception("practice outside room LOS fixture scope");}
         public bool RoomCaptureActive=true;
         bool RoomPurifyLive=false;FakeRoom RoomChainRun=new FakeRoom();
         class FakeRoom {public bool SealComplete(int i)=>false;}

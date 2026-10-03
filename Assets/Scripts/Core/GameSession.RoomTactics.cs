@@ -111,6 +111,7 @@ namespace Emberfall
         }
         public float RoomSupportMultiplier(EnemyController enemy)
         {
+            if(PracticeActive)return PracticeSupportMultiplier(enemy);
             if(!RoomSupplyActive||!LiveRoomEnemy(enemy)||enemy==roomSupplier||enemy.IsBoss)return 1;
             return RoomTacticalRegion.ReceivesSupport(CombatFx.Flat(enemy.transform.position-roomSupplier.transform.position).sqrMagnitude,true)&&
                 WorldTraversal.HasLineOfSight(enemy.transform.position,roomSupplier.transform.position) ? .7f : 1;

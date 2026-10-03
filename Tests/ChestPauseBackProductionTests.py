@@ -34,6 +34,7 @@ namespace Emberfall {
  public sealed class ProgressionStub {public ProfileStub Profile=new ProfileStub();}
  public sealed class ChoiceStub {public bool AwaitingChoice;}
  public sealed class SessionStub {
+  public bool PracticeActive=>false;public void EndPractice(string reason){throw new System.InvalidOperationException("ordinary chest replay cannot exit practice");}
   public bool BackgroundPaused,Paused=true,HasStarted=true,IsDead,DungeonSelectionOpen,Blocked=true;
   public bool InputBlocked=>Paused||Blocked;public ProgressionStub Progression=new ProgressionStub();
   public ChoiceStub RunChoices=new ChoiceStub();public PlayerStub Player;

@@ -88,6 +88,7 @@ namespace Emberfall
             else if (skillRuntime.HeroClass != heroClass)
                 throw new System.InvalidOperationException("A player controller cannot change class during an adventure.");
             session = game;
+            if(session!=null&&session.PracticeActive)skillRuntime.EnergyChanged=session.RecordPracticeEnergy;
             inputUI = game == null ? null : game.GetComponent<GameUI>();
             HeroClass = heroClass;
             gameObject.name = "Hero - " + GameBalance.ClassName(heroClass);
@@ -685,7 +686,7 @@ namespace Emberfall
                     enemy.TrySkillInterrupt(this, skillIndex, castId);
                     if(!basic&&damage.Amount>0)RegisterSkillHit(castId);
                     float healthBefore = enemy.Health;
-                    enemy.TakeDamage(damage.Amount,delta.normalized,knockback,stun,critical:damage.IsCritical);
+                    enemy.TakeDamage(damage.Amount,delta.normalized,knockback,stun,critical:damage.IsCritical,practiceCastId:basic?0:castId);
                     if (enemy.Health < healthBefore) lastMeleeDamagedEnemy = true;
                     if (knockdown > 0 && enemy.StatusEffects != null) enemy.StatusEffects.Knockdown(knockdown);
                 }
@@ -724,8 +725,7 @@ namespace Emberfall
                     session.RecordCombatAction("职业能力");
                 }
             }
-            float followup=masteryCore.BasicHit();
-            if(followup>0&&ValidAimTarget(enemy)){enemy.TakeDamage(CombatAttack*followup,Vector3.zero,impact:false);session.RecordCombatAction("连击核心");}
+            SettleMasteryCombo(enemy);
             if (ValidAimTarget(enemy) && classDodgeTime > 0)
             {
                 classDodgeTime = 0;
@@ -811,10 +811,10 @@ namespace Emberfall
                 float bonus;
                 if (status.ConsumePoison(this, castId, out bonus))
                 {
-                    bool spread = HasMechanic(EquipmentMechanic.VenomSpread);
+                    bool spread = HasMechanic(EquipmentMechanic.VenomSpread) && !ConcentratedVenom;
                     baseDamage += bonus * (spread ? .8f : 1f);
                     session.SpawnMechanismText(enemy.transform.position + Vector3.up * 2f, "三毒引爆！", new Color(.6f, 1f, .3f));
-                    session.RecordCombatAction("毒层引爆");
+                    session.RecordCombatAction(ConcentratedVenom ? "收束毒爆" : "毒层引爆");
                     session.RecordClassTutorial(HeroClass.Ranger);
                     session.RecordCombatAction("职业能力");
                     if (spread && venomSpreadProc.TryTrigger(2f))
@@ -888,7 +888,7 @@ namespace Emberfall
                     else if (status.TryShatter(this, castId)) amount += direct.WithoutCritical().Amount * .6f;
                 }
                 float healthBeforeFinale=enemy.Health;
-                enemy.TakeDamage(amount, Vector3.zero, 0, final?.3f:0, critical:direct.IsCritical);
+                enemy.TakeDamage(amount, Vector3.zero, 0, final?.3f:0, critical:direct.IsCritical,practiceCastId:castId);
                 if(burnSettlement!=null&&burnSettlement.Apply())RecordBurnCash(castId,impactEpoch,enemy.transform.position);
                 if(final&&enemy.Health<healthBeforeFinale)FilledSkillVfx.ConfirmFinale(this,castId);
             }
@@ -993,6 +993,7 @@ namespace Emberfall
             CombatImpactBatch.Begin();
             try
             {
+            bool confirmedSkillCast=castId>0;
             if(castId==0)castId=NewCastId();
             DestructibleProp.StrikeArea(this,at,radius,damage,castId);
             for (int i = session.Enemies.Count - 1; i >= 0; i--)
@@ -1003,9 +1004,9 @@ namespace Emberfall
                 if (delta.magnitude <= radius + (enemy.IsBoss ? .85f : .4f) + enemy.HitFootprintBonus && CombatSight.Area(at,enemy.transform.position))
                 {
                     var impact=volley==null?damage:volley.Apply(enemy,damage,true);if(impact.Amount<=0)continue;
-                    RegisterSkillHit(castId);ApplySpellDodgeBoon(enemy);
+                    if(confirmedSkillCast)RegisterSkillHit(castId);ApplySpellDodgeBoon(enemy);
                     float healthBeforeFinale=enemy.Health;
-                    enemy.TakeDamage(impact.Amount,delta.normalized,knockback,stun,critical:impact.IsCritical);
+                    enemy.TakeDamage(impact.Amount,delta.normalized,knockback,stun,critical:impact.IsCritical,practiceCastId:castId);
                     // Confirm after the real mutation even if its death callback just finished the mode.
                     if(enemy.Health<healthBeforeFinale)FilledSkillVfx.ConfirmFinale(this,castId);
                 }
@@ -1254,6 +1255,7 @@ namespace Emberfall
             MasteryResourceProc resourceProc=masteryCore.SkillSpent(GameBalance.SkillEnergyCost(HeroClass,slot));
             if(resourceProc.Energy>0){skillRuntime.RestoreEnergy(resourceProc.Energy);skillRuntime.ReduceCooldowns(resourceProc.CooldownReduction);session.RecordCombatAction("循能核心");}
             int castId = ++nextCastId;
+            session.RecordPracticeCast(castId,slot);
             session.RecordCombatAction("职业能力");
             if (executingChargedSkill && session.HasBlessing(RunBlessing.ChargedWard)) chargedWardTime = Mathf.Max(chargedWardTime, 2f);
             GameAudio.Play(SoundCue.Cast);
@@ -1337,11 +1339,11 @@ namespace Emberfall
                 {
                     bool frostEcho = HasMechanic(EquipmentMechanic.FrostEcho);
                     bool wideEcho = MechanicVariant(EquipmentMechanic.FrostEcho) == 1;
-                    float novaPower = frostEcho ? (wideEcho ? .65f : .8f) : 1f;
+                    float novaPower = frostEcho ? BuildCatalog.FrostEchoOpeningMultiplier(wideEcho) : 1f;
                     CombatArea.Spawn(this,session,transform.position,3.7f*range,Damage(SkillDamageBudgets.OpeningImpact(HeroClass,slot,rank)*novaPower),0,0,0,1f,new Color(.51f,.92f,1f),statusSkill:0,statusRank:rank,castId:castId,visual:SkillVisualRecipe.Ice);
                     if (frostEcho)
                     {
-                        CombatArea.Spawn(this,session,transform.position,3.7f*range*(wideEcho?1.35f:1f),Damage((wideEcho?.45f:.6f)*power),0,.7f,0,1f,new Color(.51f,.92f,1f),statusSkill:0,statusRank:rank,castId:castId,visual:SkillVisualRecipe.Ice,trackedMechanic:1);
+                        CombatArea.Spawn(this,session,transform.position,3.7f*range*BuildCatalog.FrostEchoRadiusMultiplier(wideEcho),Damage(BuildCatalog.FrostEchoCoefficient(wideEcho)*power),0,.7f,0,1f,new Color(.51f,.92f,1f),statusSkill:0,statusRank:rank,castId:castId,visual:SkillVisualRecipe.Ice,trackedMechanic:1);
                         session.RecordCombatAction("霜环回响");
                     }
                     if(rank>=2) CombatArea.Spawn(this,session,transform.position,3.7f*range,Damage(SkillDamageBudgets.OpeningImpact(HeroClass,slot,rank,1)),0,.5f,0,1f,new Color(.51f,.92f,1f),statusSkill:0,statusRank:rank,castId:castId,visual:SkillVisualRecipe.Ice);
@@ -1365,7 +1367,7 @@ namespace Emberfall
                     if (HasMechanic(EquipmentMechanic.CinderTrail))
                     {
                         // Four ticks total 40% of the base first meteor impact.
-                        CombatArea.Spawn(this,session,target,3f*range*(MechanicVariant(EquipmentMechanic.CinderTrail)==1?.7f:1f),CombatAttack*SkillDamageBudgets.MeteorTrailTick(rank,MechanicVariant(EquipmentMechanic.CinderTrail)==1),0,1.2f,1.5f,.5f,new Color(1f,.43f,.22f),castId:castId,visual:SkillVisualRecipe.Fire,trackedMechanic:0);
+                        CombatArea.Spawn(this,session,target,3f*range*BuildCatalog.CinderTrailRadiusMultiplier(MechanicVariant(EquipmentMechanic.CinderTrail)==1),CombatAttack*SkillDamageBudgets.MeteorTrailTick(rank,MechanicVariant(EquipmentMechanic.CinderTrail)==1),0,1.2f,1.5f,.5f,new Color(1f,.43f,.22f),castId:castId,visual:SkillVisualRecipe.Fire,trackedMechanic:0);
                         session.RecordCombatAction("余烬地带");
                     }
                 }
@@ -1375,6 +1377,11 @@ namespace Emberfall
             {
                 if (slot == 0)
                 {
+                    if (ConcentratedVenom)
+                    {
+                        CastConcentratedVenom(rank, range, color, castId);
+                        return;
+                    }
                     int arrows = 5+(rank-1)*2;
                     var volley=new ProjectileVolleyBudget<EnemyController>(CombatAttack,SkillDamageBudgets.FanTargetCap(rank));
                     for (int i=0;i<arrows;i++)

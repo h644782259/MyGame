@@ -4,7 +4,10 @@
 using System;using System.Collections.Generic;using UnityEngine;using Emberfall;
 namespace Emberfall
 {
- public class GameSession{public PlayerController Player=new PlayerController();public bool HasStarted=true,Paused,IsDead,InputBlocked,CombatEnded;public bool InDungeon=true;public float ArenaRadius=18;public List<EnemyController> Enemies=new List<EnemyController>();}
+ // Practice branch is explicitly outside this blocked-combat boundary.
+ public enum CampPracticeScenario {Stationary,Moving,FrontAndSupplier}
+ public class PracticeRecordBoundary {public CampPracticeScenario Scenario;}
+ public class GameSession{public bool PracticeActive;public PracticeRecordBoundary PracticeRecord;public bool MovePracticeTarget(EnemyController enemy){throw new Exception("practice outside blocked-combat fixture scope");}public PlayerController Player=new PlayerController();public bool HasStarted=true,Paused,IsDead,InputBlocked,CombatEnded;public bool InDungeon=true;public float ArenaRadius=18;public List<EnemyController> Enemies=new List<EnemyController>();}
  public partial class PlayerController:MonoBehaviour{public float Health=100;public int CombatEpoch=1,DamageCalls;public bool IsDead;public void TakeDamageFrom(float a,string s){DamageCalls++;Health-=a;}public void ApplySlow(float a,float b){}public void NotifyPerfectDodge(){} }
  public enum EnemyKind{Guardian,Goblin,Slime,Wisp}public enum ThreatTier{Normal,Elite}public enum LargeBossPhase{Active,Finished}
  public class BossState{public LargeBossPhase Phase;public bool Interruptible;}public class Boss{public BossState State=new BossState();public int TickCalls;public bool Tick(float dt){TickCalls++;return true;}}
@@ -17,12 +20,13 @@ namespace Emberfall
  public partial class SummonedCompanion:MonoBehaviour{public bool IsAlive=true;public static SummonedCompanion ThreatTarget(EnemyController e,Vector3 p){return null;}public void TakeDamage(float a,bool areaAttack=false){}public static List<SummonedCompanion> Snapshot(PlayerController p){return new List<SummonedCompanion>();}public static bool HitHostileProjectile(Vector3 a,Vector3 b,float c,float d){return false;}}
  public static partial class PlayerUpgradeRules{public static bool IsInsideArea(float x,float z,float r,bool path){return path&&x*x+z*z<=r*r;}}
  public static partial class CombatFx{public static void Ring(Vector3 p,float r,Color c,float life,float width=.1f){}}
- public partial class CombatProjectile:MonoBehaviour{public static void Hostile(GameSession s,Vector3 p,Vector3 dir,float dmg,float speed,string sourceName){throw new Exception("unexpected bolt spawn");}}
+ public partial class CombatProjectile:MonoBehaviour{public static void Hostile(GameSession s,Vector3 p,Vector3 dir,float dmg,float speed,string sourceName,System.Action onEnded=null){throw new Exception("unexpected bolt spawn");}}
  public partial class EnemyController:MonoBehaviour
  {
   enum AttackType{Melee,Slam,Charge,Bolt,Fan}
   EnemyController mobileSupplier,mobileFirst,mobileSecond;public bool IsAggro=>aggro;public bool isActiveAndEnabled=>gameObject.activeInHierarchy;public void Provoke(){if(!IsDead)aggro=true;}
   bool escapePost;float escapeChaseMovement;
+  ThreatAdmissionPolicy threatAdmission;int threatMember;
   GameSession session;public bool IsDead,IsBoss;public EnemyKind Kind=EnemyKind.Guardian;ThreatTier Tier=ThreatTier.Elite;
   Boss largeBoss;Control controlPolicy=new Control();Telegraph telegraph;public Status StatusEffects=new Status();Material healthFillMaterial=new Material();
   AdvanceBudget advanceBudget=new AdvanceBudget();Route route=new Route();
@@ -32,7 +36,7 @@ namespace Emberfall
   AttackType attackType=AttackType.Melee;SummonedCompanion companionTarget;
   public float NavigationRadius=.6f;float ImpactRadius{get{return 1.55f;}}string DisplayName{get{return "guardian";}}
   void CreateWarning(){}void ClearWarning(){}void AnimateModel(float a,float b,bool c){}void ClampPosition(){}void ConfirmChargeDodge(Vector3 a,Vector3 b){}void ConfirmImpactDodge(){}
-  void BeginComboAttack(float a,Vector3 b){throw new Exception("unexpected combo");}void BeginAttack(){throw new Exception("unexpected begin");}
+  void BeginComboAttack(float a,Vector3 b){throw new Exception("unexpected combo");}bool BeginAttack(){throw new Exception("unexpected begin");}
   bool CanUseBossAttack(BossAttackPolicy.Move a,Vector3 b){return false;}BossAttackPolicy.Move SelectBossMove(float a,Vector3 b){return BossAttackPolicy.Move.Slam;}
   Vector3 Separation(){return Vector3.zero;}Color ThreatColor(){return new Color();}bool ReturnToEscapePost(float a,float b,Vector3 c){return false;}
   public EnemyController(GameSession game){session=game;preparing=true;windup=.005f;totalWindup=.85f;transform.position=new Vector3(0,0,-1);targetPoint=game.Player.transform.position;attackOrigin=transform.position;}
@@ -58,7 +62,7 @@ namespace UnityEngine
   public static Vector3 MoveTowards(Vector3 a,Vector3 b,float max){return a+ClampMagnitude(b-a,max);}
   public static Vector3 Cross(Vector3 a,Vector3 b){return new Vector3(a.y*b.z-a.z*b.y,a.z*b.x-a.x*b.z,a.x*b.y-a.y*b.x);}
   public static Vector3 Slerp(Vector3 a,Vector3 b,float t){return Lerp(a,b,t);}
-  public static float Angle(Vector3 a,Vector3 b){return 0;}public static Vector3 RotateTowards(Vector3 a,Vector3 b,float c,float d){return b;}
+  public static float Angle(Vector3 a,Vector3 b){return (float)(Math.Acos(Math.Max(-1,Math.Min(1,Dot(a.normalized,b.normalized))))*180/Math.PI);}public static Vector3 RotateTowards(Vector3 a,Vector3 b,float c,float d){float from=(float)Math.Atan2(a.x,a.z),to=(float)Math.Atan2(b.x,b.z),delta=to-from;while(delta>Math.PI)delta-=(float)Math.PI*2;while(delta<-Math.PI)delta+=(float)Math.PI*2;float angle=from+Math.Max(-c,Math.Min(c,delta));return new Vector3((float)Math.Sin(angle),0,(float)Math.Cos(angle));}
  }
  public static partial class Mathf{public const float Deg2Rad=.01745329f;public static float Lerp(float a,float b,float t){return a+(b-a)*t;}public static float Clamp01(float f){return Clamp(f,0,1);}}
 }
@@ -67,20 +71,21 @@ namespace Emberfall
  public struct CombatDamage{public float Amount;public bool IsCritical;public float CriticalMultiplier;public CombatDamage(float amount){Amount=amount;IsCritical=false;CriticalMultiplier=1;}}
  public class Volley{public CombatDamage Apply(EnemyController enemy,CombatDamage damage,bool b){return damage;}}
  public class DestructibleProp:MonoBehaviour{public static void FindProjectileHit(PlayerController owner,Vector3 a,Vector3 b,float c,out DestructibleProp prop,out float f){prop=null;f=1;}public void Impact(PlayerController o,int cast,CombatDamage d){}}
- public static class PropImpactGeometry{public static float EntryFraction(params float[] args){throw new Exception("unused prop branch");}}
+
  public static class LockedImpactMarkPolicy{public static bool ShouldApply(object a,EnemyController b,bool c,float d,float e){return false;}}
  public static class CombatReviewEvents{public static bool Enabled;public static void Emit(params object[] args){}}
  public static class CombatReviewObjectId{public static int Get(object v){return 0;}}
  public static class CombatSight{public static bool Direct(Vector3 a,Vector3 b){return WorldTraversal.HasLineOfSight(a,b);}}
  public partial class CombatProjectile
  {
-  GameSession session;PlayerController owner,playerGeneration;int epoch;bool hostile=true;string terminationReason="active",damageSource="enemy bolt";
+  bool concentrated;EnemyController concentratedTarget;GameSession session;PlayerController owner,playerGeneration;int epoch;bool hostile=true;string terminationReason="active",damageSource="enemy bolt";
   float age,lifetime=3,speed=10,radius=.32f,distanceTravelled,impactHeight,launchHeight,aimedDistance=1,dodgeDeadline,impactMarkStrength,explosionRadius;
   EnemyController homingTarget,basicAimTarget;bool basicAttack,arrowShape,bodyHeightFlight,pendingDodge,energyAwarded,pierce;Vector3 direction=Vector3.forward,dodgeOrigin;int dodgeEpoch,castId,skillIndex;
   bool empoweredCompanionShot;Color color;CombatDamage damage=new CombatDamage(7),explosionDamage;Volley volley;SummonedCompanion companionSource;object impactMarkTarget;
   HashSet<EnemyController> hitTargets=new HashSet<EnemyController>();
   void AlignBodyFlight(){}
   public CombatProjectile(GameSession game){session=game;owner=playerGeneration=game.Player;epoch=game.Player.CombatEpoch;transform.position=new Vector3(0,0,-.5f);}
+  public static CombatProjectile Venom(GameSession game,EnemyController target){var p=new CombatProjectile(game);p.hostile=false;p.concentrated=true;p.concentratedTarget=target;p.radius=ConcentratedVenomRules.Radius;p.speed=20;p.damage=new CombatDamage(240);p.transform.position=Vector3.zero;return p;}
   public void Tick(){if(!gameObject.Destroyed)Update();}public void LoseOwner(){hostile=false;owner=null;}public float Age{get{return age;}}public string Reason{get{return terminationReason;}}
  }
 }
@@ -91,7 +96,7 @@ public Vector3 EnemyBodyPoint(EnemyController e){return e.transform.position;}
 public void RegisterSkillHit(int cast){}public float ResolveSkillImpact(EnemyController e,int skill,int cast,float amount,bool crit,float mult){return amount;}
 public void OnBasicAttackHitTarget(Vector3 at,EnemyController e,bool b){}public void HitArea(Vector3 at,float radius,CombatDamage d,float a,float b,int cast,Volley volley){}
 }
-public partial class EnemyController {public float Health=100,ProjectileHitRadius=.6f;public void TakeDamage(float d,Vector3 p,float stun,bool critical=false){Health-=d;}}
+public partial class EnemyController {public float Health=100,ProjectileHitRadius=.6f;public void TakeDamage(float d,Vector3 p,float stun,bool critical=false,int practiceCastId=0){Health-=d;}}
 public partial class SummonedCompanion{public void OnConfirmedHit(EnemyController e){}public void RecordEmpoweredHit(EnemyController e,float loss,bool empowered){}}
 }
 
@@ -132,6 +137,18 @@ public static class BlockedCombatUpdateProductionTests
   Check(projectile.gameObject.Destroyed&&projectile.Reason=="retired","blocked friendly projectile with lost owner still retires");
   game=new GameSession{InputBlocked=true};projectile=new CombatProjectile(game);game.IsDead=true;projectile.Tick();
   Check(projectile.gameObject.Destroyed&&game.Player.DamageCalls==0,"blocked projectile still retires on death");
+  VenomLifecycle();
   return "PASS: "+checks+" actual Enemy/Projectile Update pause-boundary checks (managed substitutes, not Unity execution)";
  }
+ static void VenomLifecycle(){
+ WorldTraversal.Reset(ZoneKind.Dungeon);Time.deltaTime=.1f;
+ var game=new GameSession();var target=new EnemyController(game);target.transform.position=new Vector3(0,0,5);game.Enemies.Add(target);
+ var p=CombatProjectile.Venom(game,target);game.InputBlocked=true;p.Tick();Check(p.Age==0&&p.transform.position.sqrMagnitude==0,"B pause freezes age and movement");game.InputBlocked=false;
+ p.Tick();Check(!p.gameObject.Destroyed&&target.Health==100,"B first segment does not teleport to selected target");
+ target.transform.position=new Vector3(4,0,5);for(int i=0;i<40;i++)p.Tick();Check(target.Health==100&&p.gameObject.Destroyed,"B target moved out after correction window may miss and expire");
+ WorldTraversal.AddBox(new Vector3(0,0,2),new Vector2(5,.5f));target.transform.position=new Vector3(0,0,5);p=CombatProjectile.Venom(game,target);Time.deltaTime=.5f;p.Tick();Check(target.Health==100&&p.gameObject.Destroyed&&p.Reason=="terrain","B high speed segment wall clips before rear enemy");WorldTraversal.Reset(ZoneKind.Dungeon);
+ p=CombatProjectile.Venom(game,target);game.Player.CombatEpoch++;p.Tick();Check(p.gameObject.Destroyed,"B retry epoch retires shot");
+ p=CombatProjectile.Venom(game,target);game.Player=new PlayerController();p.Tick();Check(p.gameObject.Destroyed,"B replaced player retires shot");
+ }
+
 }

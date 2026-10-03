@@ -6,6 +6,8 @@ Shader "Emberfall/Filled Spell Volume"
         _Opacity ("Opacity", Range(0,1)) = 1
         _Progress ("Lifetime", Range(0,1)) = 0
         _Style ("Dissolve", Range(0,1)) = 0
+        _EnvelopeMode ("State envelope", Float) = 0
+        _EnvelopeAge ("State age", Float) = 0
     }
     SubShader
     {
@@ -22,7 +24,7 @@ Shader "Emberfall/Filled Spell Volume"
             #include "UnityCG.cginc"
             struct appdata { float4 vertex:POSITION; float3 normal:NORMAL; float2 uv:TEXCOORD0; };
             struct v2f { float4 pos:SV_POSITION; float2 uv:TEXCOORD0; float3 normal:TEXCOORD1; };
-            fixed4 _Color; float _Opacity, _Progress, _Style;
+            fixed4 _Color; float _Opacity, _Progress, _Style, _EnvelopeMode, _EnvelopeAge;
             v2f vert(appdata v)
             {v2f o;o.pos=UnityObjectToClipPos(v.vertex);o.uv=v.uv;o.normal=UnityObjectToWorldNormal(v.normal);return o;}
             fixed4 frag(v2f i):SV_Target
@@ -31,6 +33,17 @@ Shader "Emberfall/Filled Spell Volume"
                 float edge=saturate(i.uv.y);float grain=.5+.5*sin(i.uv.x*47+i.uv.y*29+sin(i.uv.y*17)*2);
                 float dissolve=saturate((_Progress-.5)*2.0)*_Style;
                 float alpha=_Color.a*_Opacity*saturate((grain+.45-dissolve)*3);
+                if(_EnvelopeMode>.5)
+                {
+                    // The authored cage already leaves face/chest open. Preserve its
+                    // silhouette, with steady guard ribs and a soft rising healing band.
+                    float ribs=.65+.35*abs(sin(i.uv.x*6.283185));
+                    alpha=_Color.a*_Opacity*ribs;
+                    if(_EnvelopeMode>1.5 && _EnvelopeMode<2.5)
+                        alpha*=.65+.35*saturate((_EnvelopeAge-i.uv.y*.18)*18+1);
+                    if(_EnvelopeMode>2.5 && _EnvelopeMode<3.5)
+                        alpha*=.55+.45*pow(.5+.5*sin(i.uv.y*6.283185-_EnvelopeAge*4),3);
+                }
                 clip(alpha-.025);
                 float3 tint=lerp(_Color.rgb*.55,lerp(_Color.rgb,1,edge*.72),edge)*light;
                 return fixed4(tint,alpha);

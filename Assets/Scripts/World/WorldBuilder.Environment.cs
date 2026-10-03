@@ -35,7 +35,7 @@ namespace Emberfall
             Material inset=r.Material(new Color(.30f,.55f,.49f),false,VisualSurface.Metal);
             for(int side=-1;side<=1;side+=2)
                 for(int step=0;step<3;step++)
-                    Primitive(parent,"Gate approach inset",PrimitiveType.Cube,center+new Vector3(side*(.85f-step*.10f),.05f,-1.35f+step*.32f),new Vector3(.15f,.009f,.20f),inset);
+                    Primitive(parent,"Gate approach inset",PrimitiveType.Cube,center+new Vector3(side*(.85f-step*.10f),.05f,-1.35f+step*.32f),new Vector3(.24f,.009f,.27f),inset);
         }
     }
 }

@@ -14,7 +14,7 @@ def method(signature):
  return source[start:i]
 with tempfile.TemporaryDirectory(prefix='hero-pose-commit-') as path:
  p=Path(path)
- for name in ['GameTypes','CombatBalance','SkillDamageBudgets','BasicActionTimeline','VisualMotionEnvelope','CasterPoseRecipe']:(p/(name+'.cs')).write_text((root/'Assets/Scripts/Core'/(name+'.cs')).read_text())
+ for name in ['HeroMotionStyle','GameTypes','CombatBalance','SkillDamageBudgets','BasicActionTimeline','VisualMotionEnvelope','CasterPoseRecipe']:(p/(name+'.cs')).write_text((root/'Assets/Scripts/Core'/(name+'.cs')).read_text())
  for file in ['Assets/Scripts/Combat/CombatModel.Recovery.cs','Assets/Scripts/Combat/CombatModel.CastPoses.cs','Tests/HeroPoseCommitFixture.cs']:(p/Path(file).name).write_text((root/file).read_text())
  body='\n'.join(method(x) for x in ['public bool SwordActionActive','public bool TryClaimSwordRibbon(', 'public void PlayAction(','public void CancelAction(','public void ReleaseCharge(','private void CommitActionPose(','private static Quaternion Pose(','private void AnimateHero('])
  production=p/'HeroPose.cs';production.write_text('using UnityEngine;namespace Emberfall {public sealed partial class CombatModel {'+body+'}}')
