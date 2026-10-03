@@ -2,7 +2,7 @@
 
 Runtime resource hashes and GUIDs are verified at the final combined source freeze: Windows `bc6a572a86fe4376f6f346b0fe52f20d9678aec3`, iOS `30f748b1bf6da7def9d91118aa756cd225c03e79`. It contains the finite F1–F6 roster and separately authorized planning changes, based on parent-reviewed main Windows `4214b885b5346b4e4987e9d50a3abf27f329db5c` / iOS `c1a49acd52cac28d1408a6d9bb25af971f7e3343`.
 
-The cumulative comparison requested here is against the **original** main snapshots Windows `25096ba7dbf6e9d7ba9463ec29104c2c462da426` and iOS `1cd7ce36c77064757899788e23520fb796266888`. This is a source inventory/GUID audit. Combined integration regressions and the full aggregate are **pending parent validation**; individual branch logs are not a final-stack pass.
+The cumulative comparison requested here is against the **original** main snapshots Windows `25096ba7dbf6e9d7ba9463ec29104c2c462da426` and iOS `1cd7ce36c77064757899788e23520fb796266888`. This is a source inventory/GUID audit. The exact final combined source passed **233/233 full checks** and three explicit platform API compilations; see `Docs/Validation/Final-Combined-Frozen`. Parent review/merge and engine/device acceptance remain separate.
 
 ## Source bytes and unique geometry
 
@@ -48,7 +48,7 @@ The three FBX counts are Pot480/Rubble60/OpenCanopyTree564, taken from `ArtSourc
 
 These contracts are not a cumulative draw-call measurement: material reuse, shadow passes, shader variants, batching, overdraw, original live particles and simultaneous effects require Unity/device profiling. No reliable global material-instance total is asserted for an arbitrary generated scene.
 
-Representative **instantiated** counts remain separately recorded: F3 16 weapon sets116–718 triangles including held arrows/weapon fashion (not back wings); F2 Goblin8,812/Guardian9,504/boss9,600 complete visible triangles, retained Slime2,768/Wisp2,392/astrolabe9,532; F4 full quarry/observatory authored instantiated triangles5,620/2,928 amid retained geometry. These are branch factory snapshots, not post-integration device counts. Their per-case manifests are authoritative; final combined regression is pending.
+Representative **instantiated** counts remain separately recorded: F3 16 weapon sets116–718 triangles including held arrows/weapon fashion (not back wings); F2 Goblin8,812/Guardian9,504/boss9,600 complete visible triangles, retained Slime2,768/Wisp2,392/astrolabe9,532; F4 full quarry/observatory authored instantiated triangles5,620/2,928 amid retained geometry. These are branch factory snapshots, not post-integration device counts. Their per-case manifests are authoritative; the final combined regression passed, without measuring device geometry or performance.
 
 ## GUID and platform audit
 

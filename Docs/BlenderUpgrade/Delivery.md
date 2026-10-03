@@ -1,6 +1,6 @@
 # Frozen PR30–32 art integration
 
-For final F1–F6 implementation closure, see `Remaining-Art-Checklist.md`, `SkillCoverage.md` and `Cumulative-Budget.md`; final combined regression remains pending parent validation.
+For final F1–F6 implementation closure, see `Remaining-Art-Checklist.md`, `SkillCoverage.md` and `Cumulative-Budget.md`; the final complete result is in `Final-Delivery.md` and `Docs/Validation/Final-Combined-Frozen`.
 
 For the historical cumulative E01–E06/wolf follow-up, see `Extended-Delivery.md` and the latest `ResourceBudget.json`. The table below is explicitly the separate PR30–32 frozen snapshot.
 

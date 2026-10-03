@@ -2,7 +2,7 @@
 
 集成源码快照：Windows `bc6a572a86fe4376f6f346b0fe52f20d9678aec3`。原始请求基线 Windows `25096ba7dbf6e9d7ba9463ec29104c2c462da426`、iOS `1cd7ce36c77064757899788e23520fb796266888`；PR35 后的有限制作起点为 `0daa0f2`。PR35 已由父任务合并至 main：Windows `4214b885b5346b4e4987e9d50a3abf27f329db5c`、iOS `c1a49acd52cac28d1408a6d9bb25af971f7e3343`；父任务确认同步合入不改变该集成树的 Assets/Tests/Tools。当前 iOS 资源对照快照为 `30f748b1bf6da7def9d91118aa756cd225c03e79`。
 
-以下勾选表示有限对象已经获得“实际接入新资产”或“有依据保留现状”的明确结论，不表示 Unity 实机或艺术终审通过。F1–F6 已共同进入上述 Windows 集成树；**整合后的专项联合检查与全量 aggregate 仍待父任务验证**。各批独立日志不能代替该最终联合结果。此次仅文档/清单审计，不新增生产修改、视频、Android 包或远端操作。
+以下勾选表示有限对象已经获得“实际接入新资产”或“有依据保留现状”的明确结论，不表示 Unity 实机或艺术终审通过。F1–F6 已共同进入上述 Windows 集成树；**整合后的233项全量检查及三平台API编译已通过，1,785项输入文件运行前后不变；报告见`Docs/Validation/Final-Combined-Frozen`**。各批独立日志不能代替该最终联合结果。此次仅文档/清单审计，不新增生产修改、视频、Android 包或远端操作。
 
 ## 已有成果：保留
 
@@ -81,4 +81,4 @@
 
 本清单没有未决制作候选。保留项是明确审查结论，不为提高模型数量重复离线制作。源预算和GUID以 [Cumulative-Budget.md](Cumulative-Budget.md)、[ResourceBudget.json](ResourceBudget.json)、[GuidPreservationAudit.json](GuidPreservationAudit.json) 为准；不把源字节当包体、唯一库面数当同屏实例成本、材质引用当drawcall。
 
-仍待父任务完成：整合后的联合专项和全量aggregate、draft PR审查、最终平台同步/合并。Unity importer/shader/实时物理、游戏机位动态可读性、Windows/iOS设备帧时/包体/内存未验收；managed与API编译不能代替。Android仅同步源码，不新建仓库、不制作包、不处理登录。该验收边界不会触发无限增加美术范围。
+源码已同步且联合专项／全量检查已通过；仍待父任务完成draft PR审查及合并。Unity importer/shader/实时物理、游戏机位动态可读性、Windows/iOS设备帧时/包体/内存未验收；managed与API编译不能代替。Android仅同步源码，不新建仓库、不制作包、不处理登录。该验收边界不会触发无限增加美术范围。
