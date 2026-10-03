@@ -31,9 +31,18 @@ namespace Emberfall
             identity=identity=="Guardian"?"守卫":identity=="Wisp"?"魔灵":identity=="Goblin"?"哥布林":identity=="Slime"?"史莱姆":identity;
             killOrder.Add(identity+" @ "+Elapsed.ToString("0.00")+"s");
             if(supplier&&SupplyBrokenAt<0){SupplyBrokenAt=Elapsed;Mechanism("断供");}
-            if(cleared&&UsesEnemyAI){ObjectiveCompleted=true;Finish("目标全部击败");}
+            if(cleared&&UsesEnemyAI){ObjectiveCompleted=true;RequestCombatFinish("目标全部击败");}
         }
-        public void PlayerDefeated(){if(!Finished){Survived=false;Finish("角色倒下 · 记录提前结束");}}
+        public void PlayerDefeated(){if(!Finished){Survived=false;RequestCombatFinish("角色倒下 · 记录提前结束");}}
+        private string pendingCombatEnd;
+        private void RequestCombatFinish(string reason)
+        {
+            // Same-action death overrides clearing the targets. The action's existing
+            // energy, mechanism and incoming-damage callbacks settle before sealing.
+            if(pendingCombatEnd==null||!Survived)pendingCombatEnd=reason;
+            CombatImpactBatch.AfterCurrentAction(CompleteCombatAction);
+        }
+        private void CompleteCombatAction(){Finish(pendingCombatEnd);}
         public float Elapsed { get; private set; }
         public float ActualDamage { get; private set; }
         public float EnergySpent { get; private set; }
@@ -72,7 +81,7 @@ namespace Emberfall
             Mechanisms=new ReadOnlyDictionary<string,int>(mechanisms);SkillCasts=new ReadOnlyDictionary<int,int>(skillCasts);EffectiveSkillCasts=new ReadOnlyDictionary<int,int>(effectiveSkillCasts);KillOrder=killOrder.AsReadOnly();
         }
         private static bool Valid(float n){return n>0&&!float.IsNaN(n)&&!float.IsInfinity(n);}
-        public void Advance(float dt){if(Started&&!Finished&&Valid(dt)){Elapsed=Math.Min(Duration,Elapsed+dt);if(Elapsed>=Duration)Finish("计时完成");}}
+        public void Advance(float dt){if(Started&&!Finished&&pendingCombatEnd==null&&Valid(dt)){Elapsed=Math.Min(Duration,Elapsed+dt);if(Elapsed>=Duration)Finish("计时完成");}}
         public void ConfirmedHealthLoss(float amount,int castId=0){if(Started&&!Finished&&Valid(amount)){Damage(amount);Hit(castId);}}
         public void Damage(float amount){if(Started&&!Finished&&Valid(amount))ActualDamage+=amount;}
         public void Energy(float delta){if(!Started||Finished||float.IsNaN(delta)||float.IsInfinity(delta))return;if(delta<0)EnergySpent-=delta;else EnergyRestored+=delta;}

@@ -9,7 +9,7 @@ def member(s,key):
  return s[a:b]
 with tempfile.TemporaryDirectory(prefix='practice-hud-') as d:
  p=Path(d)
- for rel in ['Core/CampPracticeRecord','UI/GameUI.Practice','UI/PracticeResultPresentation','UI/PracticeHudLayout','UI/MobilePanelLayout','UI/MobileControlLayout','Core/HudLogicalScale','Combat/MobileSkillPolicy']:(p/(Path(rel).name+'.cs')).write_text((root/'Assets/Scripts'/(rel+'.cs')).read_text())
+ for rel in ['Core/CombatImpactBatch','Core/CampPracticeRecord','UI/GameUI.Practice','UI/PracticeResultPresentation','UI/PracticeHudLayout','UI/MobilePanelLayout','UI/MobileControlLayout','Core/HudLogicalScale','Combat/MobileSkillPolicy']:(p/(Path(rel).name+'.cs')).write_text((root/'Assets/Scripts'/(rel+'.cs')).read_text())
  ui=(root/'Assets/Scripts/UI/GameUI.cs').read_text();mobile=(root/'Assets/Scripts/UI/GameUI.Mobile.cs').read_text()
  matrix=next(line.strip() for line in member(ui,'private void OnGUI()').splitlines() if 'GUI.matrix = Matrix4x4.TRS' in line)
  draft=(root/'Assets/Scripts/UI/GameUI.BuildDraft.cs').read_text();plans=(root/'Assets/Scripts/UI/GameUI.BuildPlans.cs').read_text()
@@ -19,6 +19,6 @@ with tempfile.TemporaryDirectory(prefix='practice-hud-') as d:
  def run(args):
   q=subprocess.run([sdk]+args,env=env,text=True,capture_output=True);print(q.stdout+q.stderr);return q
  assert run(['run','--project',str(project)]).returncode==0
- for name,old,new,message in [('PracticeHudLayout','buttonHeight=Math.Max(48,48/pixelsPerUnit)','buttonHeight=48','physical practice actions remain at least 48 pixels after production transforms'),('CampPracticeRecord','(string[])skillNames.Clone()','skillNames','record freezes incoming skill labels'),('CampPracticeRecord','&&RulesVersion==other.RulesVersion','', 'changed target rules cannot compare'),('PracticeResultPresentation','Number(r.DamagePerSecond)','Number(r.ActualDamage/r.Duration)','DPS uses actual completion time not configured cap')]:
+ for name,old,new,message in [('PracticeResultPresentation','造成扣血的施法 / 施放','有效 / 施放','skill ratio explicitly names actual health loss casts'),('GameUI.Practice','治疗看有效治疗；伙伴伤害计入总伤害','治疗与伙伴','actual result GUI explains supportive cast accounting without false failure'),('PracticeHudLayout','buttonHeight=Math.Max(48,48/pixelsPerUnit)','buttonHeight=48','physical practice actions remain at least 48 pixels after production transforms'),('CampPracticeRecord','(string[])skillNames.Clone()','skillNames','record freezes incoming skill labels'),('CampPracticeRecord','&&RulesVersion==other.RulesVersion','', 'changed target rules cannot compare'),('PracticeResultPresentation','Number(r.DamagePerSecond)','Number(r.ActualDamage/r.Duration)','DPS uses actual completion time not configured cap')]:
   path=p/(name+'.cs');original=path.read_text();assert old in original;path.write_text(original.replace(old,new));assert run(['build',str(project),'--no-restore','-v:q']).returncode==0
   q=run([str(p/'bin/Debug/net8.0/Test.dll')]);assert q.returncode!=0 and message in q.stdout+q.stderr;print('PASS compiled negative:',message);path.write_text(original)

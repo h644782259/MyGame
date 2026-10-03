@@ -318,6 +318,9 @@ namespace Emberfall
 
         private void Update()
         {
+            CombatImpactBatch.BeginAction();
+            try
+            {
             if (session == null || session.Player == null || session.Player != playerGeneration || !session.HasStarted || session.IsDead || session.CombatEnded || session.Player.CombatEpoch != epoch || (!hostile && owner == null))
             { terminationReason = "retired"; Destroy(gameObject); return; }
             if (session.InputBlocked) return;
@@ -451,6 +454,9 @@ namespace Emberfall
             if (terrainHit) { terminationReason = "terrain"; CombatFx.Ring(transform.position, .4f, color, .15f); Destroy(gameObject); return; }
             float bound = session.ArenaRadius + 3f;
             if (Mathf.Abs(transform.position.x) > bound || Mathf.Abs(transform.position.z) > bound) Destroy(gameObject);
+
+            }
+            finally { CombatImpactBatch.EndAction(); }
         }
 
         private void OnDisable()

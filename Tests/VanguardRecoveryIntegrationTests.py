@@ -7,6 +7,7 @@ with tempfile.TemporaryDirectory(prefix='vanguard-recovery-') as temp:
  out=Path(temp)
  subprocess.run([sys.executable,str(root/'ArtSource/VanguardActions/export_actions.py'),str(out),dotnet],check=True)
  p=out/'export'
+ (p/'CombatImpactBatch.cs').write_text((root/'Assets/Scripts/Core/CombatImpactBatch.cs').read_text())
  (p/'CampPracticeRecord.cs').write_text((root/'Assets/Scripts/Core/CampPracticeRecord.cs').read_text())
  ns={'__file__':str(root/'Tests/EquipmentCompositionProductionTests.py')};argv=sys.argv;sys.argv=['x',dotnet];exec((root/'Tests/EquipmentCompositionProductionTests.py').read_text().split('with tempfile.TemporaryDirectory')[0],ns);sys.argv=argv;extract=ns['extract']
  recovery=(root/'Assets/Scripts/Combat/CombatModel.Recovery.cs').read_text();model=(root/'Assets/Scripts/Combat/CombatModel.cs').read_text()

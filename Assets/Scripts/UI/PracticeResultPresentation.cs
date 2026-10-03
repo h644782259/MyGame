@@ -31,7 +31,7 @@ namespace Emberfall
             for(int i=0;i<skills;i++)
             {
                 int slot=i;
-                Add("技能 "+(slot+1)+" 有效 / 施放",a,b,r=>{int total,effective;r.SkillCasts.TryGetValue(slot,out total);r.EffectiveSkillCasts.TryGetValue(slot,out effective);return r.SkillLabel(slot)+"\n"+effective+" / "+total;});
+                Add("技能 "+(slot+1)+" 造成扣血的施法 / 施放",a,b,r=>{int total,effective;r.SkillCasts.TryGetValue(slot,out total);r.EffectiveSkillCasts.TryGetValue(slot,out effective);return r.SkillLabel(slot)+"\n"+effective+" / "+total;});
             }
             var keys=new SortedSet<string>(StringComparer.Ordinal);
             if(a!=null)foreach(string key in a.Mechanisms.Keys)keys.Add(key);

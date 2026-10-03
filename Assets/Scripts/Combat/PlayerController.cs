@@ -212,6 +212,9 @@ namespace Emberfall
 
         public void TakeDamageFrom(float amount, string source)
         {
+            CombatImpactBatch.BeginAction();
+            try
+            {
             if (session == null || IsDead || session.CombatEnded || invulnerability > 0 || !session.HasStarted || amount <= 0 || float.IsNaN(amount) || float.IsInfinity(amount)) return;
             float damage = Mathf.Max(1, amount * CombatBalance.ArmorDamageMultiplier(stats.Armor, session.Progression.Profile.level));
             if (chargedWardTime > 0) damage *= .75f;
@@ -262,6 +265,9 @@ namespace Emberfall
                 model.transform.localRotation = Quaternion.Euler(0,0,75f);
                 session.OnPlayerDied();
             }
+
+            }
+            finally { CombatImpactBatch.EndAction(); }
         }
 
         public float CooldownRemaining(int slot) { return SkillCooldownRemaining(HotbarSkill(slot)); }
@@ -604,6 +610,9 @@ namespace Emberfall
 
         private void BasicAttack()
         {
+            CombatImpactBatch.BeginAction();
+            try
+            {
             if (TraversalStartedThisFrame || skillBasicRecovery.Blocked) return;
             if(!MobilePinnedActionAllowed(-1,true))return;
             if (charge != null && (charge.IsCharging || charge.ConsumedThisFrame)) return;
@@ -656,6 +665,9 @@ namespace Emberfall
                 Vector3 muzzle=transform.position+Vector3.up*1.15f+transform.forward*Mathf.Min(.55f,distance*.3f);
                 CombatProjectile.BasicShot(this,session,muzzle,target,Damage(SkillDamageBudgets.BasicCoefficient(HeroClass)*(mobilityTime>0?1f+.12f*mobilityRank:1f)),color,ranger,AimTarget);
             }
+
+            }
+            finally { CombatImpactBatch.EndAction(); }
         }
 
         private bool Melee(float range, float arc, CombatDamage damage, float knockback, float stun, float knockdown = 0, bool basic = false, int skillIndex = -1, int castId = 0, bool counterThrust = false)
@@ -1229,6 +1241,9 @@ namespace Emberfall
 
         private void CastSkillCore(int slot)
         {
+            CombatImpactBatch.BeginAction();
+            try
+            {
             if (slot < 0 || slot >= GameBalance.SkillCount || GameBalance.IsPassive(slot)) return;
             int rank = session.Progression.Profile.skillRanks[slot];
             if (rank <= 0)
@@ -1403,6 +1418,9 @@ namespace Emberfall
                 }
                 else {var field=SkillDamageBudgets.EarlyField(HeroClass,rank);CombatArea.Spawn(this,session,target,4.3f*range,Damage(field.TickCoefficient),.08f,field.Startup,field.Duration,field.Interval,new Color(.7f,1f,.59f),false,false,0,Damage(field.FinisherCoefficient),castId:castId,visual:SkillVisualRecipe.ArrowRain);}
             }
+
+            }
+            finally { CombatImpactBatch.EndAction(); }
         }
 
     }

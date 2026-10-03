@@ -15,7 +15,7 @@ with tempfile.TemporaryDirectory(prefix='practice-locomotion-') as d:
  p=Path(d)
  actual='using UnityEngine;namespace Emberfall{public partial class EnemyController{'+'public void Tick(){'+practiceBranch+'}'+member(enemy,'private void AnimateModel(')+'}public partial class GameSession{'+member(session,'public bool MovePracticeTarget(')+'}public partial class CombatModel{'+member(motion,'public void SetLocomotion(')+'}}'
  source=p/'Actual.cs';source.write_text(actual)
- for name in ['LocomotionPoseState','CampPracticeRecord']:(p/(name+'.cs')).write_text((root/'Assets/Scripts/Core'/(name+'.cs')).read_text())
+ for name in ['LocomotionPoseState','CombatImpactBatch','CampPracticeRecord']:(p/(name+'.cs')).write_text((root/'Assets/Scripts/Core'/(name+'.cs')).read_text())
  (p/'Test.cs').write_text((root/'Tests/PracticeLocomotionProductionTests.cs').read_text())
  project=p/'Test.csproj';project.write_text('<Project Sdk="Microsoft.NET.Sdk"><PropertyGroup><OutputType>Exe</OutputType><TargetFramework>net8.0</TargetFramework><NoWarn>0649;0169;0414</NoWarn></PropertyGroup></Project>')
  (p/'NuGet.Config').write_text('<configuration><packageSources><clear/></packageSources></configuration>')

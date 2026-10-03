@@ -67,11 +67,16 @@ namespace Emberfall
             {
                 if (owner == null || owner.IsDead || owner.CombatEpoch != epoch || session.CombatEnded) { Destroy(gameObject); return; }
                 if (session.InputBlocked) return;
+                CombatImpactBatch.BeginAction();
+                try
+                {
                 if (skill==6) Healing();
                 else if (heroClass == HeroClass.Vanguard) Vanguard();
                 else if (heroClass == HeroClass.Arcanist) Arcanist();
                 else Ranger();
                 step++; nextEvent += interval;
+                }
+                finally { CombatImpactBatch.EndAction(); }
             }
             if (step >= steps) Destroy(gameObject);
         }

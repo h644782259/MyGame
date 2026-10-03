@@ -17,7 +17,7 @@ namespace Emberfall
             var record=session.PracticeRecord;if(record==null||!record.Finished)return;
             var baseline=session.PreviousPracticeRecord;
             BuildPlanParagraph(ref y,width,unit,baseline==null?"尚未固定基准 A":record.Comparison(baseline),gold,draw,true);
-            BuildPlanParagraph(ref y,width,unit,"A 保持固定；后续练习更新 B。有效 / 施放按整次技能计数，多箭、多段和持续伤害不重复计数，不是箭矢命中率。",muted,draw);
+            BuildPlanParagraph(ref y,width,unit,"A 固定，后续更新 B。造成扣血的施法按整次计数，多段不重复。治疗看有效治疗；伙伴伤害计入总伤害，触发看机制次数。此比例不判断治疗或召唤是否生效，不是箭矢命中率。",muted,draw);
             DrawPracticeResultRow(ref y,width,unit,new PracticeResultPresentation.Row("实测项目","固定基准 A","本轮 B"),draw,true);
             foreach(var row in new PracticeResultPresentation(baseline,record).Rows)DrawPracticeResultRow(ref y,width,unit,row,draw,false);
             DraftButton(ref y,width,unit,"将本轮结果固定为基准 A",!session.PracticeActive,draw,()=>session.PinPracticeBaseline());
