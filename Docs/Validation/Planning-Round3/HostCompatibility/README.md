@@ -10,3 +10,7 @@ All three failures were C# compilation failures in narrow test hosts, not observ
 Only three test files changed; production UI code and game behavior were not changed. Existing assertions remain, including the mandatory compiled old inventory-entry negative control.
 
 Commands use `python3 Tests/<suite>.py /workspace/shared/emberfall-tools/dotnet/dotnet`. Final raw logs are `chest-fixed.log`, `skill-fixed.log`, and `inventory-fixed.log`. All three exit 0. These are managed source-host tests with explicit engine/session boundaries, not Unity execution, touch input, rendering, or device acceptance.
+
+## Route-skill follow-up
+
+The later `route-skill-navigation` failure had the same absent preset cancellation dependencies. RouteSkillNavigationProduction now extracts actual CancelPresetSale and adds its state field. It tests that cancelling the preset overlay preserves the pending workshop return and gameplay blocking, and that the following Back restores the workshop's scroll position. `route-fixed.log` records passing route/feedback assertions and all existing compiled navigation/stale-feedback negative controls; `route-skill-navigation-original-failure.log` preserves frozen v2 evidence. A scan of every Python test containing the ClosePanel production signature found the remaining ChapterEntry/Chest references to be explicit unrelated stubs and HubTravel to be source-only, so no other matching production extractor remains unadapted.
