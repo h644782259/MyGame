@@ -55,3 +55,11 @@
 最终补测 `branch-atomic-save.log`：3,789 生产链断言、原两个负控及新增恢复双保存的编译负控通过。故障按实际 Save 调用序号注入：首次失败保留未选分支、面板、输入阻塞和 epoch；首次成功而第二次配置为失败时仍成功切房，实际写入计数恰好 +1；再次确认任一选项不写入、不推进第二次。新负控运行原双保存路径，在此精确行为断言失败。
 
 `free-seal-atomic-save.log`、`first-choice-atomic-save.log` 回归原首房/印记及负控通过；`source-atomic-save.log` 回归房间、保存、持久化源契约；`api-atomic-save.log` 三宏全量 API 编译 0 错误/警告。三个房间 host runner 提取新增的真实私有 helper，其余测试消费者不变。仍无 Unity 执行声明。
+
+## 审查修复：失败远征重试仅保存一次
+
+RetryFailedRoomChain 已在任何 retry 标记/选择器/状态修改前执行保存；ChangeZone 现在识别其成功后才设置的私有 retryingRoomChain 标记，不再二次 preflight。普通旅行仍保存，章节和 staged-load 原分支保持。重试 finally 清理标记，失败的首次保存不会改变 lastRoomRetryFrame，也不妨碍同帧修复保存后再试。
+
+`retry-atomic-save-final.log`：3,901 实际生产链断言、4 个编译负控。按 Save 调用编号注入首次失败，验证原 State、receipt、epoch、种子历史、选择器、死亡状态及同帧重试资格不变；随后设置第二次写失败，验证一次成功写即可完成真实 Retry → ChangeZone → ResetExpedition → ResetRoomChain；重复重试不再写入/构建。另在 108 个场景验证普通回营和新远征各自保留一次 preflight。恢复 ChangeZone 旧双保存的编译负控必须失败于具体单写重试断言。
+
+章节切回 126 断言及两负控见 `chapter-return-retry-atomic.log`；三宏 API 编译见 `api-retry-atomic.log`；两个保存源契约只更新扩展后的精准守卫字符串，19+40 检查通过见 `source-retry-atomic-final.log`。`source-retry-atomic.log` 保留最初旧契约字符串失配记录，非最终通过结果。未修改练习死亡逻辑。

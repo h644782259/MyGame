@@ -63,13 +63,14 @@ probe=source('Tests/RoomBranchProductionTests.cs')
 with tempfile.TemporaryDirectory(prefix='room-branch-') as temporary:
  base=Path(temporary)
  env=dict(os.environ,DOTNET_CLI_HOME=str(base/'cli'),DOTNET_NOLOGO='1')
- for mode,expected in [('current',None),('old-third-room','selected objective replaces old seed objective'),('reroll-retry','retry retains seed branch and conditions'),('double-save-branch','single preflight enters selected room despite second-write fault')]:
+ for mode,expected in [('current',None),('old-third-room','selected objective replaces old seed objective'),('reroll-retry','retry retains seed branch and conditions'),('double-save-branch','single preflight enters selected room despite second-write fault'),('double-save-retry','retry uses one saved preflight despite second-write fault')]:
   p=base/mode;p.mkdir(exist_ok=True)
   for name,s in originals.items():
    if mode=='double-save-branch' and name=='GameSession.RoomBranch.cs':s=replace_required(s,'UpdateTimeScale();return EnterNextRoomAfterSave();','UpdateTimeScale();return EnterNextRoom();')
    if mode=='old-third-room' and name=='RoomChainState.cs':s=replace_required(s,'Room.Index+1,Room.Seed,SelectedBranch','Room.Index+1,Room.Seed')
    (p/name).write_text(s)
   body=replace_required(methods,'if(retryingRoomChain)runSeed=roomRetrySeed;','if(retryingRoomChain)runSeed=roomRetrySeed+1;') if mode=='reroll-retry' else methods
+  if mode=='double-save-retry':body=replace_required(body,' && !retryingRoomChain && !SaveBeforeLeaving()', ' && !SaveBeforeLeaving()')
   (p/'Methods.cs').write_text('using UnityEngine;using System.Collections.Generic;namespace Emberfall{public sealed partial class GameSession{'+body+'}}')
   (p/'Fixture.cs').write_text(fixture);(p/'Math.cs').write_text(math);(p/'Probe.cs').write_text(probe)
   project=p/'Probe.csproj';project.write_text('<Project Sdk="Microsoft.NET.Sdk"><PropertyGroup><TargetFramework>net8.0</TargetFramework><OutputType>Exe</OutputType><NuGetAudit>false</NuGetAudit><NoWarn>0649;0414</NoWarn></PropertyGroup></Project>');(p/'NuGet.Config').write_text('<configuration><packageSources><clear /></packageSources></configuration>')

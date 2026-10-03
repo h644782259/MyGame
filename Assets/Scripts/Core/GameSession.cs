@@ -351,7 +351,8 @@ namespace Emberfall
         {
             // Preserve the old adventure before destroying anything. Staged load
             // and committed hub travel already supply a durable target snapshot.
-            if (!loadingSaveSnapshot && !enteringChapter && !SaveBeforeLeaving()) return false;
+            // Room retry sets this flag only after its own successful save preflight.
+            if (!loadingSaveSnapshot && !enteringChapter && !retryingRoomChain && !SaveBeforeLeaving()) return false;
             if(!dungeon&&InDungeon&&!DungeonCleared&&!IsDead&&!ModeFinished)
             {
                 if(RoomChainRun!=null)RoomChainRun.Fail(RoomFailureReason.Abandoned);
