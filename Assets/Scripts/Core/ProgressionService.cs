@@ -1096,7 +1096,7 @@ namespace Emberfall
                 if(!string.IsNullOrEmpty(reason))return Reject(reason);
                 GameProfile candidate=preview.Snapshot();candidate.skillPoints=Points;
                 if(saveSlot>=0){EnsureBuildPresetSlots(candidate);candidate.buildPresets[saveSlot]=preset;}
-                if(!owner.CommitCandidate(candidate))return Reject(owner.LastError);
+                if(!owner.CommitCandidate(candidate,true))return Reject(owner.LastError);
                 completed=true;history.Clear();Error=null;return true;
             }
         }
@@ -1316,11 +1316,17 @@ namespace Emberfall
         }
 
         private GameProfile Snapshot() { return JsonUtility.FromJson<GameProfile>(JsonUtility.ToJson(Profile, true)); }
-        private bool CommitCandidate(GameProfile candidate)
+        // True only while publishing a successfully persisted draft candidate.
+        // Nested non-draft transactions get their own false scope.
+        internal bool IsApplyingBuildDraft { get; private set; }
+        private bool CommitCandidate(GameProfile candidate,bool buildDraft=false)
         {
             string failure;
             if (!TryWriteAttachedProfile(candidate, out failure)) return Fail(failure);
-            Profile = candidate; LastError = string.Empty; RaiseChanged(); return true;
+            Profile = candidate; LastError = string.Empty;
+            bool previousDraft=IsApplyingBuildDraft;IsApplyingBuildDraft=buildDraft;
+            try { RaiseChanged(); } finally { IsApplyingBuildDraft=previousDraft; }
+            return true;
         }
 
         public const int SideEventReceiptLimit=32;

@@ -1,7 +1,7 @@
 using System;using System.Collections.Generic;using UnityEngine;
 namespace UnityEngine {
  public struct Vector2 {public static Vector2 zero=>new Vector2();}public struct Rect {public Rect(float x,float y,float w,float h){}}
- public static class Mathf {public static int RoundToInt(float f)=>(int)Math.Round(f);public static float Ceil(float f)=>(float)Math.Ceiling(f);public static float Max(float a,float b)=>Math.Max(a,b);public static float Clamp(float f,float a,float b)=>Math.Min(b,Math.Max(a,f));}
+ public static class Mathf {public static int RoundToInt(float f)=>(int)Math.Round(f);public static float Ceil(float f)=>(float)Math.Ceiling(f);public static float Max(float a,float b)=>Math.Max(a,b);public static float Min(float a,float b)=>Math.Min(a,b);public static float Clamp(float f,float a,float b)=>Math.Min(b,Math.Max(a,f));}
  public class GUIContent {public GUIContent(string s){}}public class GUIStyle {public float CalcHeight(GUIContent c,float w)=>24;}
 }
 namespace Emberfall {
@@ -21,6 +21,30 @@ namespace Emberfall {
   void Text(Rect r,string s,int z,Color c,bool b=false,bool wrap=false){labels.Add(s);}void Fill(Rect r,Color c){}void Box(Rect r,Color c,bool b){}GUIStyle Style(int s,bool b,bool w)=>new GUIStyle();
   void CancelMobileScroll(){}void BlockUITransition(){}Vector2 BeginTouchScroll(string s,Rect r,Vector2 v,Rect body)=>v;void EndTouchScroll(){}
   void Click(string value,int index=0){click=value;clickIndex=index;seen=0;labels.Clear();DrawBuildPlanSurface();click=null;}
+  public static void TestDraftVitals(ProgressionService p,bool mobile,Action<bool,string> check)
+  {
+   MobileControls.Active=mobile;var ui=new GameUI{session=new GameSession{Progression=p}};ui.session.Bind();var player=ui.session.Player;
+   float energy=player.skillRuntime.Energy,cd=player.skillRuntime.Remaining(0);int events=0;p.Changed+=()=>events++;
+   ui.OpenBuildPlans();
+   foreach(float hp in new[]{.5f,0f,37f})
+   {
+    player.Health=hp;string before=JsonUtility.ToJson(p.Profile,true);int prior=events;
+    ui.Click("局部调整配点 · 临时草稿");System.IO.Directory.CreateDirectory(p.SaveFilePath+".tmp");ui.Click("应用配点");
+    check(ui.allocationDraft!=null&&player.Health==hp&&events==prior&&JsonUtility.ToJson(p.Profile,true)==before&&!p.IsApplyingBuildDraft,"failed draft write publishes no vitals refresh or signal");
+    System.IO.Directory.Delete(p.SaveFilePath+".tmp");ui.Click("应用配点");
+    check(ui.allocationDraft==null&&player.Health==hp&&events==prior+1&&!p.IsApplyingBuildDraft,"draft no-op preserves fractional HP and dead zero exactly");
+    check(player.skillRuntime.Energy==energy&&player.skillRuntime.Remaining(0)==cd,"draft no-op/failure never refills energy or cooldown");
+   }
+   // Increase then lower maximum through actual mastery buttons and persistence events.
+   player.Health=.5f;ui.Click("局部调整配点 · 临时草稿");ui.Click("+ 1点",GameBalance.SkillCount+1);ui.Click("应用并保存方案 A");
+   check(player.Health==.5f&&p.HasBuildPreset(0),"apply-save A preserves fractional HP on max increase");
+   float high=player.MaxHealth;player.Health=high;ui.Click("局部调整配点 · 临时草稿");ui.Click("− 1点",GameBalance.SkillCount+1);ui.Click("应用并保存方案 B");
+   check(player.MaxHealth<high&&player.Health==player.MaxHealth&&p.HasBuildPreset(1),"lower maximum truncates HP normally through apply-save B");
+   check(player.skillRuntime.Energy==energy&&player.skillRuntime.Remaining(0)==cd&&!p.IsApplyingBuildDraft,"scoped apply signal ends and resources remain unchanged");
+   // Guard the narrow scope: legacy non-draft calls keep the documented existing floor/heal.
+   player.Health=.5f;player.RefreshStats(false);check(player.Health==1,"non-draft legacy refresh floor is unchanged");
+   player.Health=.5f;player.RefreshStats(true);check(player.Health==player.MaxHealth,"explicit heal refresh still heals");
+  }
   public static void TestDraftFlow(ProgressionService p,bool mobile,Action<bool,string> check)
   {
    MobileControls.Active=mobile;var ui=new GameUI{session=new GameSession{Progression=p},TouchRatio=mobile?2:1,width=mobile?1280:1000,height=mobile?720:700};ui.session.Bind();float health=ui.session.Player.Health,energy=ui.session.Player.skillRuntime.Energy,cooldown=ui.session.Player.skillRuntime.Remaining(0);string before=JsonUtility.ToJson(p.Profile,true);ui.OpenBuildPlans();ui.Click("局部调整配点 · 临时草稿");check(ui.allocationDraft!=null,"actual camp entry opens draft");ui.Click("− 1点",0);check(ui.allocationDraft.SkillRank(0)==2&&JsonUtility.ToJson(p.Profile,true)==before,"actual skill minus edits only draft");ui.Click("撤销上一步");check(ui.allocationDraft.SkillRank(0)==3,"actual undo button restores rank");ui.Click("− 1点",GameBalance.SkillCount);check(ui.allocationDraft.MasteryRank(0)==9&&ui.allocationDraft.Core==-1,"actual mastery minus disables ineligible core in draft");ui.Click("+ 1点",GameBalance.SkillCount+1);check(ui.allocationDraft.MasteryRank(1)==1,"actual mastery plus routes to selected track");ui.Click("撤销上一步");ui.Click("撤销上一步");ui.Click("关闭此核心");check(ui.allocationDraft.Core==-1,"actual core selection button turns off draft core");ui.Click("撤销上一步");ui.Click("− 1点",0);ui.Click("取消草稿");check(ui.allocationDraft==null&&JsonUtility.ToJson(p.Profile,true)==before,"actual cancel leaves live profile unchanged");
