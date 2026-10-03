@@ -28,6 +28,7 @@ namespace Emberfall
             if (enemy == null || enemy.IsDead) return;
             ElementalEnemyAura aura = enemy.GetComponent<ElementalEnemyAura>();
             if (aura == null) aura = enemy.gameObject.AddComponent<ElementalEnemyAura>();
+            aura.BindStatus(enemy);
             aura.Refresh(element, duration, enemy.IsBoss ? 1.7f : enemy.Kind == EnemyKind.Slime ? .65f : 1.2f);
         }
 
@@ -99,6 +100,9 @@ namespace Emberfall
         private ParticleSystem fire, poison;
         private ElementalFieldVisual fireShape, poisonShape;
         private float fireUntil, poisonUntil;
+        private EnemyController statusOwner;
+        private bool statusBound;
+        internal void BindStatus(EnemyController enemy){statusOwner=enemy;statusBound=true;}
 
         public void Refresh(ElementalCombatVfx.Element element, float duration, float height)
         {
@@ -138,6 +142,15 @@ namespace Emberfall
 
         private void Update()
         {
+            // Status schedules own pause and expiry. Wall-clock duration is only a
+            // fallback for unbound decorative callers, never a second gameplay clock.
+            if(statusBound)
+            {
+                if(statusOwner==null||statusOwner.StatusEffects==null){ClearFire();ClearPoison();return;}
+                if(statusOwner.IsDead||!statusOwner.StatusEffects.IsBurning)ClearFire();
+                if(statusOwner.IsDead||statusOwner.StatusEffects.PoisonStacks<=0)ClearPoison();
+                return;
+            }
             if (fire != null && Time.time >= fireUntil && fire.isEmitting) fire.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
             if (poison != null && Time.time >= poisonUntil && poison.isEmitting) poison.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
             if(fire!=null&&Time.time>=fireUntil)fire.gameObject.SetActive(false);

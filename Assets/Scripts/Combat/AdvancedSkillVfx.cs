@@ -12,16 +12,34 @@ namespace Emberfall
         private int epoch;
         private float age,duration;
         private bool follow,registered;
+        private System.Func<bool> stateActive;
+        private int protectionChannel=-1;
+        private static readonly System.Collections.Generic.Dictionary<PlayerController,AdvancedSkillVfx[]> protections=new System.Collections.Generic.Dictionary<PlayerController,AdvancedSkillVfx[]>();
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void ResetCount(){activeEffects=0;}
+        private static void ResetCount(){activeEffects=0;protections.Clear();}
 
-        public static AdvancedSkillVfx Rune(PlayerController hero,Vector3 at,float size,Color color,float lifetime,int detail,bool followHero=false,int identity=0)
+        public static AdvancedSkillVfx Rune(PlayerController hero,Vector3 at,float size,Color color,float lifetime,int detail,bool followHero=false,int identity=0,bool protectionEnvelope=false)
         {
             if(hero==null||hero.IsDead||activeEffects>=MaximumEffects)return null;
             var obj=new GameObject("Cancellable filled charge envelope");obj.transform.position=at;
             var fx=obj.AddComponent<AdvancedSkillVfx>();fx.owner=hero;fx.epoch=hero.CombatEpoch;
             fx.duration=Mathf.Clamp(lifetime,.12f,12);fx.follow=followHero;fx.registered=true;activeEffects++;
-            FilledSkillVfx.Charge(fx.transform,hero,at,size,color,fx.duration,identity);
+            FilledSkillVfx.Charge(fx.transform,hero,at,size,color,fx.duration,identity,protectionEnvelope);
+            return fx;
+        }
+        // This non-pooled anchor owns only its own child hierarchy, never a rented
+        // FilledSkillVfx reference. State cancellation is evaluated even while paused.
+        internal static AdvancedSkillVfx Protection(PlayerController hero,Vector3 at,float radius,Color color,float lifetime,int detail,System.Func<bool> active,bool passive=false)
+        {
+            if(hero==null)return null;
+            int channel=passive?1:0;AdvancedSkillVfx[] previous;
+            if(protections.TryGetValue(hero,out previous)&&previous[channel]!=null)previous[channel].Retire();
+            var fx=Rune(hero,at,radius,color,lifetime,detail,true,4,true);
+            if(fx!=null)
+            {
+                AdvancedSkillVfx[] channels;if(!protections.TryGetValue(hero,out channels)){channels=new AdvancedSkillVfx[2];protections[hero]=channels;}
+                fx.stateActive=active;fx.protectionChannel=channel;channels[channel]=fx;
+            }
             return fx;
         }
         public static void Beam(PlayerController hero,Vector3 start,Vector3 end,Color color,float lifetime,float width=.18f)
@@ -36,12 +54,20 @@ namespace Emberfall
         {
             var game=GameSession.Instance;
             if(owner==null||owner.IsDead||owner.CombatEpoch!=epoch||game==null||game.Player!=owner||!game.HasStarted||game.ModeFinished)
-            {Destroy(gameObject);return;}
+            {Retire();return;}
+            if(stateActive!=null&&!stateActive()){Retire();return;}
             if(game.InputBlocked||Time.deltaTime<=0)return;
-            age+=Time.deltaTime;if(age>=duration){Destroy(gameObject);return;}
+            age+=Time.deltaTime;if(age>=duration){Retire();return;}
             if(follow)transform.position=owner.transform.position;
         }
-        private void Release(){if(registered){registered=false;activeEffects=Mathf.Max(0,activeEffects-1);}}
+        private void Retire(){gameObject.SetActive(false);Destroy(gameObject);}
+        private void Release()
+        {
+            if(registered){registered=false;activeEffects=Mathf.Max(0,activeEffects-1);}
+            AdvancedSkillVfx[] channels;
+            if(protectionChannel>=0&&!object.ReferenceEquals(owner,null)&&protections.TryGetValue(owner,out channels)&&channels[protectionChannel]==this)
+            {channels[protectionChannel]=null;if(channels[0]==null&&channels[1]==null)protections.Remove(owner);}
+        }
         private void OnDisable(){Release();}
         private void OnDestroy(){Release();}
     }

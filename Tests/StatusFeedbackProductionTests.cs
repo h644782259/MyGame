@@ -30,6 +30,16 @@ class StatusFeedbackTests
    for(int i=0;i<3;i++)owner.OnBasicAttackHitTarget(Vector3.zero,enemy,true);
    Check(!enemy.StatusEffects.IsBurning&&enemy.StatusEffects.HasFrostMark&&GameSession.Instance.Text=="霜触"&&CombatFx.RingColor.b>CombatFx.RingColor.r,"frost/freeze proc keeps cold type and feedback");
   }
+  enemy=Create(out owner);status=enemy.StatusEffects;status.Poison(owner,4,10);status.Burn(owner,4,20);
+  aura=enemy.GetComponent<ElementalEnemyAura>();poison=Field<ParticleSystem>(aura,"poison");fire=Field<ParticleSystem>(aura,"fire");
+  GameSession.Instance.InputBlocked=true;Time.time+=100;Call(aura,"Update");
+  Check(poison.isPlaying&&fire.isPlaying,"paused actual status must not expire on wall clock");
+  GameSession.Instance.InputBlocked=false;owner.CombatEpoch++;Time.deltaTime=.1f;Time.frameCount++;Call(status,"Update");Call(aura,"Update");
+  Check(!poison.gameObject.activeSelf&&!fire.gameObject.activeSelf,"invalidated actual statuses retire both sustained channels immediately");
+  enemy=Create(out owner);status=enemy.StatusEffects;status.Poison(owner,4,10);status.Burn(owner,4,20);aura=enemy.GetComponent<ElementalEnemyAura>();enemy.IsDead=true;Call(aura,"Update");
+  Check(!Field<ParticleSystem>(aura,"poison").gameObject.activeSelf&&!Field<ParticleSystem>(aura,"fire").gameObject.activeSelf,"death retires actual status auras");
+  enemy=Create(out owner);status=enemy.StatusEffects;status.Poison(owner,4,10);status.Burn(owner,4,20);aura=enemy.GetComponent<ElementalEnemyAura>();enemy.StatusEffects=null;GameSession.Instance.InputBlocked=true;Call(aura,"Update");
+  Check(!Field<ParticleSystem>(aura,"poison").gameObject.activeSelf&&!Field<ParticleSystem>(aura,"fire").gameObject.activeSelf,"missing bound state clears while paused instead of falling back to wall clock");
   Console.WriteLine("PASS actual poison->consume->aura clear->same-frame reapply chain; burn/frost basic-hit third-contact feedback. Damage budget, energy and receipt checks retained. Managed only, no Unity GPU validation.");
  }
 }
