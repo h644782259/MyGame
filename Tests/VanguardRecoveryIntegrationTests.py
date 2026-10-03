@@ -39,6 +39,14 @@ public void IntegrationCheck(){
   CancelAction();AnimateHero(0,0,false,0);ApplyVisualRecovery(.12f);
  }
  ApplyEquipment(null,null,null);check(spine==bodyBefore&&vanguardArt==library,"unequip keeps full motion identity");
+ // Counter variant uses a real thrust contact, then the same cancellation/recovery ownership.
+ PlayAction(-2,true,.46f);
+ check(Math.Abs(actionAge/actionDuration-.52f)<.00001f,"counter thrust keeps existing basic contact clock");
+ check(same(rightArm.localRotation,Pose(new Vector3(-18,0,12),new Vector3(-60,-8,12),new Vector3(-92,0,4),.52f)),"counter commits narrow thrust arm rather than cleave");
+ Vector3 thrustTip;check(TryGetWeaponVisualAnchor(WeaponVisualAnchor.SwordTip,out thrustTip),"counter actual sword tip available");
+ CancelAction();AnimateHero(0,0,false,0);Vector3 heldTip;
+ check(TryGetWeaponVisualAnchor(WeaponVisualAnchor.SwordTip,out heldTip)&&(heldTip-thrustTip).magnitude<.0001f,"counter cancellation preserves world contact tip");
+ ApplyVisualRecovery(.12f);AnimateHero(0,0,false,0);
  AnimateHero(0,0,false,0);var beforeDeath=spine.localRotation;pilotOwnerDead=true;new DeathSessionProbe().OnPlayerDied();check(Time.timeScale==0,"actual OnPlayerDied pauses scaled clock");Time.deltaTime=0;
  var frozen=Time.time;SampleVanguardDeath();var terminal=spine.localRotation;
  check(same(terminal,beforeDeath*Quaternion.Euler(vanguardArt.Sample(VanguardArtPose.Death,1,1))),"death terminal pose reached while scaled time frozen");
@@ -63,7 +71,7 @@ public void IntegrationCheck(){
  subprocess.run(cmd,env=env,check=True)
  # Require the integrated tests to reject losing either new-art or recovery ownership.
  original=motion.read_text()
- for label,before,after in [('skip-authored','ApplyAuthoredVanguardPose(acting,t,hurt);',''),('skip-recovery','ApplyVisualRecovery(dt);','')]:
+ for label,before,after in [('skip-authored','ApplyAuthoredVanguardPose(acting,t,hurt);',''),('skip-recovery','ApplyVisualRecovery(dt);',''),('skip-counter-thrust','if(actionBasic && actionSkill == -2)','if(false)')]:
   assert before in original;motion.write_text(original.replace(before,after));r=subprocess.run(cmd,env=env,capture_output=True,text=True)
   assert r.returncode!=0 and 'Unhandled exception. System.Exception' in r.stderr,(label,r.stdout,r.stderr)
   print('PASS compiled integration negative control:',label)

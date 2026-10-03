@@ -1143,7 +1143,7 @@ namespace Emberfall
             return item!=null && item.mechanicVariantUnlocked && HasElementVariant(item) ? item.mechanicVariant : -1;
         }
         private static bool HasElementVariant(ItemData item)
-        {return item!=null && (item.mechanic==EquipmentMechanic.FrostEcho || item.mechanic==EquipmentMechanic.CinderTrail);}
+        {return item!=null && BuildCatalog.HasMechanicVariant(item.mechanic);}
 
         public string CurrentBuildSummary() { return DescribeBuild(CaptureBuild()); }
         public string BuildPresetSummary(int slot)
@@ -1550,7 +1550,7 @@ namespace Emberfall
             ItemData item=FindItem(id);
             if(item==null||item.mechanic==EquipmentMechanic.None||!Enum.IsDefined(typeof(EquipmentMechanic),item.mechanic)||
                 BuildCatalog.MechanicClass(item.mechanic)!=Profile.heroClass||item.slot!=BuildCatalog.MechanicSlot(item.mechanic))return "请选择背包中的本职业机制装备。";
-            if(kind==ProgressionGoalKind.Variant)return HasElementVariant(item)?string.Empty:"这件装备没有元素变体。";
+            if(kind==ProgressionGoalKind.Variant)return HasElementVariant(item)?string.Empty:"这件装备没有机制变体。";
             if(!HasDiscoveredMechanic(item.mechanic))return "请先登记这件装备的机制配方。";
             if(kind==ProgressionGoalKind.Ascension&&item.rarity!=Rarity.Epic)
                 return item.rarity==Rarity.Legendary?"已是传说品质，不会重复升华。":"先获取"+BuildCatalog.MechanicName(item.mechanic)+"的史诗装备，再选择升华目标。";
@@ -2618,7 +2618,7 @@ namespace Emberfall
             item.upgradeLevel = Clamp(item.upgradeLevel, 0, MaximumUpgrade);
             if (!Enum.IsDefined(typeof(EquipmentMechanic), item.mechanic) ||
                 (item.mechanic != EquipmentMechanic.None && BuildCatalog.MechanicSlot(item.mechanic) != item.slot)) item.mechanic = EquipmentMechanic.None;
-            item.mechanicVariant = item.mechanicVariantUnlocked && (item.mechanic == EquipmentMechanic.FrostEcho || item.mechanic == EquipmentMechanic.CinderTrail) ? Clamp(item.mechanicVariant, 0, 1) : 0;
+            item.mechanicVariant = item.mechanicVariantUnlocked && BuildCatalog.HasMechanicVariant(item.mechanic) ? Clamp(item.mechanicVariant, 0, 1) : 0;
             EnsureUpgradeBasis(item);
             if (string.IsNullOrWhiteSpace(item.name)) item.name = "无名" + ItemBaseName(item.slot, hero);
             if (item.name.Length > 60) item.name = item.name.Substring(0, 60);

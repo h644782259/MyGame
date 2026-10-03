@@ -147,7 +147,7 @@ namespace Emberfall
                 MobileWorkshopParagraph(ref y, width, "当前穿戴：" + ItemTitle(item) + " · " + GameBalance.RarityName(item.rarity) + " · Lv." + item.level + "\n编号：" + id, jade, draw);
                 MobileWorkshopParagraph(ref y, width, "重铸保留装备身份、机制和部位强化；可以分段成长。", muted, draw);
                 MobileWorkshopAction(ref y,width,"选择重铸档位",jade,session.IsInCamp&&p.QuoteReforge(id)!=null,draw,()=>OpenReforgeSurface(id));
-                if (mechanic == EquipmentMechanic.FrostEcho || mechanic == EquipmentMechanic.CinderTrail)
+                if (BuildCatalog.HasMechanicVariant(mechanic))
                 {
                     MobileWorkshopParagraph(ref y, width, "当前变体 " + (item.mechanicVariant == 0 ? "A" : "B") + "；首次解锁4碎片，此后免费切换互斥效果。", muted, draw);
                     MobileWorkshopAction(ref y, width, item.mechanicVariantUnlocked ? "切换到变体 " + (item.mechanicVariant == 0 ? "B" : "A") : "解锁变体 B · 4碎片", jade,

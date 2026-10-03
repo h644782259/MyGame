@@ -612,18 +612,25 @@ namespace Emberfall
             if (mobilityTime > 0) attackCooldown *= .8f;
             if (ActiveRunBonuses != null) attackCooldown /= ActiveRunBonuses.AttackSpeedMultiplier;
             attackCooldown = Mathf.Max(.18f, attackCooldown);
-            model.PlayAction(-1,true,attackCooldown);
+            if(HeroClass==HeroClass.Vanguard && ReturningCounterVariant && perfectDodgeCounterTime>0) model.PlayAction(-2,true,attackCooldown);
+            else model.PlayAction(-1,true,attackCooldown);
             attackAnimation = 1f;
             Color color = GameBalance.ClassColor(HeroClass);
             if (HeroClass == HeroClass.Vanguard)
             {
-                CombatFx.WeaponSlash(this,model,transform.position,transform.forward,2.3f,color);
+                bool thrust = ReturningCounterVariant && perfectDodgeCounterTime > 0;
+                if (thrust)
+                {
+                    if (ValidAimTarget(AimTarget)) transform.position = ReturningCounterRules.Advance(transform.position, transform.forward, AimTarget.transform.position);
+                    AdvancedSkillVfx.Beam(this,transform.position+Vector3.up,transform.position+Vector3.up+transform.forward*2.8f,color,.18f,.12f);
+                }
+                else CombatFx.WeaponSlash(this,model,transform.position,transform.forward,2.3f,color);
                 float previousCounter = counterTime;
                 bool wasCounter = previousCounter > 0;
                 bool wasDodgeCounter = perfectDodgeCounterTime > 0;
-                float power = (wasCounter ? 1.75f : SkillDamageBudgets.BasicCoefficient(HeroClass)) * (HasMechanic(EquipmentMechanic.ReturningBlade) ? .92f : 1f);
+                float power = (wasCounter ? 1.75f : SkillDamageBudgets.BasicCoefficient(HeroClass)) * (HasMechanic(EquipmentMechanic.ReturningBlade) && !ReturningCounterVariant ? .92f : 1f);
                 counterTime = 0; // Consume only the captured bonus; on-hit procs may grant a NEW one.
-                bool hit = Melee(2.8f, 110f, Damage(power), .3f, .12f, basic: true);
+                bool hit = Melee(2.8f, 110f, Damage(power), .3f, .12f, basic: true, counterThrust: thrust);
                 counterTime = PlayerUpgradeRules.CounterAfterAttack(previousCounter, counterTime, hit);
                 if (hit && wasCounter)
                 {
@@ -644,14 +651,15 @@ namespace Emberfall
             }
         }
 
-        private bool Melee(float range, float arc, CombatDamage damage, float knockback, float stun, float knockdown = 0, bool basic = false, int skillIndex = -1, int castId = 0)
+        private bool Melee(float range, float arc, CombatDamage damage, float knockback, float stun, float knockdown = 0, bool basic = false, int skillIndex = -1, int castId = 0, bool counterThrust = false)
         {
             CombatImpactBatch.Begin();
             try
             {
             if(castId==0)castId=NewCastId();
             lastMeleeDamagedEnemy = false;
-            DestructibleProp.StrikeCone(this,transform.position,transform.forward,range,arc,damage,castId);
+            if(counterThrust) DestructibleProp.StrikeLine(this,transform.position,transform.position+transform.forward*range,.35f,damage,castId);
+            else DestructibleProp.StrikeCone(this,transform.position,transform.forward,range,arc,damage,castId);
             bool hit = false;
             EnemyController firstHit = null;
             Vector3 firstHitPosition = transform.position;
@@ -661,7 +669,9 @@ namespace Emberfall
                 if (enemy == null || enemy.IsDead) continue;
                 Vector3 delta = CombatFx.Flat(enemy.transform.position-transform.position);
                 if (delta.magnitude <= range + (enemy.IsBoss ? .5f : 0) + enemy.HitFootprintBonus &&
-                    (delta.sqrMagnitude < .36f || Vector3.Angle(transform.forward,delta) <= arc*.5f) &&
+                    (counterThrust ? (Vector3.Dot(delta,transform.forward) >= 0 &&
+                        (delta-transform.forward*Vector3.Dot(delta,transform.forward)).magnitude <= .35f+enemy.HitFootprintBonus)
+                        : (delta.sqrMagnitude < .36f || Vector3.Angle(transform.forward,delta) <= arc*.5f)) &&
                     CombatSight.Melee(transform.position, enemy.transform.position))
                 {
                     if (!hit) { firstHit = enemy; firstHitPosition = enemy.transform.position; }
@@ -732,7 +742,7 @@ namespace Emberfall
                 CombatFx.Ring(position, 2.5f, new Color(.5f, .8f, 1f), .3f, .14f);
                 session.RecordCombatAction("闪避震荡");
             }
-            if (HeroClass == HeroClass.Vanguard && HasMechanic(EquipmentMechanic.ReturningBlade))
+            if (HeroClass == HeroClass.Vanguard && HasMechanic(EquipmentMechanic.ReturningBlade) && !ReturningCounterVariant)
             {
                 EnemyController bounce = NearestOtherEnemy(position, enemy, 4f);
                 if (bounce != null && returningBladeProc.TryTrigger(1.5f))
@@ -827,6 +837,16 @@ namespace Emberfall
             else enemy.StatusEffects.FrostMark(4f);
         }
 
+        private bool ReturningCounterVariant
+        {
+            get
+            {
+                if (!HasMechanic(EquipmentMechanic.ReturningBlade)) return false;
+                ItemData item = session.Progression.Equipped(ItemSlot.Weapon);
+                return item != null && item.mechanicVariantUnlocked && item.mechanicVariant == 1;
+            }
+        }
+
         internal int MechanicVariant(EquipmentMechanic mechanic)
         {
             ItemData item = session.Progression.Equipped(BuildCatalog.MechanicSlot(mechanic));
@@ -882,7 +902,7 @@ namespace Emberfall
             perfectDodgeAwarded = true;
             float previousEnergy = Energy;
             skillRuntime.RestoreEnergy(PlayerUpgradeRules.PerfectDodgeEnergy);
-            if (HeroClass == HeroClass.Vanguard) counterTime = perfectDodgeCounterTime = PlayerUpgradeRules.CounterWindow;
+            if (HeroClass == HeroClass.Vanguard) counterTime = perfectDodgeCounterTime = ReturningCounterVariant ? 3f : PlayerUpgradeRules.CounterWindow;
             else classDodgeTime = 3f;
             if (HeroClass == HeroClass.Summoner) { SummonedCompanion.OnPerfectDodge(this); }
             float ward=masteryCore.PerfectDodge();if(ward>0){coreWardTime=ward;session.RecordCombatAction("守御核心");}
