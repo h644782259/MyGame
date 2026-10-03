@@ -612,16 +612,20 @@ namespace Emberfall
             if (mobilityTime > 0) attackCooldown *= .8f;
             if (ActiveRunBonuses != null) attackCooldown /= ActiveRunBonuses.AttackSpeedMultiplier;
             attackCooldown = Mathf.Max(.18f, attackCooldown);
-            if(HeroClass==HeroClass.Vanguard && ReturningCounterVariant && perfectDodgeCounterTime>0) model.PlayAction(-2,true,attackCooldown);
+            if(ReturningCounterReady) model.PlayAction(-2,true,attackCooldown);
             else model.PlayAction(-1,true,attackCooldown);
             attackAnimation = 1f;
             Color color = GameBalance.ClassColor(HeroClass);
             if (HeroClass == HeroClass.Vanguard)
             {
-                bool thrust = ReturningCounterVariant && perfectDodgeCounterTime > 0;
+                bool thrust = ReturningCounterReady;
                 if (thrust)
                 {
-                    if (ValidAimTarget(AimTarget)) transform.position = ReturningCounterRules.Advance(transform.position, transform.forward, AimTarget.transform.position);
+                    if (ValidAimTarget(AimTarget))
+                    {
+                        Vector3 landing;
+                        if(ReturningCounterRules.Predict(transform.position,AimTarget.transform.position,AimTarget.IsBoss,AimTarget.HitFootprintBonus,out landing).Length==0) transform.position=landing;
+                    }
                     AdvancedSkillVfx.Beam(this,transform.position+Vector3.up,transform.position+Vector3.up+transform.forward*2.8f,color,.18f,.12f);
                 }
                 else CombatFx.WeaponSlash(this,model,transform.position,transform.forward,2.3f,color);
@@ -836,6 +840,8 @@ namespace Emberfall
             if (Specialization == ElementalistSpecialization.Burn) enemy.StatusEffects.Burn(this, 2f, CombatAttack * .5f);
             else enemy.StatusEffects.FrostMark(4f);
         }
+
+        private bool ReturningCounterReady { get { return HeroClass==HeroClass.Vanguard && ReturningCounterVariant && counterTime>0 && perfectDodgeCounterTime>0; } }
 
         private bool ReturningCounterVariant
         {

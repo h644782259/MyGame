@@ -3,6 +3,16 @@ namespace Emberfall
 {
     internal static class ReturningCounterRules
     {
+        // Admission, button reason and execution use this same predicted landing.
+        internal static string Predict(Vector3 origin,Vector3 target,bool boss,float footprint,out Vector3 landing)
+        {
+            landing=origin;
+            if(!CombatSight.Melee(origin,target)||!WorldTraversal.IsWalkable(origin,.45f))return "目标被遮挡";
+            landing=Advance(origin,CombatFx.Flat(target-origin).normalized,target);
+            if(!WorldTraversal.IsWalkable(landing,.45f)||!CombatSight.Melee(landing,target))return "目标被遮挡";
+            return CombatFx.Flat(target-landing).magnitude<=2.8f+(boss?.5f:0)+footprint?"":"距离不足";
+        }
+
         // A ground approach, not a dodge/blink: never relocates an invalid origin,
         // never slides around obstacles and never searches for a point beyond one.
         internal static Vector3 Advance(Vector3 origin,Vector3 forward,Vector3 target)

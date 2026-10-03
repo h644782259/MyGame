@@ -8,7 +8,9 @@ def member(s,key):
  return s[a:b]
 s=(r/'Assets/Scripts/Combat/PlayerController.cs').read_text()
 timers=''.join(line for line in s.splitlines(True) if line.strip().startswith(('counterTime = Mathf.Max(0, counterTime - dt);','perfectDodgeCounterTime = Mathf.Max(0, perfectDodgeCounterTime - dt);')))
-methods=''.join(member(s,k) for k in ['private void BasicAttack(','private bool Melee(','public void NotifyPerfectDodge(','private bool ReturningCounterVariant'])
+methods=''.join(member(s,k) for k in ['private void BasicAttack(','private bool Melee(','public void NotifyPerfectDodge(','private bool ReturningCounterVariant','private bool ReturningCounterReady'])
+focus=(r/'Assets/Scripts/Combat/PlayerController.MobileFocus.cs').read_text()
+methods+=''.join(member(focus,k) for k in ['public EnemyController MobilePinnedTarget','internal void ClearMobilePinnedTarget(','internal bool PinMobileTarget(','internal bool MobilePinAppliesToSkill(','internal string MobilePinnedActionReason(','internal bool MobilePinnedActionAllowed('])
 # Execute the unchanged complete proc branch separately; surrounding on-hit features are independent.
 branch=member(s,'if (HeroClass == HeroClass.Vanguard && HasMechanic(EquipmentMechanic.ReturningBlade) && !ReturningCounterVariant)')
 math=(r/'Tests/DestructibleTraversalTests.cs').read_text();math=math[math.index('namespace UnityEngine'):]
@@ -24,8 +26,13 @@ with tempfile.TemporaryDirectory(prefix='return-counter-') as t:
  (p/'Test.csproj').write_text('<Project Sdk="Microsoft.NET.Sdk"><PropertyGroup><TargetFramework>net8.0</TargetFramework><OutputType>Exe</OutputType><NoWarn>0649;0414</NoWarn></PropertyGroup></Project>');(p/'NuGet.Config').write_text('<configuration><packageSources><clear/></packageSources></configuration>')
  env=dict(os.environ,DOTNET_CLI_HOME=str(p/'cli'),DOTNET_NOLOGO='1');build=[dotnet,'build',str(p/'Test.csproj'),'--configfile',str(p/'NuGet.Config'),'-v:q'];run=[dotnet,str(p/'bin/Debug/net8.0/Test.dll')]
  subprocess.run(build,env=env,check=True);subprocess.run(run,env=env,check=True)
- for old,new,expected in [('&& !ReturningCounterVariant)','&& true)','B no bounce or return grant'),('ReturningCounterVariant ? 3f','ReturningCounterVariant ? 2f','actual enemy confirmed evasion grants variant window'),('<= .35f+enemy.HitFootprintBonus','<= 3.5f+enemy.HitFootprintBonus','B narrow side rejection')]:
+ for old,new,expected in [('if(skill<0&&ReturningCounterReady)','if(false)','real locked target3.7 admission'),('if(skill<0&&ReturningCounterReady)','if(skill<0)','empty dodge no extended admission'),('&& !ReturningCounterVariant)','&& true)','B no bounce or return grant'),('ReturningCounterVariant ? 3f','ReturningCounterVariant ? 2f','blocked admission spends no cooldown or counter'),('<= .35f+enemy.HitFootprintBonus','<= 3.5f+enemy.HitFootprintBonus','B narrow side rejection')]:
   f=p/'Player.cs';original=f.read_text();assert old in original;f.write_text(original.replace(old,new));subprocess.run(build,env=env,check=True);result=subprocess.run(run,env=env,capture_output=True,text=True);assert result.returncode and expected in result.stdout+result.stderr,result.stdout+result.stderr;f.write_text(original);print('PASS compiled negative control: '+expected)
+
+ rules=p/'ReturningCounterRules.cs';original=rules.read_text();rules.write_text(original.replace('return "目标被遮挡";','return "";'))
+ subprocess.run(build,env=env,check=True);result=subprocess.run(run,env=env,capture_output=True,text=True)
+ assert result.returncode and 'blocked counter button reason' in result.stdout+result.stderr,result.stdout+result.stderr
+ print('PASS compiled negative control: shared predictor cannot allow a blocked landing')
 
 # The actual blink entry only registers candidates; only impact resolution grants reward.
 blink=member((r/'Assets/Scripts/Combat/PlayerController.cs').read_text(),'private bool TryBlinkCore(')

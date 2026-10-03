@@ -1,5 +1,7 @@
 # ReturningBlade counter variant B
 
+The [PR45 follow-up](AdmissionValidation/README.md) fixes and validates the combined pinned-target admission and desktop workshop entry. Its logs supersede the earlier isolated admission evidence below.
+
 Variant A stays the default for existing saves and keeps the original 8% basic damage penalty, bounce, return bonus and kill rebounce. Variant B uses the existing mutually exclusive index 1 and four-shard first unlock; switching thereafter is free in camp. Build presets, save validation, ascension and reforge retain the choice. No new save fields or parallel unlock system.
 
 Only a confirmed perfect dodge grants B's three-second opportunity (A remains two seconds). The next counter basic uses the existing 175% coefficient, with no additional multiplier and no 8% penalty. Its hit shape is a forward narrow strip with 0.35m half-width, existing 2.8m reach and existing enemy footprint allowance; the old 110-degree cleave remains for ordinary basics. B disables the entire bounce/return/rebounce proc branch. Basic interval, energy handling, crit, hit stun and missed-counter retention follow the existing paths.
