@@ -187,11 +187,19 @@ namespace Emberfall
             var fx=Create(hero,at,Vector3.forward,FilledVfxKind.Vine,radius,color,1.05f,priority:CombatVisualPriority.SustainedBackground);if(fx==null)return;
             for(int i=0;i<3;i++)fx.Add(vine,Vector3.zero,new Vector3(radius*.5f,1,radius*.5f),Quaternion.Euler(0,i*120,0),0,0,0,radius,"Poison branch vine",true);
         }
-        public static void Charge(Transform parent,PlayerController hero,Vector3 at,float radius,Color color,float duration,int identity=0)
+        public static void Charge(Transform parent,PlayerController hero,Vector3 at,float radius,Color color,float duration,int identity=0,bool protectionEnvelope=false)
         {
             var fx=Create(hero,at,Vector3.forward,FilledVfxKind.Charge,Mathf.Min(radius,3.5f),color,duration,parent,CombatVisualPriority.SustainedBackground);if(fx==null)return;
             Mesh authored=identity==1?identityBlade:identity==2?identityFork:identity==3?identityContract:identity==4?identityProtection:null;
-            if(authored!=null){fx.Add(authored,Vector3.up*.08f,new Vector3(fx.size*.55f,fx.size*.55f,fx.size*.55f),Quaternion.identity,0,18,identity,fx.size*.8f,"Identity preparation",true);return;}
+            if(authored!=null)
+            {
+                // Persistent protection encloses the body, independent of gameplay radius.
+                // Ordinary charge/contact envelopes keep their original dimensions.
+                float width=fx.size*.55f,height=width;
+                if(protectionEnvelope&&identity==4){width=Mathf.Max(width,2.6f);height=Mathf.Max(height,2.2f);}
+                fx.Add(authored,Vector3.up*.08f,new Vector3(width,height,width),Quaternion.identity,0,18,identity,
+                    protectionEnvelope&&identity==4?Mathf.Max(fx.size*.8f,width*.7f):fx.size*.8f,"Identity preparation",true);return;
+            }
             for(int i=0;i<3;i++)fx.Add(crescent,Vector3.up*(.18f+i*.2f),new Vector3(fx.size*.65f,.8f,fx.size*.65f),Quaternion.Euler(i*12,i*120,0),0,6,i);
         }
         // Visual endpoints consume the actual caller's release/hit position; no target search or damage lives here.

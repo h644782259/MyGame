@@ -18,13 +18,13 @@ namespace Emberfall
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetCount(){activeEffects=0;protections.Clear();}
 
-        public static AdvancedSkillVfx Rune(PlayerController hero,Vector3 at,float size,Color color,float lifetime,int detail,bool followHero=false,int identity=0)
+        public static AdvancedSkillVfx Rune(PlayerController hero,Vector3 at,float size,Color color,float lifetime,int detail,bool followHero=false,int identity=0,bool protectionEnvelope=false)
         {
             if(hero==null||hero.IsDead||activeEffects>=MaximumEffects)return null;
             var obj=new GameObject("Cancellable filled charge envelope");obj.transform.position=at;
             var fx=obj.AddComponent<AdvancedSkillVfx>();fx.owner=hero;fx.epoch=hero.CombatEpoch;
             fx.duration=Mathf.Clamp(lifetime,.12f,12);fx.follow=followHero;fx.registered=true;activeEffects++;
-            FilledSkillVfx.Charge(fx.transform,hero,at,size,color,fx.duration,identity);
+            FilledSkillVfx.Charge(fx.transform,hero,at,size,color,fx.duration,identity,protectionEnvelope);
             return fx;
         }
         // This non-pooled anchor owns only its own child hierarchy, never a rented
@@ -34,7 +34,7 @@ namespace Emberfall
             if(hero==null)return null;
             int channel=passive?1:0;AdvancedSkillVfx[] previous;
             if(protections.TryGetValue(hero,out previous)&&previous[channel]!=null)previous[channel].Retire();
-            var fx=Rune(hero,at,radius,color,lifetime,detail,true,4);
+            var fx=Rune(hero,at,radius,color,lifetime,detail,true,4,true);
             if(fx!=null)
             {
                 AdvancedSkillVfx[] channels;if(!protections.TryGetValue(hero,out channels)){channels=new AdvancedSkillVfx[2];protections[hero]=channels;}

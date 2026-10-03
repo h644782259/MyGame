@@ -15,8 +15,10 @@ class DefenseIdentityTests
  static FilledSkillVfx Child(AdvancedSkillVfx anchor)=>GameObject.All.Single(o=>!o.Destroyed&&o.transform.parent==anchor.transform&&o.GetComponent<FilledSkillVfx>()!=null).GetComponent<FilledSkillVfx>();
  static void Sample(string label,AdvancedSkillVfx anchor)
  {
-  var fx=Child(anchor);Time.deltaTime=.12f;fx.gameObject.Call("Update");
+  var fx=Child(anchor);Time.deltaTime=.75f;fx.gameObject.Call("Update");
   var objects=GameObject.All.Where(o=>!o.Destroyed&&o.activeInHierarchy&&o.transform.parent==fx.transform&&o.GetComponent<MeshFilter>()!=null).Select(o=>new {label=o.name,vertices=o.GetComponent<MeshFilter>().sharedMesh.vertices.Select(v=>{var w=o.transform.TransformPoint(v);return new[]{w.x,w.y,w.z};}).ToArray(),triangles=o.GetComponent<MeshFilter>().sharedMesh.triangles,opacity=o.GetComponent<MeshRenderer>().Opacity}).ToArray();
+  var vertices=objects.SelectMany(o=>o.vertices).ToArray();
+  Check(vertices.Max(v=>v[1])>3f&&vertices.Max(v=>Math.Abs(v[0]))>1.3f,"persistent protection has body envelope clear above head and shoulders");
   samples.Add(new {kind="ProtectionCage",phase=label,objects});
  }
  static void Main(string[] args)
@@ -39,7 +41,7 @@ class DefenseIdentityTests
   foreach(HeroClass hero in Enum.GetValues(typeof(HeroClass))){
    var h=New();h.HeroClass=hero;h.TriggerPassive();Check(!GameObject.All.Any(o=>!o.Destroyed&&o.activeInHierarchy&&o.GetComponent<AdvancedSkillVfx>()!=null),"unlearned passive never creates cast visual");
    GameSession.Instance.Progression.Profile.skillRanks[8]=3;h.TriggerPassive();var a=Anchor();Check(h.passiveTime==5&&h.passiveCooldown==30,"true passive duration cooldown unchanged");
-   if(hero==HeroClass.Summoner)Sample("Passive-true-trigger",a);
+   Sample("Passive-"+hero+"-true-trigger",a);
    int count=GameObject.All.Count(o=>!o.Destroyed&&o.activeInHierarchy&&o.GetComponent<AdvancedSkillVfx>()!=null);h.TriggerPassive();Check(count==GameObject.All.Count(o=>!o.Destroyed&&o.activeInHierarchy&&o.GetComponent<AdvancedSkillVfx>()!=null),"cooldown never manufactures repeated passive casts");
    h.passiveTime=0;Time.deltaTime=0;a.gameObject.Call("Update");Check(!a.gameObject.activeSelf,"true passive end hides protection");
   }
@@ -47,6 +49,8 @@ class DefenseIdentityTests
   // Reuse a returned child in the same frame, then destroy its old nonpooled anchor.
   {var h=New();h.Guard1(1,1,1,color,1);var old=Anchor();var returned=Child(old);returned.Retire();FilledSkillVfx.Impact(h,Vector3.zero,1,FilledVfxKind.Ice,color);var live=GameObject.All.Last(o=>!o.Destroyed&&o.activeInHierarchy&&o.GetComponent<FilledSkillVfx>()!=null).GetComponent<FilledSkillVfx>();Check(ReferenceEquals(returned,live),"fixture actually reuses pooled former child");h.guardTime=0;Time.deltaTime=0;old.gameObject.Call("Update");UnityEngine.Object.Flush();Check(!live.gameObject.Destroyed&&live.gameObject.activeInHierarchy,"old anchor destroy cannot affect rerented detached child");}
   foreach(bool epoch in new[]{true,false}){var h=New();h.Guard1(1,1,1,color,1);var a=Anchor();GameSession.Instance.InputBlocked=true;Time.deltaTime=0;if(epoch)h.CombatEpoch++;else h.IsDead=true;a.gameObject.Call("Update");Check(!a.gameObject.activeSelf&&CombatVisualLease.Active==0,"epoch or death revokes defense while paused");}
+  {var h=New();var a=AdvancedSkillVfx.Rune(h,Vector3.zero,2.1f,color,6,1,true,4);var fx=Child(a);Time.deltaTime=.75f;fx.gameObject.Call("Update");var v=GameObject.All.Where(o=>o.transform.parent==fx.transform&&o.GetComponent<MeshFilter>()!=null).SelectMany(o=>o.GetComponent<MeshFilter>().sharedMesh.vertices.Select(p=>o.transform.TransformPoint(p))).ToArray();Check(v.Max(p=>p.y)<1.7f,"ordinary identity4 preparation dimensions remain unchanged");}
+  {var h=New();Application.isMobilePlatform=true;EffectPreferences.ReducedEffects=true;h.Guard1(1,1,1,color,1);var a=Anchor();var fx=Child(a);Check(GameObject.All.Count(o=>o.transform.parent==fx.transform&&o.GetComponent<MeshFilter>()!=null)==1,"mobile reduced protection retains exactly one mesh part");h.guardTime=0;a.gameObject.Call("Update");Check(CombatVisualLease.Active==0,"low tier envelope follows state lifetime");Application.isMobilePlatform=false;EffectPreferences.ReducedEffects=false;}
   // Missing identity keeps original procedural charge fallback and its state contract.
   {var h=New();Resources.Bad="missing";Resources.BadName="ProtectionCage";Resources.BadGroup="BlenderSkillIdentities";h.Guard1(1,1,1,color,1);var a=Anchor();Check(Child(a)!=null,"missing defense identity keeps fallback");h.guardTime=0;a.gameObject.Call("Update");Check(!a.gameObject.activeSelf,"fallback also obeys state cancellation");}
   System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(args[1]));System.IO.File.WriteAllText(args[1],JsonSerializer.Serialize(samples));

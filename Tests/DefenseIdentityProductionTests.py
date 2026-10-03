@@ -42,7 +42,7 @@ with tempfile.TemporaryDirectory(prefix='defense-identity-') as d:
  cmd=[sys.argv[1] if len(sys.argv)>1 else 'dotnet','run','--project',str(p/'Test.csproj'),'--',str(root/'Assets/Resources'),str(root/'ArtSource/DefenseIdentity/Runtime-Samples.json')]
  env=dict(os.environ,DOTNET_CLI_HOME=str(p/'cli'),DOTNET_NOLOGO='1')
  subprocess.run(cmd,env=env,check=True)
- for name,old,new,expected in [('missing-identity','detail,true,4','detail,true,0','actual defense selects loaded ProtectionCage'),('stale-state','if(stateActive!=null&&!stateActive())','if(false)','state cancellation hides hierarchy before deferred destruction')]:
+ for name,old,new,expected in [('missing-identity','detail,true,4','detail,true,0','actual defense selects loaded ProtectionCage'),('lost-body-envelope','detail,true,4,true','detail,true,4,false','persistent protection has body envelope'),('stale-state','if(stateActive!=null&&!stateActive())','if(false)','state cancellation hides hierarchy before deferred destruction')]:
   path=p/'AdvancedSkillVfx.cs';before=path.read_text();assert old in before;path.write_text(before.replace(old,new));result=subprocess.run(cmd,env=env,text=True,capture_output=True);path.write_text(before)
   assert result.returncode!=0 and expected in result.stdout+result.stderr,result.stdout+result.stderr
   print('PASS compiled negative control',name)

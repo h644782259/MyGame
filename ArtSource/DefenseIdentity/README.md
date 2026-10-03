@@ -20,7 +20,9 @@ All gameplay and generation checks use managed Unity API doubles. Deferred destr
 
 `Defense-Before-After-MPB.png` supersedes the neutral isolated module sheet for judging actor relationship. It compares PR35 `0daa0f2` actual PlayerController guard/passive methods against F6 methods at age **0.75 seconds**, rank1, with the same enabled Vanguard base factory geometry and camera. Old entries call the unchanged generic Rune construction; new entries call Protection. The shared current Filled update is executed in both, recording renderer property-block `_Color` and `_Opacity`, not shared material defaults. Guard RGBA is `(1,.84,.4,.35)`, passive `(1,.65,.26,.35)`, opacity `1`. Rendering multiplies sampled tint alpha by sampled opacity with a Blender surface approximation; Unity UV grain/blending/shaders are not reproduced. The reference actor uses neutral gray, not claimed runtime actor materials.
 
-Visible limitation: at actual guard rank1 radius2.1 the cage upper arcs overlap/are occluded by the body, leaving the lower side arcs most visible. The passive radius3 reaches the shoulders more clearly. This evidence does not silently enlarge or relocate the cage to improve its appearance. These are readability review observations, not Unity acceptance.
+The initial sample exposed a real issue: rank1 guard's charge-sized cage was hidden by the body. The production correction now enables a dedicated `protectionEnvelope` flag only for persistent Protection. The existing Cage has minimum X/Z scale2.6 and Y scale2.2, independent of skill radius. Ordinary preparation/healing/counter defaults are unchanged; same one mesh part remains on mobile reduced settings. Current same-camera panels show the corrected production envelope, not an image-only enlargement.
+
+`Body-Clearance.json` / `body-clearance.log` execute actual four-class factories with enabled-renderer filtering, at base and level100 Legendary weapon/armor (eight cases). Measurements use actual body/head/shoulder parts, excluding weapon, shield and fashion-wing bounds. Opposed arc shoulder-slab lateral clearance exceeds .12 and crown clearance exceeds .15 world units, after real Filled.Update at age.75. This is geometric clearance, not exhaustive animated/camera coverage. `validate_body_envelope.py /path/to/dotnet` reproduces it. The lifecycle suite also rejects removing only the body-envelope flag, verifies original identity4 charge dimensions and mobile one-part behavior.
 
 Reproduce from repository root:
 
@@ -31,4 +33,4 @@ blender -b --python ArtSource/DefenseIdentity/render_comparison.py -- /tmp/f6-ac
 python3 ArtSource/DefenseIdentity/assemble_comparison.py
 ```
 
-The included `Vanguard-Enabled-Factory.json` may replace the factory export path for rendering the exact checked sample. Raw exports/logs, four uncomposited panels and comparison script are retained. Only ArtSource evidence is changed by this follow-up; production and tests are unchanged.
+The included `Vanguard-Enabled-Factory.json` may replace the factory export path for rendering the exact checked sample. Raw exports/logs, four uncomposited panels and comparison script are retained. The initial evidence-only commit is preserved in history; the follow-up correction changes only the explicit persistent-envelope visual path and its tests, never gameplay state/radius/timing.
