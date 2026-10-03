@@ -455,6 +455,13 @@ namespace Emberfall
             session.RecordCombatAction("双契共鸣");
         }
 
+        public static bool HasHealingTarget(PlayerController owner)
+        {
+            foreach (var pet in active)
+                if (pet != null && pet.IsAlive && pet.Owner == owner && pet.Health < pet.MaxHealth) return true;
+            return false;
+        }
+
         public static void HealAll(PlayerController owner, float fraction)
         {
             foreach (var pet in active)
@@ -529,10 +536,13 @@ namespace Emberfall
             }
             if (directive.Recalling) return null;
             if (explicitTarget != null) return explicitTarget;
-            EnemyController focused = Owner.FocusTarget;
-            if (focused != null) return focused;
+            // Timed pack wolves share the hunt even while their owner attacks.
+            // Paid commands and explicit team orders above still take priority;
+            // the foundation wolf and all other companions keep owner focus.
             if (Form == Kind.Wolf && !IsPermanent && !IsStarter && session.Progression.Profile.summonerRoute == SummonerRoute.Pack)
                 return AcquirePackTarget();
+            EnemyController focused = Owner.FocusTarget;
+            if (focused != null) return focused;
             EnemyController chosen = null;
             float nearest = 14f;
             foreach (var enemy in session.Enemies)

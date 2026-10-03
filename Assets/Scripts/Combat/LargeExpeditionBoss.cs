@@ -45,7 +45,8 @@ namespace Emberfall
             // Explicit chapter opt-in only, before the first threshold; legacy Configure stays unchanged.
             if(value.State.PhaseNumber!=0)return value;
             value.chapterConfigured=true;value.chapterDifficulty=difficulty;
-            value.State=new LargeBossPhaseState(difficulty!=ChapterDifficulty.Normal);
+            value.State=new LargeBossPhaseState(difficulty!=ChapterDifficulty.Normal,
+                value.game!=null&&value.game.ActiveChapterNode==ChapterNode.StarPlatform);
             value.owner=value.game==null?null:value.game.Player;
             value.ownerEpoch=value.owner==null?-1:value.owner.CombatEpoch;
             value.ownerRoom=value.game==null?-1:value.game.ChapterRoomIndex;value.ownerSeed=value.game==null?0:value.game.ChapterSeed;
@@ -75,7 +76,7 @@ namespace Emberfall
             if (beamVisible)
             {
                 Vector3 direction=Quaternion.Euler(0,BeamWorldAngle,0)*Vector3.forward;
-                Vector3 from=phaseCenter+direction*1.5f,to=ClipBeam(from,phaseCenter+direction*LargeBossPhaseState.BeamLength);
+                Vector3 from=phaseCenter+direction*1.5f,to=ClipBeam(from,phaseCenter+direction*State.CurrentBeamLength);
                 if(!WorldTraversal.HasClearSweepCapsule(from,from,BeamDangerRadius)){beamRoot.SetActive(false);return State.OwnsAttacks;}
                 DrawBeam(from,to,direction);
                 if (State.DamagePulse && !game.InputBlocked && !boss.IsDead && !game.Player.IsDead &&

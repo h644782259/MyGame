@@ -12,7 +12,7 @@ namespace Emberfall
         {
             var mechanic=ActiveMechanic(item,hero);
             if(mechanic==EquipmentMechanic.None)return "无生效机制";
-            return BuildCatalog.MechanicName(mechanic)+((mechanic==EquipmentMechanic.FrostEcho||mechanic==EquipmentMechanic.CinderTrail)?" · "+(item.mechanicVariantUnlocked&&item.mechanicVariant==1?"变体 B":"变体 A"):"");
+            return BuildCatalog.MechanicName(mechanic)+((BuildCatalog.HasMechanicVariant(mechanic))?" · "+(item.mechanicVariantUnlocked&&item.mechanicVariant==1?"变体 B":"变体 A"):"");
         }
         public static bool SameMechanism(ItemData current, ItemData next, HeroClass hero)
         {

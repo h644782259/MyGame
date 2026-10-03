@@ -39,7 +39,20 @@ public void IntegrationCheck(){
   CancelAction();AnimateHero(0,0,false,0);ApplyVisualRecovery(.12f);
  }
  ApplyEquipment(null,null,null);check(spine==bodyBefore&&vanguardArt==library,"unequip keeps full motion identity");
- AnimateHero(0,0,false,0);var beforeDeath=spine.localRotation;pilotOwnerDead=true;new DeathSessionProbe().OnPlayerDied();check(Time.timeScale==0,"actual OnPlayerDied pauses scaled clock");Time.deltaTime=0;
+ // Counter variant uses a real thrust contact, then the same cancellation/recovery ownership.
+ PlayAction(-2,true,.46f);
+ check(Math.Abs(actionAge/actionDuration-.52f)<.00001f,"counter thrust keeps existing basic contact clock");
+ check(same(rightArm.localRotation,Pose(new Vector3(-18,0,12),new Vector3(-60,-8,12),new Vector3(-92,0,4),.52f)),"counter commits narrow thrust arm rather than cleave");
+ Vector3 thrustTip;check(TryGetWeaponVisualAnchor(WeaponVisualAnchor.SwordTip,out thrustTip),"counter actual sword tip available");
+ CancelAction();AnimateHero(0,0,false,0);Vector3 heldTip;
+ check(TryGetWeaponVisualAnchor(WeaponVisualAnchor.SwordTip,out heldTip)&&(heldTip-thrustTip).magnitude<.0001f,"counter cancellation preserves world contact tip");
+ ApplyVisualRecovery(.12f);AnimateHero(0,0,false,0);
+ AnimateHero(0,0,false,0);var beforeDeath=spine.localRotation;pilotOwnerDead=true;var death=new DeathSessionProbe();death.OnPlayerDied();check(Time.timeScale==0,"actual OnPlayerDied pauses scaled clock");
+ check(death.PreserveCalls==1&&death.SaveCalls==1,"death reaches explicit successful persistence boundary once");
+ Time.timeScale=1;var failedDeath=new DeathSessionProbe(false);failedDeath.OnPlayerDied();
+ check(failedDeath.IsDead&&Time.timeScale==0,"failed persistence still freezes actual death clock");
+ check(failedDeath.PreserveCalls==1&&failedDeath.SaveCalls==0&&failedDeath.Notification=="fixture preserve failure","failed preservation skips Save and keeps its error");
+ failedDeath.OnPlayerDied();check(failedDeath.PreserveCalls==1&&failedDeath.SaveCalls==0,"repeated death callback does not retry or pay twice");Time.deltaTime=0;
  var frozen=Time.time;SampleVanguardDeath();var terminal=spine.localRotation;
  check(same(terminal,beforeDeath*Quaternion.Euler(vanguardArt.Sample(VanguardArtPose.Death,1,1))),"death terminal pose reached while scaled time frozen");
  for(int i=0;i<30;i++){SampleVanguardDeath();check(Time.time==frozen&&same(spine.localRotation,terminal),"paused death terminal never accumulates or advances gameplay time");}
@@ -54,7 +67,9 @@ public void IntegrationCheck(){
  (p/'CombatBalance.cs').write_text((root/'Assets/Scripts/Core/CombatBalance.cs').read_text())
  session=(root/'Assets/Scripts/Core/GameSession.cs').read_text()
  (p/'ApplicationPauseState.cs').write_text((root/'Assets/Scripts/Core/ApplicationPauseState.cs').read_text())
- pause='using UnityEngine;namespace Emberfall {enum ExpeditionModeFailure{PlayerDefeated}enum RoomFailureReason{Death}enum SoundCue{Death}static class GameAudio{public static void Play(SoundCue cue){}}class DeathSessionProbe {public bool IsDead,Paused,uiBlocking,DungeonSelectionOpen,ModeFinished,ChapterActive;public bool HasStarted=true;private ApplicationPauseState pauseState=new ApplicationPauseState();class Mode{public void Fail(ExpeditionModeFailure f){}}class Chain{public void Fail(RoomFailureReason f){}}class Choice{public bool AwaitingChoice;public void Cancel(){}}class ProfileData{public int gold=100;}class Progress{public ProfileData Profile=new ProfileData();public void AddGold(int n){Profile.gold+=n;}public void Save(){}}private Mode ModeRun;private Chain RoomChainRun;private Choice pendingRoomChoice=new Choice(),RunChoices=new Choice();private Progress Progression=new Progress();private object LastRunSummary;private object BuildRunSummary(bool won){return null;}private void FailChapter(string s){}private void RecordRecapGoldLoss(int n){}private void Notify(string s){}'+extract(session,'public void OnPlayerDied(')+extract(session,'private void UpdateTimeScale(')+'}}'
+ # Presentation/recovery suite: persistence is an explicit configurable boundary.
+ # Real writes/receipts are tested by DeathLootPersistenceProductionTests; real death and pause methods remain below.
+ pause='using UnityEngine;namespace Emberfall {enum ExpeditionModeFailure{PlayerDefeated}enum RoomFailureReason{Death}enum SoundCue{Death}static class GameAudio{public static void Play(SoundCue cue){}}class DeathSessionProbe {private readonly bool preserveResult;public int PreserveCalls;public int SaveCalls=>Progression.Saves;public string Notification;public DeathSessionProbe(bool preserve=true){preserveResult=preserve;}private bool PreserveWorldLoot(){PreserveCalls++;if(!preserveResult)Progression.LastError="fixture preserve failure";return preserveResult;}public bool IsDead,Paused,uiBlocking,DungeonSelectionOpen,ModeFinished,ChapterActive;public bool HasStarted=true;private ApplicationPauseState pauseState=new ApplicationPauseState();class Mode{public void Fail(ExpeditionModeFailure f){}}class Chain{public void Fail(RoomFailureReason f){}}class Choice{public bool AwaitingChoice;public void Cancel(){}}class ProfileData{public int gold=100;}class Progress{public string LastError;public int Saves;public ProfileData Profile=new ProfileData();public void AddGold(int n){Profile.gold+=n;}public void Save(){Saves++;}}private Mode ModeRun;private Chain RoomChainRun;private Choice pendingRoomChoice=new Choice(),RunChoices=new Choice();private Progress Progression=new Progress();private object LastRunSummary;private object BuildRunSummary(bool won){return null;}private void FailChapter(string s){}private void RecordRecapGoldLoss(int n){}private void Notify(string s){Notification=s;}'+extract(session,'public void OnPlayerDied(')+extract(session,'private void UpdateTimeScale(')+'}}'
  (p/'ActualDeathPause.cs').write_text(pause)
  (p/'SkillDamageBudgets.cs').write_text((root/'Assets/Scripts/Core/SkillDamageBudgets.cs').read_text())
  fixture=p/'Fixture.cs';s=fixture.read_text().replace('public static int frameCount;','public static int frameCount;public static float timeScale=1;').replace('public new string name=>gameObject.name;','public Vector3 eulerAngles=>new Vector3(0,0,0);public new string name=>gameObject.name;').replace('public static class Mathf{','public static class Mathf{public static int FloorToInt(float f)=>(int)Math.Floor(f);public static float DeltaAngle(float a,float b){float d=Repeat(b-a,360);return d>180?d-360:d;}');fixture.write_text(s)
@@ -63,7 +78,7 @@ public void IntegrationCheck(){
  subprocess.run(cmd,env=env,check=True)
  # Require the integrated tests to reject losing either new-art or recovery ownership.
  original=motion.read_text()
- for label,before,after in [('skip-authored','ApplyAuthoredVanguardPose(acting,t,hurt);',''),('skip-recovery','ApplyVisualRecovery(dt);','')]:
+ for label,before,after in [('skip-authored','ApplyAuthoredVanguardPose(acting,t,hurt);',''),('skip-recovery','ApplyVisualRecovery(dt);',''),('skip-counter-thrust','if(actionBasic && actionSkill == -2)','if(false)')]:
   assert before in original;motion.write_text(original.replace(before,after));r=subprocess.run(cmd,env=env,capture_output=True,text=True)
   assert r.returncode!=0 and 'Unhandled exception. System.Exception' in r.stderr,(label,r.stdout,r.stderr)
   print('PASS compiled integration negative control:',label)

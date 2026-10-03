@@ -60,6 +60,9 @@ namespace Emberfall
             return mechanic == EquipmentMechanic.CinderTrail || mechanic == EquipmentMechanic.ReturningBlade ? ItemSlot.Weapon : ItemSlot.Relic;
         }
 
+        public static bool HasMechanicVariant(EquipmentMechanic mechanic)
+        { return mechanic == EquipmentMechanic.FrostEcho || mechanic == EquipmentMechanic.CinderTrail || mechanic == EquipmentMechanic.ReturningBlade; }
+
         public static string MechanicName(EquipmentMechanic mechanic)
         {
             switch (mechanic)
@@ -79,7 +82,7 @@ namespace Emberfall
             {
                 case EquipmentMechanic.FrostEcho: return "冰霜新星首击伤害 -20%；0.7秒后回响造成40%基础伤害并再次施加冰霜控制（灼燃专精仍只减速）。变体：范围 +35%、回响伤害降低。";
                 case EquipmentMechanic.CinderTrail: return "陨星直接伤害 -20%；落点留下2秒火场，总计40%基础伤害。每次施法每目标仅反应一次。变体：火场半径 -30%、每跳伤害提高。";
-                case EquipmentMechanic.ReturningBlade: return "普攻伤害 -8%；每1.5秒回刃弹向4米内另一个目标，造成110%基础伤害；回收后强化下一刀，击杀再弹65%。";
+                case EquipmentMechanic.ReturningBlade: return "普攻伤害 -8%；每1.5秒回刃弹向4米内另一个目标，造成110%基础伤害；回收后强化下一刀，击杀再弹65%。变体B：放弃全部弹射与回收强化，取消普攻-8%；真实完美闪避的反击窗口延至3秒，下次175%反击改窄刺，可沿合法地面前进最多2米。";
                 case EquipmentMechanic.VenomSpread: return "毒素引爆加成伤害 -20%；每2秒向附近最多2个目标传播1层毒素。";
                 case EquipmentMechanic.TwinSummonResonance: return "普通召唤上限改为2；伙伴伤害 +60%、生命 +20%。不同类型伙伴1.5秒内实际命中同一集火目标时共鸣追加35%基础伤害，冷却3秒。";
                 default: return "装备机制只在穿戴且职业匹配时生效。";
@@ -449,8 +452,9 @@ namespace Emberfall
             }
             if (skill == 6)
             {
-                if (hero == HeroClass.Summoner) return new[] { "5秒内为自身与召唤物恢复30%最大生命。", "5秒为自身与召唤物恢复42%生命，自身获得18%减伤。", "5秒为自身与召唤物恢复55%生命，自身获得25%减伤并回复8灵力。" }[stage];
-                return new[] { "5秒内恢复30%最大生命，不造成伤害。", "5秒恢复42%生命，获得18%减伤。", "5秒恢复55%生命，获得25%减伤并回复8能量。" }[stage];
+                string limited = " 限疗模式：5秒内自身恢复" + new[] { "60%", "70%", "80%" }[stage] + "最大生命，消耗1次治疗充能。";
+                if (hero == HeroClass.Summoner) return new[] { "5秒内为自身与召唤物恢复30%最大生命。", "5秒为自身与召唤物恢复42%生命，自身获得18%减伤。", "5秒为自身与召唤物恢复55%生命，自身获得25%减伤并回复8灵力。" }[stage] + limited + "召唤物治疗量不变。";
+                return new[] { "5秒内恢复30%最大生命，不造成伤害。", "5秒恢复42%生命，获得18%减伤。", "5秒恢复55%生命，获得25%减伤并回复8能量。" }[stage] + limited;
             }
             if (stage == 0) return SkillDescription(hero, skill);
             return stage == 1 ? ReinforcedEffects[(int)hero,skill] : AwakenedEffects[(int)hero,skill];

@@ -93,6 +93,31 @@ namespace Emberfall {
    var extra2=Summon(owner,game,Kind.Wolf,1,Vector3.zero,10,false);extra2.IsStarter=false;
    extra.target=extra.AcquireTarget();extra2.target=extra2.AcquireTarget();
    check(extra.target==b&&extra2.target==c,"reinforcements split including permanent base wolf occupancy");
+   // Actual AcquireTarget/AdvanceCommand/Directive methods: sustained basic focus
+   // must not continually steal the two reinforcement wolves from their guards.
+   owner.FocusTarget=a;
+   for(int tick=0;tick<100;tick++) {
+    Time.time+=.1f;wolf.target=wolf.AcquireTarget();extra.AdvanceCommand(.1f);extra2.AdvanceCommand(.1f);
+    extra.target=extra.AcquireTarget();extra2.target=extra2.AcquireTarget();
+    check(wolf.target==a&&extra.target==b&&extra2.target==c,"ten second basic focus leaves reinforcements on two guards");
+   }
+   check(spirit.AcquireTarget()==a,"spirit still follows basic focus on pack route");
+   extra.IsPermanent=true;check(extra.AcquireTarget()==a,"permanent nonstarter wolf still follows basic focus");extra.IsPermanent=false;
+   extra.IsStarter=true;check(extra.AcquireTarget()==a,"foundation marker excludes autonomous pack priority");extra.IsStarter=false;
+   game.Progression.Profile.summonerRoute=SummonerRoute.Bonded;check(extra.AcquireTarget()==a,"bonded route still follows basic focus");game.Progression.Profile.summonerRoute=SummonerRoute.Pack;
+   SetFreeFocus(owner,c);check(extra.AcquireTarget()==c&&extra2.AcquireTarget()==c,"explicit focus overrides basic focus and autonomous hunt");
+   FreeRecall(owner);check(extra.AcquireTarget()==null&&extra2.AcquireTarget()==null,"recall overrides basic focus and autonomous hunt");
+   FreeAttack(owner);wolf.target=wolf.AcquireTarget();extra.target=extra.AcquireTarget();extra2.target=extra2.AcquireTarget();
+   check(wolf.target==a&&extra.target==b&&extra2.target==c,"focus recall attack resumes split with continuous basic focus");
+   extra.Command(a,false,a.transform.position,true);check(extra.AcquireTarget()==a,"paid submitted wolf contract overrides autonomous hunt");
+   extra.AdvanceCommand(4);extra.target=null;check(extra.AcquireTarget()==b,"paid wolf command expiry resumes autonomous hunt despite basic focus");
+   extra.Command(b,false,b.transform.position,true);b.IsDead=true;extra.AdvanceCommand(0);extra.target=extra.AcquireTarget();
+   check(extra.target!=b&&!extra.hasCommandPoint,"dead paid wolf target cannot hold hunt");b.IsDead=false;
+   extra.target=b;extra.packTargetHoldUntil=Time.time+1;game.Enemies.Remove(b);check(extra.AcquireTarget()!=b,"removed pack target bypasses hold with active basic focus");game.Enemies.Add(b);
+   b.gameObject.activeInHierarchy=false;check(extra.AcquireTarget()!=b,"inactive pack target bypasses hold with active basic focus");b.gameObject.activeInHierarchy=true;
+   owner.FocusTarget=c;game.InDungeon=false;a.IsAggro=b.IsAggro=c.IsAggro=false;extra.target=null;
+   check(extra.AcquireTarget()==null,"basic focus cannot bypass wilderness engagement rule for pack");game.InDungeon=true;a.IsAggro=b.IsAggro=c.IsAggro=true;
+   owner.FocusTarget=null;extra.target=b;extra.packTargetHoldUntil=Time.time+1;
    extra2.target=null;b.transform.position=new Vector3(8,0,0);c.transform.position=new Vector3(4,0,0);Time.time+=.5f;
    check(extra.AcquireTarget()==b,"legal target held for one second despite nearer choice");
    b.IsDead=true;extra.target=extra.AcquireTarget();check(extra.target!=b,"death bypasses hold");b.IsDead=false;
@@ -134,6 +159,7 @@ if __name__ == '__main__':
   dotnet=sys.argv[1] if len(sys.argv)>1 else 'dotnet';subprocess.run([dotnet,'build',str(p),'--configfile',str(config),'-v:q'],env=env,check=True);subprocess.run([dotnet,str(p.parent/'bin/Debug/net8.0/Validation.dll')],env=env,check=True)
 
   for old,new,expected in [
+   ('if (Form == Kind.Wolf && !IsPermanent && !IsStarter && session.Progression.Profile.summonerRoute == SummonerRoute.Pack)', 'if (Owner.FocusTarget != null) return Owner.FocusTarget;\n            if (Form == Kind.Wolf && !IsPermanent && !IsStarter && session.Progression.Profile.summonerRoute == SummonerRoute.Pack)', 'ten second basic focus leaves reinforcements on two guards'),
    ('EnemyController chosen = unclaimed ?? fallback;', 'EnemyController chosen = fallback;', 'reinforcements split including permanent base wolf occupancy'),
    ('Time.time < packTargetHoldUntil && LegalPackTarget(target)', 'false && LegalPackTarget(target)', 'legal target held for one second despite nearer choice'),
    ('State(owner).Directive.Clear();\n            foreach (var pet in Snapshot(owner)) { pet.target = null; pet.recallVisualPending = false; }', 'State(owner).Directive.Clear();\n            foreach (var pet in Snapshot(owner)) { pet.cooldown = 0; pet.target = null; pet.recallVisualPending = false; }', 'free attack never refreshes timers buffs recovery lifetime or opportunity'),

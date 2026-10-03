@@ -1,12 +1,15 @@
-READ-ONLY FINAL INVENTORY AUDIT
-Windows runtime source 8659466c3a0f9bbc00915b97d9405d40cc3ed939
-Windows original baseline 25096ba7dbf6e9d7ba9463ec29104c2c462da426
-PASS all 124 recorded current Resources payload SHA-256 and byte lengths match actual worktree files
-PASS 112 added Resources / 1094536 source bytes / 111 meshes / 11866 unique source triangles / 1 animation-data file
-PASS Windows/iOS added art resource+meta parity; only five original font paths differ
-PASS Windows integrated snapshot 8659466c3a0f9bbc00915b97d9405d40cc3ed939 preserved 306 baseline GUIDs; 0 changed/missing/duplicate
-PASS iOS current checkout snapshot 2b2469d3a6ed3da5d622bd95127219da54268dd4 preserved 309 baseline GUIDs; 0 changed/missing/duplicate
-PASS 40 existing skill classification rows; no unchecked production candidate in finite checklist
-No production, tests or tools edited by this audit.
-Combined integration regression/full aggregate pending parent validation.
-Not Unity engine, packaging, imported-memory, GPU, FPS or device acceptance.
+FINAL FROZEN INVENTORY AND VALIDATION AUDIT
+Windows source bc6a572a86fe4376f6f346b0fe52f20d9678aec3
+iOS source 30f748b1bf6da7def9d91118aa756cd225c03e79
+PASS all 124 Resources payload SHA-256 and byte lengths
+PASS 112 added Resources / 1094536 source bytes / 111 meshes / 11866 unique source triangles / 1 action-data file
+PASS original Windows306/iOS309 GUIDs preserved;142 new paths including2 planning sources;no collisions
+PASS 273 runtime C# files identical and all have metadata
+PASS 813 common runtime paths; only preserved original Fonts.meta differs;4 iOS-only font files unchanged
+PASS complete input differences and platform-only paths retain original baseline blobs
+PASS 40 existing skill classifications;finite asset roster closed
+PASS 233/233 full checks;separate explicit Windows/iOS/Android API compilations
+PASS all1785 actual Windows checkout input files byte-identical before/after;declared CRLF conversion recorded separately
+Scope:source,managed and numerical geometry evidence;not Unity6/device/camera/GPU/package acceptance
+Android remote unavailable;offline source handoff only;patch applicability unverified
+Parent owns draft PR review and merge

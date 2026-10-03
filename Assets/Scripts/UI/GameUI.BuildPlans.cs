@@ -36,13 +36,15 @@ namespace Emberfall
         private bool CloseBuildPlanSurface()
         {
             if(!buildPlansOpen||panel!=Panel.Camp)return false;
-            if(buildPlanAction!=BuildPlanAction.None)buildPlanAction=BuildPlanAction.None;
+            if(allocationDraft!=null)CancelAllocationDraft();
+            else if(buildPlanAction!=BuildPlanAction.None)buildPlanAction=BuildPlanAction.None;
             else buildPlansOpen=false;
             buildPlanError=null;buildPlanScroll=Vector2.zero;
             CancelMobileScroll();BlockUITransition();return true;
         }
         private void ResetBuildPlanSurface()
         {
+            CancelAllocationDraft();
             buildPlansOpen=false;buildPlanAction=BuildPlanAction.None;
             buildPlanOwner=null;buildPlanSource=null;buildPlanHero=null;buildPlanCharacterId=null;
             buildPlanPreview=buildPlanError=null;buildPlanScroll=Vector2.zero;
@@ -57,6 +59,7 @@ namespace Emberfall
             if(!buildPlansOpen)return false;
             ReconcileBuildPlanSurface();
             if(!buildPlansOpen)return false;
+            if(allocationDraft!=null)return DrawAllocationDraftSurface();
             float unit=MobileControls.Active?TouchRatio:1;
             var layout=new MobileDialogLayout(width/unit,height/unit);
             bool confirm=buildPlanAction!=BuildPlanAction.None;
@@ -130,6 +133,7 @@ namespace Emberfall
                 if(!session.IsInCamp)BuildPlanParagraph(ref y,width,unit,"请先安全返回营地再操作。",gold,draw);
                 return y;
             }
+            DraftButton(ref y,width,unit,"局部调整配点 · 临时草稿",session.IsInCamp,draw,OpenAllocationDraft);
             BuildPlanParagraph(ref y,width,unit,"当前配装",gold,draw,true);
             BuildPlanParagraph(ref y,width,unit,p.CurrentBuildSummary(),pale,draw);
             BuildPlanParagraph(ref y,width,unit,"免费重置预览：技能进阶 "+p.RefundableSkillRanks+"点 + 精通 "+p.RefundableMasteryPoints+"点 = "+p.RefundableBuildPoints+"点。保留已学1阶，关闭精通核心。",muted,draw);

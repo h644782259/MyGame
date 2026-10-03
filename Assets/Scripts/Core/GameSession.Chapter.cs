@@ -29,6 +29,34 @@ namespace Emberfall
         private ChapterRunReceipt chapterReceipt;
         private ChapterRoomPlan chapterPlan;
         private bool enteringChapter;
+        private int chapterRetrySeed,chapterRetryTier,lastChapterRetryFrame=-1;
+        private bool chapterRetryLimited;
+        private RunBlessing? chapterRetryTactic;
+        public bool CanRetryChapter {get{return HasStarted&&InDungeon&&ChapterFinished&&ChapterRun.Failed&&Player!=null&&chapterReceipt!=null&&chapterReceipt.SavePath==Progression.SaveFilePath&&!enteringChapter&&!changingZone&&lastChapterRetryFrame!=Time.frameCount;}}
+        public bool RetryFailedChapter()
+        {
+            if(!CanRetryChapter||!SaveBeforeLeaving())return false;
+            ChapterRunReceipt receipt;
+            if(!Progression.TryBeginChapterNode(ChapterRun.Node,ChapterRun.Difficulty,chapterRetryTier,out receipt))
+            {Notify(Progression.LastError);return false;}
+            // A new receipt invalidates all callbacks from the failed attempt. Seed and
+            // the admitted tactic are frozen, independent of mutable selection controls.
+            lastChapterRetryFrame=Time.frameCount;
+            chapterReceipt=receipt;ChapterRun=new ChapterCombatRun(receipt.Node,receipt.Difficulty,chapterRetrySeed);
+            chapterEntryPotions=Progression.Profile.potions;chapterFirstSealSeconds=chapterSecondSealSeconds=0;
+            ChapterResult=null;chapterBossDeathFrame=-1;chapterResultSkipped=false;
+            enteringChapter=true;ChallengeRun=chapterRetryLimited;
+            try
+            {
+                if(!ChangeZone(true))return false;
+                IsDead=false;Paused=false;uiBlocking=false;
+                if(ChapterFinished)return false;
+                if(chapterRetryTactic.HasValue)RunChoices.RestoreChapterTactic(chapterRetryTactic.Value);
+                Notify("已按原条件从节点起点重试 · "+ChapterObjectiveStatus);return true;
+            }
+            catch(System.Exception error){IsDead=false;FailChapter("重试生成异常："+error.Message);return false;}
+            finally {enteringChapter=false;changingZone=false;UpdateTimeScale();}
+        }
         private GameObject chapterExit,chapterObjective;
         private readonly GameObject[] chapterObjectives=new GameObject[2];
         private EnemyController chapterSupplier;
@@ -86,6 +114,7 @@ namespace Emberfall
             bool redrockReplay=receipt.Node==ChapterNode.Redrock&&receipt.Difficulty!=ChapterDifficulty.Normal&&
                 (Progression.Profile.chapterCompletedMask&(1<<(int)ChapterNode.Redrock))!=0;
             if(redrockReplay)seed=ChapterRoomGeometry.RedrockReplaySeed(seed,redrockRouteOwner!=Progression.SaveFilePath||!previousRedrockSplit);
+            chapterRetrySeed=seed;chapterRetryTier=receipt.Tier;chapterRetryLimited=SelectedChapterLimitedHealing;chapterRetryTactic=SelectedChapterTactic>=0&&SelectedChapterTactic<3&&RunChoices.ChapterTacticsAvailable(Progression.Profile,receipt.Node)?(RunBlessing?)RunChoices.ChapterTactic(Progression.Profile,MobileControls.Active,SelectedChapterTactic):null;
             chapterReceipt=receipt;ChapterRun=new ChapterCombatRun(receipt.Node,receipt.Difficulty,seed);
             enteringChapter=true;ChallengeRun=SelectedChapterLimitedHealing;
             try {if(!ChangeZone(true)){ResetChapterRun();return false;}}
@@ -95,6 +124,7 @@ namespace Emberfall
             {redrockRouteOwner=Progression.SaveFilePath;previousRedrockSplit=ChapterRoomGeometry.RedrockSplitRoute(seed);}
             if(receipt.Node==ChapterNode.ForestCourt&&receipt.Difficulty==ChapterDifficulty.Hard){forestLineupOwner=Progression.SaveFilePath;previousForestLineup=(seed&2)==0?0:1;}
             if(ChapterRun!=null&&!ChapterRun.Finished&&!ChapterRun.Failed&&SelectedChapterTactic>=0)RunChoices.ChooseChapterTactic(Progression.Profile,receipt.Node,MobileControls.Active,SelectedChapterTactic);
+            foreach(var tactic in RunChoices.Active)chapterRetryTactic=tactic;
             UpdateTimeScale();Notify(ChapterDefinition.Get(receipt.Node).Story+" · "+ChapterObjectiveStatus);return true;
         }
         private void ResetChapterRun()

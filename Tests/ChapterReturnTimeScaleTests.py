@@ -21,7 +21,7 @@ with tempfile.TemporaryDirectory(prefix='chapter-return-clock-') as t:
  'Paused,BackgroundPaused,IsInCamp=true;':'Paused,IsInCamp=true;public bool BackgroundPaused=>pauseState.BackgroundPaused;',
  'public bool InputBlocked=>Paused||BackgroundPaused||IsDead||ChapterFinished;':member('Assets/Scripts/Core/GameSession.cs','public bool InputBlocked'),
  'void UpdateTimeScale(){}':'',
- 'public void Notify(string s)':'string SaveLoadError;GameUI ui;float autosaveTimer;readonly SaveLifecycleGate lifecycleSave=new SaveLifecycleGate();void OnProgressChanged(){}void OnLevelUp(int level){}void DiscardForeignSideEventRewards(){}readonly ApplicationPauseState pauseState=new ApplicationPauseState();bool uiBlocking;string equipmentFingerprint;readonly Dictionary<string,PendingLoot> pendingLoot=new Dictionary<string,PendingLoot>();readonly HashSet<string> collectedGroundLoot=new HashSet<string>();class PendingLoot{public FakePickup Pickup;}class FakePickup{public void Retire(){}}void StopAllCoroutines(){}\npublic void Notify(string s)'
+ 'public void Notify(string s)':'string SaveLoadError;GameUI ui;float autosaveTimer;readonly SaveLifecycleGate lifecycleSave=new SaveLifecycleGate();void OnProgressChanged(){}void OnLevelUp(int level){}void DiscardForeignSideEventRewards(){}readonly ApplicationPauseState pauseState=new ApplicationPauseState();string equipmentFingerprint;readonly Dictionary<string,PendingLoot> pendingLoot=new Dictionary<string,PendingLoot>();readonly HashSet<string> collectedGroundLoot=new HashSet<string>();class PendingLoot{public FakePickup Pickup;}class FakePickup{public void Retire(){}}void StopAllCoroutines(){}\npublic void Notify(string s)'
  }
  for a,b in replacements.items():
   assert a in fixture,a

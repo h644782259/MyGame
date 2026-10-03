@@ -1006,6 +1006,106 @@ namespace Emberfall
         }
         public int RefundableBuildPoints { get { return RefundableSkillRanks + RefundableMasteryPoints; } }
 
+        /// <summary>Camp-only detached allocation editor. No writes or Changed events
+        /// occur until a single candidate (optionally including A/B) is persisted.</summary>
+        public sealed class BuildDraft
+        {
+            private readonly ProgressionService owner, preview;
+            private readonly GameProfile source;
+            private readonly string fingerprint, slot;
+            private readonly List<GameProfile> history = new List<GameProfile>();
+            private bool completed;
+            public string Error { get; private set; }
+            internal BuildDraft(ProgressionService owner)
+            {
+                this.owner=owner;source=owner.Profile;slot=owner.CurrentSlotId;
+                fingerprint=JsonUtility.ToJson(source,true);
+                preview=new ProgressionService(owner.saveDirectory);preview.Profile=owner.Snapshot();
+            }
+            private bool Attached { get { return !completed && owner.CurrentSlotId==slot && ReferenceEquals(source,owner.Profile); } }
+            public bool IsCurrent { get { return Attached && fingerprint==JsonUtility.ToJson(owner.Profile,true); } }
+            public int Points { get { int spent=0;foreach(int rank in preview.Profile.skillRanks)spent+=rank;foreach(int rank in preview.Profile.masteryRanks)spent+=rank;return GameBalance.SkillPointBudget(source.level)-spent; } }
+            public int Level { get { return source.level; } }
+            public int Core { get { return preview.Profile.masteryCore; } }
+            public bool CanUndo { get { return history.Count>0; } }
+            public int SkillRank(int index) { return index>=0&&index<GameBalance.SkillCount?preview.Profile.skillRanks[index]:0; }
+            public int MasteryRank(int index) { return index>=0&&index<4?preview.Profile.masteryRanks[index]:0; }
+            public StatBlock Stats { get { return preview.GetStats(); } }
+            private bool Reject(string reason) { Error=reason;return false; }
+            private void Remember()
+            {
+                if(history.Count==128)history.RemoveAt(0);
+                history.Add(preview.Snapshot());Error=null;
+            }
+            public string SkillChangeReason(int index,int delta)
+            {
+                if(!Attached)return "角色资料已变化，请取消并重新打开草稿。";
+                if(index<0||index>=GameBalance.SkillCount||(delta!=1&&delta!=-1))return "无效的技能调整。";
+                int rank=SkillRank(index);
+                if(rank<1)return "先在技能页学习1阶；草稿只调整已学技能的2/3阶。";
+                if(delta<0)return rank<=1?"已学1阶保留，不可退还。":null;
+                if(rank>=3)return "已达3阶上限。";
+                if(source.level<GameBalance.SkillRankRequiredLevel(index,rank+1))return "等级不足，不能提升这一阶。";
+                return Points<=0?"共享点数不足，请先退回其他投入。":null;
+            }
+            public bool ChangeSkill(int index,int delta)
+            {
+                if(!IsCurrent)return Reject("角色资料已变化，请取消并重新打开草稿。");
+                string reason=SkillChangeReason(index,delta);if(reason!=null)return Reject(reason);
+                Remember();preview.Profile.skillRanks[index]+=delta;return true;
+            }
+            public string MasteryChangeReason(int index,int delta)
+            {
+                if(!Attached)return "角色资料已变化，请取消并重新打开草稿。";
+                if(index<0||index>=4||(delta!=1&&delta!=-1))return "无效的精通调整。";
+                if(delta<0)return MasteryRank(index)<=0?"没有可退还的投入。":null;
+                if(MasteryRank(index)>=MasteryCap(source.level))return "已达当前等级精通上限 "+MasteryCap(source.level)+"。";
+                return Points<=0?"共享点数不足，请先退回其他投入。":null;
+            }
+            public bool ChangeMastery(int index,int delta)
+            {
+                if(!IsCurrent)return Reject("角色资料已变化，请取消并重新打开草稿。");
+                string reason=MasteryChangeReason(index,delta);if(reason!=null)return Reject(reason);
+                Remember();preview.Profile.masteryRanks[index]+=delta;
+                if(Core==index&&MasteryRank(index)<MasteryCoreRules.InitialInvestment)preview.Profile.masteryCore=-1;
+                return true;
+            }
+            public bool SelectCore(int index)
+            {
+                if(!IsCurrent)return Reject("角色资料已变化，请重新打开草稿。");
+                if(index < -1||index>=4||index>=0&&MasteryRank(index)<MasteryCoreRules.InitialInvestment)return Reject("核心需该方向投入 "+MasteryCoreRules.InitialInvestment+"点。");
+                if(index==Core)return true;Remember();preview.Profile.masteryCore=index;return true;
+            }
+            public string CoreThreshold(int index)
+            {
+                int rank=MasteryRank(index);
+                return rank<MasteryCoreRules.InitialInvestment?"距核心 "+(MasteryCoreRules.InitialInvestment-rank)+"点":rank<MasteryCoreRules.EnhancedInvestment?"核心可选 · 距强化 "+(MasteryCoreRules.EnhancedInvestment-rank)+"点":"强化核心可选";
+            }
+            public bool Undo()
+            {
+                if(!IsCurrent||!CanUndo)return false;
+                preview.Profile=history[history.Count-1];history.RemoveAt(history.Count-1);Error=null;return true;
+            }
+            public void Cancel() { completed=true;history.Clear(); }
+            public bool Apply(bool inCamp,int saveSlot=-1)
+            {
+                if(!inCamp)return Reject("只能在营地应用草稿。");
+                if(!IsCurrent)return Reject("角色资料已变化，请取消并重新打开草稿。");
+                if(saveSlot < -1||saveSlot>=BuildPresetCount)return Reject("无效的方案位置。");
+                BuildPreset preset=preview.CaptureBuild();string reason=owner.ValidateBuildPreset(preset);
+                if(!string.IsNullOrEmpty(reason))return Reject(reason);
+                GameProfile candidate=preview.Snapshot();candidate.skillPoints=Points;
+                if(saveSlot>=0){EnsureBuildPresetSlots(candidate);candidate.buildPresets[saveSlot]=preset;}
+                if(!owner.CommitCandidate(candidate,true))return Reject(owner.LastError);
+                completed=true;history.Clear();Error=null;return true;
+            }
+        }
+        public BuildDraft BeginBuildDraft(bool inCamp)
+        {
+            if(!inCamp){Fail("只能在营地调整配点草稿。");return null;}
+            return new BuildDraft(this);
+        }
+
         /// <summary>One transaction, rather than two independently fallible refunds.
         /// Learned first ranks, prerequisites, equipment and hotbar identity remain.</summary>
         public bool ResetBuild(bool inCamp)
@@ -1043,7 +1143,7 @@ namespace Emberfall
             return item!=null && item.mechanicVariantUnlocked && HasElementVariant(item) ? item.mechanicVariant : -1;
         }
         private static bool HasElementVariant(ItemData item)
-        {return item!=null && (item.mechanic==EquipmentMechanic.FrostEcho || item.mechanic==EquipmentMechanic.CinderTrail);}
+        {return item!=null && BuildCatalog.HasMechanicVariant(item.mechanic);}
 
         public string CurrentBuildSummary() { return DescribeBuild(CaptureBuild()); }
         public string BuildPresetSummary(int slot)
@@ -1216,11 +1316,17 @@ namespace Emberfall
         }
 
         private GameProfile Snapshot() { return JsonUtility.FromJson<GameProfile>(JsonUtility.ToJson(Profile, true)); }
-        private bool CommitCandidate(GameProfile candidate)
+        // True only while publishing a successfully persisted draft candidate.
+        // Nested non-draft transactions get their own false scope.
+        internal bool IsApplyingBuildDraft { get; private set; }
+        private bool CommitCandidate(GameProfile candidate,bool buildDraft=false)
         {
             string failure;
             if (!TryWriteAttachedProfile(candidate, out failure)) return Fail(failure);
-            Profile = candidate; LastError = string.Empty; RaiseChanged(); return true;
+            Profile = candidate; LastError = string.Empty;
+            bool previousDraft=IsApplyingBuildDraft;IsApplyingBuildDraft=buildDraft;
+            try { RaiseChanged(); } finally { IsApplyingBuildDraft=previousDraft; }
+            return true;
         }
 
         public const int SideEventReceiptLimit=32;
@@ -1450,7 +1556,7 @@ namespace Emberfall
             ItemData item=FindItem(id);
             if(item==null||item.mechanic==EquipmentMechanic.None||!Enum.IsDefined(typeof(EquipmentMechanic),item.mechanic)||
                 BuildCatalog.MechanicClass(item.mechanic)!=Profile.heroClass||item.slot!=BuildCatalog.MechanicSlot(item.mechanic))return "请选择背包中的本职业机制装备。";
-            if(kind==ProgressionGoalKind.Variant)return HasElementVariant(item)?string.Empty:"这件装备没有元素变体。";
+            if(kind==ProgressionGoalKind.Variant)return HasElementVariant(item)?string.Empty:"这件装备没有机制变体。";
             if(!HasDiscoveredMechanic(item.mechanic))return "请先登记这件装备的机制配方。";
             if(kind==ProgressionGoalKind.Ascension&&item.rarity!=Rarity.Epic)
                 return item.rarity==Rarity.Legendary?"已是传说品质，不会重复升华。":"先获取"+BuildCatalog.MechanicName(item.mechanic)+"的史诗装备，再选择升华目标。";
@@ -2518,7 +2624,7 @@ namespace Emberfall
             item.upgradeLevel = Clamp(item.upgradeLevel, 0, MaximumUpgrade);
             if (!Enum.IsDefined(typeof(EquipmentMechanic), item.mechanic) ||
                 (item.mechanic != EquipmentMechanic.None && BuildCatalog.MechanicSlot(item.mechanic) != item.slot)) item.mechanic = EquipmentMechanic.None;
-            item.mechanicVariant = item.mechanicVariantUnlocked && (item.mechanic == EquipmentMechanic.FrostEcho || item.mechanic == EquipmentMechanic.CinderTrail) ? Clamp(item.mechanicVariant, 0, 1) : 0;
+            item.mechanicVariant = item.mechanicVariantUnlocked && BuildCatalog.HasMechanicVariant(item.mechanic) ? Clamp(item.mechanicVariant, 0, 1) : 0;
             EnsureUpgradeBasis(item);
             if (string.IsNullOrWhiteSpace(item.name)) item.name = "无名" + ItemBaseName(item.slot, hero);
             if (item.name.Length > 60) item.name = item.name.Substring(0, 60);

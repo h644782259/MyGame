@@ -273,7 +273,7 @@ namespace Emberfall
         private static string MobileMechanicSummary(ItemData item)
         {
             if (item == null || item.mechanic == EquipmentMechanic.None) return "无特殊机制";
-            string variant = item.mechanic == EquipmentMechanic.FrostEcho || item.mechanic == EquipmentMechanic.CinderTrail ? " · 当前变体 " + (item.mechanicVariant == 1 ? "B" : "A") : "";
+            string variant = BuildCatalog.HasMechanicVariant(item.mechanic) ? " · 当前变体 " + (item.mechanicVariant == 1 ? "B" : "A") : "";
             return BuildCatalog.MechanicName(item.mechanic) + variant + "\n" + BuildCatalog.MechanicDescription(item.mechanic);
         }
         private void DrawMobileEquipmentScores(float x, float y, float width, ItemData current, ItemData candidate)

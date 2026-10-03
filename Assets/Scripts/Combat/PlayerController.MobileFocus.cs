@@ -37,6 +37,11 @@ namespace Emberfall
         {
             if(!MobileControls.Active||!MobilePinAppliesToSkill(skill))return "";
             var enemy=MobilePinnedTarget;if(enemy==null)return "";
+            if(skill<0&&ReturningCounterReady)
+            {
+                Vector3 landing;
+                return ReturningCounterRules.Predict(transform.position,enemy.transform.position,enemy.IsBoss,enemy.HitFootprintBonus,out landing);
+            }
             float distance=CombatFx.Flat(enemy.transform.position-transform.position).magnitude;
             float range=skill<0?(HeroClass==HeroClass.Vanguard?2.8f+(enemy.IsBoss?.85f:.4f)+enemy.HitFootprintBonus:14f):
                 SkillTargetingController.Describe(HeroClass,skill,session.Progression.Profile.skillRanks[skill]).distance;

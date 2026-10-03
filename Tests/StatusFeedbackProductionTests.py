@@ -25,7 +25,7 @@ fixture+='''namespace Emberfall{
  public static class SkillDamageBudgets{public const float BasicEnergyOnHit=1;} public enum CombatVisualPriority{SustainedBackground}
  public class ElementalFieldVisual:MonoBehaviour{public static ElementalFieldVisual Spawn(Transform p,ElementalCombatVfx.Element e,float radius,bool attached,CombatVisualPriority priority)=>new ElementalFieldVisual();}
  public static class AdvancedSkillVfx{public static void Beam(PlayerController p,Vector3 a,Vector3 b,Color c,float d,float w){}}public static class GameBalance{public static Color ClassColor(HeroClass h)=>new Color();}
- public sealed partial class PlayerController{public HeroClass HeroClass=HeroClass.Arcanist;public float CombatAttack=100;public Runtime skillRuntime=new Runtime();private Mastery masteryCore=new Mastery();private EnemyController openingFrostTarget,focusedEnemy;private int openingFrostIdentity;private OpeningFrostCounter openingFrost=new OpeningFrostCounter();private CombatProcCooldown openingFrostProc=new CombatProcCooldown(),returningBladeProc=new CombatProcCooldown();private float classDodgeTime,focusTime,dodgeShockTime,counterTime;private bool HasMechanic(EquipmentMechanic m)=>false;private EnemyController NearestOtherEnemy(Vector3 p,EnemyController e,float r)=>null;private void HitArea(Vector3 p,float radius,float damage,float stun,float knock){} }
+ public sealed partial class PlayerController{public HeroClass HeroClass=HeroClass.Arcanist;public float CombatAttack=100;public Runtime skillRuntime=new Runtime();private Mastery masteryCore=new Mastery();private EnemyController openingFrostTarget,focusedEnemy;private int openingFrostIdentity;private OpeningFrostCounter openingFrost=new OpeningFrostCounter();private CombatProcCooldown openingFrostProc=new CombatProcCooldown(),returningBladeProc=new CombatProcCooldown();private float classDodgeTime,focusTime,dodgeShockTime,counterTime;public bool ReturningCounterVariant,OwnReturningBlade;public EnemyController BounceTarget;private bool HasMechanic(EquipmentMechanic m)=>OwnReturningBlade;private EnemyController NearestOtherEnemy(Vector3 p,EnemyController e,float r)=>BounceTarget;private void HitArea(Vector3 p,float radius,float damage,float stun,float knock){} }
 }'''
 visual=(ROOT/'Assets/Scripts/Combat/ElementalCombatVfx.cs').read_text()
 aura='using UnityEngine;namespace Emberfall { public static class ElementalCombatVfx {public enum Element {Fire,Poison,Lightning}'+''.join(member(visual,x) for x in ['public static void OnEnemy(', 'internal static void ClearFire(', 'internal static void ClearPoison('])+'internal static ParticleSystem Create(Transform t,string n,Element e,float rate,float radius)=>new ParticleSystem();}'+member(visual,'internal sealed class ElementalEnemyAura')+'}'
@@ -37,16 +37,28 @@ with tempfile.TemporaryDirectory(prefix='status-feedback-') as d:
  (p/'Fixture.cs').write_text(fixture);(p/'Aura.cs').write_text(aura)
  (p/'Player.cs').write_text('using UnityEngine;namespace Emberfall{public sealed partial class PlayerController{'+member(player,'internal void OnBasicAttackHitTarget(')+'}}')
  (p/'Rules.cs').write_text('using System;using System.Collections.Generic;namespace Emberfall{'+''.join(member(rules,x) for x in ['public sealed class RecentCastGate','public sealed class OpeningFrostCounter','public sealed class CombatProcCooldown'])+'}')
- (p/'Test.cs').write_text((ROOT/'Tests/StatusFeedbackProductionTests.cs').read_text())
+ # Variant ownership and target search are explicit inputs; actual basic-hit branch executes.
+ tests=(ROOT/'Tests/StatusFeedbackProductionTests.cs').read_text()
+ seam='  Console.WriteLine("PASS actual poison'
+ assert seam in tests
+ tests=tests.replace(seam,'''  foreach(bool counterVariant in new[]{false,true}){
+   enemy=Create(out owner);owner.HeroClass=HeroClass.Vanguard;owner.OwnReturningBlade=true;owner.ReturningCounterVariant=counterVariant;owner.BounceTarget=new EnemyController();
+   owner.OnBasicAttackHitTarget(Vector3.zero,enemy,true);
+   Check(owner.BounceTarget.Hits.Count==(counterVariant?0:1),"counter variant excludes legacy returning-blade bounce while normal retains it");
+   Check(Math.Abs(Field<float>(owner,"counterTime")-(counterVariant?0:1.8f))<.0001f,"counter variant excludes legacy heavy-counter grant");
+   if(!counterVariant)Check(Math.Abs(owner.BounceTarget.Hits[0].Amount-110)<.001f,"normal returning-blade damage dispatch unchanged");
+  }
+'''+seam)
+ (p/'Test.cs').write_text(tests)
  (p/'Test.csproj').write_text('<Project Sdk="Microsoft.NET.Sdk"><PropertyGroup><TargetFramework>net8.0</TargetFramework><OutputType>Exe</OutputType></PropertyGroup></Project>');(p/'NuGet.Config').write_text('<configuration><packageSources><clear /></packageSources></configuration>')
  dotnet=sys.argv[1] if len(sys.argv)>1 else os.environ.get('DOTNET','dotnet')
- for name,mutation in [('current',None),('poison-clear-missing',('EnemyStatusEffects.cs','ElementalCombatVfx.ClearPoison(enemy);','')),('false-frost-feedback',('Player.cs','burning ? "灼触" : "霜触"','"霜触"'))]:
+ for name,mutation in [('current',None),('poison-clear-missing',('EnemyStatusEffects.cs','ElementalCombatVfx.ClearPoison(enemy);','')),('false-frost-feedback',('Player.cs','burning ? "灼触" : "霜触"','"霜触"')),('lost-counter-variant-exclusion',('Player.cs',' && !ReturningCounterVariant',''))]:
   original=None
   if mutation:
    path=p/mutation[0];original=path.read_text();assert mutation[1] in original;path.write_text(original.replace(mutation[1],mutation[2]))
   result=subprocess.run([dotnet,'run','--project',str(p/'Test.csproj')],env=dict(os.environ,DOTNET_CLI_HOME=str(p/'cli'),DOTNET_NOLOGO='1'),capture_output=True,text=True)
   if name=='current':print(result.stdout+result.stderr);result.check_returncode()
   else:
-   expected='poison consumption retires sustained visuals immediately' if name=='poison-clear-missing' else 'burn proc reports actual fire type'
+   expected={'poison-clear-missing':'poison consumption retires sustained visuals immediately','false-frost-feedback':'burn proc reports actual fire type','lost-counter-variant-exclusion':'counter variant excludes legacy returning-blade bounce while normal retains it'}[name]
    assert result.returncode!=0 and 'System.Exception: '+expected in result.stdout+result.stderr,result.stdout+result.stderr
    print('PASS compiled negative control:',name);path.write_text(original)

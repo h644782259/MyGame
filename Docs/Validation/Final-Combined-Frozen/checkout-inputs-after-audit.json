@@ -1,0 +1,9 @@
+{
+  "scope": "All canonical tracked Assets/Tests/Tools/ArtSource inputs, using exact captured checkout bytes to preserve declared CRLF conversion. No edited or regenerated input permitted.",
+  "inputCount": 1785,
+  "changedInputs": [],
+  "gitStatusPorcelain": "",
+  "cloudSourceChangedDuringRun": [],
+  "resourcePayloadHashesVerified": 124,
+  "passed": true
+}

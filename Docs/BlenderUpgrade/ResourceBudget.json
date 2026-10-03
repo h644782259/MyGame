@@ -1,6 +1,6 @@
 {
   "scope": "Tracked Assets/Resources source files excluding .meta. EFM1/EFS4 binary and hash-matched Blender FBX triangles are unique source mesh counts, not instantiated geometry. No package/resident memory measurement.",
-  "sourceRuntimeCommit": "8659466c3a0f9bbc00915b97d9405d40cc3ed939",
+  "sourceRuntimeCommit": "bc6a572a86fe4376f6f346b0fe52f20d9678aec3",
   "windowsBaseline": "25096ba7dbf6e9d7ba9463ec29104c2c462da426",
   "summary": {
     "currentAllResourceSourceBytes": 3449531,
@@ -1680,7 +1680,7 @@
   ],
   "deletedResources": [],
   "iosResourceParity": {
-    "head": "2b2469d3a6ed3da5d622bd95127219da54268dd4",
+    "head": "30f748b1bf6da7def9d91118aa756cd225c03e79",
     "comparedFilesIncludingMeta": 267,
     "differentPaths": [
       "Assets/Resources/Fonts.meta",
