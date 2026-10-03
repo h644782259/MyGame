@@ -1,0 +1,410 @@
+{
+  "blender": "4.3.2",
+  "format": "EFM1 little endian position/normal/uv/indices in Unity axes",
+  "source": "Original scripted geometry; no third party inputs",
+  "assets": {
+    "Cuirass": {
+      "triangles": 116,
+      "vertices": 348,
+      "materials_added": 0,
+      "textures_added": 0,
+      "bytes": 12540,
+      "sha256": "ed0ed4a315f20206e668a2de78d28744d6fbe42dc00f491cd8534fd3e5479893",
+      "bounds_unity": [
+        [
+          -0.5,
+          -1.0,
+          -0.5
+        ],
+        [
+          0.5,
+          1.0,
+          0.5
+        ]
+      ]
+    },
+    "Pauldron": {
+      "triangles": 116,
+      "vertices": 348,
+      "materials_added": 0,
+      "textures_added": 0,
+      "bytes": 12540,
+      "sha256": "fcda101be8ce47346c5c4399499da2b7e261cd71acab8c62da9075307a7177b3",
+      "bounds_unity": [
+        [
+          -0.5,
+          -0.5,
+          -0.5
+        ],
+        [
+          0.5,
+          0.5,
+          0.5
+        ]
+      ]
+    },
+    "Helmet": {
+      "triangles": 116,
+      "vertices": 348,
+      "materials_added": 0,
+      "textures_added": 0,
+      "bytes": 12540,
+      "sha256": "341a85889ba92c0edca4757a25749748434bac24adb408aa18d5012a68f74858",
+      "bounds_unity": [
+        [
+          -0.5,
+          -0.5,
+          -0.5
+        ],
+        [
+          0.5,
+          0.5,
+          0.5
+        ]
+      ]
+    },
+    "Boot": {
+      "triangles": 76,
+      "vertices": 228,
+      "materials_added": 0,
+      "textures_added": 0,
+      "bytes": 8220,
+      "sha256": "e9482ff1bc0ac0b950440bd8f8403db0542893b4375c4a415167ba1e5af2dc6c",
+      "bounds_unity": [
+        [
+          -0.5,
+          -0.5,
+          -0.5
+        ],
+        [
+          0.5,
+          0.5,
+          0.5
+        ]
+      ]
+    },
+    "WolfHead": {
+      "triangles": 36,
+      "vertices": 108,
+      "materials_added": 0,
+      "textures_added": 0,
+      "bytes": 3900,
+      "sha256": "b3d3edb2600d0331665972399c33d3d9c9862bc764b40bb617233db77eefdc9b",
+      "bounds_unity": [
+        [
+          -0.5,
+          -0.5,
+          -0.5
+        ],
+        [
+          0.5,
+          0.5,
+          0.5
+        ]
+      ]
+    },
+    "WolfTorso": {
+      "triangles": 140,
+      "vertices": 420,
+      "materials_added": 0,
+      "textures_added": 0,
+      "bytes": 15132,
+      "sha256": "285f8012f970e80ade85ad2f9645ae3db677f039a379fbf94a8d1d47d0ed135f",
+      "bounds_unity": [
+        [
+          -0.5,
+          -1.0,
+          -0.5
+        ],
+        [
+          0.5,
+          1.0,
+          0.5
+        ]
+      ]
+    },
+    "Paw": {
+      "triangles": 76,
+      "vertices": 228,
+      "materials_added": 0,
+      "textures_added": 0,
+      "bytes": 8220,
+      "sha256": "bfcf722f60b8942c651cad5816f0d516920b5705871e550224f369b4bd6b94ed",
+      "bounds_unity": [
+        [
+          -0.5,
+          -1.0,
+          -0.5
+        ],
+        [
+          0.5,
+          1.0,
+          0.5
+        ]
+      ]
+    },
+    "SpiritCore": {
+      "triangles": 76,
+      "vertices": 228,
+      "materials_added": 0,
+      "textures_added": 0,
+      "bytes": 8220,
+      "sha256": "222ac41a95a51ce6504a5cda5a3bed97d557d14f114e6895cbf9e3cc16bb34c6",
+      "bounds_unity": [
+        [
+          -0.5,
+          -0.5,
+          -0.5
+        ],
+        [
+          0.5,
+          0.5,
+          0.5
+        ]
+      ]
+    },
+    "Slime": {
+      "triangles": 164,
+      "vertices": 492,
+      "materials_added": 0,
+      "textures_added": 0,
+      "bytes": 17724,
+      "sha256": "06762d18e1214fb20e85684c5fff951213f1bd4d5b2cea6e3c9352509f5352cd",
+      "bounds_unity": [
+        [
+          -0.5,
+          -0.5,
+          -0.5
+        ],
+        [
+          0.5,
+          0.5,
+          0.5
+        ]
+      ]
+    },
+    "Hammer": {
+      "triangles": 124,
+      "vertices": 372,
+      "materials_added": 0,
+      "textures_added": 0,
+      "bytes": 13404,
+      "sha256": "7e9044cc395ff7bc306b79d7315c3cf2ef8913487a1682010e50e323c5ab593f",
+      "bounds_unity": [
+        [
+          -0.5,
+          -0.5,
+          -0.5
+        ],
+        [
+          0.5,
+          0.5,
+          0.5
+        ]
+      ]
+    },
+    "Totem": {
+      "triangles": 68,
+      "vertices": 204,
+      "materials_added": 0,
+      "textures_added": 0,
+      "bytes": 7356,
+      "sha256": "9dd1f1f9e640deaef9aeb8e1d3bf9e8ae780aa99892cd74d54b12a5b5ac723b8",
+      "bounds_unity": [
+        [
+          -0.5,
+          -0.5,
+          -0.5
+        ],
+        [
+          0.5,
+          0.5,
+          0.5
+        ]
+      ]
+    },
+    "BossHousing": {
+      "triangles": 164,
+      "vertices": 492,
+      "materials_added": 0,
+      "textures_added": 0,
+      "bytes": 17724,
+      "sha256": "502ded3154505d7daae842c940ee98a23a1034f7500ee8e2d09126d31480e89f",
+      "bounds_unity": [
+        [
+          -0.5,
+          -1.0,
+          -0.5
+        ],
+        [
+          0.5,
+          1.0,
+          0.5
+        ]
+      ]
+    },
+    "BossPlate": {
+      "triangles": 92,
+      "vertices": 276,
+      "materials_added": 0,
+      "textures_added": 0,
+      "bytes": 9948,
+      "sha256": "3dfe218a4f5b4d67e4b2605a2756cad7f5dd43655742716e7fdb5d51e65507dd",
+      "bounds_unity": [
+        [
+          -0.5,
+          -1.0,
+          -0.5
+        ],
+        [
+          0.5,
+          1.0,
+          0.5
+        ]
+      ]
+    },
+    "SwordGuard": {
+      "triangles": 76,
+      "vertices": 228,
+      "materials_added": 0,
+      "textures_added": 0,
+      "bytes": 8220,
+      "sha256": "cfe1e970d9469f72a66ae342577906599f9e62f71064faae4f3acff063640065",
+      "bounds_unity": [
+        [
+          -0.5,
+          -0.5,
+          -0.5
+        ],
+        [
+          0.5,
+          0.5,
+          0.5
+        ]
+      ]
+    },
+    "BowLimb": {
+      "triangles": 76,
+      "vertices": 228,
+      "materials_added": 0,
+      "textures_added": 0,
+      "bytes": 8220,
+      "sha256": "b7b882bdb49b596719c5d981f9a6e6a21aaa4fe0d03c2ad5be3ab40a1a5725c4",
+      "bounds_unity": [
+        [
+          -0.5,
+          -1.0,
+          -0.5
+        ],
+        [
+          0.5,
+          1.0,
+          0.5
+        ]
+      ]
+    },
+    "StaffCrown": {
+      "triangles": 56,
+      "vertices": 168,
+      "materials_added": 0,
+      "textures_added": 0,
+      "bytes": 6060,
+      "sha256": "e6375fc72ca280dee1a2a0b3557ddbab333a12b2cdde0b78a4b83b4c03bca5ac",
+      "bounds_unity": [
+        [
+          -0.5,
+          -0.5,
+          -0.5
+        ],
+        [
+          0.5,
+          0.5,
+          0.5
+        ]
+      ]
+    },
+    "ClothTorso": {
+      "triangles": 164,
+      "vertices": 492,
+      "materials_added": 0,
+      "textures_added": 0,
+      "bytes": 17724,
+      "sha256": "080fe67c97f711e47fe715e5af0272b99efd0becd4566a8102a0adf3f737a20d",
+      "bounds_unity": [
+        [
+          -0.5,
+          -1.0,
+          -0.5
+        ],
+        [
+          0.5,
+          1.0,
+          0.5
+        ]
+      ]
+    },
+    "BarkTorso": {
+      "triangles": 94,
+      "vertices": 282,
+      "materials_added": 0,
+      "textures_added": 0,
+      "bytes": 10164,
+      "sha256": "11f0e606c4501694ddf0737dba7cd03c0af7b1a44b64c75e7a01e5d4a09f1ee4",
+      "bounds_unity": [
+        [
+          -0.5,
+          -1.0,
+          -0.5
+        ],
+        [
+          0.5,
+          1.0,
+          0.5
+        ]
+      ]
+    },
+    "CuirassPlate": {
+      "triangles": 96,
+      "vertices": 288,
+      "materials_added": 0,
+      "textures_added": 0,
+      "bytes": 10380,
+      "sha256": "ef6c86db94f3a0f8dc1b36e0a5143ad04541f0783c03dde177292944f3126436",
+      "bounds_unity": [
+        [
+          -0.5,
+          -0.5,
+          -0.5
+        ],
+        [
+          0.5,
+          0.5,
+          0.5
+        ]
+      ]
+    },
+    "ClothShoulder": {
+      "triangles": 136,
+      "vertices": 408,
+      "materials_added": 0,
+      "textures_added": 0,
+      "bytes": 14700,
+      "sha256": "975033c5ee2c14626ac50a0909e713018822c3c31652a46fa52620f175530555",
+      "bounds_unity": [
+        [
+          -0.5,
+          -0.5,
+          -0.5
+        ],
+        [
+          0.5,
+          0.5,
+          0.5
+        ]
+      ]
+    }
+  },
+  "total_runtime_source_bytes": 222936,
+  "total_triangles": 2062,
+  "texture_bytes": 0
+}

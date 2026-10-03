@@ -73,7 +73,7 @@ namespace Emberfall
         internal static Transform Joint(Transform parent,string title,Vector3 position)
         {var obj=new GameObject(title);obj.transform.SetParent(parent,false);obj.transform.localPosition=position;return obj.transform;}
         internal static Transform Part(Transform parent,string title,PrimitiveType shape,Vector3 position,Vector3 scale,Material material)
-        {var obj=ProceduralVisuals.Create(title,shape,material);obj.transform.SetParent(parent,false);obj.transform.localPosition=position;obj.transform.localScale=scale;return obj.transform;}
+        {var obj=ProceduralVisuals.Create(title,shape,material);AuthoredActorMeshes.Apply(obj,title,shape);obj.transform.SetParent(parent,false);obj.transform.localPosition=position;obj.transform.localScale=scale;return obj.transform;}
         private static Transform Ring(Transform parent,string title,Mesh mesh,Material material,Vector3 at)
         {Transform obj=Joint(parent,title,at);obj.gameObject.AddComponent<MeshFilter>().sharedMesh=mesh;obj.gameObject.AddComponent<MeshRenderer>().sharedMaterial=material;return obj;}
         private static Mesh MakeRing()
