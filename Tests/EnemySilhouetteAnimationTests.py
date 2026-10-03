@@ -9,7 +9,7 @@ exec((root/'Tests/EnemyKnockdownGeometryTests.py').read_text().split('with tempf
 source=ns['source'];member=ns['member'];output=ns['output'];dotnet=ns['dotnet']
 with tempfile.TemporaryDirectory(prefix='enemy-f2-animation-') as directory:
  p=Path(directory)
- for name in ['CombatModel.Knockdown','EnemySilhouetteArt','AuthoredActorMeshes','ProceduralVisuals','VisualMeshRecipes']:(p/(name+'.cs')).write_text((root/'Assets/Scripts/Combat'/(name+'.cs')).read_text())
+ for name in ['ActorSilhouetteF1','CombatModel.Knockdown','EnemySilhouetteArt','AuthoredActorMeshes','ProceduralVisuals','VisualMeshRecipes']:(p/(name+'.cs')).write_text((root/'Assets/Scripts/Combat'/(name+'.cs')).read_text())
  (p/'LocomotionPoseState.cs').write_text((root/'Assets/Scripts/Core/LocomotionPoseState.cs').read_text())
  (p/'Fields.cs').write_text((root/'Tests/EnemyKnockdownProductionTests.cs').read_text().split('public static class EnemyKnockdownProductionTests')[0])
  methods=['public static CombatModel Enemy(','private static CombatModel Create(','private Material Mat(','private Transform Part(','private Transform Joint(','private void Humanoid(','private static Transform NewJoint(','private static void RemovePart(','private Transform ArticulateArm(','private Transform ArticulateLeg(','private Transform MeshPart(','private Transform Tapered(','private void BuildEnemy(','private void EnhanceEnemy(','public void Animate(','public void Recoil(','private void ApplyRecoil(']

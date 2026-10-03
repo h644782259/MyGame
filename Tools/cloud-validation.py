@@ -372,6 +372,7 @@ def main():
             passed = run_check(pilot_test[:-3], [[sys.executable,str(ROOT/"Tests"/pilot_test),dotnet]], dict(env,DOTNET=dotnet), output, report)
             failed = failed or not passed
         for name, script in [("authored-actor-modules", "ActorModulesProductionTests.py"),
+                             ("actor-silhouette-f1-production", "ActorSilhouetteF1ProductionTests.py"),
                              ("blender-skill-vfx-production", "BlenderSkillVfxProductionTests.py"),
                              ("blender-scenery-production", "BlenderSceneryProductionTests.py"),
                              ("authored-projectile-production", "AuthoredProjectileProductionTests.py"),

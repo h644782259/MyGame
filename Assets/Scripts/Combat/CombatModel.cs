@@ -429,7 +429,7 @@ namespace Emberfall
                 model.body = model.Part("Star spirit", PrimitiveType.Sphere, new Vector3(0,1.2f,0), new Vector3(.54f,.7f,.54f), new Color(.4f,1f,.84f));
                 model.companionBodyScale = model.body.localScale;
                 model.decoration = model.Part("Star crown", PrimitiveType.Cube, new Vector3(0,1.75f,0), Vector3.one*.25f, new Color(1f,.87f,.47f),model.CompanionRigidParent());
-                for(int i=-1;i<=1;i+=2) model.Part("Spirit wing",PrimitiveType.Capsule,new Vector3(i*.42f,1.35f,0),new Vector3(.18f,.5f,.15f),new Color(.67f,1f,.88f)).localRotation=Quaternion.Euler(0,0,i*45);
+                for(int i=-1;i<=1;i+=2) model.Part("Spirit wing",PrimitiveType.Capsule,new Vector3(i*.42f,1.35f,0),new Vector3(.18f,.5f,.15f),new Color(.67f,1f,.88f),model.CompanionRigidParent()).localRotation=Quaternion.Euler(0,0,i*45);
             }
             else if (form == SummonedCompanion.Kind.Treant)
             {
@@ -509,6 +509,7 @@ namespace Emberfall
         {
             GameObject obj = ProceduralVisuals.Create(name, shape, Mat(color, surface ?? ProceduralVisuals.SurfaceFor(name)));
             AuthoredActorMeshes.Apply(obj,meshModule ?? name,shape);
+            ActorSilhouetteF1.Apply(obj,name,treantCompanion);
             obj.transform.SetParent(parent == null ? transform : parent, false);
             obj.transform.localPosition = position;
             obj.transform.localScale = size;

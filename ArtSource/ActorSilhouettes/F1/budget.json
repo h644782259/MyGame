@@ -1,0 +1,214 @@
+{
+  "source": "Original Blender scripted geometry, no external inputs",
+  "assets": {
+    "RobePanel": {
+      "triangles": 44,
+      "bytes": 4764,
+      "sha256": "9bea5e1accae9452bb1044871b98e97d01617775daa83a326518b69e141530b9",
+      "bounds": [
+        [
+          -0.5,
+          -0.5,
+          -0.5
+        ],
+        [
+          0.5,
+          0.5,
+          0.5
+        ]
+      ]
+    },
+    "Hood": {
+      "triangles": 172,
+      "bytes": 18588,
+      "sha256": "6e6ff2f92c41713495485f09c9c815904b1f5b7cf12e5bbfa0fd7cfc21163bf5",
+      "bounds": [
+        [
+          -0.5,
+          -0.5,
+          -0.5
+        ],
+        [
+          0.5,
+          0.5,
+          0.5
+        ]
+      ]
+    },
+    "Quiver": {
+      "triangles": 164,
+      "bytes": 17724,
+      "sha256": "8d993d0a2e9463753bdd99eb3c49208967c17de7b6604da1b7a082377c452ce3",
+      "bounds": [
+        [
+          -0.5,
+          -1.0,
+          -0.5
+        ],
+        [
+          0.5,
+          1.0,
+          0.5
+        ]
+      ]
+    },
+    "ArrowFeather": {
+      "triangles": 56,
+      "bytes": 6060,
+      "sha256": "f0da70fbc962dc489a9c68c2014e2c6dc4de7f4eedb208c967155159b9e21ed5",
+      "bounds": [
+        [
+          -1.75,
+          -1.0,
+          -0.25980761647224426
+        ],
+        [
+          1.75,
+          1.0,
+          0.25980761647224426
+        ]
+      ]
+    },
+    "Antler": {
+      "triangles": 80,
+      "bytes": 8652,
+      "sha256": "7532ad433fb8ed0571243433b7932b7b5eaf6ba184927a5bec0cbda6d74b6f04",
+      "bounds": [
+        [
+          -0.5162174105644226,
+          -1.0,
+          -0.3694697320461273
+        ],
+        [
+          0.38999998569488525,
+          1.0,
+          0.4494697153568268
+        ]
+      ]
+    },
+    "SpiritCrown": {
+      "triangles": 100,
+      "bytes": 10812,
+      "sha256": "fc4c3cea11043e3eb08eb9bf4092e95b5bb968918064e8e633278db8b2daff15",
+      "bounds": [
+        [
+          -1.159999966621399,
+          -0.7599999904632568,
+          -0.30000001192092896
+        ],
+        [
+          1.159999966621399,
+          0.7599999904632568,
+          0.30000001192092896
+        ]
+      ]
+    },
+    "SpiritWing": {
+      "triangles": 48,
+      "bytes": 5196,
+      "sha256": "27eb6f75d1808c3c03c247b3b99c7137aafe5ed07bee2bdea5ec5a8671f5467e",
+      "bounds": [
+        [
+          -0.8888888955116272,
+          -1.0,
+          -0.5
+        ],
+        [
+          0.8888888955116272,
+          1.0,
+          0.5
+        ]
+      ]
+    },
+    "Canopy": {
+      "triangles": 80,
+      "bytes": 8652,
+      "sha256": "53d8f0c02b15339e0eb973f3b0435c26574758aa61bec1995c834f837746b9d2",
+      "bounds": [
+        [
+          -0.5,
+          -0.5,
+          -0.5
+        ],
+        [
+          0.5,
+          0.5,
+          0.5
+        ]
+      ]
+    },
+    "BarkLimb": {
+      "triangles": 80,
+      "bytes": 8652,
+      "sha256": "c0b4e984de890fa3080f52445244eb3d5d76540afd6f891ffe3f1a4430e9366c",
+      "bounds": [
+        [
+          -0.5,
+          -1.0,
+          -0.5
+        ],
+        [
+          0.5,
+          1.0,
+          0.5
+        ]
+      ]
+    },
+    "BarkHand": {
+      "triangles": 66,
+      "bytes": 7140,
+      "sha256": "ee518ebd9b9288bd836ac02b09fdca842cc22f7892591e59747aff85711c0ed2",
+      "bounds": [
+        [
+          -0.5,
+          -0.5,
+          -0.5
+        ],
+        [
+          0.5,
+          0.5,
+          0.5
+        ]
+      ]
+    },
+    "RootFoot": {
+      "triangles": 66,
+      "bytes": 7140,
+      "sha256": "c6a82b036d3b53e4e7131be1e2a8d8790c1410ba7dbe2505ad539edd5f56f82f",
+      "bounds": [
+        [
+          -0.5,
+          -0.5,
+          -0.5
+        ],
+        [
+          0.5,
+          0.5,
+          0.5
+        ]
+      ]
+    },
+    "BarkFace": {
+      "triangles": 86,
+      "bytes": 9300,
+      "sha256": "43bbe40b3b9373e63392d9b8c85b424d254a6888d105160f176c9438d9216463",
+      "bounds": [
+        [
+          -0.5,
+          -0.5,
+          -0.5
+        ],
+        [
+          0.5,
+          0.5,
+          0.5
+        ]
+      ]
+    }
+  },
+  "total_bytes": 112680,
+  "triangles": 1042,
+  "added_materials": 0,
+  "added_textures": 0,
+  "added_renderers": 0
+}

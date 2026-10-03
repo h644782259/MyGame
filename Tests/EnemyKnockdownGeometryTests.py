@@ -35,7 +35,7 @@ f+='''\nnamespace Emberfall{public enum HeroClass{Vanguard,Ranger,Arcanist,Summo
 f+='namespace UnityEngine{public class TextAsset:Object{public byte[] bytes;}public static class Resources{public static T Load<T>(string name)where T:class{var p=System.IO.Path.Combine(@"'+str(root/'Assets/Resources')+'",name+".bytes");return System.IO.File.Exists(p)?new TextAsset{bytes=System.IO.File.ReadAllBytes(p)} as T:null;}}}'
 with tempfile.TemporaryDirectory(prefix='enemy-knockdown-geometry-') as directory:
     p=Path(directory)
-    for name in ['CombatModel.Knockdown','EnemySilhouetteArt','AuthoredActorMeshes','ProceduralVisuals','VisualMeshRecipes']:(p/(name+'.cs')).write_text((root/'Assets/Scripts/Combat'/(name+'.cs')).read_text())
+    for name in ['ActorSilhouetteF1','CombatModel.Knockdown','EnemySilhouetteArt','AuthoredActorMeshes','ProceduralVisuals','VisualMeshRecipes']:(p/(name+'.cs')).write_text((root/'Assets/Scripts/Combat'/(name+'.cs')).read_text())
     (p/'LocomotionPoseState.cs').write_text((root/'Assets/Scripts/Core/LocomotionPoseState.cs').read_text())
     # Use the same animation field fixture; Setup's synthetic rig is not used by this factory exporter.
     (p/'AnimationFields.cs').write_text((root/'Tests/EnemyKnockdownProductionTests.cs').read_text().split('public static class EnemyKnockdownProductionTests')[0])
