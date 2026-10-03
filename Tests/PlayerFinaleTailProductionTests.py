@@ -65,6 +65,7 @@ Console.WriteLine("PASS: "+n+" actual finale producers/HitArea/visual lifecycle 
 '''
 with tempfile.TemporaryDirectory(prefix='player-finale-tail-') as tmp:
  p=Path(tmp)
+ (p/'BuildCatalogDamage.cs').write_text('namespace Emberfall{public static class BuildCatalog{'+member((r/'Assets/Scripts/Core/GameTypes.cs').read_text(),'public static float CinderTrailTickMultiplier(')+'}}')
  for f in ['Core/CombatImpactBatch','Core/CombatVisualBudget','Core/FilledVfxRecipes','Core/FilledVfxPlacement','Core/SkillVisualRecipe','Core/SkillDamageBudgets','Combat/CombatDamage','Combat/CombatVisualLease','Combat/FilledSkillVfx','Combat/AnchoredImpactMesh']:(p/(Path(f).name+'.cs')).write_text((r/('Assets/Scripts/'+f+'.cs')).read_text())
  (p/'Shell.cs').write_text(s);(p/'Producers.cs').write_text('using System;using UnityEngine;'+extra);(p/'Tests.cs').write_text(test)
  (p/'NuGet.Config').write_text('<configuration><packageSources><clear /></packageSources></configuration>');project=p/'Test.csproj';project.write_text('<Project Sdk="Microsoft.NET.Sdk"><PropertyGroup><TargetFramework>net8.0</TargetFramework><OutputType>Exe</OutputType><NoWarn>0649;0414</NoWarn></PropertyGroup></Project>')

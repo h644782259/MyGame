@@ -1,0 +1,1 @@
+System.Console.WriteLine(Emberfall.GameSession.VerifyIntegratedJourney(args[0]));

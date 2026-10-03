@@ -14,6 +14,7 @@ animate=member(model,'private void AnimateHero(');animate=animate[:animate.index
 methods='\n'.join(member(model,k) for k in ['public void PlayAction(', 'private void CommitActionPose(', 'private void OnDestroy(', 'public void ApplyEquipment(', 'private static string EquipmentKey(', 'private static void SetVisible(', 'private void SetBaseWeaponVisible(', 'public void CancelAction('])+animate
 with tempfile.TemporaryDirectory(prefix='blender-adapter-') as tmp:
  p=Path(tmp)
+ (p/'BuildCatalogDamage.cs').write_text('namespace Emberfall{public static class BuildCatalog{'+member((source/'Assets/Scripts/Core/GameTypes.cs').read_text(),'public static float CinderTrailTickMultiplier(')+'}}')
  for f in ['Combat/BlenderPilotVisual','Combat/CombatModel.BlenderPilot','Combat/CombatModel.WeaponRig','Core/RendererGroupCache','Core/BlenderPilotPosePolicy','Core/BasicActionTimeline','Core/SkillDamageBudgets','Core/CombatBalance','Core/WeaponStructure']:(p/(Path(f).name+'.cs')).write_text((source/('Assets/Scripts/'+f+'.cs')).read_text())
  (p/'Layers.cs').write_text((r/'Tests/BlenderPilotLayerProductionFixture.cs').read_text())
  (p/'Readiness.cs').write_text((r/'Tests/BlenderPilotReadinessTests.cs').read_text())

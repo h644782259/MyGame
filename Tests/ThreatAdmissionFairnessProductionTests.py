@@ -40,6 +40,13 @@ math=(root/'Tests/DestructibleTraversalTests.cs').read_text();math='using System
 for d in ['public static class CombatFx','public static class PlayerUpgradeRules','public struct Vector3','public static class Time','public static class Mathf']:math=math.replace(d,d.replace('class ','partial class ').replace('struct ','partial struct '))
 with tempfile.TemporaryDirectory(prefix='threat-fairness-') as tmp:
  p=Path(tmp);(p/'Enemy.cs').write_text(body);(p/'Fixture.cs').write_text(fixture);(p/'Math.cs').write_text(math)
+ # Compile the same catalog coefficient consumed by the real venom rule; no duplicated balance values.
+ catalogSource=(root/'Assets/Scripts/Core/GameTypes.cs').read_text()
+ start=catalogSource.index('public static float ConcentratedVenomCoefficient(');end=catalogSource.index('{',start)+1;depth=1
+ while depth:
+  depth+=(catalogSource[end]=='{')-(catalogSource[end]=='}');end+=1
+ catalog=catalogSource[start:end]
+ (p/'BuildCatalog.cs').write_text('namespace Emberfall{public static class BuildCatalog{'+catalog+'}}')
  for rel in ['Assets/Scripts/Core/ThreatAdmissionPolicy.cs','Assets/Scripts/Core/DestructiblePropRules.cs','Assets/Scripts/Combat/ConcentratedVenomRules.cs','Assets/Scripts/World/WorldTraversal.cs','Assets/Scripts/Combat/EnemyImpactRegion.cs']:(p/Path(rel).name).write_bytes((root/rel).read_bytes())
  (p/'NuGet.Config').write_text('<configuration><packageSources><clear /></packageSources></configuration>');proj=p/'Test.csproj';proj.write_text('<Project Sdk="Microsoft.NET.Sdk"><PropertyGroup><OutputType>Exe</OutputType><TargetFramework>net8.0</TargetFramework><NoWarn>0649;0414;0169</NoWarn></PropertyGroup></Project>')
  env=dict(os.environ,DOTNET_CLI_HOME=str(p/'home'),DOTNET_CLI_TELEMETRY_OPTOUT='1',DOTNET_GENERATE_ASPNET_CERTIFICATE='false',DOTNET_NOLOGO='1')
