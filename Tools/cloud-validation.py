@@ -384,6 +384,7 @@ def main():
                              ("weapon-contact-production", "WeaponContactProductionTests.py"),
                              ("vanguard-recovery-integration", "VanguardRecoveryIntegrationTests.py"),
                              ("status-feedback-production", "StatusFeedbackProductionTests.py"),
+                             ("defense-identity-production", "DefenseIdentityProductionTests.py"),
                              ("skill-identity-callsite-production", "SkillIdentityCallsiteProductionTests.py"),
                              ("enemy-knockdown-production", "EnemyKnockdownProductionTests.py"),
                              ("enemy-knockdown-geometry", "EnemyKnockdownGeometryTests.py"),

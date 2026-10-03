@@ -218,7 +218,7 @@ namespace Emberfall
                 damage *= 1f-guardReduction;
                 if (HeroClass == HeroClass.Vanguard)
                 {
-                    AdvancedSkillVfx.Rune(this, transform.position, guardRadius, new Color(1f,.84f,.4f), .55f, guardRank);
+                    AdvancedSkillVfx.Rune(this, transform.position, guardRadius, new Color(1f,.84f,.4f), .55f, guardRank,identity:4);
                     HitArea(transform.position, guardRadius, CombatAttack * guardPower, .5f, .2f,guardCastId);
                 }
             }
@@ -956,7 +956,7 @@ namespace Emberfall
                 passiveSpeed=.1f+rank*.05f;
                 if(rank==3) skillRuntime.RestoreEnergy(SkillDamageBudgets.BasicEnergyOnHit);
             }
-            AdvancedSkillVfx.Rune(this,transform.position,radius,tint,passiveTime,rank,true);
+            AdvancedSkillVfx.Protection(this,transform.position,radius,tint,passiveTime,rank,()=>passiveTime>0,passive:true);
             session.SpawnMechanismText(transform.position+Vector3.up*2.7f,GameBalance.SkillName(HeroClass,8),tint);
         }
 
@@ -1241,7 +1241,7 @@ namespace Emberfall
                 {
                     guardTime = 6f + (rank - 1) * 2f;
                     guardRank = rank;guardCastId=castId; guardReduction = .25f + rank * .1f;
-                    AdvancedSkillVfx.Rune(this, transform.position, 2.8f * range, color, guardTime, rank + 1, true);
+                    AdvancedSkillVfx.Protection(this, transform.position, 2.8f * range, color, guardTime, rank + 1, ()=>guardTime>0);
                 }
                 else
                 {
@@ -1263,14 +1263,14 @@ namespace Emberfall
                 {
                     guardTime = 6f+(rank-1)*2f; guardPower = 1.2f * power;
                     guardReduction=.55f+rank*.05f; guardRadius=3.2f*range; guardRank=rank;guardCastId=castId;
-                    AdvancedSkillVfx.Rune(this,transform.position,2.1f*range,new Color(1f,.84f,.4f),guardTime,rank,true);
+                    AdvancedSkillVfx.Protection(this,transform.position,2.1f*range,new Color(1f,.84f,.4f),guardTime,rank,()=>guardTime>0);
                 }
                 else if (HeroClass == HeroClass.Arcanist && slot == 5)
                 {
                     guardTime=6f+(rank-1)*2f; guardRank=rank;guardCastId=castId; guardReduction=.25f+rank*.1f;
                     guardRadius=2.8f*range; guardPulseTimer=0;
                     if (Specialization == ElementalistSpecialization.Burn) { guardReduction=.3f; burnStrideTime=guardTime; }
-                    AdvancedSkillVfx.Rune(this,transform.position,guardRadius,Specialization==ElementalistSpecialization.Burn?new Color(1f,.55f,.25f):new Color(.55f,.92f,1f),guardTime,rank+1,true);
+                    AdvancedSkillVfx.Protection(this,transform.position,guardRadius,Specialization==ElementalistSpecialization.Burn?new Color(1f,.55f,.25f):new Color(.55f,.92f,1f),guardTime,rank+1,()=>guardTime>0);
                 }
                 else AdvancedSkillSequence.Spawn(this,session,slot,rank,target,transform.forward,Damage(power * SkillDamageBudgets.AdvancedScale(HeroClass,slot)),color,castId);
                 return;
