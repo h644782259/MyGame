@@ -59,10 +59,12 @@ public static class ChapterCombatProductionTests
         var game=Game();var enemy=new EnemyController();game.Player.transform.position=new Vector3(0,0,5);
         var normal=LargeExpeditionBoss.Configure(enemy,1,0);normal.Tick(.05f);Steps(normal,390);
         Check(enemy.BeginCalls==1&&!normal.State.IsFollowup,"legacy default must not add followup");
+        Check(normal.State.CurrentBeamLength==9f&&normal.State.CurrentBeamDegreesPerSecond==24f,"legacy five room length and speed unchanged");
         foreach(var difficulty in new[]{ChapterDifficulty.Normal,ChapterDifficulty.Hard,ChapterDifficulty.Heroic})
         {
             game=Game();game.Player.transform.position=new Vector3(0,0,5);enemy=new EnemyController();
             var boss=LargeExpeditionBoss.ConfigureChapter(enemy,1,0,difficulty);boss.Tick(.05f);
+            if(difficulty==ChapterDifficulty.Normal)Check(boss.State.CurrentBeamLength==9f&&boss.State.CurrentBeamDegreesPerSecond==24f,"normal chapter length and speed unchanged");
             Check(boss.State.Phase==LargeBossPhase.Windup&&boss.State.PhaseNumber==1,"chapter phase starts at original 70 percent threshold");
             Check(boss.State.Remaining>2.1f,"chapter starts with full warning");
             float angle=boss.BeamWorldAngle;game.InputBlocked=true;Steps(boss,100);
@@ -192,6 +194,59 @@ public static class ChapterCombatProductionTests
                 Check(Math.Abs(before-victim.Health-(mode<2?13.5f:10f))<.001f,"legacy and normal triggering hit retain immediate 1.35 multiplier; hard heroic defer without vulnerability");
             } finally { CombatImpactBatch.End(); }
             Check(encounter.State.Phase==(mode<2?LargeBossPhase.Exposed:LargeBossPhase.Recovery),"attack resolution retains mode-specific counterplay");
+        }
+        // Whole production component: configuration, phase advancement, drawn footprint and damage recipient.
+        foreach(var difficulty in new[]{ChapterDifficulty.Hard,ChapterDifficulty.Heroic})
+        foreach(var hero in new[]{HeroClass.Vanguard,HeroClass.Arcanist,HeroClass.Ranger,HeroClass.Summoner})
+        {
+            var trialGame=Game();trialGame.Player.HeroClass=hero;trialGame.Player.transform.position=new Vector3(0,0,5);
+            var trialEnemy=new EnemyController();var trial=LargeExpeditionBoss.ConfigureChapter(trialEnemy,1,0,difficulty);trial.Tick(.05f);
+            var lines=Field<LineRenderer[]>(trial,"beamLines");
+            // Boundary endcap crown (j=0) includes the unchanged .55 + .4 player-center compensation.
+            Check(Math.Abs(CombatFx.Flat(lines[1].points[0]).magnitude-14.95f)<.002f,"star main warning and damage endpoint share trial length");
+            while(trial.State.Phase==LargeBossPhase.Windup)trial.Tick(.05f);
+            Check(trial.State.Remaining==14f,"star main retains fourteen second duration");
+            float bearing=trial.BeamWorldAngle;trial.Tick(.05f);
+            Check(Math.Abs(Math.Abs(trial.BeamWorldAngle-bearing)-.9f)<.002f,"star main uses independent 18 degree speed");
+            foreach(float distance in new[]{2f,10f,12f,14.94f,14.96f,16f})
+            {
+                int damage=trialGame.Player.DamageCalls;
+                do {
+                    float sign=difficulty==ChapterDifficulty.Heroic?-1:1;
+                    trialGame.Player.transform.position=Quaternion.Euler(0,trial.BeamWorldAngle+sign*.9f,0)*Vector3.forward*distance;
+                    trial.Tick(.05f);
+                } while(!trial.State.DamagePulse);
+                Check(trialGame.Player.DamageCalls==damage+(distance<=14.95f?1:0),"actual star damage includes body endcap and rejects beyond compensated endpoint");
+            }
+            // A pillar on the current ray clips both warning and live beam before its solid surface.
+            var ray=Quaternion.Euler(0,trial.BeamWorldAngle,0)*Vector3.forward;
+            WorldTraversal.AddCircle(ray*7f,1f);trialGame.Player.transform.position=ray*10;
+            trial.Tick(.00001f);
+            Check(CombatFx.Flat(lines[1].points[0]).magnitude<6.01f,"pillar clips compensated warning and damage capsule");
+            int sheltered=trialGame.Player.DamageCalls;
+            for(int i=0;i<14;i++)trial.Tick(.05f);
+            Check(trialGame.Player.DamageCalls==sheltered,"pillar shelter prevents actual pulse damage");
+            WorldTraversal.Reset(ZoneKind.Dungeon);
+            while(!trial.State.IsFollowup)trial.Tick(.05f);
+            Check(trial.State.CurrentBeamLength==9f&&trial.State.CurrentBeamDegreesPerSecond==24f,"followup preserves nine metre length and 24 degree speed");
+            trialEnemy.IsDead=true;trialGame.InputBlocked=true;trial.Tick(0);
+            Check(trial.State.Phase==LargeBossPhase.Finished&&Field<GameObject>(trial,"beamRoot")==null,"death retires beam before blocked zero-delta tick");
+        }
+        foreach(var pillar in ChapterRoomGeometry.Plan(ChapterNode.StarPlatform,0,0).Obstacles)
+        {
+            var mapGame=Game();ChapterRoomGeometry.Register(ChapterRoomGeometry.Plan(ChapterNode.StarPlatform,0,0));
+            var mapEnemy=new EnemyController();mapEnemy.transform.position=new Vector3(0,0,1);
+            Vector3 ray=(pillar.Center-mapEnemy.transform.position).normalized;
+            mapGame.Player.transform.position=mapEnemy.transform.position+(Quaternion.Euler(0,-35,0)*ray)*5;
+            var mapBoss=LargeExpeditionBoss.ConfigureChapter(mapEnemy,1,0,ChapterDifficulty.Hard);mapBoss.Tick(.05f);
+            Check(mapBoss.State.Phase==LargeBossPhase.Windup,"real star map retains safe anchor placements");
+            var endcap=Field<LineRenderer[]>(mapBoss,"beamLines")[1].points[0];
+            Check(CombatFx.Flat(endcap-mapEnemy.transform.position).magnitude<(pillar.Center-mapEnemy.transform.position).magnitude-pillar.Radius+.03f,"real star pillars clip warning before solid surface from actual boss spawn");
+        }
+        foreach(var node in new[]{ChapterNode.ForestCourt,ChapterNode.Redrock})
+        {
+            Game(node);var unchanged=LargeExpeditionBoss.ConfigureChapter(new EnemyController(),1,0,ChapterDifficulty.Hard);
+            Check(unchanged.State.CurrentBeamLength==9f&&unchanged.State.CurrentBeamDegreesPerSecond==24f,"trial never changes other chapter nodes");
         }
         return "PASS: "+checks+" chapter component/pattern checks (managed substitutes; not Unity play)";
     }
