@@ -89,36 +89,36 @@ namespace Emberfall
     Material cloth=r.Material(index==0?new Color(.58f,.35f,.16f):index==1?new Color(.32f,.37f,.44f):new Color(.22f,.48f,.53f),false,VisualSurface.Cloth);
     Material skin=r.Material(new Color(.76f,.57f,.42f),false,VisualSurface.Skin),dark=r.Material(new Color(.12f,.16f,.2f),false,VisualSurface.Cloth);
     Material wood=r.Material(new Color(.32f,.20f,.12f),false,VisualSurface.Wood),metal=r.Material(new Color(.38f,.42f,.47f),false,VisualSurface.Metal),light=r.Material(new Color(.46f,.86f,.9f),true,VisualSurface.Crystal);
-    Primitive(npc,"NPC tunic",PrimitiveType.Capsule,p+Vector3.up*.85f,new Vector3(.7f,.58f,.5f),cloth);
+    Primitive(npc,"NPC tunic",PrimitiveType.Capsule,p+Vector3.up*.85f,new Vector3(index==1?.84f:index==2?.62f:.72f,.58f,index==1?.58f:.5f),cloth);
     Primitive(npc,"NPC head",PrimitiveType.Sphere,p+Vector3.up*1.66f,Vector3.one*.47f,skin);
     Transform left=null,right=null,dial=null;
     for(int side=-1;side<=1;side+=2)
     {
      Primitive(npc,"NPC boots",PrimitiveType.Capsule,p+new Vector3(side*.19f,.29f,0),new Vector3(.21f,.26f,.24f),dark);
      Transform arm=Region(npc,"Articulated working sleeve");arm.localPosition=p+new Vector3(side*.43f,1.22f,0);if(side<0)left=arm;else right=arm;
-     Primitive(arm,"NPC sleeve",PrimitiveType.Capsule,new Vector3(0,-.20f,0),new Vector3(.23f,.22f,.24f),cloth);
+     Primitive(arm,"NPC sleeve",PrimitiveType.Capsule,new Vector3(0,-.20f,0),new Vector3(index==1?.30f:.23f,.22f,index==1?.29f:.24f),cloth);
      Primitive(arm,"NPC hand",PrimitiveType.Sphere,new Vector3(0,-.45f,.03f),Vector3.one*.2f,skin);
     }
     if(index==0)
     {
-     Primitive(npc,"Merchant cap",PrimitiveType.Cylinder,p+Vector3.up*1.89f,new Vector3(.65f,.075f,.58f),cloth);
-     for(int row=0;row<3;row++)
-     {Primitive(npc,"Merchant stocked shelf",PrimitiveType.Cube,p+new Vector3(0,.35f+row*.4f,.65f),new Vector3(1.4f,.1f,.5f),wood);
-      for(int item=0;item<4;item++)Primitive(npc,item%2==0?"Potion stock":"Wrapped provision",item%2==0?PrimitiveType.Cylinder:PrimitiveType.Cube,p+new Vector3(-.5f+item*.33f,.50f+row*.4f,.65f),new Vector3(.15f,.2f,.17f),item%2==0?light:cloth);}
+     Primitive(npc,"Merchant cap",PrimitiveType.Cylinder,p+Vector3.up*1.89f,new Vector3(.92f,.075f,.70f),cloth);
+     for(int row=0;row<2;row++)
+     {Primitive(npc,"Merchant stocked shelf",PrimitiveType.Cube,p+new Vector3(0,.35f+row*.6f,.65f),new Vector3(1.4f,.1f,.5f),wood);
+      for(int item=0;item<3;item++)Primitive(npc,item%2==0?"Potion stock":"Wrapped provision",item%2==0?PrimitiveType.Cylinder:PrimitiveType.Cube,p+new Vector3(-.46f+item*.46f,.53f+row*.6f,.65f),new Vector3(.22f,.28f,.22f),item%2==0?light:cloth);}
      for(int side=-1;side<=1;side+=2)Primitive(npc,"Shelf upright",PrimitiveType.Cube,p+new Vector3(side*.65f,.67f,.65f),new Vector3(.08f,1.3f,.45f),wood);
     }
     else if(index==1)
     {
-     Primitive(npc,"Smith leather apron",PrimitiveType.Cube,p+new Vector3(0,.84f,.27f),new Vector3(.48f,.63f,.06f),dark);
+     Primitive(npc,"Smith leather apron",PrimitiveType.Cube,p+new Vector3(0,.84f,.27f),new Vector3(.62f,.69f,.06f),dark);
      Primitive(npc,"Anvil stump",PrimitiveType.Cylinder,p+new Vector3(0,.3f,.65f),new Vector3(.65f,.3f,.48f),wood);
      Primitive(npc,"Forged anvil face",PrimitiveType.Cube,p+new Vector3(0,.7f,.65f),new Vector3(1.2f,.22f,.48f),metal);
      Primitive(npc,"Anvil tapered horn",PrimitiveType.Capsule,p+new Vector3(.48f,.73f,.65f),new Vector3(.18f,.22f,.17f),metal).transform.localRotation=Quaternion.Euler(0,0,90);
      Primitive(right,"Smith hammer handle",PrimitiveType.Cylinder,new Vector3(0,-.42f,.16f),new Vector3(.06f,.23f,.06f),wood).transform.localRotation=Quaternion.Euler(90,0,0);
-     Primitive(right,"Smith hammer head",PrimitiveType.Cube,new Vector3(0,-.42f,.37f),new Vector3(.3f,.17f,.17f),metal);
+     Primitive(right,"Smith hammer head",PrimitiveType.Cube,new Vector3(0,-.42f,.37f),new Vector3(.44f,.23f,.23f),metal);
     }
     else
     {
-     Primitive(npc,"Exchange lectern",PrimitiveType.Cube,p+new Vector3(0,.44f,.65f),new Vector3(.8f,.88f,.48f),wood);
+     Primitive(npc,"Exchange lectern",PrimitiveType.Cube,p+new Vector3(0,.44f,.65f),new Vector3(1.05f,.88f,.48f),wood);
      Primitive(npc,"Star chart table",PrimitiveType.Cylinder,p+new Vector3(0,.95f,.65f),new Vector3(1.35f,.04f,.48f),metal);
      dial=Region(npc,"Turning exchange star chart");dial.localPosition=p+new Vector3(0,1.1f,.65f);dial.localScale=Vector3.one*.5f;
      var ring=dial.gameObject.AddComponent<MeshFilter>();ring.sharedMesh=CostumeMeshLibrary.Get(WingSilhouette.Mechanical);dial.gameObject.AddComponent<MeshRenderer>().sharedMaterial=light;
