@@ -16,7 +16,7 @@ class Renderer {public bool enabled=true;public Bounds bounds;}
 class BuildingOcclusionGroup {public void SetOccluded(bool b){}}
 class CameraOcclusionSurface {
 static List<CameraOcclusionSurface> surfaces=new List<CameraOcclusionSurface>();static HashSet<BuildingOcclusionGroup> hitGroups=new HashSet<BuildingOcclusionGroup>(),admittedGroups=new HashSet<BuildingOcclusionGroup>();static int fadedCount=32;
-Renderer visual;Renderer[] hierarchy=null;Dictionary<object,object> hierarchyFades=new Dictionary<object,object>();int RequiredFadeSlots=>fade==null?1:0;object fade=null;BuildingOcclusionGroup group=null;bool requested,heroRequested,targetRequested;bool CanFade=>true;void SetFade(bool b,float d){}
+Renderer visual;Renderer[] hierarchy=null;Dictionary<object,object> hierarchyFades=new Dictionary<object,object>();int RequiredFadeSlots=>fade==null?1:0;object fade=null;BuildingOcclusionGroup group=null;bool requested,heroRequested,targetRequested;bool externalChange;bool BindingsIntact()=>true;void Restore(){}bool CanFade=>true;void SetFade(bool b,float d){}
 public static int LastOccluders,LastHeroOccluders,LastTargetOccluders;
 '''
 test='''public static void Main(){var surface=new CameraOcclusionSurface{visual=new Renderer{bounds=new Bounds{min=new Vector3(4,-1,4),max=new Vector3(6,1,6)}}};surfaces.Add(surface);
