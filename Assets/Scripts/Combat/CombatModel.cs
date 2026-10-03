@@ -429,7 +429,7 @@ namespace Emberfall
             else if (form == SummonedCompanion.Kind.Treant)
             {
                 model.treantCompanion = true;
-                model.Humanoid(new Color(.35f,.26f,.15f), new Color(.28f,.32f,.14f), new Color(.4f,.69f,.32f), 1.6f);
+                model.Humanoid(new Color(.35f,.26f,.15f), new Color(.28f,.32f,.14f), new Color(.4f,.69f,.32f), 1.6f, "Treant bark torso");
                 model.transform.localScale = Vector3.one * 1.3f;
                 for (int i = -1; i <= 1; i++)
                     model.Part("Leaf crown", PrimitiveType.Sphere, new Vector3(i * .35f, 2.23f, -.08f), new Vector3(.75f,.65f,.65f), new Color(.35f,.69f,.37f), model.CompanionRigidParent(), surface: VisualSurface.Foliage);
@@ -500,9 +500,10 @@ namespace Emberfall
             return material;
         }
 
-        private Transform Part(string name, PrimitiveType shape, Vector3 position, Vector3 size, Color color, Transform parent = null, VisualSurface? surface = null)
+        private Transform Part(string name, PrimitiveType shape, Vector3 position, Vector3 size, Color color, Transform parent = null, VisualSurface? surface = null, string meshModule = null)
         {
             GameObject obj = ProceduralVisuals.Create(name, shape, Mat(color, surface ?? ProceduralVisuals.SurfaceFor(name)));
+            AuthoredActorMeshes.Apply(obj,meshModule ?? name,shape);
             obj.transform.SetParent(parent == null ? transform : parent, false);
             obj.transform.localPosition = position;
             obj.transform.localScale = size;
@@ -517,10 +518,10 @@ namespace Emberfall
             return obj.transform;
         }
 
-        private void Humanoid(Color skin, Color cloth, Color armor, float bulk)
+        private void Humanoid(Color skin, Color cloth, Color armor, float bulk, string bodyModule = "Breastplate")
         {
             Color boot = new Color(.12f, .15f, .21f);
-            body = Part("Breastplate", PrimitiveType.Capsule, new Vector3(0, 1.22f, 0), new Vector3(.75f * bulk, .49f, .48f * bulk), cloth);
+            body = Part("Breastplate", PrimitiveType.Capsule, new Vector3(0, 1.22f, 0), new Vector3(.75f * bulk, .49f, .48f * bulk), cloth, meshModule:bodyModule);
             Part("Belt", PrimitiveType.Cube, new Vector3(0, .88f, .02f), new Vector3(.66f * bulk, .13f, .49f), boot);
             Part("Buckle", PrimitiveType.Cube, new Vector3(0, .88f, .29f), new Vector3(.16f, .14f, .06f), armor);
             Part("Head", PrimitiveType.Sphere, new Vector3(0, 1.97f, 0), new Vector3(.51f, .56f, .49f), skin);
@@ -558,7 +559,7 @@ namespace Emberfall
             Color accent = GameBalance.ClassColor(hero);
             Color skin = new Color(.94f,.76f,.59f);
             Color steel = new Color(.64f,.75f,.85f);
-            Humanoid(skin, accent * .62f, hero == HeroClass.Vanguard ? steel : accent, hero == HeroClass.Vanguard ? 1.15f : 1f);
+            Humanoid(skin, accent * .62f, hero == HeroClass.Vanguard ? steel : accent, hero == HeroClass.Vanguard ? 1.15f : 1f, hero == HeroClass.Vanguard ? "Breastplate" : "Tailored cloth torso");
             Cape(accent * .48f, hero);
             if (hero == HeroClass.Vanguard)
             {

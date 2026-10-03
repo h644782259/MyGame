@@ -22,6 +22,10 @@ namespace UnityEngine
 namespace Emberfall
 {
  public class EnemyController{public GameObject gameObject=new GameObject();public Transform transform=>gameObject.transform;public bool IsDead,IsBoss;public void TrySkillInterrupt(PlayerController p,int skill,int cast){}public float HitFootprintBonus;public EnemyController(float z){transform.position=new Vector3(0,0,z);}}
+ // Optional authored visuals are emission boundaries in this targeting suite.
+ // Actual geometry, admission and lifecycle execute in BlenderSkillVfxProductionTests.
+ public static class BlenderSkillVfx{public static bool TryPlay(PlayerController hero,float range,bool shock)=>false;}
+ public static class WeaponSlashRibbon{public static void Spawn(params object[] args){}}
  public static class CombatFx{public static void Ring(params object[] a){}public static Vector3 Flat(Vector3 v)=>new Vector3(v.x,0,v.z);public static void WeaponSlash(params object[] p){}}
  public static class CombatSight{public static float BlockedZ=float.NaN;public static bool Visible=true;public static bool Direct(Vector3 a,Vector3 b)=>Visible&&b.z!=BlockedZ;public static bool Melee(Vector3 a,Vector3 b)=>Direct(a,b);public static Vector3 GroundPoint(Vector3 a,Vector3 b)=>Visible?b:a;}
  public enum RunBlessing{ChargedWard}public enum SkillVisualRecipe{Neutral,Steel,Ice,Fire,Poison,Lightning,Arcane,Spirit,ArrowRain}

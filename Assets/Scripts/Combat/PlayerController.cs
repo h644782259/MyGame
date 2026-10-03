@@ -1279,13 +1279,14 @@ namespace Emberfall
             {
                 if (slot == 0)
                 {
-                    CombatFx.Ring(transform.position,3.4f*range,color,.45f,.2f);
+                    if(!BlenderSkillVfx.TryPlay(this,range,false)) CombatFx.Ring(transform.position,3.4f*range,color,.45f,.2f);
                     Melee(3.4f*range,360,Damage(SkillDamageBudgets.OpeningImpact(HeroClass,slot,rank)),.75f,.3f,skillIndex:slot,castId:castId);
                     if(rank>=2) CombatArea.Spawn(this,session,transform.position,3.4f*range,Damage(SkillDamageBudgets.OpeningImpact(HeroClass,slot,rank,1)),.25f,.18f,rank==3?.22f:0,.22f,color,true,false,rank==3?5f:0,rank==3?Damage(SkillDamageBudgets.OpeningImpact(HeroClass,slot,rank,2)):0,castId:castId,visual:SkillVisualRecipe.Steel);
                 }
                 else if (slot == 1)
                 {
-                    CombatFx.WeaponSlash(this,model,transform.position,transform.forward,4.8f*range,new Color(1f,.85f,.4f));
+                    if(!BlenderSkillVfx.TryPlay(this,range,true)) CombatFx.WeaponSlash(this,model,transform.position,transform.forward,4.8f*range,new Color(1f,.85f,.4f));
+                    else WeaponSlashRibbon.Spawn(this,model,new Color(1f,.85f,.4f));
                     Melee(4.8f*range,90+(rank-1)*10,Damage(SkillDamageBudgets.OpeningImpact(HeroClass,slot,rank)),1.9f,1.3f+(rank-1)*.3f,1.3f+(rank-1)*.3f,skillIndex:slot,castId:castId);
                     CombatFx.Ring(transform.position+transform.forward*2.5f*range,2.1f*range,color,.4f,.16f);
                     if(rank>=2) CombatArea.Spawn(this,session,CombatSight.GroundPoint(transform.position,transform.position+transform.forward*3f*range),2.3f*range,Damage(SkillDamageBudgets.OpeningImpact(HeroClass,slot,rank,1)),.6f,.25f,0,1,color,false,false,0,rank==3?Damage(SkillDamageBudgets.OpeningImpact(HeroClass,slot,rank,2)):0,castId:castId,visual:SkillVisualRecipe.Steel);
