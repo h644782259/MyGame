@@ -1,0 +1,22 @@
+{
+  "base_head": "d4dc7ae63ef70783fc841937c03598d18236142d",
+  "source_sha256": {
+    "Assets/Scripts/Combat/FilledSkillVfx.cs": "5d61977a477ab4071c5dac0a0f10564cf415ae42fb354a07a8bc452774aac8bc",
+    "Tests/FinalBodyEnvelopeProductionTests.Program.cs": "4bab37bc6cabbd4fb9175221ce95646c041ca8b7f598330bba3d2799cdd5c9be",
+    "Tests/FinalBodyEnvelopeProductionTests.py": "0f5ebe3ff6e855ec81ddcbe185d9929b05e1d27c6841aa131b519fe863442b86",
+    "Tests/FinalBodyEnvelopeProductionTests.Pose.cs": "1291de3f49d5a52fb3d4f9d5deecf8e76da6bb2ad730c878f3d16f3b62093316",
+    "ArtSource/FinalBodyEnvelope/render.py": "5b32667c630f2bdcd46a9aeb54657dea98ff52b1cf77d30172bf572cb250cb8d",
+    "ArtSource/FinalBodyEnvelope/intersections.py": "3951b894baf8de4a849fec380e18768ddc400fdd350b31a5669c4503049f4e0b",
+    "ArtSource/FinalBodyEnvelope/measure.py": "e8467991d8a1e502d5bdbbb7a81dfc9f1057111d7e59971810e0879ec1d7cbb0",
+    "ArtSource/FinalBodyEnvelope/search_dimensions.py": "e1c36c06e5aa84e15d0757c1a28c5193667572217f23c4a8b9ca15a90e93c0f3"
+  },
+  "samples_sha256": {
+    "actors.json.gz": "a7e266524c8bda590fd310fb2a1a1cec555b3c8283c7c9f4243bc8a0757c39f1",
+    "before-clearance.json.gz": "f72aeeb1dca8f4f05af8b1ae6cfbe29c95ea60823934daed24a33b007cf44d43",
+    "before-protection.json.gz": "fe26d94c62aab95729106eef34875a5a73b49d6bc8147eba0ac8cdec9a48eeb5",
+    "old-height-protection.json.gz": "7b549d0ed1b269a2ec29c71a1bcdc7167fdd5d7bbea8ea11c35e508f679d070d",
+    "old-height-clearance.json.gz": "927b97bfc5a04d88cac731c1fd4bb5bbda514c32306f5a1bd7694629068e93c1",
+    "protection.json.gz": "59d295d85f2e38f55ace72109984935c87b443fa64af45cb25e526d60d9dee26",
+    "before-actors.json.gz": "a7e266524c8bda590fd310fb2a1a1cec555b3c8283c7c9f4243bc8a0757c39f1"
+  }
+}

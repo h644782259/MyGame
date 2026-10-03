@@ -30,6 +30,9 @@ class EvidenceTest {static int n;static void Check(bool b,string m){n++;if(!b)th
 '''
 with tempfile.TemporaryDirectory(prefix='mechanism-evidence-') as temp:
  p=Path(temp)
+ # Evidence suite: rigid anchor art does not own health loss or result ordering.
+ # Actual F2 resource/mesh application is covered by the combined actor-art suite.
+ (p/'AnchorArtBoundary.cs').write_text('using UnityEngine;namespace Emberfall { internal static class EnemySilhouetteArt { internal static void ApplyAnchors(Transform root) {} } }')
  (p/'AreaCallback.cs').write_text(area_host);(p/'Math.cs').write_text(fixture);(p/'Enums.cs').write_text(enums)
  for name in ['Combat/EnemyControlPolicy','Core/RunMechanismEvidence','Core/GuardArmorRules','Core/AdventureResultPolicy','Core/CombatVisualBudget','Core/CombatImpactBatch','Core/LargeBossPhaseState','Core/ChapterBossPattern','Core/ArenaPulseRules','Core/CombatSightRules','World/ChapterRoomGeometry','World/WorldTraversal','World/ChapterHazards','World/ChapterHazardGeometry','Combat/LargeExpeditionBoss','Combat/CombatSight','Combat/ThreatVisualStyle']:(p/(Path(name).name+'.cs')).write_text((root/'Assets/Scripts'/(name+'.cs')).read_text())
  for name in ['ChapterCombatProductionTests','ChapterCombatProductionAttackFixture']:

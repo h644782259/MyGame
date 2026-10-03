@@ -1,6 +1,8 @@
 # Frozen PR30–32 art integration
 
-For the current cumulative E01–E06/wolf follow-up, see `Extended-Delivery.md` and the latest `ResourceBudget.json`. The table below is explicitly the separate PR30–32 frozen snapshot.
+For final F1–F6 implementation closure, see `Remaining-Art-Checklist.md`, `SkillCoverage.md` and `Cumulative-Budget.md`; final combined regression remains pending parent validation.
+
+For the historical cumulative E01–E06/wolf follow-up, see `Extended-Delivery.md` and the latest `ResourceBudget.json`. The table below is explicitly the separate PR30–32 frozen snapshot.
 
 The initial PR30–32 integration inventory covers: selected rigid pieces across all four heroes, sword/bow/staff and equipment, all three companions, existing enemy families and boss construction; six scenery families; Vanguard opening skills, nine reusable spell volumes and two dedicated Ice/Fire primary meshes. It is an actual source integration, not just a Blender proposal. It does not replace entire characters, all fashions, animation clips or procedural gameplay systems.
 
