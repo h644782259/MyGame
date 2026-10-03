@@ -532,11 +532,8 @@ namespace Emberfall
             DungeonSelectionOpen = false;
             LastRunSummary = BuildRunSummary(false);
             GameAudio.Play(SoundCue.Death);
-            int lost = Mathf.FloorToInt(Progression.Profile.gold * .1f);
-            Progression.AddGold(-lost);
-            RecordRecapGoldLoss(lost);
             Progression.Save();
-            Notify("你暂时倒下了，损失 " + lost + " 金币。装备、经验与技能均已保留。");
+            Notify(string.IsNullOrEmpty(Progression.LastError)?"你暂时倒下了。已赚金币、装备、经验与技能均保留；未完成奖励不发放。":Progression.LastError);
             UpdateTimeScale();
         }
 
