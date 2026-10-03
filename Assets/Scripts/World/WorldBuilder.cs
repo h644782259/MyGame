@@ -170,6 +170,7 @@ namespace Emberfall
                 Material stone = r.Material(new Color(.18f,.22f,.28f));
                 Material glow = r.Material(colors[i] * (progress > i ? 1f : .6f), true);
                 Primitive(facilities, names[i] + " plinth", PrimitiveType.Cylinder, p + Vector3.up*.35f, new Vector3(.9f,.35f,.9f), stone);
+                AuthoredFixedScenery.Crest(facilities,names[i],p+Vector3.up*.76f,stone);
                 Crystal(facilities, r, p + Vector3.up * (1.1f + Mathf.Min(progress,5)*.06f), .35f + Mathf.Min(progress,5)*.025f, glow);
                 Label(facilities, names[i], labels[i], p + Vector3.up*2.1f, .055f, colors[i], false);
                 WorldTraversal.AddCircle(p,.48f);
@@ -459,6 +460,7 @@ namespace Emberfall
         private static GameObject Primitive(Transform parent,string name,PrimitiveType type,Vector3 p,Vector3 scale,Material material,bool cameraOccluder=false)
         {
             GameObject go=ProceduralVisuals.Create(name,type,material);
+            AuthoredFixedScenery.Apply(go,name,type);
             go.transform.SetParent(parent,false); go.transform.localPosition=p; go.transform.localScale=scale;
             if(cameraOccluder)CameraOcclusionSurface.Mark(go);
             return go;
@@ -484,6 +486,7 @@ namespace Emberfall
         private static GameObject Ring(Transform parent,WorldResources r,string name,Vector3 center,float radius,float thickness,Material material,bool vertical)
         {
             GameObject go=new GameObject(name); go.transform.SetParent(parent); go.transform.position=center;
+            if(name=="Gate frame"&&AuthoredFixedScenery.Frame(go,radius,material))return go;
             LineRenderer line=go.AddComponent<LineRenderer>(); line.useWorldSpace=false; line.loop=true; line.positionCount=72; line.widthMultiplier=thickness; line.sharedMaterial=material;
             line.numCornerVertices=2; line.numCapVertices=2; line.generateLightingData=true;
             for(int i=0;i<72;i++) { float a=i*Mathf.PI*2/72; line.SetPosition(i,vertical?new Vector3(Mathf.Cos(a)*radius,Mathf.Sin(a)*radius,0):new Vector3(Mathf.Cos(a)*radius,0,Mathf.Sin(a)*radius)); }

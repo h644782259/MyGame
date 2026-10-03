@@ -1,6 +1,7 @@
 using System;using System.Linq;using System.Collections.Generic;using System.Reflection;using UnityEngine;using Emberfall;
 namespace Emberfall {
  // This suite exercises the retained procedural fallback; resource readiness has separate coverage.
+ public static class AuthoredFixedScenery {public static void Apply(GameObject g,string n,PrimitiveType t){}public static bool Frame(GameObject g,float r,Material m)=>false;public static void Crest(Transform p,string n,Vector3 at,Material m){}}
  public static class BlenderSceneryArt {public static GameObject Create(string n,Transform p,Vector3 at,WorldResources r)=>null;public static GameObject CreatePilotProp(string n,Transform p,Vector3 at)=>null;}
 
  // Observe production material-category arguments; WorldResources and ApplySurface execute unchanged apart from this trace.
