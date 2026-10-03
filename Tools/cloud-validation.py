@@ -374,6 +374,7 @@ def main():
         for name, script in [("authored-actor-modules", "ActorModulesProductionTests.py"),
                              ("blender-skill-vfx-production", "BlenderSkillVfxProductionTests.py"),
                              ("blender-scenery-production", "BlenderSceneryProductionTests.py"),
+                             ("authored-projectile-production", "AuthoredProjectileProductionTests.py"),
                              ("authored-spell-bases", "AuthoredSpellBasesProductionTests.py"),
                              ("authored-spell-integration", "AuthoredSpellIntegrationTests.py"),
                              ("camera-occlusion-slots", "CameraOcclusionSlotsProductionTests.py"),
