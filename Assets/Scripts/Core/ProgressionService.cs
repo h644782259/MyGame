@@ -95,6 +95,11 @@ namespace Emberfall
         private string lastLoggedSaveError;
         private string currentSlotId = "legacy";
         private readonly System.Random random = new System.Random();
+        // Freeze the draw through failed writes and in-process reload/retry. Nothing
+        // is granted or presented until the normal durable transaction succeeds.
+        private ChestReward pendingChestRoll;
+        private string pendingChestRollPath;
+        private int pendingChestRollClears, pendingChestRollTier;
         private readonly HashSet<string> collectedLootIds = new HashSet<string>(StringComparer.Ordinal);
 
         [Serializable]
@@ -134,6 +139,7 @@ namespace Emberfall
             // gets a fresh ID rather than recycling its deleted filename.
             if (activeSlotDeleted || File.Exists(savePath + DeletionSuffix)) { CreateNewSlot(heroClass); return; }
             CancelChapterRun();
+            pendingChestRoll = null;
             Profile = CreateProfile(heroClass);
             collectedLootIds.Clear();
             Commit();
@@ -157,6 +163,11 @@ namespace Emberfall
             bool recovered;
             if (TryReadSlot(candidatePath, out loaded, out failure, out recovered))
             {
+                // Migration is written before selecting/publishing the loaded role.
+                // A failed save leaves the active role and durable reward flags intact.
+                string migrationFailure;
+                if (ChapterProgression.BackfillDifficultyRewards(loaded) && !TryWriteProfile(loaded, candidatePath, false, out migrationFailure))
+                    return Fail(migrationFailure);
                 if (currentSlotId != normalized) collectedLootIds.Clear();
                 SelectSlotPath(normalized);
                 attachedSaveExists = true;
@@ -366,6 +377,7 @@ namespace Emberfall
 
         private void SelectSlotPath(string id)
         {
+            if (currentSlotId != id) pendingChestRoll = null;
             currentSlotId = id;
             savePath = SlotPath(id);
             activeSlotDeleted = false;
@@ -1416,6 +1428,18 @@ namespace Emberfall
             return CommitCandidate(candidate);
         }
 
+        public static string ChestChoiceName(int choice)
+        { return choice == 0 ? "兵装" : choice == 1 ? "羽翼" : "补给"; }
+        public static string DungeonChestRules(int tier, ChestReward savedReward = null)
+        {
+            int minimum = TierRewardRules.ChestGoldMinimum(tier);
+            return (savedReward != null && savedReward.rulesRevision == 0 ? "当前展示旧版已保存奖励：箱号不代表新箱型，金币不追加补给加成。以下规则仅适用于新开箱。\n\n" : "") + "三选一：兵装 / 羽翼 / 补给。\n兵装与羽翼：金币 " + minimum + "～" + (minimum + 40)
+                + "；抽到时装时固定所选部位，并非必出。\n普通22% · 稀有12% · 史诗5% · 传说1% · 无时装60%"
+                + "\n补给：不抽时装，原金币×1.5向下取整（" + (minimum * 3 / 2) + "～" + ((minimum + 40) * 3 / 2) + "）。"
+                + "\n每箱均增加1基础星纹；重复时装转金币及额外星纹，收藏规则不变。基础通关碎片独立结算。"
+                + "\n奖励先保存再展示；旧回执原样保留，跳过动画不重抽。";
+        }
+
         public bool PrepareDungeonChest(int tier = 1)
         {
             if (Profile.pendingFashionChest && Profile.clearedRuns <= Profile.materialRewardedClears)
@@ -1447,15 +1471,27 @@ namespace Emberfall
                 Fail("请先收起上一次的宝箱奖励展示；该奖励已保存，不会重新抽取。");
                 return null;
             }
+            if (pendingChestRoll != null && (pendingChestRollPath != SaveFilePath || pendingChestRollClears != Profile.clearedRuns || pendingChestRollTier != Profile.pendingChestTier))
+                pendingChestRoll = null;
+            if (pendingChestRoll != null && pendingChestRoll.choice != choice)
+            { Fail("上次开箱尚未保存，请重试「" + ChestChoiceName(pendingChestRoll.choice) + "」箱；不会重新抽取。"); return null; }
+            if (pendingChestRoll == null)
+            {
+                int baseGold = TierRewardRules.ChestGoldMinimum(Profile.pendingChestTier) + random.Next(41);
+                Rarity? draw = choice == 2 ? (Rarity?)null : RollFashionRarity(random.Next(100));
+                pendingChestRoll = new ChestReward { rulesRevision = 1, id = Guid.NewGuid().ToString("N"), choice = choice,
+                    gold = choice == 2 ? baseGold * 3 / 2 : baseGold, rarityIndex = draw.HasValue ? (int)draw.Value : -1 };
+                pendingChestRollPath = SaveFilePath; pendingChestRollClears = Profile.clearedRuns; pendingChestRollTier = Profile.pendingChestTier;
+            }
             GameProfile candidate = JsonUtility.FromJson<GameProfile>(JsonUtility.ToJson(Profile, true));
             candidate.pendingFashionChest = false;
             candidate.fashionThreads = Clamp(candidate.fashionThreads + 1, 0, 999999);
-            var receipt = new ChestReward { id = Guid.NewGuid().ToString("N"), choice = choice, gold = TierRewardRules.ChestGoldMinimum(candidate.pendingChestTier) + random.Next(41), name = "金币" };
-            Rarity? rarity = RollFashionRarity(random.Next(100));
-            if (!rarity.HasValue) receipt.summary = "宝箱 " + (choice + 1) + "：获得 " + receipt.gold + " 金币";
+            var receipt = new ChestReward { rulesRevision = 1, id = pendingChestRoll.id, choice = choice, gold = pendingChestRoll.gold, name = "金币" };
+            Rarity? rarity = pendingChestRoll.Rarity;
+            if (!rarity.HasValue) receipt.summary = ChestChoiceName(choice) + "箱：获得 " + receipt.gold + " 金币";
             else
             {
-                FashionSlot slot = (FashionSlot)random.Next(2);
+                FashionSlot slot = choice == 0 ? FashionSlot.Weapon : FashionSlot.Wings;
                 string id = "fashion-" + (int)slot + "-" + (int)rarity.Value;
                 FashionData owned = candidate.fashions.Find(value => value != null && value.id == id);
                 receipt.rarityIndex = (int)rarity.Value;
@@ -1466,13 +1502,13 @@ namespace Emberfall
                 {
                     int duplicateGold = new[] { 40, 100, 250, 800 }[(int)rarity.Value];
                     candidate.fashionThreads = Clamp(candidate.fashionThreads + new[] { 1, 2, 4, 8 }[(int)rarity.Value], 0, 999999);
-                    receipt.summary = "宝箱 " + (choice + 1) + "：" + receipt.name + " 已拥有，转化 " + duplicateGold + " 金币；另得 " + receipt.gold + " 金币";
+                    receipt.summary = ChestChoiceName(choice) + "箱：" + receipt.name + " 已拥有，转化 " + duplicateGold + " 金币；另得 " + receipt.gold + " 金币";
                     receipt.gold += duplicateGold;
                 }
                 else
                 {
                     candidate.fashions.Add(new FashionData { id = id, slot = slot, rarity = rarity.Value, name = receipt.name });
-                    receipt.summary = "宝箱 " + (choice + 1) + "：获得" + GameBalance.RarityName(rarity.Value) + "时装「" + receipt.name + "」及 " + receipt.gold + " 金币";
+                    receipt.summary = ChestChoiceName(choice) + "箱：获得" + GameBalance.RarityName(rarity.Value) + "时装「" + receipt.name + "」及 " + receipt.gold + " 金币";
                 }
             }
             receipt.summary += " · 星纹 " + candidate.fashionThreads + "/30";
@@ -1488,6 +1524,7 @@ namespace Emberfall
                 Fail(failure);
                 return null;
             }
+            pendingChestRoll = null;
             Profile = candidate;
             LastError = string.Empty;
             RaiseChanged();
@@ -2293,7 +2330,7 @@ namespace Emberfall
 
         private static GameProfile CreateProfile(HeroClass heroClass)
         {
-            var profile = new GameProfile { heroClass = heroClass };
+            var profile = new GameProfile { heroClass = heroClass, chapterDifficultyRewardRevision = 1 };
             profile.skillRanks[0] = 1;
             for (int slot = 0; slot < 3; slot++) AddStarterItem(profile, (ItemSlot)slot);
             return profile;

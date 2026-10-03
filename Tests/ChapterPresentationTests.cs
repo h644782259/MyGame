@@ -16,14 +16,14 @@ public static class ChapterPresentationTests
             foreach(ChapterDifficulty diff in Enum.GetValues(typeof(ChapterDifficulty)))
             foreach(bool limited in new[]{false,true})
             {
-                p.chapterFirstRewardMask=0;
+                p.chapterFirstRewardMask=0;p.chapterDifficultyRewardMask=0;
                 string first=ChapterEntryPresentation.Preview(p,node,diff,tier,limited);
                 int repeat=ChapterProgression.MaterialReward(node,tier);
-                Check(first.Contains("完成奖励 "+(repeat+1)+" 碎片")&&first.Contains("首次1"),"first reward follows shared tier bands plus one fixed shard");
+                Check(first.Contains("完成奖励 "+(repeat+1+(diff==ChapterDifficulty.Normal?0:4))+" 碎片")&&first.Contains("首次1"),"first reward follows shared tier bands plus one fixed shard");
                 Check(first.Contains(ChapterDefinition.DifficultyMechanic(node,diff)),"exact production difficulty mechanic described");
-                Check(first.Contains("难度不加乘")&&first.Contains("不发旧副本宝箱")&&first.Contains(node==ChapterNode.StarPlatform?"星台通关完成整章，可领取共享一次首通核心":"本节点不授予资格"),"actual shared first-core eligibility and no legacy chest");
+                Check(first.Contains("困难/英雄每节点各一次，全章额外最多24")&&first.Contains("不发旧副本宝箱")&&first.Contains(node==ChapterNode.StarPlatform?"星台通关完成整章，可领取共享一次首通核心":"本节点不授予资格"),"actual shared first-core eligibility and no legacy chest");
                 Check(first.Contains(limited?"初始3次":"携带药剂"),"healing rules are independent");
-                p.chapterFirstRewardMask=1<<(int)node;
+                p.chapterFirstRewardMask=1<<(int)node;p.chapterDifficultyRewardMask=63;
                 string replay=ChapterEntryPresentation.Preview(p,node,diff,tier,limited);
                 Check(replay.Contains("完成奖励 "+repeat+" 碎片")&&!replay.Contains("首次1"),"replay does not promise first shard again");
             }

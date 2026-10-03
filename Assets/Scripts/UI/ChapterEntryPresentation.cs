@@ -29,11 +29,14 @@ namespace Emberfall
             string health=ChapterDefinition.HealthMultiplier(difficulty).ToString("0.##",CultureInfo.InvariantCulture);
             string damage=ChapterDefinition.DamageMultiplier(difficulty).ToString("0.##",CultureInfo.InvariantCulture);
             int repeat=ChapterProgression.MaterialReward(node,tier),total=ChapterProgression.CompletionMaterials(profile,node,tier);
+            int rewardBit=ChapterProgression.DifficultyRewardBit(node,difficulty);
+            int firstDifficulty=rewardBit!=0&&(profile.chapterDifficultyRewardMask&rewardBit)==0?ChapterProgression.DifficultyFirstRewardMaterials:0;
             return DifficultyName(difficulty)+" · 敌人生命 ×"+health+" / 伤害 ×"+damage+"\n"+
                 ChapterDefinition.DifficultyMechanic(node,difficulty)+"\n"+
                 "解锁 · 普通通关解锁困难，困难通关解锁英雄；阶数和治疗规则独立。\n"+
                 (limited?"限疗：初始3次治疗充能。":"普通治疗：使用携带药剂。")+"\n"+
-                "完成奖励 "+total+" 碎片（重复 "+repeat+(total>repeat?" + 首次1":"")+"）；难度不加乘，不发旧副本宝箱。\n"+
+                "完成奖励 "+(total+firstDifficulty)+" 碎片（重复 "+repeat+(total>repeat?" + 节点首次1":"")+(firstDifficulty>0?" + 本难度首次4":"")+"）；困难/英雄每节点各一次，全章额外最多24；不发旧副本宝箱。\n"+
+                "旧档按合法逐档完成记录一次补领；缺失或非法记录不推断，实际通关后领取。\n"+
                 (!profile.firstClearRewardClaimed?(profile.pendingFirstClearReward?"共享一次首通核心已待领取；本次不重复。\n":(node==ChapterNode.StarPlatform?"星台通关完成整章，可领取共享一次首通核心。\n":"首通核心需完成整章：通关星台；本节点不授予资格。\n")):"")+TierEffect(node)+MasteryProgress(profile,node,difficulty);
         }
         private static string MechanismReport(ChapterResultSnapshot result)

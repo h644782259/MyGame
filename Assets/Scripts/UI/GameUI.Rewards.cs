@@ -60,7 +60,7 @@ namespace Emberfall
             Fill(w,new Color(.045f,.064f,.095f,.99f));Border(w,new Color(.52f,.60f,.67f,.3f));
             Text(new Rect(w.x+28,w.y+20,w.width-56,18),"F A L L E N   S T A R",10,gold,true);
             Text(new Rect(w.x+28,w.y+45,w.width-248,42),revealed?(complete?"星光已归你所有":"封印正在苏醒"):"遗迹馈赠",28,pale,true);
-            Text(new Rect(w.x+28,w.y+92,w.width-56,24),revealed?(complete?ChestRevealPresentation.Outcome(reward):"已保存奖励 · 可以跳过揭晓动画"):"三份机会相同 · 只开启你选中的一份",14,muted);
+            Text(new Rect(w.x+28,w.y+92,w.width-56,24),revealed?(complete?ChestRevealPresentation.Outcome(reward):"已保存奖励 · 可以跳过揭晓动画"):"兵装 / 羽翼 / 补给 · 三选一",14,muted);
             if(Button(new Rect(w.xMax-200,w.y+43,78,36),"菜单",jade)){session.SetPaused(true);BlockUITransition();return;}
             if(Button(new Rect(w.xMax-110,w.y+43,82,36),chestDetails?"收起规则":"奖励规则",muted))chestDetails=!chestDetails;
             Rect body=new Rect(w.x+28,w.y+132,w.width-56,w.height-208);
@@ -75,7 +75,7 @@ namespace Emberfall
                     Rect r=new Rect(body.x+i*(cardWidth+12),body.y,cardWidth,body.height);
                     bool hover=r.Contains(Mouse)&&GUI.enabled;
                     Fill(r,new Color(.07f,.09f,.125f));Border(r,hover?gold:new Color(.32f,.42f,.49f,.65f));
-                    Text(new Rect(r.x+14,r.y+12,r.width-28,20),i==0?"I":i==1?"II":"III",12,muted);
+                    Text(new Rect(r.x+14,r.y+12,r.width-28,20),ProgressionService.ChestChoiceName(i),12,muted);
                     DrawRewardChest(new Rect(r.x+12,r.y+30,r.width-24,r.height-98),false,1,0);
                     if(Button(new Rect(r.x+12,r.yMax-54,r.width-24,42),"开启",gold,!chestOpening&&progression.Profile.pendingFashionChest&&!progression.Profile.pendingChestReveal,null,hover))
                     {
@@ -98,7 +98,7 @@ namespace Emberfall
         private void DrawDesktopChestRules(Rect r)
         {
             int minimum=TierRewardRules.ChestGoldMinimum(session.Progression.Profile.pendingChestTier);
-            string rules="三份宝箱机会完全相同，每次只可开启一份。\n\n金币 "+minimum+"～"+(minimum+40)+"，另有机会获得时装。\n普通22% · 稀有12% · 史诗5% · 传说1% · 无时装60%\n\n重复时装转金币并额外增加星纹，每次开启均增加星纹。\n奖励先保存再展示；跳过动画不会重新抽取。";
+            string rules=ProgressionService.DungeonChestRules(session.Progression.Profile.pendingChestTier, session.Progression.Profile.pendingChestReveal ? session.Progression.LastChestReward : null);
             Text(new Rect(r.x+10,r.y+8,r.width-20,r.height-16),rules,15,pale,false,true);
         }
         private void DrawDesktopChestResult(Rect r,ChestReward reward,Color accent)

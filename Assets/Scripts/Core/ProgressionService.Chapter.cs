@@ -46,6 +46,8 @@ namespace Emberfall
                 candidate.chapterMasteryMask|=receipt.MasteryEvidence;
                 for(int i=0;i<4;i++)if((receipt.MasteryEvidence&(1<<i))!=0)candidate.chapterMasteryTiers[i]=Math.Max(candidate.chapterMasteryTiers[i],receipt.Tier);
             }
+            ChapterProgression.BackfillDifficultyRewards(candidate);
+            ChapterProgression.GrantDifficultyRewards(candidate, ChapterProgression.DifficultyRewardBit(receipt.Node, receipt.Difficulty));
             candidate.chapterRevision=1;candidate.chapterCompletedMask|=bit;candidate.chapterFirstRewardMask|=bit;
             candidate.chapterHighestDifficulties[index]=Math.Max(candidate.chapterHighestDifficulties[index],(int)receipt.Difficulty+1);
             candidate.mechanicMaterials=(int)Math.Min(999999L,(long)candidate.mechanicMaterials+receipt.Materials);

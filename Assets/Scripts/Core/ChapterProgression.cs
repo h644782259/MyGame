@@ -42,15 +42,46 @@ namespace Emberfall
         public static int MaterialReward(ChapterNode node,int tier){return TierRewardBand.Materials(ChapterDefinition.Get(node).BaseMaterials,tier);}
         public static int CompletionMaterials(GameProfile profile,ChapterNode node,int tier)
         {return MaterialReward(node,tier)+((profile.chapterFirstRewardMask&(1<<(int)node))==0?1:0);}
+        public const int DifficultyFirstRewardMaterials = 4;
+        public static int DifficultyRewardBit(ChapterNode node, ChapterDifficulty difficulty)
+        { return Valid(node) && (difficulty == ChapterDifficulty.Hard || difficulty == ChapterDifficulty.Heroic)
+            ? 1 << ((int)node * 2 + (int)difficulty - 1) : 0; }
+        // Legacy service admitted only highest+1 at both begin and completion. Thus a
+        // valid highest Heroic proves Hard; absent/invalid fields are never evidence.
+        internal static bool BackfillDifficultyRewards(GameProfile profile)
+        {
+            if (profile.chapterDifficultyRewardRevision >= 1) return false;
+            int proven = 0;
+            for (int n = 0; n < 3; n++)
+            {
+                if ((profile.chapterCompletedMask & (1 << n)) == 0) continue;
+                int highest = profile.chapterHighestDifficulties != null && n < profile.chapterHighestDifficulties.Length
+                    ? profile.chapterHighestDifficulties[n] : 0;
+                if (highest == 2 || highest == 3) proven |= DifficultyRewardBit((ChapterNode)n, ChapterDifficulty.Hard);
+                if (highest == 3) proven |= DifficultyRewardBit((ChapterNode)n, ChapterDifficulty.Heroic);
+            }
+            GrantDifficultyRewards(profile, proven);
+            profile.chapterDifficultyRewardRevision = 1;
+            return true;
+        }
+        internal static void GrantDifficultyRewards(GameProfile profile, int proven)
+        {
+            int unpaid = proven & 63 & ~profile.chapterDifficultyRewardMask, count = 0;
+            for (int i = 0; i < 6; i++) if ((unpaid & (1 << i)) != 0) count++;
+            profile.mechanicMaterials = (int)Math.Min(999999L, (long)profile.mechanicMaterials + count * DifficultyFirstRewardMaterials);
+            profile.chapterDifficultyRewardMask |= unpaid;
+        }
         internal static void Normalize(GameProfile profile)
         {
+            profile.chapterDifficultyRewardMask &= 63;
+            profile.chapterDifficultyRewardRevision = Math.Max(0, Math.Min(1, profile.chapterDifficultyRewardRevision));
             profile.chapterMasteryMask&=15;
             var oldMastery=profile.chapterMasteryTiers;profile.chapterMasteryTiers=new int[4];
             for(int i=0;i<4;i++)if((profile.chapterMasteryMask&(1<<i))!=0)profile.chapterMasteryTiers[i]=Math.Max(1,Math.Min(100,oldMastery!=null&&i<oldMastery.Length?oldMastery[i]:1));
             profile.chapterRevision=Math.Max(0,Math.Min(1,profile.chapterRevision));
             profile.chapterCompletedMask&=7;profile.chapterFirstRewardMask&=profile.chapterCompletedMask;
             var previous=profile.chapterHighestDifficulties;profile.chapterHighestDifficulties=new int[3];
-            for(int i=0;i<3;i++)if((profile.chapterCompletedMask&(1<<i))!=0)profile.chapterHighestDifficulties[i]=Math.Max(1,Math.Min(3,previous!=null&&i<previous.Length?previous[i]:1));
+            for(int i=0;i<3;i++)if((profile.chapterCompletedMask&(1<<i))!=0)profile.chapterHighestDifficulties[i]=previous!=null&&i<previous.Length&&previous[i]>=1&&previous[i]<=3?previous[i]:1;
             profile.chapterRewardSequence=Math.Max(0,profile.chapterRewardSequence);
             Guid receipt;profile.lastChapterRewardId=Guid.TryParseExact(profile.lastChapterRewardId,"N",out receipt)?receipt.ToString("N"):null;
             profile.chapterHighestAdventureTier=Math.Max(0,Math.Min(100,profile.chapterHighestAdventureTier));

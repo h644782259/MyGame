@@ -136,6 +136,8 @@ namespace Emberfall
     [Serializable]
     public class ChestReward
     {
+        // Zero is the historical identical-chest schema; never infer it from choice.
+        public int rulesRevision;
         public bool hasCurrencyDeltas;
         public int goldDelta, threadsDelta;
         public string id;
@@ -242,6 +244,9 @@ namespace Emberfall
         public int chapterRevision;
         public int chapterCompletedMask;
         public int chapterFirstRewardMask;
+        // Six independent node/difficulty first rewards; revision gates legacy backfill.
+        public int chapterDifficultyRewardMask;
+        public int chapterDifficultyRewardRevision;
         public int[] chapterHighestDifficulties = new int[3];
         public long chapterRewardSequence;
         public string lastChapterRewardId;
