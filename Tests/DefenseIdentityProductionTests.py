@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Actual guard/passive blocks -> nonpooled anchor -> real loaded pooled mesh, with deferred Unity destruction doubles."""
+"""Actual guard/passive blocks -> nonpooled anchor -> real loaded pooled mesh, with deferred Unity destruction doubles. Args: dotnet [evidence.json]. Default evidence is temporary."""
 from pathlib import Path
 import tempfile,subprocess,os,sys
 root=Path(__file__).resolve().parents[1]
@@ -35,11 +35,12 @@ PASSIVE
 internal void TriggerPassive(){TryDefensePassive();}
 }}
 '''.replace('GUARDS',guards).replace('PASSIVE',member(player,'private void TryDefensePassive('))
+evidence_path=Path(sys.argv[2]).expanduser().resolve() if len(sys.argv)>2 else None
 with tempfile.TemporaryDirectory(prefix='defense-identity-') as d:
  p=Path(d);(p/'Stubs.cs').write_text(stubs);(p/'Player.cs').write_text(fixture);(p/'Test.cs').write_text((root/'Tests/DefenseIdentityProductionTests.cs').read_text())
  for f in ['Core/FilledVfxRecipes','Core/FilledVfxPlacement','Core/CombatVisualBudget','Combat/CombatVisualLease','Combat/AnchoredImpactMesh','Combat/FilledSkillVfx','Combat/AuthoredActorMeshes','Combat/AuthoredSpellBases','Combat/AdvancedSkillVfx']:(p/(Path(f).name+'.cs')).write_text((root/('Assets/Scripts/'+f+'.cs')).read_text())
  (p/'Test.csproj').write_text('<Project Sdk="Microsoft.NET.Sdk"><PropertyGroup><TargetFramework>net8.0</TargetFramework><OutputType>Exe</OutputType></PropertyGroup></Project>');(p/'NuGet.Config').write_text('<configuration><packageSources><clear /></packageSources></configuration>')
- cmd=[sys.argv[1] if len(sys.argv)>1 else 'dotnet','run','--project',str(p/'Test.csproj'),'--',str(root/'Assets/Resources'),str(root/'ArtSource/DefenseIdentity/Runtime-Samples.json')]
+ cmd=[sys.argv[1] if len(sys.argv)>1 else 'dotnet','run','--project',str(p/'Test.csproj'),'--',str(root/'Assets/Resources'),str(evidence_path if evidence_path is not None else p/'Runtime-Samples.json')]
  env=dict(os.environ,DOTNET_CLI_HOME=str(p/'cli'),DOTNET_NOLOGO='1')
  subprocess.run(cmd,env=env,check=True)
  for name,old,new,expected in [('missing-identity','detail,true,4','detail,true,0','actual defense selects loaded ProtectionCage'),('lost-body-envelope','detail,true,4,true','detail,true,4,false','persistent protection has body envelope'),('stale-state','if(stateActive!=null&&!stateActive())','if(false)','state cancellation hides hierarchy before deferred destruction')]:
