@@ -6,7 +6,7 @@ namespace Emberfall
         private VanguardActionLibrary vanguardArt;
         private Transform[] vanguardArtBones;
         private bool vanguardHurt;
-        private float vanguardHurtStart=-10, vanguardDeathStart=-1;
+        private float vanguardHurtStart=-10;
         private Quaternion[] vanguardDeathRest;
         private void ConfigureVanguardArt()
         {
@@ -52,15 +52,17 @@ namespace Emberfall
         private void SampleVanguardDeath()
         {
             if(vanguardArt==null)return;
-            if(!pilotOwnerDead){vanguardDeathRest=null;vanguardDeathStart=-1;return;}
+            if(!pilotOwnerDead){vanguardDeathRest=null;return;}
             if(vanguardDeathRest==null)
             {
-                vanguardDeathStart=Time.time;vanguardDeathRest=new Quaternion[vanguardArtBones.Length];
+                vanguardDeathRest=new Quaternion[vanguardArtBones.Length];
                 for(int i=0;i<vanguardArtBones.Length;i++)vanguardDeathRest[i]=vanguardArtBones[i].localRotation;
             }
             for(int i=0;i<vanguardArtBones.Length;i++)vanguardArtBones[i].localRotation=vanguardDeathRest[i];
-            // Root fall belongs to PlayerController. This local settling never changes it.
-            VanguardLayer(VanguardArtPose.Death,Mathf.Clamp01((Time.time-vanguardDeathStart)/.35f),1);
+            // Player death freezes scaled time immediately. Apply the authored terminal
+            // local pose once, then re-sample from the snapshot without accumulation.
+            // Root fall and the pause remain PlayerController/GameSession-owned.
+            VanguardLayer(VanguardArtPose.Death,1,1);
         }
     }
 }

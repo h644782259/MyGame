@@ -22,7 +22,7 @@ if(mode==5||mode==6)for(int i=0;i<12;i++)visualMotion.Advance(mode==5?-12:12,0,0
 if(mode==7||mode==8){actionDuration=1;actionAge=.52f;actionBasic=mode==7;actionSkill=0;}
 if(mode==9||mode==10){pilotAirborne=mode==9;locomotion.Advance(0,0,.05f,2,false,true,.5f);if(mode==10)locomotion.Advance(0,0,.05f,2,true,false,0);}
 AnimateHero(locomotion.Speed,0,hurt,0);
-if(mode==12){pilotOwnerDead=true;transform.localRotation=Quaternion.Euler(0,0,75f);SampleVanguardDeath();Time.time=1.35f;SampleVanguardDeath();}
+if(mode==12){pilotOwnerDead=true;transform.localRotation=Quaternion.Euler(0,0,75f);SampleVanguardDeath();SampleVanguardDeath();}
 }}}'''
 (p/'MotionExport.cs').write_text(body)
 f=(p/'Fixture.cs').read_text().replace('public static float deltaTime=.016f,time;','public static float deltaTime=.016f,time;public static int frameCount;')
