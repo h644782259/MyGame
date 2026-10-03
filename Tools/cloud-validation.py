@@ -373,6 +373,7 @@ def main():
             failed = failed or not passed
         for name, script in [("authored-actor-modules", "ActorModulesProductionTests.py"),
                              ("actor-silhouette-f1-production", "ActorSilhouetteF1ProductionTests.py"),
+                             ("integrated-actor-art-production", "IntegratedActorArtProductionTests.py"),
                              ("blender-skill-vfx-production", "BlenderSkillVfxProductionTests.py"),
                              ("blender-scenery-production", "BlenderSceneryProductionTests.py"),
                              ("authored-projectile-production", "AuthoredProjectileProductionTests.py"),
