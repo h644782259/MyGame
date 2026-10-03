@@ -30,8 +30,8 @@ namespace Emberfall
                 practiceOriginalRoots.Clear();practiceSuspendedRoots.Clear();
                 GameObject[] originalRoots=gameObject.scene.GetRootGameObjects();
                 foreach(GameObject root in originalRoots)practiceOriginalRoots.Add(root);
-                PreviousPracticeRecord=PracticeRecord;
-                PracticeRecord=new CampPracticeRecord(scenario,seconds,JsonUtility.ToJson(copy.Profile,true),configurationSummary:copy.PracticeConfigurationSummary());
+                var skillNames=new string[GameBalance.SkillCount];for(int skill=0;skill<skillNames.Length;skill++)skillNames[skill]=GameBalance.SkillName(copy.Profile.heroClass,skill);
+                PracticeRecord=new CampPracticeRecord(scenario,seconds,JsonUtility.ToJson(copy.Profile,true),configurationSummary:copy.PracticeConfigurationSummary(),heroIdentity:copy.Profile.heroClass.ToString(),level:copy.Profile.level,skillNames:skillNames);
                 PracticeRecord.Prepare();
                 practiceDraft=draft;practiceOwner=Progression;practiceOriginalPlayer=Player;practiceOriginalEnemies=Enemies;
                 practiceOriginalUI=uiBlocking;practiceOriginalPaused=Paused;practiceRandom=UnityEngine.Random.state;
@@ -62,6 +62,11 @@ namespace Emberfall
                 if(root.activeSelf&&root.GetComponentInChildren<CombatProjectile>()!=null)
                 {Notify("场上仍有飞行弹体；请等战斗结束后再试招。");return false;}
             return true;
+        }
+        public bool PinPracticeBaseline()
+        {
+            if(PracticeActive||PracticeRecord==null||!PracticeRecord.Finished)return false;
+            PreviousPracticeRecord=PracticeRecord.FrozenCopy();return true;
         }
         public bool StartPractice()
         {
@@ -109,6 +114,7 @@ namespace Emberfall
         {
             if(!PracticeActive)return;
             PracticeRecord.Finish(reason);
+            if(PreviousPracticeRecord==null&&PracticeRecord.Started&&PracticeRecord.Survived&&(PracticeRecord.Elapsed==PracticeRecord.Duration||PracticeRecord.ObjectiveCompleted))PreviousPracticeRecord=PracticeRecord.FrozenCopy();
             // Restore ownership even if Unity destruction/reactivation raises an exception.
             try
             {
