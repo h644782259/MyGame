@@ -1,0 +1,149 @@
+[
+  {
+    "path": ".gitignore",
+    "androidOriginal": "698c54c121e2638853f5bba7671a8605d825e09893cb497f7b51109a14972868",
+    "windowsOriginal": "8142a2d720ced667b9b8a8b4368184b74b38967be217dc583b68df64e94f66ec",
+    "windowsFinal": "8142a2d720ced667b9b8a8b4368184b74b38967be217dc583b68df64e94f66ec",
+    "integrated": "698c54c121e2638853f5bba7671a8605d825e09893cb497f7b51109a14972868"
+  },
+  {
+    "path": "Assets/Editor/AndroidDevelopmentBuild.cs",
+    "androidOriginal": "475bdb41ecfa5004e921731efa190f336fff3c33da2eda4c29bbca7e7f42b7ff",
+    "windowsOriginal": null,
+    "windowsFinal": null,
+    "integrated": "475bdb41ecfa5004e921731efa190f336fff3c33da2eda4c29bbca7e7f42b7ff"
+  },
+  {
+    "path": "Assets/Editor/AndroidDevelopmentBuild.cs.meta",
+    "androidOriginal": "9b180e2f4fac7c9078f8de91b0c1cde2f0a256d5f0bccf582e3e1073000d45b0",
+    "windowsOriginal": null,
+    "windowsFinal": null,
+    "integrated": "9b180e2f4fac7c9078f8de91b0c1cde2f0a256d5f0bccf582e3e1073000d45b0"
+  },
+  {
+    "path": "Assets/Editor/ProjectTools.cs",
+    "androidOriginal": "68d5caca788c30bca4bb3025d4916eb7efdb5b9c2fb58d4a92e93540dc4519cc",
+    "windowsOriginal": "65b1af9bc02877f8fd8c79e4cd1aae13981a41efafae4316ae74f38c17fa4e44",
+    "windowsFinal": "65b1af9bc02877f8fd8c79e4cd1aae13981a41efafae4316ae74f38c17fa4e44",
+    "integrated": "68d5caca788c30bca4bb3025d4916eb7efdb5b9c2fb58d4a92e93540dc4519cc"
+  },
+  {
+    "path": "Assets/Resources/Fonts.meta",
+    "androidOriginal": "7ceb269c822dc157cfe3793eb65de296f29e5097a024825ccc6f4105717bd033",
+    "windowsOriginal": "7ceb269c822dc157cfe3793eb65de296f29e5097a024825ccc6f4105717bd033",
+    "windowsFinal": "7ceb269c822dc157cfe3793eb65de296f29e5097a024825ccc6f4105717bd033",
+    "integrated": "7ceb269c822dc157cfe3793eb65de296f29e5097a024825ccc6f4105717bd033"
+  },
+  {
+    "path": "Assets/Resources/Fonts/LICENSE.txt",
+    "androidOriginal": "6a73f9541c2de74158c0e7cf6b0a58ef774f5a780bf191f2d7ec9cc53efe2bf2",
+    "windowsOriginal": null,
+    "windowsFinal": null,
+    "integrated": "6a73f9541c2de74158c0e7cf6b0a58ef774f5a780bf191f2d7ec9cc53efe2bf2"
+  },
+  {
+    "path": "Assets/Resources/Fonts/LICENSE.txt.meta",
+    "androidOriginal": "1d7df2c0b0e74e39e9e7c66713cfc826121bb1e1f684adc78ed81d7bafb7a1c6",
+    "windowsOriginal": null,
+    "windowsFinal": null,
+    "integrated": "1d7df2c0b0e74e39e9e7c66713cfc826121bb1e1f684adc78ed81d7bafb7a1c6"
+  },
+  {
+    "path": "Assets/Resources/Fonts/NotoSansSC-Regular.otf",
+    "androidOriginal": "faa6c9df652116dde789d351359f3d7e5d2285a2b2a1f04a2d7244df706d5ea9",
+    "windowsOriginal": null,
+    "windowsFinal": null,
+    "integrated": "faa6c9df652116dde789d351359f3d7e5d2285a2b2a1f04a2d7244df706d5ea9"
+  },
+  {
+    "path": "Assets/Resources/Fonts/NotoSansSC-Regular.otf.meta",
+    "androidOriginal": "9fe99bd5268f2cf6ac7a41c35bb342b334535bfdb06e74743648a13cde6bc8f4",
+    "windowsOriginal": null,
+    "windowsFinal": null,
+    "integrated": "9fe99bd5268f2cf6ac7a41c35bb342b334535bfdb06e74743648a13cde6bc8f4"
+  },
+  {
+    "path": "Docs/Android-Development.md",
+    "androidOriginal": "7049970dbec57b50d0f33b02ba946b4f1180afa02ad81b8a26ed78922ec312c4",
+    "windowsOriginal": null,
+    "windowsFinal": null,
+    "integrated": "7049970dbec57b50d0f33b02ba946b4f1180afa02ad81b8a26ed78922ec312c4"
+  },
+  {
+    "path": "Docs/Android-Toolchain-Report.json",
+    "androidOriginal": "0b95c2ec56ed28ba91129b6248a6e11166f8615caa97cb6b4e9298e7a2e83204",
+    "windowsOriginal": null,
+    "windowsFinal": null,
+    "integrated": "0b95c2ec56ed28ba91129b6248a6e11166f8615caa97cb6b4e9298e7a2e83204"
+  },
+  {
+    "path": "Docs/Art-Design-Pilot-Delivery.md",
+    "androidOriginal": "4fe6e593d1d3bc630b3ac90e18687c081e39263d53ad64f0ffc2fbe8459f337b",
+    "windowsOriginal": "69e89aa1147f9f216a339d077829388d48a2a1944ced240ce4ddd56d6df25f6d",
+    "windowsFinal": "69e89aa1147f9f216a339d077829388d48a2a1944ced240ce4ddd56d6df25f6d",
+    "integrated": "4fe6e593d1d3bc630b3ac90e18687c081e39263d53ad64f0ffc2fbe8459f337b"
+  },
+  {
+    "path": "Docs/Moving-Basic-Pilot.md",
+    "androidOriginal": "b802502653873476df9b90501af9eb3033fc8fbbe46a64bdab8be363105318d8",
+    "windowsOriginal": "ff50a62f52ba08eb8e8dc486d8220af654d1fb2a563519f05dacc636d76770c8",
+    "windowsFinal": "ff50a62f52ba08eb8e8dc486d8220af654d1fb2a563519f05dacc636d76770c8",
+    "integrated": "b802502653873476df9b90501af9eb3033fc8fbbe46a64bdab8be363105318d8"
+  },
+  {
+    "path": "Docs/Release-2026-10-03.md",
+    "androidOriginal": null,
+    "windowsOriginal": "732a270f78d9c826c5aa3808980f568744207e0f16057d7bb3e8438c5869789e",
+    "windowsFinal": "732a270f78d9c826c5aa3808980f568744207e0f16057d7bb3e8438c5869789e",
+    "integrated": null
+  },
+  {
+    "path": "ProjectSettings/ProjectSettings.asset",
+    "androidOriginal": "e11291079c80bc65949eba8378163b6ccda83e9683cb28b4533344808d77be6f",
+    "windowsOriginal": "7ec8a4081f19859c0d9387fa01a63388696267c683e069a69a183939f21cb1ac",
+    "windowsFinal": "7ec8a4081f19859c0d9387fa01a63388696267c683e069a69a183939f21cb1ac",
+    "integrated": "e11291079c80bc65949eba8378163b6ccda83e9683cb28b4533344808d77be6f"
+  },
+  {
+    "path": "README.md",
+    "androidOriginal": "06427f037b197ab43ab3497e8d15667b9215f90fa682f67fe2555b2fe980e022",
+    "windowsOriginal": "4f38c3ffad1b1750d04b67ff7a3d059c0459aebec15a8e51f7c57ee992f4cc0b",
+    "windowsFinal": "f553b7b4e1acc6ba931dc9944cabc60e252d8026d84783410604f7a3deddb62f",
+    "integrated": "5420f509167bf91694c44ed0ea14e91de0ab4c9692443f82e55249403ffa0775"
+  },
+  {
+    "path": "Tests/AndroidBuildAuditTests.py",
+    "androidOriginal": "6de43e4a572b0c83efd76a136f080b607580f008b2adc3c67fe8718fef474833",
+    "windowsOriginal": null,
+    "windowsFinal": null,
+    "integrated": "6de43e4a572b0c83efd76a136f080b607580f008b2adc3c67fe8718fef474833"
+  },
+  {
+    "path": "Tests/AndroidPlatformTests.py",
+    "androidOriginal": "32b4a05dcfd8a4bad45661b7949346e5c2788171c7d8ae04e20de0d94bfebe68",
+    "windowsOriginal": null,
+    "windowsFinal": null,
+    "integrated": "32b4a05dcfd8a4bad45661b7949346e5c2788171c7d8ae04e20de0d94bfebe68"
+  },
+  {
+    "path": "Tools/Android/build_debug.py",
+    "androidOriginal": "96e403f9f17f0fd304919eab7ca50d7cc296b5ce40060fc17e7acbaeb35eb0a9",
+    "windowsOriginal": null,
+    "windowsFinal": null,
+    "integrated": "96e403f9f17f0fd304919eab7ca50d7cc296b5ce40060fc17e7acbaeb35eb0a9"
+  },
+  {
+    "path": "Tools/Android/policy.json",
+    "androidOriginal": "240bae90cae1068160c60c54337666fbdb0443a682b2e6e57a1df008f68fe1fa",
+    "windowsOriginal": null,
+    "windowsFinal": null,
+    "integrated": "240bae90cae1068160c60c54337666fbdb0443a682b2e6e57a1df008f68fe1fa"
+  },
+  {
+    "path": "Tools/Android/preflight.py",
+    "androidOriginal": "e245dd1d27d60b49d17aa40849295cac7220e87a67d487689898444bea1349f4",
+    "windowsOriginal": null,
+    "windowsFinal": null,
+    "integrated": "e245dd1d27d60b49d17aa40849295cac7220e87a67d487689898444bea1349f4"
+  }
+]

@@ -1,0 +1,4 @@
+{
+  "scope": "all packaged source bytes; high-confidence patterns only, not proof of absence of secrets",
+  "matches": []
+}

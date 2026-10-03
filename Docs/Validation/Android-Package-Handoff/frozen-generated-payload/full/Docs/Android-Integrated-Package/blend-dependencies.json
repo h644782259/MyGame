@@ -1,0 +1,109 @@
+[
+  {
+    "blend": "ArtSource/ActorModules/Emberfall-ActorModules.blend",
+    "references": []
+  },
+  {
+    "blend": "ArtSource/ActorSilhouettes/F1/ActorSilhouettes-F1.blend",
+    "references": []
+  },
+  {
+    "blend": "ArtSource/BlenderPilot/Emberfall-Pilot-Props.blend",
+    "references": [
+      {
+        "kind": "images",
+        "path": "//../../Assets/Art/BlenderPilot/EmberfallPilot_Atlas.png",
+        "packed": true,
+        "resolved": "/workspace/scratch/android-final-packages-v2/project/ArtSource/BlenderPilot/../../Assets/Art/BlenderPilot/EmberfallPilot_Atlas.png"
+      },
+      {
+        "kind": "images",
+        "path": "//../../Assets/Art/BlenderPilot/EmberfallPilot_MetallicSmoothness.png",
+        "packed": true,
+        "resolved": "/workspace/scratch/android-final-packages-v2/project/ArtSource/BlenderPilot/../../Assets/Art/BlenderPilot/EmberfallPilot_MetallicSmoothness.png"
+      }
+    ]
+  },
+  {
+    "blend": "ArtSource/BlenderPilot/Emberfall-Pilot-Vanguard.blend",
+    "references": [
+      {
+        "kind": "images",
+        "path": "//../../Assets/Resources/BlenderPilot/EmberfallPilot_Atlas.png",
+        "packed": true,
+        "resolved": "/workspace/scratch/android-final-packages-v2/project/ArtSource/BlenderPilot/../../Assets/Resources/BlenderPilot/EmberfallPilot_Atlas.png"
+      },
+      {
+        "kind": "images",
+        "path": "//../../Assets/Resources/BlenderPilot/EmberfallPilot_MetallicSmoothness.png",
+        "packed": true,
+        "resolved": "/workspace/scratch/android-final-packages-v2/project/ArtSource/BlenderPilot/../../Assets/Resources/BlenderPilot/EmberfallPilot_MetallicSmoothness.png"
+      }
+    ]
+  },
+  {
+    "blend": "ArtSource/BlenderProjectiles/Projectiles.blend",
+    "references": []
+  },
+  {
+    "blend": "ArtSource/BlenderScenery/Emberfall-Scenery.blend",
+    "references": []
+  },
+  {
+    "blend": "ArtSource/BlenderSkillIdentities/Four-Skill-Identities.blend",
+    "references": []
+  },
+  {
+    "blend": "ArtSource/BlenderSpellBases/Reusable-Spell-Volumes.blend",
+    "references": []
+  },
+  {
+    "blend": "ArtSource/BlenderVfx/Vanguard-Skills.blend",
+    "references": []
+  },
+  {
+    "blend": "ArtSource/EnemyKnockdown/GuardianDown-Support.blend",
+    "references": []
+  },
+  {
+    "blend": "ArtSource/EnemyKnockdown/KnockdownPoseReview.blend",
+    "references": []
+  },
+  {
+    "blend": "ArtSource/EnemySilhouettes/Down/GuardianDown-Support.blend",
+    "references": []
+  },
+  {
+    "blend": "ArtSource/EnemySilhouettes/EnemySilhouettes.blend",
+    "references": []
+  },
+  {
+    "blend": "ArtSource/FixedScenery/Emberfall-Fixed-Scenery.blend",
+    "references": []
+  },
+  {
+    "blend": "ArtSource/TacticalAttachments/TacticalAttachments.blend",
+    "references": []
+  },
+  {
+    "blend": "ArtSource/VanguardActions/Swordguard-Actions.blend",
+    "references": []
+  },
+  {
+    "blend": "ArtSource/WeaponModules/WeaponModules.blend",
+    "references": [
+      {
+        "kind": "images",
+        "path": "//../../Assets/Art/BlenderPilot/EmberfallPilot_Atlas.png",
+        "packed": true,
+        "resolved": "/workspace/scratch/android-final-packages-v2/project/ArtSource/WeaponModules/../../Assets/Art/BlenderPilot/EmberfallPilot_Atlas.png"
+      },
+      {
+        "kind": "images",
+        "path": "//../../Assets/Art/BlenderPilot/EmberfallPilot_MetallicSmoothness.png",
+        "packed": true,
+        "resolved": "/workspace/scratch/android-final-packages-v2/project/ArtSource/WeaponModules/../../Assets/Art/BlenderPilot/EmberfallPilot_MetallicSmoothness.png"
+      }
+    ]
+  }
+]

@@ -1,0 +1,54 @@
+{
+  "status": "integrated source archive; no Android engine/device acceptance",
+  "androidBase": "8654c803eb29b87dea7d69f09678ec21e1955f6d",
+  "windowsMain": "5d85e47b9fab2489d5b06963a0b896ec19112740",
+  "windowsTree": "d8a472e7f594a28988b2aa5fd9f73672e97518da",
+  "iosMain": "d3a4aab185eb368f5a4a7aba67b43678bfea508f",
+  "iosTree": "ff00beb4e3a004e6e235f717bd445b61a43bd854",
+  "originalWinBaseline": "25096ba7dbf6e9d7ba9463ec29104c2c462da426",
+  "source": "exact Git blobs; not downloaded original Library ZIP",
+  "androidCommitCreated": false,
+  "pushed": false,
+  "networkUsed": false,
+  "unityOrAndroidBuildPerformed": false,
+  "overlayScopes": [
+    "Assets/Scripts/",
+    "Assets/Resources/",
+    "ArtSource/",
+    "Tests/",
+    "Tools/",
+    "Docs/"
+  ],
+  "platformExcludedPaths": [
+    "Docs/Art-Design-Pilot-Delivery.md",
+    "Docs/Moving-Basic-Pilot.md",
+    "Docs/Release-2026-10-03.md"
+  ],
+  "artifacts": [
+    {
+      "path": "Emberfall-Android-Integrated-Source-base8654c803.zip",
+      "bytes": 200620131,
+      "sha256": "c58a7542ecebfca4e03880d305cf77f527906bb92c143d9bb28a0089fcbb4e94",
+      "entries": 4564,
+      "crcAndAllEntryHashesVerified": true
+    },
+    {
+      "path": "Emberfall-Android-Integrated-Compact-base8654c803.zip",
+      "bytes": 42147129,
+      "sha256": "fa63150e84e8254b094ad4b6518ebedca6636bcfbbc517660c83a80ccf170669",
+      "entries": 4438,
+      "crcAndAllEntryHashesVerified": true
+    }
+  ],
+  "compactRemovedReviewFiles": 126,
+  "compactRemovedBytes": 158992948,
+  "blendFilesPreserved": 17,
+  "allAssetsIdenticalFullCompact": true,
+  "originalGuidPathsPreserved": 309,
+  "runtimeResourcesAddedByArtUpgrade": {
+    "files": 112,
+    "bytes": 1094536
+  },
+  "securityScan": "token-scan.json (bounded pattern scan, zero matches)",
+  "builderSha256": "7ed9b75cab075dc9641f8b8a4d14b91e4aacad3d5e1cdb094e4e8652cff057fd"
+}

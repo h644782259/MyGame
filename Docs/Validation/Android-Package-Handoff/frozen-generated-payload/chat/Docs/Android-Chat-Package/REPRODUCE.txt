@@ -1,0 +1,5 @@
+Run offline with Python 3 and the unchanged complete v2 source ZIP:
+
+python3 build_chat_package.py --source /path/to/Emberfall-Android-Integrated-Source-base8654c803.zip --output /path/to/fresh-output
+
+No network, Unity launch, Git modification or Android access is used. ZIP timestamps/modes/order are deterministic.

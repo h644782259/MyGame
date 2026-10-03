@@ -1,0 +1,16 @@
+[
+  {
+    "archive": "Emberfall-Android-Integrated-Source-base8654c803.zip",
+    "files": 4564,
+    "crc": true,
+    "safeUniquePaths": true,
+    "allFileHashes": true
+  },
+  {
+    "archive": "Emberfall-Android-Integrated-Compact-base8654c803.zip",
+    "files": 4438,
+    "crc": true,
+    "safeUniquePaths": true,
+    "allFileHashes": true
+  }
+]

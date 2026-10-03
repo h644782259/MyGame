@@ -1,0 +1,18 @@
+{
+  "sourceArchive": "Emberfall-Android-Integrated-Source-base8654c803.zip",
+  "sourceArchiveBytes": 200620131,
+  "sourceArchiveSha256": "c58a7542ecebfca4e03880d305cf77f527906bb92c143d9bb28a0089fcbb4e94",
+  "androidBase": "8654c803eb29b87dea7d69f09678ec21e1955f6d",
+  "windowsMain": "5d85e47b9fab2489d5b06963a0b896ec19112740",
+  "iosMain": "d3a4aab185eb368f5a4a7aba67b43678bfea508f",
+  "scope": "runtime-complete Unity source project; offline ArtSource and historical Docs excluded; all Assets/Packages/ProjectSettings/Tools/Tests retained",
+  "excludedFiles": 3234,
+  "excludedUncompressedBytes": 210993034,
+  "notFullEditableSource": true,
+  "apk": false,
+  "unityBuildOrDeviceTest": false,
+  "androidCommitOrPush": false,
+  "uploaded": false,
+  "builderSha256": "938d815d251a4b941f5e8dc1b22f3c79712086c1ce1a592606669a328b378374",
+  "archiveDigest": "external manifest.json only, to avoid circular hashing"
+}

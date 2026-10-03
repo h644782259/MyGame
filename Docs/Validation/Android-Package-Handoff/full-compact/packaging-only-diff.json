@@ -1,0 +1,40 @@
+[
+  {
+    "kind": "Source",
+    "modified": [
+      "README.md"
+    ],
+    "addedMetadata": [
+      "Docs/Android-Integrated-Package/README.md",
+      "Docs/Android-Integrated-Package/blend-dependencies.json",
+      "Docs/Android-Integrated-Package/build_android_integrated.py",
+      "Docs/Android-Integrated-Package/compact-excluded-review-media.json",
+      "Docs/Android-Integrated-Package/guid-audit.json",
+      "Docs/Android-Integrated-Package/payload-file-manifest.json",
+      "Docs/Android-Integrated-Package/platform-differences.json",
+      "Docs/Android-Integrated-Package/source-common-hash-audit.json",
+      "Docs/Android-Integrated-Package/source-manifest.json",
+      "Docs/Android-Integrated-Package/token-scan.json"
+    ],
+    "runtimeArtAndPlatformBytesUnchanged": true
+  },
+  {
+    "kind": "Compact",
+    "modified": [
+      "README.md"
+    ],
+    "addedMetadata": [
+      "Docs/Android-Integrated-Package/README.md",
+      "Docs/Android-Integrated-Package/blend-dependencies.json",
+      "Docs/Android-Integrated-Package/build_android_integrated.py",
+      "Docs/Android-Integrated-Package/compact-excluded-review-media.json",
+      "Docs/Android-Integrated-Package/guid-audit.json",
+      "Docs/Android-Integrated-Package/payload-file-manifest.json",
+      "Docs/Android-Integrated-Package/platform-differences.json",
+      "Docs/Android-Integrated-Package/source-common-hash-audit.json",
+      "Docs/Android-Integrated-Package/source-manifest.json",
+      "Docs/Android-Integrated-Package/token-scan.json"
+    ],
+    "runtimeArtAndPlatformBytesUnchanged": true
+  }
+]

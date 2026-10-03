@@ -1,0 +1,16 @@
+{
+  "passed": true,
+  "scope": "Independent ZIP CRC/path/symlink checks, all original Android ProjectSettings/Packages/font bytes,273 final runtime C# files,all final resource payloads and17 blend blobs,all Assets metadata uniqueness/presence,309 original GUID preservation,full/compact Assets+blend identity",
+  "files": [
+    {
+      "path": "/workspace/scratch/android-final-packages-v2/Emberfall-Android-Integrated-Compact-base8654c803.zip",
+      "bytes": 42147129,
+      "sha256": "fa63150e84e8254b094ad4b6518ebedca6636bcfbbc517660c83a80ccf170669"
+    },
+    {
+      "path": "/workspace/scratch/android-final-packages-v2/Emberfall-Android-Integrated-Source-base8654c803.zip",
+      "bytes": 200620131,
+      "sha256": "c58a7542ecebfca4e03880d305cf77f527906bb92c143d9bb28a0089fcbb4e94"
+    }
+  ]
+}

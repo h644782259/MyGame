@@ -1,0 +1,10 @@
+{
+  "all4564SourceSelectionsHashVerified": true,
+  "files": 4564,
+  "sourceCommits": {
+    "android": "8654c803eb29b87dea7d69f09678ec21e1955f6d",
+    "windows": "5d85e47b9fab2489d5b06963a0b896ec19112740"
+  },
+  "zipsRebuilt": false,
+  "runtimeSourceChanged": false
+}

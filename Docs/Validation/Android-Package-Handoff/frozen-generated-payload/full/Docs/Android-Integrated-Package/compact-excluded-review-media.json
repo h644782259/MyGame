@@ -1,0 +1,758 @@
+[
+  {
+    "path": "ArtSource/ActorModules/ActorModules-Blender.png",
+    "bytes": 1222787,
+    "sha256": "98da3c05226322d9308dd683b728a4f9717a170cd346f98099d54882d40b44f2",
+    "reason": "offline review output; not runtime or any blend dependency basename"
+  },
+  {
+    "path": "ArtSource/ActorModules/Constructions/Companion-0.png",
+    "bytes": 284617,
+    "sha256": "175463ac63b667503cfea076374b23c68d56cd83b5a06e304897e71709d54eed",
+    "reason": "offline review output; not runtime or any blend dependency basename"
+  },
+  {
+    "path": "ArtSource/ActorModules/Constructions/Companion-1.png",
+    "bytes": 265521,
+    "sha256": "d785a76bcb0545d24113ed1d6e8223e544438a8a765148aa8aaa72f9484f94cc",
+    "reason": "offline review output; not runtime or any blend dependency basename"
+  },
+  {
+    "path": "ArtSource/ActorModules/Constructions/Companion-2.png",
+    "bytes": 373123,
+    "sha256": "1ef070fe38088270b58164812909773ef6915ba49b45d65ccc751fcfc425b8e6",
+    "reason": "offline review output; not runtime or any blend dependency basename"
+  },
+  {
+    "path": "ArtSource/ActorModules/Constructions/LargeBoss.png",
+    "bytes": 400194,
+    "sha256": "0590b806e7fa1921756301dbd5f5b8860737393e79996a60f826eee5b5b7b0e0",
+    "reason": "offline review output; not runtime or any blend dependency basename"
+  },
+  {
+    "path": "ArtSource/ActorModules/Constructions/h0-t-1-w0.png",
+    "bytes": 330690,
+    "sha256": "c800c926495c89da8f251eb818960826eaf275ff59029579ceae62121dc9cf6f",
+    "reason": "offline review output; not runtime or any blend dependency basename"
+  },
+  {
+    "path": "ArtSource/ActorModules/Constructions/h0-t0-w0.png",
+    "bytes": 329826,
+    "sha256": "f9a7239745d04c8f27a7ff5282d2f9accfd70b0211e7d30cfbe78f75a424174a",
+    "reason": "offline review output; not runtime or any blend dependency basename"
+  },
+  {
+    "path": "ArtSource/ActorModules/Constructions/h1-t-1-w0.png",
+    "bytes": 332512,
+    "sha256": "376ee197e2cbaa6e2511fed8f22769979969e96f9a165163458ae282fb5e0033",
+    "reason": "offline review output; not runtime or any blend dependency basename"
+  },
+  {
+    "path": "ArtSource/ActorModules/Constructions/h1-t0-w0.png",
+    "bytes": 334224,
+    "sha256": "b9c0fe91a5dbe8d693781bb89b2b09f309316636131e960700ace611af31ae32",
+    "reason": "offline review output; not runtime or any blend dependency basename"
+  },
+  {
+    "path": "ArtSource/ActorModules/Constructions/h2-t-1-w0.png",
+    "bytes": 316298,
+    "sha256": "1d1eda967c140000a25f4fb5923bbd80569daf1ba08a64feb0dd4a42848b6bba",
+    "reason": "offline review output; not runtime or any blend dependency basename"
+  },
+  {
+    "path": "ArtSource/ActorModules/Constructions/h2-t0-w0.png",
+    "bytes": 316070,
+    "sha256": "f6c4982ea32c652c0a148eeab16725f09acf1f95eb027dd479377af73ff5848d",
+    "reason": "offline review output; not runtime or any blend dependency basename"
+  },
+  {
+    "path": "ArtSource/ActorModules/Constructions/h3-t-1-w0.png",
+    "bytes": 323776,
+    "sha256": "d41ca09bd13bfa77ff9b0111459fafab80fdb9394f813eef80917127442637b1",
+    "reason": "offline review output; not runtime or any blend dependency basename"
+  },
+  {
+    "path": "ArtSource/ActorModules/Constructions/h3-t0-w0.png",
+    "bytes": 326114,
+    "sha256": "a46caab103569450e99ea964331121ace21f84822dcb3c64239658ad02665694",
+    "reason": "offline review output; not runtime or any blend dependency basename"
+  },
+  {
+    "path": "ArtSource/ActorModules/EnabledReview/Constructions/Companion-0.png",
+    "bytes": 283979,
+    "sha256": "cb2c09e3177a25e41e8ddd28f439a859a19c214e412dd48ba2d66f34b3390f8e",
+    "reason": "offline review output; not runtime or any blend dependency basename"
+  },
+  {
+    "path": "ArtSource/ActorModules/EnabledReview/Constructions/Companion-1.png",
+    "bytes": 265521,
+    "sha256": "f6d91344b820cb8242cc044703189f6e356d89f8a43eed06b648f1773fcce75a",
+    "reason": "offline review output; not runtime or any blend dependency basename"
+  },
+  {
+    "path": "ArtSource/ActorModules/EnabledReview/Constructions/Companion-2.png",
+    "bytes": 373123,
+    "sha256": "a4306cf2448650b0bc3c05c030b657e846cb6e4703ddb66584923b9fc975a735",
+    "reason": "offline review output; not runtime or any blend dependency basename"
+  },
+  {
+    "path": "ArtSource/ActorModules/EnabledReview/Constructions/LargeBoss.png",
+    "bytes": 400194,
+    "sha256": "8bff8ff75bcac03a813653296ea7a8202e24224ee4be3c2e92fbfa277ad64690",
+    "reason": "offline review output; not runtime or any blend dependency basename"
+  },
+  {
+    "path": "ArtSource/ActorModules/EnabledReview/Constructions/h0-t-1-w0.png",
+    "bytes": 330690,
+    "sha256": "77cc22d2555a21328649200cb103e98fac97db1006f3ecd1526e028d48e9cdba",
+    "reason": "offline review output; not runtime or any blend dependency basename"
+  },
+  {
+    "path": "ArtSource/ActorModules/EnabledReview/Constructions/h0-t0-w0.png",
+    "bytes": 329959,
+    "sha256": "aa08ac9f638515358fb7c27453b5f972649bf1edd6d3e8e6c4d2c241aa46723e",
+    "reason": "offline review output; not runtime or any blend dependency basename"
+  },
+  {
+    "path": "ArtSource/ActorModules/EnabledReview/Constructions/h1-t-1-w0.png",
+    "bytes": 332512,
+    "sha256": "7714fd1a6306683f810534d30d9b1c4e6b76b502a44bcd5f41b37ee4367063d0",
+    "reason": "offline review output; not runtime or any blend dependency basename"
+  },
+  {
+    "path": "ArtSource/ActorModules/EnabledReview/Constructions/h1-t0-w0.png",
+    "bytes": 332423,
+    "sha256": "c9aacb425d9fca175afc64c1c96aa51c4efd91ea5dda5d4318ae826c14cbc6e6",
+    "reason": "offline review output; not runtime or any blend dependency basename"
+  },
+  {
+    "path": "ArtSource/ActorModules/EnabledReview/Constructions/h2-t-1-w0.png",
+    "bytes": 316298,
+    "sha256": "c29a0b2878e571363ed038862e247b0a4142ad155ae44fcc25571e1302b4791a",
+    "reason": "offline review output; not runtime or any blend dependency basename"
+  },
+  {
+    "path": "ArtSource/ActorModules/EnabledReview/Constructions/h2-t0-w0.png",
+    "bytes": 316125,
+    "sha256": "9f8f24ddb471ab9d047b5f543d34a3fb2c873e3b31ee89c636dab60cf3375540",
+    "reason": "offline review output; not runtime or any blend dependency basename"
+  },
+  {
+    "path": "ArtSource/ActorModules/EnabledReview/Constructions/h3-t-1-w0.png",
+    "bytes": 323776,
+    "sha256": "0a6d5d9af948407767d28ea186ca187c733796d286edcef85daafc8da4b51f83",
+    "reason": "offline review output; not runtime or any blend dependency basename"
+  },
+  {
+    "path": "ArtSource/ActorModules/EnabledReview/Constructions/h3-t0-w0.png",
+    "bytes": 324092,
+    "sha256": "2979c23a3e6542893494bde97f658cb916654737c9d5f0f9a6dccd1b66d4f32e",
+    "reason": "offline review output; not runtime or any blend dependency basename"
+  },
+  {
+    "path": "ArtSource/ActorModules/WolfV2/Wolf-pose-0.png",
+    "bytes": 803590,
+    "sha256": "5eb3445fbd15ff6732c0912ebf9cba72f2338d17a4bf908781e606d2acde472e",
+    "reason": "offline review output; not runtime or any blend dependency basename"
+  },
+  {
+    "path": "ArtSource/ActorModules/WolfV2/Wolf-pose-12.png",
+    "bytes": 810519,
+    "sha256": "8f0ff9d329d90bfd7b4f1a6056ac90f3afa24705900d669f6cf913965a6ebdf4",
+    "reason": "offline review output; not runtime or any blend dependency basename"
+  },
+  {
+    "path": "ArtSource/ActorModules/WolfV2/Wolf-pose-24.png",
+    "bytes": 809657,
+    "sha256": "1053e122a51868392329b8ced8682325f7223e7b8cfa5021bbc47a52963616c4",
+    "reason": "offline review output; not runtime or any blend dependency basename"
+  },
+  {
+    "path": "ArtSource/ActorSilhouettes/F1/Review/Arcanist-After.png",
+    "bytes": 1474534,
+    "sha256": "b474fb88a35323f1e34ad1bbb1878758be456e11762f8cab2eeb53083a8e969e",
+    "reason": "offline review output; not runtime or any blend dependency basename"
+  },
+  {
+    "path": "ArtSource/ActorSilhouettes/F1/Review/Arcanist-Before.png",
+    "bytes": 1474000,
+    "sha256": "7e3048210f4598ea4f5cfd925c9ede0e6e4928bf19ea689ee088743d2c90643b",
+    "reason": "offline review output; not runtime or any blend dependency basename"
+  },
+  {
+    "path": "ArtSource/ActorSilhouettes/F1/Review/Ranger-After.png",
+    "bytes": 1337628,
+    "sha256": "ebe42c0af38438bae00e6997bfe9d223ee2155b69ed3adfd0d7bfb4ea40040a5",
+    "reason": "offline review output; not runtime or any blend dependency basename"
+  },
+  {
+    "path": "ArtSource/ActorSilhouettes/F1/Review/Ranger-Before.png",
+    "bytes": 1336982,
+    "sha256": "d0b7d9f6b237027f67bbcfbaebf84f16b283f4288555219fd96c3cf62d835d96",
+    "reason": "offline review output; not runtime or any blend dependency basename"
+  },
+  {
+    "path": "ArtSource/ActorSilhouettes/F1/Review/Spirit-After.png",
+    "bytes": 1218222,
+    "sha256": "6e47bc59f72b698c16a451fa4846718c13642fffa717ff468152ccfd0796f460",
+    "reason": "offline review output; not runtime or any blend dependency basename"
+  },
+  {
+    "path": "ArtSource/ActorSilhouettes/F1/Review/Spirit-Before.png",
+    "bytes": 1185032,
+    "sha256": "c0d5a2de130f97d455197f772aa11b2cff9650a4366b3584c039a442dde51913",
+    "reason": "offline review output; not runtime or any blend dependency basename"
+  },
+  {
+    "path": "ArtSource/ActorSilhouettes/F1/Review/Summoner-After.png",
+    "bytes": 1383519,
+    "sha256": "38f0d08addbd94d02de791dbd91bace602d003272dd034bf508e2519898c5053",
+    "reason": "offline review output; not runtime or any blend dependency basename"
+  },
+  {
+    "path": "ArtSource/ActorSilhouettes/F1/Review/Summoner-Before.png",
+    "bytes": 1391816,
+    "sha256": "ceddd8b6515bf0954da31285edcd151676b9bffe3d90c7f2996cad50a830e91d",
+    "reason": "offline review output; not runtime or any blend dependency basename"
+  },
+  {
+    "path": "ArtSource/ActorSilhouettes/F1/Review/Treant-After.png",
+    "bytes": 1665613,
+    "sha256": "ebd2a86c0844ea184faffd57f8486ea4f5be4ba6f60dacc08e4d02a742aa2701",
+    "reason": "offline review output; not runtime or any blend dependency basename"
+  },
+  {
+    "path": "ArtSource/ActorSilhouettes/F1/Review/Treant-Before.png",
+    "bytes": 1665189,
+    "sha256": "d873c6b47e1c9072e7905d6ece489d401f620496d5af49307281d6391d0aadb7",
+    "reason": "offline review output; not runtime or any blend dependency basename"
+  },
+  {
+    "path": "ArtSource/BlenderPilotRefinement/Review/Comparison-back.png",
+    "bytes": 586986,
+    "sha256": "afe7e6a01af99c1200912f58657f4c71869a873c4020951a6ebf3235f39f7779",
+    "reason": "offline review output; not runtime or any blend dependency basename"
+  },
+  {
+    "path": "ArtSource/BlenderPilotRefinement/Review/Comparison-front.png",
+    "bytes": 560087,
+    "sha256": "40389d36d8c90cfd06d78a52f0dfbf75d6d25f73a0d0934fab5d8ab5fd7b5a65",
+    "reason": "offline review output; not runtime or any blend dependency basename"
+  },
+  {
+    "path": "ArtSource/BlenderPilotRefinement/Review/Comparison-side.png",
+    "bytes": 577595,
+    "sha256": "4bbad3f6ddfdb18ef6b9a7b90f9a720238933c1bcc6cd3292001b68c4a941d2a",
+    "reason": "offline review output; not runtime or any blend dependency basename"
+  },
+  {
+    "path": "ArtSource/BlenderPilotRefinement/Review/Comparison-skill.png",
+    "bytes": 346615,
+    "sha256": "b8e3f47b54a7e628ae66b02cbf0e245c2a9555e7a3cb92a3234c9743f5ae2cd1",
+    "reason": "offline review output; not runtime or any blend dependency basename"
+  },
+  {
+    "path": "ArtSource/BlenderProjectiles/Factory-Review.png",
+    "bytes": 994384,
+    "sha256": "751b4893906e309bd69b43916f1443c7a6c99f8801c105ca23f4ad704e9143c5",
+    "reason": "offline review output; not runtime or any blend dependency basename"
+  },
+  {
+    "path": "ArtSource/BlenderScenery/Scenery-New-Preview.png",
+    "bytes": 2107667,
+    "sha256": "17c2a832a71882efa772c8914f09bd43d4eb85ffcf33ff750d9d54765ece16cb",
+    "reason": "offline review output; not runtime or any blend dependency basename"
+  },
+  {
+    "path": "ArtSource/BlenderSkillIdentities/Four-Identities-Phases.png",
+    "bytes": 3356193,
+    "sha256": "a2d7c47ef35bc2eac9b6b322be43e2f4f83663ab5c70b7d3beab6672efc6a5e8",
+    "reason": "offline review output; not runtime or any blend dependency basename"
+  },
+  {
+    "path": "ArtSource/BlenderSpellBases/Primary-Beats-Preview.png",
+    "bytes": 2565685,
+    "sha256": "eb3de422cfca0af429366154c4a86ec4dbc51f4aa6a38e2673119fb1872074cc",
+    "reason": "offline review output; not runtime or any blend dependency basename"
+  },
+  {
+    "path": "ArtSource/BlenderSpellBases/Spell-Volumes-Preview.png",
+    "bytes": 1395385,
+    "sha256": "3b4046d9c4991a43d5be8b8a83e200fbcc2fd0f661f34940cf71b74dadc6eb1c",
+    "reason": "offline review output; not runtime or any blend dependency basename"
+  },
+  {
+    "path": "ArtSource/BlenderVfx/Authored-Skills-Preview.png",
+    "bytes": 897010,
+    "sha256": "25939a41025221d53c2a0baac8efd8f58a66a344eeb8feacfd598308948fc04a",
+    "reason": "offline review output; not runtime or any blend dependency basename"
+  },
+  {
+    "path": "ArtSource/DefenseIdentity/After-guard.png",
+    "bytes": 440002,
+    "sha256": "4de2725a3c0fdb218c11f4d6f431845b5f00bdbe1bbd94794808fe14da44014e",
+    "reason": "offline review output; not runtime or any blend dependency basename"
+  },
+  {
+    "path": "ArtSource/DefenseIdentity/After-passive.png",
+    "bytes": 440797,
+    "sha256": "0b743d778bee372ba67d70942a961f1938d076bff828e80947caa5a6af485420",
+    "reason": "offline review output; not runtime or any blend dependency basename"
+  },
+  {
+    "path": "ArtSource/DefenseIdentity/Before-guard.png",
+    "bytes": 433751,
+    "sha256": "1afa694a5a58070b9a160d09b53fbad02af57d58c042a4d0138963e1fbb465dc",
+    "reason": "offline review output; not runtime or any blend dependency basename"
+  },
+  {
+    "path": "ArtSource/DefenseIdentity/Before-passive.png",
+    "bytes": 450541,
+    "sha256": "06deb24b12ce1da15bb04ebce8f69ad5341eddbe02b21427520c9752af0ecfff",
+    "reason": "offline review output; not runtime or any blend dependency basename"
+  },
+  {
+    "path": "ArtSource/DefenseIdentity/Defense-Actual-Construction.png",
+    "bytes": 1180319,
+    "sha256": "9120992fe3e2a3b10fbeb574d1e95955b3b6769270fca554325bb911fcab99f1",
+    "reason": "offline review output; not runtime or any blend dependency basename"
+  },
+  {
+    "path": "ArtSource/DefenseIdentity/Defense-Before-After-MPB.png",
+    "bytes": 1186911,
+    "sha256": "c5b8c8e1158e924396c8648b7057ee643a8a7c6b3ba96ef60d5c930f9945e04b",
+    "reason": "offline review output; not runtime or any blend dependency basename"
+  },
+  {
+    "path": "ArtSource/EnemyKnockdown/GuardianDown-Low.png",
+    "bytes": 839414,
+    "sha256": "24bee8dc2394dd6f85ae0332784b3552ef6673fef1fa5d053f37438d8bc1f435",
+    "reason": "offline review output; not runtime or any blend dependency basename"
+  },
+  {
+    "path": "ArtSource/EnemyKnockdown/GuardianDown-Side.png",
+    "bytes": 806113,
+    "sha256": "e0a2002bc09dcd0ca2ed5dbfd46591b5fec1091a488562a68b4d17f673728e01",
+    "reason": "offline review output; not runtime or any blend dependency basename"
+  },
+  {
+    "path": "ArtSource/EnemyKnockdown/KnockdownPoseReview.png",
+    "bytes": 1436775,
+    "sha256": "1607880541542569a8d3e67c7078d4fc18089f7bb72b060a0003042b14aa0eb7",
+    "reason": "offline review output; not runtime or any blend dependency basename"
+  },
+  {
+    "path": "ArtSource/EnemySilhouettes/After/Enemies-back.png",
+    "bytes": 1228321,
+    "sha256": "26b904f0d1d2f27742b1b7a4a48e159eead455bf98ced7c2a1ba7c89d40c86b3",
+    "reason": "offline review output; not runtime or any blend dependency basename"
+  },
+  {
+    "path": "ArtSource/EnemySilhouettes/After/Enemies-front.png",
+    "bytes": 1232364,
+    "sha256": "9c19c356a4925250bc0475a880f89fa47b4e5ccbfda1124ca33f4912f6f87ab3",
+    "reason": "offline review output; not runtime or any blend dependency basename"
+  },
+  {
+    "path": "ArtSource/EnemySilhouettes/Assemblies/Action-contact-after.png",
+    "bytes": 923785,
+    "sha256": "3e86a174097a71b486a54c9a42dfdb1f64699b40f3b90cf8a2d0cbfe0ac70959",
+    "reason": "offline review output; not runtime or any blend dependency basename"
+  },
+  {
+    "path": "ArtSource/EnemySilhouettes/Assemblies/Action-contact-before.png",
+    "bytes": 925348,
+    "sha256": "ea7da0fa131c4e0b4d3427ea65a0ce9640e6933a64a74b9e42d9a18bdb6fce19",
+    "reason": "offline review output; not runtime or any blend dependency basename"
+  },
+  {
+    "path": "ArtSource/EnemySilhouettes/Assemblies/Action-recovery-after.png",
+    "bytes": 924118,
+    "sha256": "8f08f52edf02bc014d51bbc9ea3e1c45526de50a5227d0630f13bac200289d4e",
+    "reason": "offline review output; not runtime or any blend dependency basename"
+  },
+  {
+    "path": "ArtSource/EnemySilhouettes/Assemblies/Action-recovery-before.png",
+    "bytes": 923828,
+    "sha256": "ef3d950678773e810e0367a8f99024de27f3809dfe8b54c0525bc704eb17b6ca",
+    "reason": "offline review output; not runtime or any blend dependency basename"
+  },
+  {
+    "path": "ArtSource/EnemySilhouettes/Assemblies/Action-walk-after.png",
+    "bytes": 921922,
+    "sha256": "0f4cbb5d3f75129c5b5be90059cecfe17252734fa2b6394515ae2ae84f579a99",
+    "reason": "offline review output; not runtime or any blend dependency basename"
+  },
+  {
+    "path": "ArtSource/EnemySilhouettes/Assemblies/Action-walk-before.png",
+    "bytes": 922354,
+    "sha256": "7980b5b9ab798fedfe747dbc2855e7d9b193799fc3b3e166cf3011ce0c72cd20",
+    "reason": "offline review output; not runtime or any blend dependency basename"
+  },
+  {
+    "path": "ArtSource/EnemySilhouettes/Assemblies/Action-windup-after.png",
+    "bytes": 919940,
+    "sha256": "174445698d11de6c64731a868f98db72737519b07c494520011b84703330835a",
+    "reason": "offline review output; not runtime or any blend dependency basename"
+  },
+  {
+    "path": "ArtSource/EnemySilhouettes/Assemblies/Action-windup-before.png",
+    "bytes": 920023,
+    "sha256": "ca4d69ff07fda34eb5101661d20ce0476d0b6753735131de7f0c44ee4cc285b9",
+    "reason": "offline review output; not runtime or any blend dependency basename"
+  },
+  {
+    "path": "ArtSource/EnemySilhouettes/Assemblies/Anchor-pair.png",
+    "bytes": 1057411,
+    "sha256": "7bbab4598bc4650ae515d650d0a582e889ab3965bca4f319804c845d5fe2a983",
+    "reason": "offline review output; not runtime or any blend dependency basename"
+  },
+  {
+    "path": "ArtSource/EnemySilhouettes/Assemblies/Astrolabe-retained.png",
+    "bytes": 1096825,
+    "sha256": "ef571990d9390b3e37b2fc7bf78955e7f1140a464f83b9346963b5f873cf6294",
+    "reason": "offline review output; not runtime or any blend dependency basename"
+  },
+  {
+    "path": "ArtSource/EnemySilhouettes/Before/Enemies-back.png",
+    "bytes": 1228026,
+    "sha256": "575230c4ac724cf30fa130ef77095ddfe6878810f14eb6e3c3b65077af3576f2",
+    "reason": "offline review output; not runtime or any blend dependency basename"
+  },
+  {
+    "path": "ArtSource/EnemySilhouettes/Before/Enemies-front.png",
+    "bytes": 1231967,
+    "sha256": "d38e5fc18a8cc1909d0f41246827ec28ebf50785dc9a689b5e29e844c2a873cc",
+    "reason": "offline review output; not runtime or any blend dependency basename"
+  },
+  {
+    "path": "ArtSource/EnemySilhouettes/Down/GuardianDown-Low.png",
+    "bytes": 841306,
+    "sha256": "688763a0a6f12dc62887a2c5db4278c808c6d7aada43cf0a53f9734e01b7f418",
+    "reason": "offline review output; not runtime or any blend dependency basename"
+  },
+  {
+    "path": "ArtSource/EnemySilhouettes/Down/GuardianDown-Side.png",
+    "bytes": 807420,
+    "sha256": "f0dbb57dc0cf6633989c55f1f476701f610347c3e2c281a3d516471b4ca6dcb3",
+    "reason": "offline review output; not runtime or any blend dependency basename"
+  },
+  {
+    "path": "ArtSource/FinalBodyEnvelope/Combined-Protection-Actions.png",
+    "bytes": 5194632,
+    "sha256": "547d211ba838e0bb5e5f279c5021e7fccaa28d0ac0e5afd15a2eb43c7fe98d38",
+    "reason": "offline review output; not runtime or any blend dependency basename"
+  },
+  {
+    "path": "ArtSource/FinalBodyEnvelope/Raw-Front-Review.png",
+    "bytes": 4234397,
+    "sha256": "59be88f6642d4b662dc0d0e77e1fc7855daa88edaf9b1f1aab061358b4b76acf",
+    "reason": "offline review output; not runtime or any blend dependency basename"
+  },
+  {
+    "path": "ArtSource/FixedScenery/factory-0-before.png",
+    "bytes": 949214,
+    "sha256": "eeb3eca24b2c8db7e88139774cdb6817164cffe47b73605768e0523f29a4774c",
+    "reason": "offline review output; not runtime or any blend dependency basename"
+  },
+  {
+    "path": "ArtSource/FixedScenery/factory-0.png",
+    "bytes": 954703,
+    "sha256": "46f35914c5f451bb1df18ffe8d2787235bf17d4af88e67171d8ec021d2ebaa50",
+    "reason": "offline review output; not runtime or any blend dependency basename"
+  },
+  {
+    "path": "ArtSource/FixedScenery/factory-1-before.png",
+    "bytes": 985862,
+    "sha256": "c58ff05c6cf5b8e6af391568b46ca4f1ed2b2c984006be46083b5239303b0de6",
+    "reason": "offline review output; not runtime or any blend dependency basename"
+  },
+  {
+    "path": "ArtSource/FixedScenery/factory-1.png",
+    "bytes": 993116,
+    "sha256": "86e20fe3087577cf9ec319ae0fad3402ab8f6f3f7e989aab0622b11384a8fe60",
+    "reason": "offline review output; not runtime or any blend dependency basename"
+  },
+  {
+    "path": "ArtSource/FixedScenery/factory-2-before.png",
+    "bytes": 1065311,
+    "sha256": "5dadee77225356af8566ea72a3b89569515a9c277c6547d0dadb78c68436ef22",
+    "reason": "offline review output; not runtime or any blend dependency basename"
+  },
+  {
+    "path": "ArtSource/FixedScenery/factory-2.png",
+    "bytes": 1078527,
+    "sha256": "d1415f9aaba90a2e412df28f35cc69d9dbd15f322635df8fe1e5306e25628a9e",
+    "reason": "offline review output; not runtime or any blend dependency basename"
+  },
+  {
+    "path": "ArtSource/FixedScenery/factory-3-before.png",
+    "bytes": 911245,
+    "sha256": "84454a42ae6c4f0042da55c36e3341ed507e4299c0bbb20b4e09d52592a80335",
+    "reason": "offline review output; not runtime or any blend dependency basename"
+  },
+  {
+    "path": "ArtSource/FixedScenery/factory-3.png",
+    "bytes": 910979,
+    "sha256": "144b4ca94358c3dea90f8f9dedb244d0caaec3b63c2f3dfae8627a80526956c0",
+    "reason": "offline review output; not runtime or any blend dependency basename"
+  },
+  {
+    "path": "ArtSource/FixedScenery/factory-4-before.png",
+    "bytes": 875950,
+    "sha256": "b82cf60de16bb1c228792dace12d49b65e031c119b218b79bbecb2db0ca7132d",
+    "reason": "offline review output; not runtime or any blend dependency basename"
+  },
+  {
+    "path": "ArtSource/FixedScenery/factory-4.png",
+    "bytes": 880479,
+    "sha256": "dd8123d5878534ef05d20191fbbf5fd432b074099f2924ba1e8ff745ddae8fe6",
+    "reason": "offline review output; not runtime or any blend dependency basename"
+  },
+  {
+    "path": "ArtSource/FixedScenery/factory-5-before.png",
+    "bytes": 883793,
+    "sha256": "23b2c007328ffd7854f8d137ea51b715dc238317768cb7a1ef3c06f65214e066",
+    "reason": "offline review output; not runtime or any blend dependency basename"
+  },
+  {
+    "path": "ArtSource/FixedScenery/factory-5.png",
+    "bytes": 887251,
+    "sha256": "fda48c4a3b8198123f8afc5033601f18813f30dbb2e3c2c70fbbdd98381f73b1",
+    "reason": "offline review output; not runtime or any blend dependency basename"
+  },
+  {
+    "path": "ArtSource/FixedScenery/role-0-after.png",
+    "bytes": 1109596,
+    "sha256": "f5c1ef25486f0b9b27f2d12a739e14f39497672c71a30aa388d835349563828a",
+    "reason": "offline review output; not runtime or any blend dependency basename"
+  },
+  {
+    "path": "ArtSource/FixedScenery/role-0-before.png",
+    "bytes": 1095445,
+    "sha256": "2295b8b0a00a5253d1106cbd40e0c1c12d361f32a230ebd0981abb95e75df67d",
+    "reason": "offline review output; not runtime or any blend dependency basename"
+  },
+  {
+    "path": "ArtSource/FixedScenery/role-1-after.png",
+    "bytes": 982614,
+    "sha256": "e1c2e8cf10cf85297378780fe9a1a98a92f3d18c85902479511d6125cfaac1ae",
+    "reason": "offline review output; not runtime or any blend dependency basename"
+  },
+  {
+    "path": "ArtSource/FixedScenery/role-1-before.png",
+    "bytes": 966070,
+    "sha256": "fbba91d16d85d2aa8458490f94313c33974af28e7d1355abe52de843a0f7dfcc",
+    "reason": "offline review output; not runtime or any blend dependency basename"
+  },
+  {
+    "path": "ArtSource/FixedScenery/role-2-after.png",
+    "bytes": 1039678,
+    "sha256": "62df12fd5926fa056ddeb07e60a0f70ddf3a24cf7a2e30146f1077cfb4084ed3",
+    "reason": "offline review output; not runtime or any blend dependency basename"
+  },
+  {
+    "path": "ArtSource/FixedScenery/role-2-before.png",
+    "bytes": 1010005,
+    "sha256": "b2ca8008bbb087f6f2e631403f745988ddb39a4b32b8a2c8581299417131695c",
+    "reason": "offline review output; not runtime or any blend dependency basename"
+  },
+  {
+    "path": "ArtSource/IntegratedActorArt/Combined-Factory.png",
+    "bytes": 3684890,
+    "sha256": "c4723fa01344661aa33e07671fdc94f38c9667b62459f2094ea2c380407fe898",
+    "reason": "offline review output; not runtime or any blend dependency basename"
+  },
+  {
+    "path": "ArtSource/Review/Class-Rear-New.png",
+    "bytes": 1659205,
+    "sha256": "9a0eec5f3f99d5eae8669df797a49fee4a05d03ed11a3179146fe259348309e0",
+    "reason": "offline review output; not runtime or any blend dependency basename"
+  },
+  {
+    "path": "ArtSource/Review/Class-Rear-Old.png",
+    "bytes": 1642487,
+    "sha256": "28b4c30f7de739fb0d0a1ea23fc85fc2c33c67ed389fe2f50edb52f128deb687",
+    "reason": "offline review output; not runtime or any blend dependency basename"
+  },
+  {
+    "path": "ArtSource/Review/Emberfall-Pilot-Five-Actions.mp4",
+    "bytes": 246143,
+    "sha256": "3b31d314e80b0f47e125de132d661873b434de2fe1ba02526817a8827a8d88c1",
+    "reason": "offline review output; not runtime or any blend dependency basename"
+  },
+  {
+    "path": "ArtSource/Review/Emberfall-Pilot-Props.png",
+    "bytes": 3334532,
+    "sha256": "beeb6e7fb084d8bd8581987cc85f6a7639f8646199f87fb0ca224b2d1c4748b3",
+    "reason": "offline review output; not runtime or any blend dependency basename"
+  },
+  {
+    "path": "ArtSource/Review/Emberfall-Pilot-Vanguard.png",
+    "bytes": 1776874,
+    "sha256": "b7afb461ddd815f3a628e25281b49f3fee005a4a0536075cb054c6fb21c3e22c",
+    "reason": "offline review output; not runtime or any blend dependency basename"
+  },
+  {
+    "path": "ArtSource/Review/Emberfall-VFX-After.mp4",
+    "bytes": 462159,
+    "sha256": "ebb499929dc237964fbebe47663b652c1da2363942f6f587c95f67d9687654a6",
+    "reason": "offline review output; not runtime or any blend dependency basename"
+  },
+  {
+    "path": "ArtSource/Review/Emberfall-VFX-Before.mp4",
+    "bytes": 286963,
+    "sha256": "749f7545a8df6b5b53b87867fafaa9d8c5460311af9bc4f1c2c9defff11ea1d2",
+    "reason": "offline review output; not runtime or any blend dependency basename"
+  },
+  {
+    "path": "ArtSource/Review/Scenery-Comparison.png",
+    "bytes": 1003596,
+    "sha256": "312ab62b9681490721c965858966c4fa3c702b79262b5667521b67118538e4e1",
+    "reason": "offline review output; not runtime or any blend dependency basename"
+  },
+  {
+    "path": "ArtSource/Review/VFX-After-Frame024.png",
+    "bytes": 821845,
+    "sha256": "675a15128ae3c898ce8630062d75540d92067e8d600324feffc95edd485de1fd",
+    "reason": "offline review output; not runtime or any blend dependency basename"
+  },
+  {
+    "path": "ArtSource/Review/VFX-Before-Frame124.png",
+    "bytes": 809223,
+    "sha256": "742a8d8ab36fa5a056635c2100dee6e848332b2fc40df65fda4c434fd91bb401",
+    "reason": "offline review output; not runtime or any blend dependency basename"
+  },
+  {
+    "path": "ArtSource/Review/Vanguard-Gray-Comparison.png",
+    "bytes": 1877279,
+    "sha256": "03b9c63dbf2576c1b0584540f0b111ce63fbb1de93ba420f1a5c2ccdf18d36e6",
+    "reason": "offline review output; not runtime or any blend dependency basename"
+  },
+  {
+    "path": "ArtSource/TacticalAttachments/EnemyAssemblies/Combined-back.png",
+    "bytes": 1530611,
+    "sha256": "109b3fa36e687c1c15212dcff558602b68a0aeef3221abbdd533b2686bf8c191",
+    "reason": "offline review output; not runtime or any blend dependency basename"
+  },
+  {
+    "path": "ArtSource/TacticalAttachments/EnemyAssemblies/Goblin.png",
+    "bytes": 1222197,
+    "sha256": "5a44ff4ef41caa493eea8998a4dd56380aa79161dc3c1307034d5535837e6eb1",
+    "reason": "offline review output; not runtime or any blend dependency basename"
+  },
+  {
+    "path": "ArtSource/TacticalAttachments/EnemyAssemblies/Guardian.png",
+    "bytes": 1500495,
+    "sha256": "8f1804aa97b7f2db087a3c881c9d17c9beb412b394f8ff6431aaea2e81389279",
+    "reason": "offline review output; not runtime or any blend dependency basename"
+  },
+  {
+    "path": "ArtSource/TacticalAttachments/EnemyAssemblies/GuardianBoss.png",
+    "bytes": 1723394,
+    "sha256": "6e0a88120c2a84b8139bb8b38df7f86ed4929e4e7717a75007e8628e01061a44",
+    "reason": "offline review output; not runtime or any blend dependency basename"
+  },
+  {
+    "path": "ArtSource/TacticalAttachments/EnemyAssemblies/Slime.png",
+    "bytes": 1244590,
+    "sha256": "27ced32a3d6bbf938e51317196fb6cf9d0920f0b7ee59764c1f1aa2752dfb37e",
+    "reason": "offline review output; not runtime or any blend dependency basename"
+  },
+  {
+    "path": "ArtSource/TacticalAttachments/EnemyAssemblies/Wisp.png",
+    "bytes": 1275405,
+    "sha256": "50f286b6736256dd069a1ba282c0238d1887e6cb694845c73053c8c369ddcda9",
+    "reason": "offline review output; not runtime or any blend dependency basename"
+  },
+  {
+    "path": "ArtSource/TacticalAttachments/Fittings-back.png",
+    "bytes": 516662,
+    "sha256": "bec93e93be8c41a6c1f181c9a0fdab5937261df9115827ae8b163589e3300722",
+    "reason": "offline review output; not runtime or any blend dependency basename"
+  },
+  {
+    "path": "ArtSource/TacticalAttachments/Fittings-combined.png",
+    "bytes": 632584,
+    "sha256": "36dbb24d7f4904f3078b7b4769c5d6f02690765b560b9e4981a07807b71ef595",
+    "reason": "offline review output; not runtime or any blend dependency basename"
+  },
+  {
+    "path": "ArtSource/TacticalAttachments/Fittings-front.png",
+    "bytes": 516938,
+    "sha256": "2841de77f379ee9d10f46d6f1fbf8391596deca6198ed1b4e4612db93ee887f4",
+    "reason": "offline review output; not runtime or any blend dependency basename"
+  },
+  {
+    "path": "ArtSource/VanguardActions/Factory-Additive-Poses.png",
+    "bytes": 2955341,
+    "sha256": "8f70ce299d57af1c24d7bebd2b785c058052623611d285faa64dc7f6bd4d4e2b",
+    "reason": "offline review output; not runtime or any blend dependency basename"
+  },
+  {
+    "path": "ArtSource/VanguardActions/Factory-Runtime-Poses.png",
+    "bytes": 2986546,
+    "sha256": "f7fc969f3b75f51828402d68611bd335c9e41cbc1bbe5ae69fd0cb102c45a7bb",
+    "reason": "offline review output; not runtime or any blend dependency basename"
+  },
+  {
+    "path": "ArtSource/WeaponModules/Factory16-After.png",
+    "bytes": 7751760,
+    "sha256": "7b189aa74dd84b2e06b0ae36400398034212b3bdb61d93a45d3434e76d98720b",
+    "reason": "offline review output; not runtime or any blend dependency basename"
+  },
+  {
+    "path": "ArtSource/WeaponModules/Factory16-Before.png",
+    "bytes": 7762548,
+    "sha256": "3bd5232b3e4cbb0890263f7c8a583a5a01dc8027c56ff37a932c0180758edc59",
+    "reason": "offline review output; not runtime or any blend dependency basename"
+  },
+  {
+    "path": "ArtSource/WeaponModules/WeaponClose-After.png",
+    "bytes": 6513672,
+    "sha256": "5129ec46d2f59abfd1454c4c39ceb23f21b7c68e43eb8dc4e1433ac8c3e6c2b1",
+    "reason": "offline review output; not runtime or any blend dependency basename"
+  },
+  {
+    "path": "ArtSource/WeaponModules/WeaponClose-Before.png",
+    "bytes": 6556157,
+    "sha256": "8dd93d129a0fc374030365888700d824d019ca58769c8a4dc7fca7804a64c391",
+    "reason": "offline review output; not runtime or any blend dependency basename"
+  },
+  {
+    "path": "ArtSource/WeaponModules/WeaponDetail-After.png",
+    "bytes": 3500452,
+    "sha256": "d70775ad6514bbc0107a512e005aab0ebacd951856c3ff18bab7d4dc5007bb1e",
+    "reason": "offline review output; not runtime or any blend dependency basename"
+  },
+  {
+    "path": "ArtSource/WeaponModules/WeaponDetail-Before.png",
+    "bytes": 3519667,
+    "sha256": "3a157c7e2689ff6a0f23bff471b348b4c0cc94e641b2d3d4b178916d69485f27",
+    "reason": "offline review output; not runtime or any blend dependency basename"
+  },
+  {
+    "path": "Docs/BlenderUpgrade/ReviewThumbnails/ActorModules-Blender.jpg",
+    "bytes": 75286,
+    "sha256": "f0fb38279affa96e2f25484da5e6859d60f7c381279897d048c07d149eb1e650",
+    "reason": "offline review output; not runtime or any blend dependency basename"
+  },
+  {
+    "path": "Docs/BlenderUpgrade/ReviewThumbnails/Primary-Beats-Preview.jpg",
+    "bytes": 57223,
+    "sha256": "99434975406ddab4e97cd1e4f29ef7de22fe58682682a0f5d4c3062fb9a81c1e",
+    "reason": "offline review output; not runtime or any blend dependency basename"
+  },
+  {
+    "path": "Docs/BlenderUpgrade/ReviewThumbnails/Scenery-New-Preview.jpg",
+    "bytes": 154983,
+    "sha256": "9a15affbc1400fbd4f26f592ffd6687f42ca65c6d97d1a5d1b6cf4f6eac2e0d9",
+    "reason": "offline review output; not runtime or any blend dependency basename"
+  },
+  {
+    "path": "Docs/BlenderUpgrade/ReviewThumbnails/Spell-Volumes-Preview.jpg",
+    "bytes": 34441,
+    "sha256": "ad40769b39730b103128f5aeb81eb8a0469ac45f99a4c9dbb58983f724f691ec",
+    "reason": "offline review output; not runtime or any blend dependency basename"
+  }
+]
