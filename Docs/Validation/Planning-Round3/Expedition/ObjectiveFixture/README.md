@@ -23,3 +23,9 @@
 真实 ClosePanel 新增方案引用装备的出售确认框取消分支，章节入口 UI 独立 fixture 缺 `presetSaleOpen` 与 `CancelPresetSale`，导致编译失败，尚未进入原章节断言。仅给此章节测试 shell 增加 `presetSaleOpen=>false`，取消方法若意外被调用则抛异常，明确该 fixture 不打开出售弹窗；不复制出售逻辑、不吞掉错误路径，也未修改 runtime。
 
 `chapter-entry-production-original.log` 保留冻结失败；`chapter-entry-production-fixed.log` 原344条章节 UI/真实进度持久化重放断言通过，6个旧 Back/首领遮罩/位置/滚动/保存失败阅读位置的编译负控均按预期失败。原有3条 fixture 未使用字段编译警告保留，0错误。命令：`python Tests/ChapterEntryProductionTests.py /workspace/shared/emberfall-tools/dotnet/dotnet`。无Unity执行。
+
+## v2 room-seal-hud-production 共享 fixture 回归证据
+
+冻结原日志先完成1085条实际HUD绘制/矩形/状态断言，随后复用旧 RoomObjectivePresentationTests，在其第59行重复击杀已死敌人失败，原因与 mobile-room-objective 相同。无需新增源码修改：提交6b9f00e的共享 fixture 显式选择第三房即可解决。
+
+命令 `python Tests/RoomSealHudProductionTests.py /workspace/shared/emberfall-tools/dotnet/dotnet` 在本独立tree通过1085条HUD断言、171条房间显示断言、原扩大行距的实际Draw矩形编译负控。原失败和此次输出分别为 `room-seal-hud-production-original.log` 与 `room-seal-hud-production-fixed.log`。这是managed绘制记录器，不是Unity画面验收；本次提交仅归档证据。
