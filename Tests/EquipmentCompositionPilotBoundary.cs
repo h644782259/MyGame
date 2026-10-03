@@ -11,6 +11,8 @@ namespace Emberfall
         // It preserves the real factory call; VanguardActionsProductionTests owns
         // the actual library selection, decode and pose-adapter checks.
         private void ConfigureVanguardArt() {}
+        private void ApplyWeaponFashionArt() {}
+        private void ApplyWeaponArt(ItemData weapon) {} // WeaponModulesProductionTests owns actual new weapon geometry.
         private bool pilotHasGear, pilotHasFashion, pilotVisible;
         private void InvalidatePilotRendererGroup() {} // No display cache in this disabled-feature boundary.
         private void ReleasePilotRendererGroup() {} // No display cache resources in this boundary.

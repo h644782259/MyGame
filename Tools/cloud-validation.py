@@ -381,6 +381,7 @@ def main():
                              ("authored-spell-integration", "AuthoredSpellIntegrationTests.py"),
                              ("camera-occlusion-slots", "CameraOcclusionSlotsProductionTests.py"),
                              ("vanguard-actions-production", "VanguardActionsProductionTests.py"),
+                             ("weapon-contact-production", "WeaponContactProductionTests.py"),
                              ("vanguard-recovery-integration", "VanguardRecoveryIntegrationTests.py"),
                              ("status-feedback-production", "StatusFeedbackProductionTests.py"),
                              ("skill-identity-callsite-production", "SkillIdentityCallsiteProductionTests.py"),
