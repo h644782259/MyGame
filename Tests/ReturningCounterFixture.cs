@@ -19,6 +19,7 @@ namespace Emberfall{
  public class Model{public int Skill,Count;public void PlayAction(int skill,bool basic,float interval){Skill=skill;Count++;}}
  public class Bonus{public float AttackSpeedMultiplier=1;}public class Runtime{public float Energy;public void RestoreEnergy(float f){Energy+=f;}}public class Mastery{public float PerfectDodge()=>0;}
  public partial class PlayerController{
+  private float counterWindowDuration;
   public HeroClass HeroClass=HeroClass.Vanguard;public Transform transform=new Transform();GameSession session=new GameSession();public EnemyController AimTarget;
   public bool IsDead;public int CombatEpoch;bool TraversalStartedThisFrame,lastMeleeDamagedEnemy,perfectDodgeAwarded;Recovery skillBasicRecovery=new Recovery();Charge charge;Model model=new Model();Bonus ActiveRunBonuses;float attackCooldown,mobilityTime,attackAnimation,counterTime,perfectDodgeCounterTime,perfectDodgeWindow,coreWardTime,classDodgeTime;int mobilityRank;
   Runtime skillRuntime=new Runtime();Mastery masteryCore=new Mastery();float Energy=>skillRuntime.Energy;ElementalistSpecialization Specialization;Vector3 aimPoint;float CombatAttack=>100;CombatProcCooldown returningBladeProc=new CombatProcCooldown();

@@ -757,6 +757,7 @@ namespace Emberfall
                     AdvancedSkillVfx.Beam(this, position + Vector3.up, bounce.transform.position + Vector3.up, GameBalance.ClassColor(HeroClass), .25f, .14f);
                     // A returned blade strengthens a deliberate next heavy attack,
                     // while a kill carries the blade to a fresh target.
+                    if(counterTime<=1.8f)counterWindowDuration=1.8f;
                     counterTime = Mathf.Max(counterTime, 1.8f);
                     if (bounce.IsDead)
                     {
@@ -910,7 +911,7 @@ namespace Emberfall
             perfectDodgeAwarded = true;
             float previousEnergy = Energy;
             skillRuntime.RestoreEnergy(PlayerUpgradeRules.PerfectDodgeEnergy);
-            if (HeroClass == HeroClass.Vanguard) counterTime = perfectDodgeCounterTime = ReturningCounterVariant ? 3f : PlayerUpgradeRules.CounterWindow;
+            if (HeroClass == HeroClass.Vanguard) counterWindowDuration = counterTime = perfectDodgeCounterTime = ReturningCounterVariant ? 3f : PlayerUpgradeRules.CounterWindow;
             else classDodgeTime = 3f;
             if (HeroClass == HeroClass.Summoner) { SummonedCompanion.OnPerfectDodge(this); }
             float ward=masteryCore.PerfectDodge();if(ward>0){coreWardTime=ward;session.RecordCombatAction("守御核心");}
@@ -1042,6 +1043,8 @@ namespace Emberfall
         }
 
         internal void CancelCombatPose() { skillBasicRecovery.Clear(); if (model != null) model.CancelAction(); }
+        private float counterWindowDuration;
+        internal float CounterOpportunityDuration {get{return counterWindowDuration;}}
         internal float CounterOpportunityRemaining { get { return IsDead ? 0 : counterTime; } }
         internal EnemyController CurrentOpportunityTarget { get { return ValidAimTarget(AimTarget) ? AimTarget : null; } }
 
