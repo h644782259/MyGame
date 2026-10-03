@@ -186,9 +186,10 @@ namespace Emberfall
             chapterResultScroll=BeginTouchScroll("chapter-result",ChapterRect(layout.Body,u),chapterResultScroll,new Rect(0,0,(layout.Body.Width-16)*u,Mathf.Max(layout.Body.Height*u,h)));
             Text(new Rect(8*u,8*u,(layout.Body.Width-26)*u,h),copy,Mathf.RoundToInt(16*u),pale,false,true);EndTouchScroll();
             if(pending&&Button(ChapterRect(layout.FooterButton(0,2),u),"重试保存结算",gold)){RetryChapterSettlement();return;}
+            if(failed&&Button(ChapterRect(layout.FooterButton(0,2),u),"原条件重试",gold,session.CanRetryChapter)){session.RetryFailedChapter();BlockUITransition();return;}
             bool next=!failed&&!pending&&(int)session.ActiveChapterNode<2;
             if(next&&Button(ChapterRect(layout.FooterButton(1,2),u),"下一节点 · 回营准备",gold)){ReturnAndSelectNextChapter();return;}
-            if(Button(ChapterRect(layout.FooterButton(pending?1:0,pending||next?2:1),u),"返回营地",jade)){ReturnFromChapter();return;}
+            if(Button(ChapterRect(layout.FooterButton(pending||failed?1:0,pending||next||failed?2:1),u),"返回营地",jade)){ReturnFromChapter();return;}
         }
     }
 }
