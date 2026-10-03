@@ -21,9 +21,12 @@ namespace Emberfall
         public float IncomingMultiplier { get { return Phase == LargeBossPhase.Exposed ? CoreDamageMultiplier : 1f; } }
         private float nextPulse, phaseCooldown;
         private bool anchorsCommitted, followupPending;
-        private readonly bool chapterFollowup;
+        private readonly bool chapterFollowup, starSweepTrial;
+        public float CurrentBeamLength { get { return starSweepTrial && !IsFollowup ? 14f : BeamLength; } }
+        public float CurrentBeamDegreesPerSecond { get { return starSweepTrial && !IsFollowup ? 18f : BeamDegreesPerSecond; } }
         public bool IsFollowup { get; private set; }
-        public LargeBossPhaseState(bool chapterFollowup = false) { this.chapterFollowup = chapterFollowup; }
+        public LargeBossPhaseState(bool chapterFollowup = false, bool starSweepTrial = false)
+        { this.chapterFollowup = chapterFollowup; this.starSweepTrial = chapterFollowup && starSweepTrial; }
 
         public bool TryBegin(float healthFraction, bool combatActive)
         {
@@ -66,7 +69,7 @@ namespace Emberfall
             Remaining = Math.Max(0, Remaining - step);
             if (Phase == LargeBossPhase.Beam)
             {
-                BeamAngle = (BeamAngle + step * BeamDegreesPerSecond) % 360f;
+                BeamAngle = (BeamAngle + step * CurrentBeamDegreesPerSecond) % 360f;
                 nextPulse -= step;
                 if (Remaining > 0 && nextPulse <= 0) { DamagePulse = true; nextPulse = BeamTickSeconds; }
             }
