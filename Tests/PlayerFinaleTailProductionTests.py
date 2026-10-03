@@ -26,7 +26,7 @@ public static class AdvancedSkillVfx{public static void Rune(params object[] val
 public sealed partial class PlayerController{GameSession session=>GameSession.Instance;int id;int NewCastId()=>++id;void RegisterSkillHit(int castId){}void ApplySpellDodgeBoon(EnemyController enemy){}
 '''+hit+'''}
 public class FinaleProducer {
-PlayerController owner;GameSession session;FilledSkillVfx arrowBatch;int step=8,steps=9,rank=1,skill=9,castId=73;HeroClass heroClass=HeroClass.Ranger;Vector3 target,forward=Vector3.forward;float range=1;Color color=new Color(1,1,1);CombatDamage damage=new CombatDamage(10,false);
+PlayerController owner;GameSession session;FilledSkillVfx.ArrowBatchHandle arrowBatch;int step=8,steps=9,rank=1,skill=9,castId=73;HeroClass heroClass=HeroClass.Ranger;Vector3 target,forward=Vector3.forward;float range=1;Color color=new Color(1,1,1);CombatDamage damage=new CombatDamage(10,false);
 public FinaleProducer(PlayerController hero){owner=hero;session=GameSession.Instance;arrowBatch=FilledSkillVfx.BeginArrowBatch(owner,target,6f*range,color,priority:CombatVisualPriority.ActionBody,castId:castId);}
 public void ArrowFinal(){'''+event+'''}
 public void EarlyBeat(){step=0;ArrowFinal();step=8;}

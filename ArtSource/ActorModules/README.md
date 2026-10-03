@@ -1,5 +1,7 @@
 # Blender rigid actor modules — finite batch 2
 
+**Evidence correction (E review):** the original `Constructions/` images and original construction inventory preserved from the first PR exports include some renderer-disabled legacy parts. They are historical authoring evidence and must not be used to infer actual equipped mesh visibility or precise occlusion. The exporter now filters `Renderer.enabled`; corrected evidence is saved separately under `EnabledReview/`, without overwriting the historic images. These new pictures are still managed-construction Blender renders, not Unity captures.
+
 Original scripted geometry made in Blender 4.3.2, with no Meshy, paid assets, external artwork or textures. This batch replaces selected **rigid mesh pieces**, not complete characters or animation clips. Production uses the existing factories and existing joint transforms, source materials, equipment dimensions and palette. The incomplete Vanguard FBX pilot remains separately default-off.
 
 ## Covered construction calls
@@ -57,3 +59,24 @@ blender -b --factory-startup --threads 4 --python ArtSource/ActorModules/render_
 ```
 
 Actual loader tests cover malformed data, normal/index/vertex budgets, bounds, exact mapping exclusions, cached reuse and rollback. Existing equipment/fashion composition suites explicitly test the original fallback boundary; they do not silently claim loaded-module coverage. The separate construction exporter executes the real loader. Three-platform API compilation and managed checks are not Unity acceptance.
+
+
+## Wolf silhouette revision (E01–E06 review follow-up)
+
+The old `Constructions/Companion-0.png` records the earlier block muzzle, rectangular ears and thin lower limbs and is superseded for wolf acceptance. The new `WolfV2/Wolf-pose-0.png`, `Wolf-pose-12.png`, and `Wolf-pose-24.png` show **actual Companion factory vertices** at sampled poses of the unmodified quadruped animation branch, exported through managed TRS and rendered in Blender. These are not Unity captures.
+
+WolfHead now has a longitudinal cheek/skull shape; WolfMuzzle tapers forward from the original bite hinge; WolfEar has a pointed tapered silhouette. WolfTorso separates the broad chest and haunch from the narrow belly. Paw is the thicker foreleg with a distinct ankle/toe; WolfHindLeg carries the larger haunch. WolfTail has a fuller taper. The wolf-only factory scales the legs/ears/tail and seats the eye primitives into the reshaped skull. No joint origin, animation branch, navigation body, damage range, attack timing or gameplay parameter changed. Generic Ear/Muzzle/Tail/Paw names are **not** mapped globally: explicit wolf meshModule keys select them. Other actors' buffers remain byte-identical.
+
+Seven wolf resources: 664 unique triangles / 71,796 bytes. Repeated forelegs, hindlegs and ears yield 908 authored wolf triangles per constructed wolf, plus unchanged procedural eyes. Complete ActorModules inventory: 24 files / 267,480 bytes (44,544 bytes above the preceding batch), zero added textures/materials/renderers. Existing WolfHead/WolfTorso/Paw GUIDs are unchanged. New resources use the same deterministic GUID namespace. Missing/corrupt resource or `AuthoredActorMeshes.Enabled=false` retains procedural geometry at the current cosmetic socket scales.
+
+Reproduce geometry and checks:
+
+```
+blender -b --factory-startup --python ArtSource/ActorModules/build_actor_modules.py
+python3 ArtSource/ActorModules/export_wolf_motion.py "$PWD" /tmp/emberfall-wolf /path/to/dotnet
+python3 ArtSource/ActorModules/validate_constructions.py /tmp/emberfall-wolf/geometry.json
+blender -b --factory-startup --python ArtSource/ActorModules/render_wolf.py -- /tmp/emberfall-wolf/wolf-motion.json ArtSource/ActorModules/WolfV2
+python3 Tests/ActorModulesProductionTests.py /path/to/dotnet
+```
+
+`wolf-attachment-validation.log`: all four leg cap surfaces and both eye surfaces overlap their actual transformed parent body/head. `wolf-motion-validation.log`: 49 sampled actual quadruped branch poses retain limb resources and bite parent, move the jaw, preserve finite vertices and do not move the navigation owner. Hero optional renderer initialization is explicitly disabled in the generic construction exporter; this exporter does not validate Vanguard skinning. These tests cannot establish live Unity collision, exact runtime animation playback, GPU shading or device performance.

@@ -12,7 +12,8 @@ charge='\n'.join(member('SkillChargeController.cs',sig) for sig in ['public bool
 confirm=member('SkillTargetingController.cs','public bool Confirm()')
 shell=orders.shell[:orders.shell.index('class Program{')]
 shell=shell.replace('public static float time;','public static float time;public static int frameCount;').replace('public class GameObject {public bool activeInHierarchy=true;}','public class GameObject {public bool activeInHierarchy=true;public void SetActive(bool b){activeInHierarchy=b;}}')
-shell=shell.replace('public static class AdvancedSkillVfx {','public class AdvancedSkillVfx {public Transform transform=new Transform();public GameObject gameObject=new GameObject();public static AdvancedSkillVfx Rune(PlayerController o,Vector3 p,float r,Color c,float t,int i,bool b)=>new AdvancedSkillVfx();')
+shell=shell.replace('public static class AdvancedSkillVfx {','public class AdvancedSkillVfx {public Transform transform=new Transform();public GameObject gameObject=new GameObject();public static AdvancedSkillVfx Rune(PlayerController o,Vector3 p,float r,Color c,float t,int i,bool b,int identity=0)=>new AdvancedSkillVfx();')
+shell=shell.replace('enum HeroClass{Summoner}','enum HeroClass{Summoner,Vanguard,Arcanist}')
 shell=shell.replace('public static class CombatSight {','public static class CombatSight {public static bool Direct(Vector3 a,Vector3 b)=>true;')
 shell+=r'''
 namespace Emberfall {

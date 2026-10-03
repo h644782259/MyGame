@@ -2,7 +2,7 @@
 // Runs production preview lifecycle against controlled native-resource stand-ins;
 // no GPU, Unity frame timing, pixel correctness or real CombatModel execution.
 using System;
-using System.Collections.Generic;
+using System.Collections.Generic;using System.Linq;
 using Emberfall;
 using UnityEngine;
 public static class CollectionRenderLifecycleTests
@@ -115,6 +115,20 @@ public static class CollectionRenderLifecycleTests
         imported.SetComposition(CollectionPreviewComposition.Back);Time.frameCount++;Draw(imported);
         Check(importedCamera.transform.position.x < -1,"back composition includes actual imported back renderer bounds");
         imported.Dispose();CombatModel.ImportedGroups=false;
+        // Real host cache invalidation: membership changes must repaint even with no motion.
+        Time.unscaledDeltaTime=0;var changing=new CollectionModelPreview();Time.frameCount++;Draw(changing);
+        var flags=System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic;
+        var avatar=(GameObject)typeof(CollectionModelPreview).GetField("avatar",flags).GetValue(changing);
+        var group=(RendererGroupCache)typeof(CollectionModelPreview).GetField("rendererGroup",flags).GetValue(changing);
+        Func<Renderer[]> cached=()=>((Renderer[])typeof(CollectionModelPreview).GetField("renderers",flags).GetValue(changing));
+        int revision=group.Revision,renderCount=Camera.Renders;for(int i=0;i<10;i++){Time.frameCount++;Draw(changing);}
+        Check(group.Revision==revision&&Camera.Renders==renderCount,"unchanged preview reuses renderer cache without scans or repaint");
+        var late=new GameObject("late nested accessory");late.transform.SetParent(avatar.transform,false);var nested=new GameObject("detail");nested.transform.SetParent(late.transform,false);var added=nested.AddComponent<Renderer>();added.FixedBounds=new Bounds(new Vector3(12,2,0),new Vector3(2,2,2));nested.AddComponent<Collider>();
+        Time.frameCount++;Draw(changing);Check(cached().Contains(added)&&group.Revision>revision&&Camera.Renders==renderCount+1,"hierarchy addition invalidates actual preview membership and texture");Check(nested.layer==31&&!nested.GetComponent<Collider>().enabled&&!added.receiveShadows,"late renderer follows actual isolation contract");
+        var outside=new GameObject("outside");late.transform.SetParent(outside.transform,false);Time.frameCount++;Draw(changing);Check(!cached().Contains(added),"reparent outside removes preview renderer from framing");
+        late.transform.SetParent(avatar.transform,false);Time.frameCount++;Draw(changing);Check(cached().Contains(added),"reparent back refreshes preview membership");
+        UnityEngine.Object.Destroy(added);var replacement=nested.AddComponent<Renderer>();replacement.FixedBounds=new Bounds(new Vector3(-5,2,0),new Vector3(2,2,2));changing.Invalidate();Time.frameCount++;Draw(changing);Check(cached().Contains(replacement)&&!cached().Contains(added),"explicit same-object renderer replacement invalidates preview cache");
+        UnityEngine.Object.Destroy(late);Time.frameCount++;Draw(changing);Check(!cached().Contains(replacement),"destroyed subtree invalidates preview cache");changing.Dispose();UnityEngine.Object.Destroy(outside);
         UnityEngine.Object.Destroy(world.gameObject);Time.unscaledDeltaTime=0;SystemInfo.SupportedSamples=4;
         return "PASS: "+checks+" production preview lifecycle checks (managed resource fixture, not Unity rendering)";
     }
@@ -146,24 +160,25 @@ namespace UnityEngine
         public static void Destroy(Object value)
         {
             if(value==null||value.Destroyed)return;value.Destroyed=true;
-            if(value is GameObject go){foreach(var child in go.transform.children.ToArray())Destroy(child.gameObject);foreach(var c in go.Components)Destroy(c);}
+            if(value is GameObject go){GameObject.Notify(go,"OnDestroy");GameObject.Notify(go.transform.parent?.gameObject,"OnTransformChildrenChanged");go.transform.parent?.children.Remove(go.transform);foreach(var child in go.transform.children.ToArray())Destroy(child.gameObject);foreach(var c in go.Components.ToArray())Destroy(c);}
         }
         public static T[] FindObjectsOfType<T>()where T:Object
         {var list=new List<T>();foreach(var item in Registry)if(item is T t&&!t.Destroyed&&(!(t is Component c)||c.gameObject.activeInHierarchy))list.Add(t);return list.ToArray();}
         public static T[] FindObjectsByType<T>(FindObjectsSortMode mode)where T:Object{return FindObjectsOfType<T>();}
     }
     public enum FindObjectsSortMode{None}
-    public class Component:Object{public GameObject gameObject;public Transform transform=>gameObject.transform;}
+    public class Component:Object{public GameObject gameObject;public Transform transform=>gameObject.transform;public T GetComponent<T>()where T:class=>gameObject.GetComponent<T>();}
     public class MonoBehaviour:Component{public bool enabled=true;}
     public class GameObject:Object
     {
         public readonly List<Component> Components=new List<Component>();public Transform transform;public int layer;bool active=true;
         public bool activeInHierarchy=>active&&!Destroyed&&(transform.parent==null||transform.parent.gameObject.activeInHierarchy);
         public GameObject(string name=""){this.name=name;transform=new Transform{gameObject=this};Components.Add(transform);}
+        internal static void Notify(GameObject go,string name){if(go==null)return;foreach(var c in go.Components.ToArray())c.GetType().GetMethod(name,System.Reflection.BindingFlags.NonPublic|System.Reflection.BindingFlags.Instance)?.Invoke(c,null);}
         public T AddComponent<T>()where T:Component,new(){var c=new T{gameObject=this};Components.Add(c);return c;}
-        public T GetComponent<T>()where T:class{foreach(var c in Components)if(c is T t)return t;return null;}
+        public T GetComponent<T>()where T:class{foreach(var c in Components)if(c is T t&&!c.Destroyed)return t;return null;}
         public T[] GetComponentsInChildren<T>(bool all)where T:class
-        {var result=new List<T>();foreach(var c in Components)if(c is T t)result.Add(t);foreach(var child in transform.children)if(!child.gameObject.Destroyed)result.AddRange(child.gameObject.GetComponentsInChildren<T>(all));return result.ToArray();}
+        {var result=new List<T>();foreach(var c in Components)if(c is T t&&!c.Destroyed)result.Add(t);foreach(var child in transform.children)if(!child.gameObject.Destroyed)result.AddRange(child.gameObject.GetComponentsInChildren<T>(all));return result.ToArray();}
         public static GameObject CreatePrimitive(PrimitiveType type){var go=new GameObject();go.AddComponent<Renderer>();go.AddComponent<Collider>();return go;}
         public void SetActive(bool value){active=value;}
     }
@@ -172,7 +187,7 @@ namespace UnityEngine
         public new string name=>gameObject.name;
         public List<Transform> children=new List<Transform>();public Transform parent;public Vector3 localPosition,localScale=Vector3.one;public Quaternion localRotation;
         public Vector3 position{get{return parent==null?localPosition:parent.position+localPosition;}set{localPosition=parent==null?value:value-parent.position;}}
-        public void SetParent(Transform p,bool world){parent=p;p.children.Add(this);}
+        public void SetParent(Transform p,bool world){var old=parent;parent?.children.Remove(this);parent=p;p?.children.Add(this);GameObject.Notify(old?.gameObject,"OnTransformChildrenChanged");GameObject.Notify(p?.gameObject,"OnTransformChildrenChanged");GameObject.Notify(gameObject,"OnTransformParentChanged");}
         public bool IsChildOf(Transform root){for(var p=parent;p!=null;p=p.parent)if(p==root)return true;return false;}
         public void LookAt(Vector3 point){}
     }

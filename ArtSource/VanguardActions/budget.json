@@ -1,0 +1,34 @@
+{
+  "clips": [
+    "Idle",
+    "Forward",
+    "Backward",
+    "Left",
+    "Right",
+    "TurnLeft",
+    "TurnRight",
+    "Basic",
+    "Skill",
+    "Jump",
+    "Landing",
+    "Hit",
+    "Death"
+  ],
+  "bones": [
+    "Pelvis",
+    "Spine",
+    "Head",
+    "LeftArm",
+    "RightArm",
+    "LeftKnee",
+    "RightKnee",
+    "Cloak",
+    "Sword"
+  ],
+  "samples_per_clip": 33,
+  "runtime_bytes": 46348,
+  "triangles_added": 0,
+  "materials_added": 0,
+  "textures_added": 0,
+  "source": "Original key poses authored in build.py; Blender baked local Euler offsets"
+}

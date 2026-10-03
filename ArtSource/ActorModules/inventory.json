@@ -84,12 +84,12 @@
       ]
     },
     "WolfHead": {
-      "triangles": 36,
-      "vertices": 108,
+      "triangles": 96,
+      "vertices": 288,
       "materials_added": 0,
       "textures_added": 0,
-      "bytes": 3900,
-      "sha256": "b3d3edb2600d0331665972399c33d3d9c9862bc764b40bb617233db77eefdc9b",
+      "bytes": 10380,
+      "sha256": "7790560cb55a665264388a3498d4bb09d3322943aec8f70ed09132cc985edb0a",
       "bounds_unity": [
         [
           -0.5,
@@ -104,12 +104,12 @@
       ]
     },
     "WolfTorso": {
-      "triangles": 140,
-      "vertices": 420,
+      "triangles": 188,
+      "vertices": 564,
       "materials_added": 0,
       "textures_added": 0,
-      "bytes": 15132,
-      "sha256": "285f8012f970e80ade85ad2f9645ae3db677f039a379fbf94a8d1d47d0ed135f",
+      "bytes": 20316,
+      "sha256": "49c2bc41df764b822cf96bb135f1efff0936d9927a23d33b52e07389194aba08",
       "bounds_unity": [
         [
           -0.5,
@@ -124,12 +124,92 @@
       ]
     },
     "Paw": {
+      "triangles": 108,
+      "vertices": 324,
+      "materials_added": 0,
+      "textures_added": 0,
+      "bytes": 11676,
+      "sha256": "658d4e88a1814610981599065707ff5341ddcd745a8072cbfced13c602db112a",
+      "bounds_unity": [
+        [
+          -0.5,
+          -1.0,
+          -0.5
+        ],
+        [
+          0.5,
+          1.0,
+          0.5
+        ]
+      ]
+    },
+    "WolfHindLeg": {
+      "triangles": 108,
+      "vertices": 324,
+      "materials_added": 0,
+      "textures_added": 0,
+      "bytes": 11676,
+      "sha256": "7d05402936a251c7b887b719c1cb724637ec72c75abe4edbb03cc034cfe62b9b",
+      "bounds_unity": [
+        [
+          -0.5,
+          -1.0,
+          -0.5
+        ],
+        [
+          0.5,
+          1.0,
+          0.5
+        ]
+      ]
+    },
+    "WolfMuzzle": {
+      "triangles": 60,
+      "vertices": 180,
+      "materials_added": 0,
+      "textures_added": 0,
+      "bytes": 6492,
+      "sha256": "5fb1e0108b86503d32cc2702a9bbaa4c98c54d6e933886d16c080056dbcbaa12",
+      "bounds_unity": [
+        [
+          -0.5,
+          -0.5,
+          -0.5
+        ],
+        [
+          0.5,
+          0.5,
+          0.5
+        ]
+      ]
+    },
+    "WolfEar": {
+      "triangles": 28,
+      "vertices": 84,
+      "materials_added": 0,
+      "textures_added": 0,
+      "bytes": 3036,
+      "sha256": "cd4faa965942f71ed76785d578d3e0a82121961681724e915797c34de9c2a38b",
+      "bounds_unity": [
+        [
+          -0.5,
+          -0.5,
+          -0.5
+        ],
+        [
+          0.5,
+          0.5,
+          0.5
+        ]
+      ]
+    },
+    "WolfTail": {
       "triangles": 76,
       "vertices": 228,
       "materials_added": 0,
       "textures_added": 0,
       "bytes": 8220,
-      "sha256": "bfcf722f60b8942c651cad5816f0d516920b5705871e550224f369b4bd6b94ed",
+      "sha256": "c4480b6503589625451a932c1601233b0b9f057ff038a96067c5221ef8847f1f",
       "bounds_unity": [
         [
           -0.5,
@@ -404,7 +484,7 @@
       ]
     }
   },
-  "total_runtime_source_bytes": 222936,
-  "total_triangles": 2062,
+  "total_runtime_source_bytes": 267480,
+  "total_triangles": 2474,
   "texture_bytes": 0
 }

@@ -24,10 +24,10 @@ namespace Emberfall
             visual = body.transform;
             slime = isSlime;
             this.boss = boss;
+            model.BeginDeath(); // Finalize the displayed pose before capturing death ownership.
             startRotation = visual.localRotation;
             startPosition = visual.localPosition;
             startScale = visual.localScale;
-            model.BeginDeath();
             ash = ElementalCombatVfx.Create(transform, "Dissolving Ash", ElementalCombatVfx.Element.Fire,
                 boss ? 35f : 16f, boss ? 1.3f : .55f);
             if(ash!=null){
