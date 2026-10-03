@@ -38,3 +38,26 @@ python3 Tests/SceneryPresentationProductionTests.py /path/to/dotnet
 | Three NPCs and working stations | 56 | 8 | 2072 |
 
 Counts include retained renderers/materials; new loader allocates **zero** materials. Each changed module still uses one palette material; full-town 23/24 counts are the existing aggregate palette, not a module budget. Full town totals are larger than the selected review screenshot. Instanced triangles are deliberately distinguished from unique resource budget. `factory-snapshots.json.gz` is review data, outside Resources; not shipped gameplay content. Source `.blend`, script, budget, GUID manifest and raw logs are retained. Unity Windows/iOS rendering, low-device performance and on-device occlusion fade remain parent acceptance tasks; no engine test is asserted here.
+
+## Matched before / after review (Blender, not Unity)
+
+These pairs execute the same actual factories. **Before disables only AuthoredFixedScenery**, keeping all other art, NPC rigs, tools, portal motion components, palette and layout unchanged. Both renders derive their camera target, orthographic scale, lighting and review floor from the **after snapshot**, so changing mesh bounds cannot move the comparison camera. Original `factory-0..5.png` after images are preserved byte-for-byte. Snapshot export still passes all 136 production checks (`comparison-production.log`). The earlier Unity API/text-label limitations apply to every image below; these are Blender reconstructions of actual factory geometry, not captured gameplay.
+
+| Factory | Before | After |
+|---|---|---|
+| Pillar | [before](factory-0-before.png) | [after](factory-0.png) |
+| Portal | [before](factory-1-before.png) | [after](factory-1.png) |
+| Workshop roof/building | [before](factory-2-before.png) | [after](factory-2.png) |
+| Observatory dais/crown | [before](factory-3-before.png) | [after](factory-3.png) |
+| Four facilities | [before](factory-4-before.png) | [after](factory-4.png) |
+| Three NPCs and stations | [before](factory-5-before.png) | [after](factory-5.png) |
+
+NPC close-ups below use the original complete factory scene, with a camera centered on each role. No mesh, joint, tool, station or NPC is repositioned. Each before/after pair uses the same camera and lighting; `role-render.log` records the exact camera transforms and orthographic scale. They intentionally show caps, apron, sleeves and work tools at a readable size.
+
+| Role (Blender factory reconstruction, not Unity) | Before | After |
+|---|---|---|
+| Merchant / stocked shelves / cap | [before](role-0-before.png) | [after](role-0-after.png) |
+| Smith / apron / anvil / hammer | [before](role-1-before.png) | [after](role-1-after.png) |
+| Steward / lectern / real chart ring | [before](role-2-before.png) | [after](role-2-after.png) |
+
+Reproduce full comparisons with `F4_STATE=before blender -b -t 2 --python ArtSource/FixedScenery/render.py`. For a role pair, set `F4_SAMPLE=5 F4_ROLE=0` (or 1, 2), and run with `F4_STATE=before` then `F4_STATE=after`. Only evidence scripts/tests changed in this supplement; production assets and runtime code are unchanged.

@@ -24,3 +24,7 @@ import gzip
 snapshot=root/"ArtSource/FixedScenery/factory-snapshots.json"
 (root/"ArtSource/FixedScenery/factory-snapshots.json.gz").write_bytes(gzip.compress(snapshot.read_bytes(),mtime=0))
 snapshot.unlink()
+
+snapshot=root/"ArtSource/FixedScenery/factory-before-snapshots.json"
+(root/"ArtSource/FixedScenery/factory-before-snapshots.json.gz").write_bytes(gzip.compress(snapshot.read_bytes(),mtime=0))
+snapshot.unlink()
