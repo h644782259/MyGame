@@ -21,8 +21,12 @@ namespace Emberfall
         public static void Friendly(PlayerController owner,GameSession game,Vector3 at,Vector3 direction,CombatDamage damage,Color color,bool pierce,bool arrow,bool basic,float size,float speed,int castId=0)
         {Count++;Total+=damage.Amount;LastCast=castId;}
     }
+    // Only arrow finales execute here. A healing cleanup call indicates fixture misuse.
+    public class AdvancedSkillVfx
+    { public void Stop(){throw new Exception("unexpected healing anchor in arrow readability fixture");} }
     public partial class ArrowSequenceFixture
     {
+        private AdvancedSkillVfx healingAura; // Actual Sequence.OnDisable field, null on these non-healing routes.
         PlayerController owner;GameSession session;FilledSkillVfx.ArrowBatchHandle arrowBatch;int step,steps,rank,skill=9,castId=73;
         HeroClass heroClass=HeroClass.Ranger;Vector3 target;float range=1;Color color=new Color(1,1,1);CombatDamage damage=new CombatDamage(10,true,2);
         public ArrowSequenceFixture(PlayerController hero,int rank){owner=hero;session=GameSession.Instance;this.rank=rank;steps=SkillDamageBudgets.AdvancedSteps(heroClass,skill,rank);arrowBatch=FilledSkillVfx.BeginArrowBatch(hero,target,6,color);}

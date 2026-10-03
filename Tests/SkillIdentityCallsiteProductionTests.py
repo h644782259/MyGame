@@ -88,7 +88,7 @@ using System;using System.Linq;using System.Collections.Generic;using Emberfall;
 namespace Emberfall{
  public enum HeroClass{Vanguard,Arcanist,Ranger,Summoner}public enum CombatVisualPriority{ActionBody,RealContact}
  public struct CombatDamage{public float Amount;public bool IsCritical;public static CombatDamage operator*(CombatDamage d,float n){d.Amount*=n;return d;}}
- public class EnemyController:MonoBehaviour{public bool IsDead,Invulnerable;public float Health=100;public int Attempts;public void TakeDamage(float n,Vector3 f,float knockback=0,float stun=0,bool critical=false){Attempts++;if(!Invulnerable&&!IsDead){Health-=n;if(Health<=0)IsDead=true;}}}
+ public class EnemyController:MonoBehaviour{public bool IsDead,Invulnerable;public float Health=100;public int Attempts;public void TakeDamage(float n,Vector3 f,float knockback=0,float stun=0,bool critical=false,int practiceCastId=0){Attempts++;if(!Invulnerable&&!IsDead){Health-=n;if(Health<=0)IsDead=true;}}}
  public static class SkillDamageBudgets{public static float AdvancedImpact(HeroClass h,int s,int r,int step)=>1;public static float AdvancedAuxiliary(HeroClass h,int s,int r)=>1;}
  public static class SummonerDamageRules{public const float ImpulseCoefficient=1;}
  public static class DestructibleProp{public static void StrikeCone(params object[] a){}}

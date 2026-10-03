@@ -19,13 +19,15 @@ parts=(r/'Tests/CombatReadabilityVisualTests.cs').read_text()
 # Keep complete production branch bodies unchanged; fixture supplies only omitted engine/scheduler context.
 extra='namespace Emberfall{'+''.join(member(parts,k) for k in ['public enum ElementalistSpecialization','public enum HeroClass','public static class CombatBalance','public static class CombatProjectile'])+'''
 public class EnemyController:MonoBehaviour {public bool IsDead,IsBoss,IgnoreDamage;public float HitFootprintBonus,Health=10000;public int Hits;public Action OnDamage;
-public void TakeDamage(float damage,Vector3 direction,float knockback=0,float stun=0,bool critical=false){if(IsDead||IgnoreDamage||GameSession.Instance.ModeFinished)return;float old=Health;Health=Math.Max(0,Health-damage);Hits++;IsDead=Health<=0;if(Health<old)OnDamage?.Invoke();}}
+public void TakeDamage(float damage,Vector3 direction,float knockback=0,float stun=0,bool critical=false,int practiceCastId=0){if(IsDead||IgnoreDamage||GameSession.Instance.ModeFinished)return;float old=Health;Health=Math.Max(0,Health-damage);Hits++;IsDead=Health<=0;if(Health<old)OnDamage?.Invoke();}}
 public class ProjectileVolleyBudget<T>{public CombatDamage Apply(T e,CombatDamage damage,bool area)=>damage;}
 public static class DestructibleProp{public static void StrikeArea(PlayerController owner,Vector3 at,float radius,CombatDamage damage,int castId){}}
-public static class AdvancedSkillVfx{public static void Rune(params object[] values){}}
+// Healing is outside these non-healing finale routes; a non-null use is a fixture failure.
+public class AdvancedSkillVfx{public static void Rune(params object[] values){}public void Stop(){throw new Exception("unexpected healing anchor in finale fixture");}}
 public sealed partial class PlayerController{GameSession session=>GameSession.Instance;int id;int NewCastId()=>++id;void RegisterSkillHit(int castId){}void ApplySpellDodgeBoon(EnemyController enemy){}
 '''+hit+'''}
 public class FinaleProducer {
+private AdvancedSkillVfx healingAura; // Actual OnDisable dependency; always null for tested non-healing routes.
 PlayerController owner;GameSession session;FilledSkillVfx.ArrowBatchHandle arrowBatch;int step=8,steps=9,rank=1,skill=9,castId=73;HeroClass heroClass=HeroClass.Ranger;Vector3 target,forward=Vector3.forward;float range=1;Color color=new Color(1,1,1);CombatDamage damage=new CombatDamage(10,false);
 public FinaleProducer(PlayerController hero){owner=hero;session=GameSession.Instance;arrowBatch=FilledSkillVfx.BeginArrowBatch(owner,target,6f*range,color,priority:CombatVisualPriority.ActionBody,castId:castId);}
 public void ArrowFinal(){'''+event+'''}

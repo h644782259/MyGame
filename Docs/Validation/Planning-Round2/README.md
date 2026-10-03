@@ -1,4 +1,4 @@
-# Planning round 2 — five implementation packages
+# Planning round 2 — five planning packages and G01–G07
 
 Baseline checked against remote main on 2026-10-03: Windows `5d85e47b9fab2489d5b06963a0b896ec19112740`, iOS `d3a4aab185eb368f5a4a7aba67b43678bfea508f`. Both original checkouts clean. New isolated worktrees only; previously revoked work and package delivery are out of scope.
 
@@ -7,6 +7,8 @@ Baseline checked against remote main on 2026-10-03: Windows `5d85e47b9fab2489d5b
 3. Rewards: weapon/wing/supply choice without cosmetic odds inflation; supply 1.5x integer-rounded coins; immutable old receipts; six independent difficulty first-award bits and evidence-based legacy migration.
 4. Coordination: one designated Hard Redrock room only; at most two high-threat admissions, seeded 0.35–0.6s warning separation, fair queue and lifecycle cleanup without stat changes.
 5. Camp practice: actual isolated static/moving/front-and-back combat; legal loadout/draft snapshot, no persistent rewards or live resource mutation; 10/60s actual metrics and comparable-configuration A/B receipts.
+
+Additional explicitly requested presentation work: G01 persistent opportunity/result channels; G02 protection/healing state identity and confirmed healing feedback; G03 freeze/frost/vulnerability indicators; G04 authoritative draft change summary; G05 class-specific visual motion without gameplay timing changes; G06 fixed-camera equipment comparison viewing and isolated animation; G07 large scene/NPC silhouette and destination composition.
 
 Each package has an independent implementation commit and raw test evidence. Integration preserves Windows/iOS platform configuration and Android conditional source compatibility. No ZIP, Library mutation, new Android repository or Android push. Main merging remains with the parent reviewer.
 
@@ -17,3 +19,7 @@ Each package has an independent implementation commit and raw test evidence. Int
 ## Cross-package constraints
 
 Reward migration must use evidence of historical forced sequential difficulty unlock (ChapterProgression.CanEnter and completion guards), never infer progress from absent/invalid fields. Practice must not use BuildDraft preview's real saveDirectory as writable persistence; reward/save paths require complete isolation. Distinct package worktrees prevent concurrent source rewrites; final checks run against a frozen integrated source tree.
+
+## Publication state
+
+Both codex/planning-round2 branches are authorized and pushed. Creating draft PRs with the original gh GraphQL call returned `Post "https://api.github.com/graphql": Forbidden`, exit code 1, for both repositories. No alternate endpoint, credentials or retry was used. This is a service-call rejection, not an observed auto-review authorization denial. Main remains untouched; parent review owns merge decisions.

@@ -15,7 +15,7 @@ namespace UnityEngine {
 }
 namespace Emberfall {
  public enum MasteryType{Offense,Vitality,Guard,Technique} public static class MasteryProgressionRules{public const int InitialInvestment=10,EnhancedInvestment=20;}
- public class EnemyController {public bool IsDead,IsBoss,Ignore;public float Health=1000,HitFootprintBonus;public int Hits;public bool LastCritical,LastImpact;public Transform transform=new Transform();public void TakeDamage(float n,Vector3 d,float knockback=0,float stun=0,bool impact=true,bool critical=false){if(Ignore||IsDead)return;Health-=n;Hits++;LastCritical=critical;LastImpact=impact;IsDead=Health<=0;}}
+ public class EnemyController {public bool IsDead,IsBoss,Ignore;public float Health=1000,HitFootprintBonus;public int Hits;public bool LastCritical,LastImpact;public Transform transform=new Transform();public void TakeDamage(float n,Vector3 d,float knockback=0,float stun=0,bool impact=true,bool critical=false,int practiceCastId=0){if(Ignore||IsDead)return;Health-=n;Hits++;LastCritical=critical;LastImpact=impact;IsDead=Health<=0;}}
  public class GameSession{public PlayerController Player;public bool HasStarted=true,InputBlocked,CombatEnded;public int Records,Feedback;public List<EnemyController> Enemies=new List<EnemyController>();public void RecordCombatAction(string s){Records++;}public void SpawnMechanismText(Vector3 at,string s,Color c){Feedback++;}}
  public struct CombatDamage{public float Amount;public bool IsCritical;public CombatDamage(float a){Amount=a;IsCritical=false;}}
  public class ProjectileVolleyBudget<T>{public CombatDamage Apply(T e,CombatDamage d,bool area)=>d;}

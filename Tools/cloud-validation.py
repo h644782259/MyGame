@@ -402,6 +402,10 @@ def main():
                              ("wolf-silhouette-production", "WolfSilhouetteProductionTests.py")]:
             passed = run_check(name, [[sys.executable, str(ROOT/"Tests"/script), dotnet]], dict(env, DOTNET=dotnet), output, report)
             failed = failed or not passed
+        # Planning round 2: real production paths, with explicit managed boundaries.
+        for name, script in [('mastery-combo-round2', 'MasteryComboRound2Tests.py'), ('concentrated-venom-production', 'ConcentratedVenomProductionTests.py'), ('concentrated-venom-launch', 'ConcentratedVenomLaunchTests.py'), ('concentrated-venom-poison', 'ConcentratedVenomPoisonTests.py'), ('reward-revision', 'RewardRevisionTests.py'), ('threat-admission', 'ThreatAdmissionTests.py'), ('threat-admission-lifecycle', 'ThreatAdmissionLifecycleTests.py'), ('camp-practice-production', 'CampPracticeProductionTests.py'), ('camp-practice-session', 'CampPracticeSessionProductionTests.py'), ('camp-practice-wiring', 'CampPracticeWiringTests.py'), ('opportunity-channels-round2', 'OpportunityChannelsRound2Tests.py'), ('mobile-basic-window-draw', 'MobileBasicWindowDrawTests.py'), ('combat-result-pause-receipt', 'CombatResultPauseReceiptTests.py'), ('protection-presentation', 'ProtectionPresentationProductionTests.py'), ('enemy-status-visual', 'EnemyStatusVisualProductionTests.py'), ('hero-motion-style', 'HeroMotionStyleProductionTests.py'), ('hero-motion-factory', 'HeroMotionFactoryProductionTests.py'), ('g07-factory-inventory', 'G07FactoryInventoryTests.py')]:
+            passed = run_check(name, [[sys.executable, str(ROOT/"Tests"/script), dotnet]], dict(env, DOTNET=dotnet), output, report)
+            failed = failed or not passed
         if args.compile or args.download_references or args.compile_android:
             try:
                 refs = unity_references(args.download_references)
