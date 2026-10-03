@@ -45,7 +45,7 @@ namespace Emberfall
             duration = chargeTime;
             elapsed = 0;
             SkillIndex = skill;
-            chargeEffect = AdvancedSkillVfx.Rune(owner, origin, 1.35f, GameBalance.ClassColor(owner.HeroClass), chargeTime + .2f, 2, true);
+            chargeEffect = AdvancedSkillVfx.Rune(owner, origin, 1.35f, GameBalance.ClassColor(owner.HeroClass), chargeTime + .2f, 2, true, skill==6?4:owner.HeroClass==HeroClass.Vanguard?1:owner.HeroClass==HeroClass.Summoner?3:owner.HeroClass==HeroClass.Arcanist&&skill==4?2:0);
             if (chargeEffect != null) chargeEffect.transform.localScale = Vector3.one * .65f;
             return true;
         }

@@ -39,7 +39,7 @@ def main():
             rain=opening.replace('SkillVisualRecipe.ArrowRain','SkillVisualRecipe.Poison') if name=='old-poison-recipe' else opening
             (folder/'Opening.cs').write_text('using UnityEngine;namespace Emberfall{public sealed partial class PlayerController{private CombatDamage Damage(float value)=>new CombatDamage(value*10,true,2);public void CastRain(int rank){var HeroClass=Emberfall.HeroClass.Ranger;var session=GameSession.Instance;Vector3 target=Vector3.zero;float range=1;int castId=91;'+rain+'}}}')
             body=event
-            if name=='old-independent-arrows':body=once(body,'if(arrowBatch!=null)arrowBatch.ArrowBeat(rainAt,3.4f*range,false);','FilledSkillVfx.ArrowRain(owner,rainAt,3.4f*range,color);')
+            if name=='old-independent-arrows':body=once(body,'if(arrowBatch.IsValid)arrowBatch.ArrowBeat(rainAt,3.4f*range,false);','FilledSkillVfx.ArrowRain(owner,rainAt,3.4f*range,color);')
             (folder/'ArrowEvent.cs').write_text('using UnityEngine;namespace Emberfall{public partial class ArrowSequenceFixture{private void Event(){'+body+'}'+sequence[sequence.index('        private void OnDisable()'):sequence.index('        private Vector3 Clamp(')]+'}}')
             (folder/'Tests.cs').write_text((ROOT/'Tests/CombatReadabilityVisualTests.cs').read_text());(folder/'Program.cs').write_text('System.Console.WriteLine(CombatReadabilityVisualTests.Run());')
             project=folder/'Validation.csproj';project.write_text('<Project Sdk="Microsoft.NET.Sdk"><PropertyGroup><TargetFramework>net8.0</TargetFramework><OutputType>Exe</OutputType></PropertyGroup></Project>');config=folder/'NuGet.Config';config.write_text('<configuration><packageSources><clear /></packageSources></configuration>')

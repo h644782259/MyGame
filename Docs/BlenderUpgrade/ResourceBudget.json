@@ -99,11 +99,11 @@
     },
     {
       "path": "Assets/Resources/ActorModules/Paw.bytes",
-      "bytes": 8220,
-      "sha256": "bfcf722f60b8942c651cad5816f0d516920b5705871e550224f369b4bd6b94ed",
+      "bytes": 11676,
+      "sha256": "658d4e88a1814610981599065707ff5341ddcd745a8072cbfced13c602db112a",
       "guid": "4fb65901448abc7b04da7e7324bd49b0",
-      "vertices": 228,
-      "triangles": 76
+      "vertices": 324,
+      "triangles": 108
     },
     {
       "path": "Assets/Resources/ActorModules/Slime.bytes",
@@ -146,20 +146,52 @@
       "triangles": 68
     },
     {
+      "path": "Assets/Resources/ActorModules/WolfEar.bytes",
+      "bytes": 3036,
+      "sha256": "cd4faa965942f71ed76785d578d3e0a82121961681724e915797c34de9c2a38b",
+      "guid": "75cfeefe9ec964ead81c793dd664ab38",
+      "vertices": 84,
+      "triangles": 28
+    },
+    {
       "path": "Assets/Resources/ActorModules/WolfHead.bytes",
-      "bytes": 3900,
-      "sha256": "b3d3edb2600d0331665972399c33d3d9c9862bc764b40bb617233db77eefdc9b",
+      "bytes": 10380,
+      "sha256": "7790560cb55a665264388a3498d4bb09d3322943aec8f70ed09132cc985edb0a",
       "guid": "fa374262a7970773cc1b31aa2a7c5e97",
-      "vertices": 108,
-      "triangles": 36
+      "vertices": 288,
+      "triangles": 96
+    },
+    {
+      "path": "Assets/Resources/ActorModules/WolfHindLeg.bytes",
+      "bytes": 11676,
+      "sha256": "7d05402936a251c7b887b719c1cb724637ec72c75abe4edbb03cc034cfe62b9b",
+      "guid": "37bf173299f34263d4eb78cd3bc347b0",
+      "vertices": 324,
+      "triangles": 108
+    },
+    {
+      "path": "Assets/Resources/ActorModules/WolfMuzzle.bytes",
+      "bytes": 6492,
+      "sha256": "5fb1e0108b86503d32cc2702a9bbaa4c98c54d6e933886d16c080056dbcbaa12",
+      "guid": "c0268e4e96815fc6452b58043ff5d86f",
+      "vertices": 180,
+      "triangles": 60
+    },
+    {
+      "path": "Assets/Resources/ActorModules/WolfTail.bytes",
+      "bytes": 8220,
+      "sha256": "c4480b6503589625451a932c1601233b0b9f057ff038a96067c5221ef8847f1f",
+      "guid": "3f6aafab814fc49b71284134ba365679",
+      "vertices": 228,
+      "triangles": 76
     },
     {
       "path": "Assets/Resources/ActorModules/WolfTorso.bytes",
-      "bytes": 15132,
-      "sha256": "285f8012f970e80ade85ad2f9645ae3db677f039a379fbf94a8d1d47d0ed135f",
+      "bytes": 20316,
+      "sha256": "49c2bc41df764b822cf96bb135f1efff0936d9927a23d33b52e07389194aba08",
       "guid": "08568f9a99ab4f03c003e55e5c782231",
-      "vertices": 420,
-      "triangles": 140
+      "vertices": 564,
+      "triangles": 188
     },
     {
       "path": "Assets/Resources/BlenderScenery/FracturedRubble.fbx",
@@ -178,6 +210,38 @@
       "bytes": 20940,
       "sha256": "38c0f39b506653722096c75a2d1ec3127adc2321fd0fedb07208da0593ceae1a",
       "guid": "d606e883b51672b830be48be54f4a7bf"
+    },
+    {
+      "path": "Assets/Resources/BlenderSkillIdentities/BladeSlices.bytes",
+      "bytes": 10620,
+      "sha256": "488864ef36b0ebcebecc19b2b57b9ee492e94928ca5fbbaf4e38ffa3e225ff36",
+      "guid": "bb95399abad63673b3c7881db9df7d31",
+      "vertices": 192,
+      "triangles": 372
+    },
+    {
+      "path": "Assets/Resources/BlenderSkillIdentities/ContractSigil.bytes",
+      "bytes": 3196,
+      "sha256": "dc13a5dadd315c6ea4f8efad7ba8df0dc6bc36d6f0add01034ec923e4f7ae19d",
+      "guid": "28ac1c16ca23daa530c75e9ce61c5f92",
+      "vertices": 62,
+      "triangles": 100
+    },
+    {
+      "path": "Assets/Resources/BlenderSkillIdentities/ForkPulse.bytes",
+      "bytes": 3804,
+      "sha256": "6d4543fc1a5dd042d12387a051a345c3c26712e4a1e46be352ac8c798e4df0da",
+      "guid": "7baaa3c0bf3d3da99e3139ee0330bfa8",
+      "vertices": 72,
+      "triangles": 124
+    },
+    {
+      "path": "Assets/Resources/BlenderSkillIdentities/ProtectionCage.bytes",
+      "bytes": 8172,
+      "sha256": "0b0197c97d30a6f0b2d8f3d0418bbe99f71b72bbb5ff1df402807a4fbeae49db",
+      "guid": "022c4607511c97f3328a9ffbb371abce",
+      "vertices": 150,
+      "triangles": 280
     },
     {
       "path": "Assets/Resources/BlenderSpellBases/ArcaneShard.bytes",
@@ -298,11 +362,41 @@
       "guid": "b185fec88d62bb16552173d2193ffb63",
       "vertices": 5,
       "triangles": 6
+    },
+    {
+      "path": "Assets/Resources/TacticalAttachments/HuntBadge.bytes",
+      "bytes": 6060,
+      "sha256": "b45a66cd432011e7ad261b60eb372b8cee7d38f23089ff704252da4ec2bb736b",
+      "guid": "4d73f6e75683dfc68d6b3bfa1cedfb8d",
+      "vertices": 168,
+      "triangles": 56
+    },
+    {
+      "path": "Assets/Resources/TacticalAttachments/SupplierBackpack.bytes",
+      "bytes": 12108,
+      "sha256": "48e4f230bdedd4ac260c8f7d6eeae49dff5a2ffba92daa779de8dc0579b872cd",
+      "guid": "104fb4b0cc784ff634bc87e6e6dad0a8",
+      "vertices": 336,
+      "triangles": 112
+    },
+    {
+      "path": "Assets/Resources/TacticalAttachments/SupportMantle.bytes",
+      "bytes": 6924,
+      "sha256": "986354c55e5e5e4998692ebf0edb6be4805792e2ad5b5c7adb308b9818b51472",
+      "guid": "95570c9cf53610bff6840768ee3af466",
+      "vertices": 192,
+      "triangles": 64
+    },
+    {
+      "path": "Assets/Resources/VanguardActions/Swordguard.bytes",
+      "bytes": 46348,
+      "sha256": "867f3d4ba49950b3031657e06856693c9cb08ef9c71ea0796ffa4eb50701a2dc",
+      "guid": "94393f9eabfe42f4ae8df2949c7a0b45"
     }
   ],
-  "newResourceBytes": 338792,
+  "newResourceBytes": 480568,
   "newTextures": 0,
   "existingGuidsPreserved": 306,
-  "resourceFiles": 38,
-  "sourceRuntimeCommit": "cda8a9045b3ea6e11b352cff40af8a39b5939e4c"
+  "resourceFiles": 50,
+  "sourceRuntimeCommit": "0daa0f2dec8b53f695888032e3972b24a8145773"
 }

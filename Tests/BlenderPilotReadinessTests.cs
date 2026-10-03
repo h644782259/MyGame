@@ -1,3 +1,4 @@
+// Imported-adapter tests explicitly authorize preview construction; subsequent clock tests exercise its sampler in isolation.
 using System;using System.Linq;using UnityEngine;using Emberfall;
 static class BlenderPilotReadinessTests
 {
@@ -11,7 +12,7 @@ static class BlenderPilotReadinessTests
  }
  static void Fail(string reason,Action invalidate,bool prop=true)
  {
-  Ready();invalidate();int before=GameObject.All.Count;var root=new GameObject("procedural host");var old=root.AddComponent<Renderer>();var model=root.AddComponent<CombatModel>();model.heroClass=HeroClass.Vanguard;model.Init();
+  Ready();invalidate();int before=GameObject.All.Count;var root=new GameObject("procedural host");var old=root.AddComponent<Renderer>();var model=root.AddComponent<CombatModel>();model.heroClass=HeroClass.Vanguard;model.isolatedPreview=true;model.Init();model.isolatedPreview=false;
   Check(model.View==null&&!model.Sample()&&old.enabled,"invalid pilot readiness keeps original hero: "+reason);
   if(prop)Check(BlenderPilotArt.CreateProp("SupplyCrate",null,Vector3.zero)==null,"invalid pilot readiness keeps original prop: "+reason);
   Check(!GameObject.All.Skip(before).Any(g=>!g.destroyed&&(g.name=="Blender pilot visual (sampled skeleton)"||g.name=="asset")),"invalid import instance retired immediately: "+reason);

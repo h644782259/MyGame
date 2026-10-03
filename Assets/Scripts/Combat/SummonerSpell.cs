@@ -28,7 +28,7 @@ namespace Emberfall
             }
             else if (skill == 0)
             {
-                CombatFx.Slash(player.transform.position, player.transform.forward, 5f * range, color);
+                if(!FilledSkillVfx.IdentityContact(player,player.transform.position,player.transform.forward,1.6f*range,color,3)) CombatFx.Slash(player.transform.position, player.transform.forward, 5f * range, color);
                 CombatDamage impact = player.RollDirectDamage(damage * SummonerDamageRules.ImpulseCoefficient);
                 DestructibleProp.StrikeCone(player,player.transform.position,player.transform.forward,5f*range,110,impact,propCast);
                 foreach (var enemy in game.Enemies.ToArray())
@@ -37,7 +37,9 @@ namespace Emberfall
                     Vector3 delta = CombatFx.Flat(enemy.transform.position - player.transform.position);
                     if (delta.magnitude <= 5f * range && (delta.sqrMagnitude < .1f || Vector3.Angle(player.transform.forward, delta) < 55) && CombatSight.Melee(player.transform.position,enemy.transform.position))
                     {
+                        float contactHealth=enemy.Health;
                         enemy.TakeDamage(impact.Amount, delta.normalized, 1.25f + rank * .2f, .2f, critical: impact.IsCritical);
+                        if(enemy.Health<contactHealth)FilledSkillVfx.IdentityContact(player,enemy.transform.position,player.transform.forward,.6f,color,3,CombatVisualPriority.RealContact);
                         player.RegisterSkillHit(propCast);
                     }
                 }

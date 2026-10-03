@@ -27,7 +27,9 @@ namespace Emberfall
                     case "Tailored cloth torso": return "ClothTorso";
                     case "Treant bark torso": return "BarkTorso";
                     case "Spirit wolf torso": return "WolfTorso";
-                    case "Paw": return "Paw";
+                    case "Wolf foreleg": return "Paw";
+                    case "Wolf hindleg": return "WolfHindLeg";
+                    case "Wolf tail": return "WolfTail";
                     case "Bow Limb": case "Layered bow limb": return "BowLimb";
                     case "Curved shell plate": return "BossPlate";
                 }
@@ -51,6 +53,8 @@ namespace Emberfall
                     case "Raised breastplate": return "CuirassPlate";
                     case "Boot": case "Grounded claw": return "Boot";
                     case "Wolf head": return "WolfHead";
+                    case "Wolf muzzle": return "WolfMuzzle";
+                    case "Wolf ear": return "WolfEar";
                     case "Great Hammer": return "Hammer";
                     case "Bound spirit totem": return "Totem";
                     case "Crossguard": case "Swept guard": return "SwordGuard";

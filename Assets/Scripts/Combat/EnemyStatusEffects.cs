@@ -46,6 +46,7 @@ namespace Emberfall
         private int poisonStacks, sourceEpoch;
         private PlayerController poisonSource;
         private Transform model;
+        private CombatModel knockdownModel;
         private bool wasDown;
         private float airborneTime, airborneDuration, airborneHeight, airborneRecovery;
 
@@ -148,6 +149,7 @@ namespace Emberfall
             if (!poisonCasts.TryEnter(castId)) return false;
             storedDamage = poisonDamage * poisonStacks * PlayerUpgradeRules.PoisonDetonationTicks;
             poisonTime = poisonDamage = 0; poisonStacks = 0; if (poisonSchedule != null) poisonSchedule.Clear();
+            ElementalCombatVfx.ClearPoison(enemy);
             return true;
         }
 
@@ -283,8 +285,11 @@ namespace Emberfall
         private void LateUpdate()
         {
             if (enemy == null || enemy.IsDead) return;
-            if (model == null) { CombatModel found = GetComponentInChildren<CombatModel>(); if (found != null) model = found.transform; }
+            if (model == null) { CombatModel found = GetComponentInChildren<CombatModel>(); if (found != null) {model = found.transform;knockdownModel=found;} }
             if (model == null) return;
+            var game=GameSession.Instance;
+            float dt=game!=null&&game.HasStarted&&!game.InputBlocked?Time.deltaTime:0;
+            if(knockdownModel!=null&&knockdownModel.TryAnimateKnockdown(downTime,IsAirborne,dt)){wasDown=false;return;}
             if (downTime > 0 && !enemy.IsBoss) { model.localRotation = Quaternion.Euler(0, 0, 72); wasDown = true; }
             else if (wasDown) { model.localRotation = Quaternion.identity; wasDown = false; }
         }
