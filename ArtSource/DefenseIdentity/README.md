@@ -15,3 +15,20 @@ Evidence:
 - `Runtime-Samples.json` and `Defense-Actual-Construction.png`: sampled actual production mesh transforms/opacity rendered in Blender with a neutral illustrative material. Caption Guard0=Summoner, Guard1=Vanguard, Guard2=Arcanist; Passive is a real slot8 trigger. These are not Unity shader screenshots. No new `.blend` asset is needed; editable geometry remains `ArtSource/BlenderSkillIdentities/Four-Skill-Identities.blend`.
 
 All gameplay and generation checks use managed Unity API doubles. Deferred destruction and hierarchy disable are explicitly modeled for lifetime tests, but cannot prove Unity engine rendering/device performance. The aggregate run in `full-validation.log` was intentionally stopped after passing checks so the parent can run one consolidated full validation across all F branches; it is an incomplete run, not a success claim. Targeted final checks/API compilation are recorded separately.
+
+## Same-camera before/after with actual property-block color
+
+`Defense-Before-After-MPB.png` supersedes the neutral isolated module sheet for judging actor relationship. It compares PR35 `0daa0f2` actual PlayerController guard/passive methods against F6 methods at age **0.75 seconds**, rank1, with the same enabled Vanguard base factory geometry and camera. Old entries call the unchanged generic Rune construction; new entries call Protection. The shared current Filled update is executed in both, recording renderer property-block `_Color` and `_Opacity`, not shared material defaults. Guard RGBA is `(1,.84,.4,.35)`, passive `(1,.65,.26,.35)`, opacity `1`. Rendering multiplies sampled tint alpha by sampled opacity with a Blender surface approximation; Unity UV grain/blending/shaders are not reproduced. The reference actor uses neutral gray, not claimed runtime actor materials.
+
+Visible limitation: at actual guard rank1 radius2.1 the cage upper arcs overlap/are occluded by the body, leaving the lower side arcs most visible. The passive radius3 reaches the shoulders more clearly. This evidence does not silently enlarge or relocate the cage to improve its appearance. These are readability review observations, not Unity acceptance.
+
+Reproduce from repository root:
+
+```sh
+python3 ArtSource/DefenseIdentity/export_comparison.py /path/to/dotnet
+python3 ArtSource/ActorModules/export_constructions.py . /tmp/f6-actor /path/to/dotnet
+blender -b --python ArtSource/DefenseIdentity/render_comparison.py -- /tmp/f6-actor/geometry.json
+python3 ArtSource/DefenseIdentity/assemble_comparison.py
+```
+
+The included `Vanguard-Enabled-Factory.json` may replace the factory export path for rendering the exact checked sample. Raw exports/logs, four uncomposited panels and comparison script are retained. Only ArtSource evidence is changed by this follow-up; production and tests are unchanged.
