@@ -1,6 +1,6 @@
 # 有限美术清单：F1–F6 集成收口
 
-集成源码快照：Windows `8659466c3a0f9bbc00915b97d9405d40cc3ed939`。原始请求基线 Windows `25096ba7dbf6e9d7ba9463ec29104c2c462da426`、iOS `1cd7ce36c77064757899788e23520fb796266888`；PR35 后的有限制作起点为 `0daa0f2`。PR35 已由父任务合并至 main：Windows `4214b885b5346b4e4987e9d50a3abf27f329db5c`、iOS `c1a49acd52cac28d1408a6d9bb25af971f7e3343`；父任务确认同步合入不改变该集成树的 Assets/Tests/Tools。当前 iOS 资源对照快照为 `2b2469d3a6ed3da5d622bd95127219da54268dd4`。
+集成源码快照：Windows `bc6a572a86fe4376f6f346b0fe52f20d9678aec3`。原始请求基线 Windows `25096ba7dbf6e9d7ba9463ec29104c2c462da426`、iOS `1cd7ce36c77064757899788e23520fb796266888`；PR35 后的有限制作起点为 `0daa0f2`。PR35 已由父任务合并至 main：Windows `4214b885b5346b4e4987e9d50a3abf27f329db5c`、iOS `c1a49acd52cac28d1408a6d9bb25af971f7e3343`；父任务确认同步合入不改变该集成树的 Assets/Tests/Tools。当前 iOS 资源对照快照为 `30f748b1bf6da7def9d91118aa756cd225c03e79`。
 
 以下勾选表示有限对象已经获得“实际接入新资产”或“有依据保留现状”的明确结论，不表示 Unity 实机或艺术终审通过。F1–F6 已共同进入上述 Windows 集成树；**整合后的专项联合检查与全量 aggregate 仍待父任务验证**。各批独立日志不能代替该最终联合结果。此次仅文档/清单审计，不新增生产修改、视频、Android 包或远端操作。
 
@@ -74,7 +74,7 @@
 
 - [x] [SkillCoverage.md](SkillCoverage.md) 保留完整40行：实际准备、命中/持续、结束与保留/新接入结论；F1/F2/F5依赖已更新为集成调用。
 - [x] 3类主动防护与4职业slot8只在真实触发时调用 ProtectionCage，按独立owner/channel与实际timer撤除，普通技能castId不误取消护盾。
-- [x] 持续 Protection 专属身体包络，普通Charge/治疗/反击默认尺度不变；同一网格/低档1part。F6独立基线4职业基础/最高装备8组肩外弧/冠顶间隙通过（最终集成树仍待联合回归）；原state/epoch/暂停/立即释放/同帧复租/刷新专项保留。源半径、伤害、时序不变。
+- [x] 持续 Protection 专属身体包络，普通Charge/治疗/反击默认尺度不变；同一网格/低档1part。最终真实F1/F3装配与动作59姿态×28触发/时点三角交叉检查通过；Y缩放下限2.6、XZ缩放下限仍2.6（不是世界空间米数），专属motion20从出生保持身体包络，旧高度和旧出生缩放负控均失败。证据见`ArtSource/FinalBodyEnvelope/`；原state/epoch/暂停/立即释放/同帧复租/刷新专项保留。源半径、伤害、时序不变。
 - [x] slot3/8无主动施法；动态路线、布局、碰撞、危险/目标边界、beam/ribbon、LOS裁切继续运行时生成。
 
 ## 有限制作终点与未验收项

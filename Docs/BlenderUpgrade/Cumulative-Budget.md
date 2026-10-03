@@ -1,6 +1,6 @@
 # Cumulative runtime-source budget and GUID closure
 
-Runtime inventory frozen at Windows `8659466c3a0f9bbc00915b97d9405d40cc3ed939`, containing F1–F6; iOS resource parity snapshot `2b2469d3a6ed3da5d622bd95127219da54268dd4`. Parent subsequently merged the reviewed PR35 base to main: Windows `4214b885b5346b4e4987e9d50a3abf27f329db5c`, iOS `c1a49acd52cac28d1408a6d9bb25af971f7e3343`. Parent reports merging that main into the final integration did not change Assets/Tests/Tools. These main commits are not falsely presented as containing the later F series.
+Runtime resource hashes and GUIDs are verified at the final combined source freeze: Windows `bc6a572a86fe4376f6f346b0fe52f20d9678aec3`, iOS `30f748b1bf6da7def9d91118aa756cd225c03e79`. It contains the finite F1–F6 roster and separately authorized planning changes, based on parent-reviewed main Windows `4214b885b5346b4e4987e9d50a3abf27f329db5c` / iOS `c1a49acd52cac28d1408a6d9bb25af971f7e3343`.
 
 The cumulative comparison requested here is against the **original** main snapshots Windows `25096ba7dbf6e9d7ba9463ec29104c2c462da426` and iOS `1cd7ce36c77064757899788e23520fb796266888`. This is a source inventory/GUID audit. Combined integration regressions and the full aggregate are **pending parent validation**; individual branch logs are not a final-stack pass.
 
@@ -56,10 +56,10 @@ Representative **instantiated** counts remain separately recorded: F3 16 weapon 
 
 | Platform snapshot | Original GUIDs | Preserved | Changed / missing | New GUID paths | Duplicate GUIDs |
 |---|---:|---:|---:|---:|---:|
-| Windows8659466 |306|306|0 / 0|140|0|
-| iOS2b2469d |309|309|0 / 0|140|0|
+| Windows bc6a572 |306|306|0 / 0|142|0|
+| iOS 30f748b |309|309|0 / 0|142|0|
 
-The140 new GUID paths include source scripts, resource files and folders, and must not be mistaken for140 runtime meshes. All112 new resource inputs and their metas are identical between the recorded Windows/iOS snapshots. The267-path complete Resources comparison differs only in the five existing Fonts paths; the manifest records the original baseline's same font-path differences. Platform-specific font contents are not overwritten for art parity. No Android repository, package or remote operation is part of this audit.
+The142 new GUID paths (140 art paths plus two planning-source paths) include source scripts, resource files and folders, and must not be mistaken for142 runtime meshes. All112 new resource inputs and their metas are identical between the recorded Windows/iOS snapshots. The267-path complete Resources comparison differs only in the five existing Fonts paths; the manifest records the original baseline's same font-path differences. Platform-specific font contents are not overwritten for art parity. No Android repository, package or remote operation is part of this audit.
 
 Audit method: `git ls-tree -r -l <recorded-ref> Assets` lists tracked blobs and sizes; `git cat-file blob <object-id>` supplies exact bytes for SHA-256 and meta GUID parsing. Baseline paths must still exist with the same GUID; all current GUID values are grouped to detect duplicates. This is stronger than checking only meshes touched by the latest batch. It does not claim UUID behavior for untracked files or future imports.
 
