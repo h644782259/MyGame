@@ -14,7 +14,7 @@ model=(root/'Assets/Scripts/Combat/CombatModel.cs').read_text()
 methods=['public static CombatModel Hero(', 'public void ApplyFashion(', 'public void ApplyEquipment(', 'private static string EquipmentKey(', 'private static void SetVisible(', 'private void SetBaseWeaponVisible(', 'private Transform GearRoot(', 'private Transform GlowingPart(', 'private void BuildEquipmentWeapon(', 'private void BuildEquipmentArmor(', 'private void BuildEquipmentRelic(', 'private void SummonerCrown(', 'private static CombatModel Create(', 'private Material Mat(', 'private Transform Part(', 'private Transform Joint(', 'private void Humanoid(', 'private void Cape(', 'private void BuildHero(', 'private void EnhanceHero(', 'private static Transform NewJoint(', 'private static void RemovePart(', 'private Transform ArticulateArm(', 'private Transform ArticulateLeg(', 'private Transform MeshPart(', 'private Transform Blade(', 'private Transform Tapered(', 'private void OnDestroy(']
 fields=model[model.index('        private struct SurfaceKey'):model.index('        public int WeaponActionId')]
 # Identity fields above are construction-compatible; remaining animation state isn't needed.
-fields+='private float phase; private EnemyController enemyOwner;'
+fields+='private float phase; private EnemyController enemyOwner; private bool treantCompanion;'
 body='using System.Collections.Generic;using UnityEngine;namespace Emberfall {public sealed partial class CombatModel:MonoBehaviour {'+fields+'\n'.join(extract(model,m) for m in methods)+'}\n'+extract(model,'internal sealed class OwnedCombatMesh')+'}'
 body+=(root/'Assets/Scripts/Combat/RearSilhouette.cs').read_text().replace('using UnityEngine;','')
 types=(root/'Assets/Scripts/Core/GameTypes.cs').read_text()

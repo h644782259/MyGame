@@ -32,6 +32,8 @@ namespace Emberfall
     }
 }
 
+namespace Emberfall { internal static class ActorSilhouetteF1 { internal static void Apply(UnityEngine.GameObject obj,string name,bool treant) {} } }
+
 // This legacy composition suite covers original fallback geometry. Authored binary
 // decoding/selection has a separate production-loader suite and construction export.
 namespace Emberfall { internal static class AuthoredActorMeshes { internal static void Apply(UnityEngine.GameObject obj,string name,UnityEngine.PrimitiveType shape) {} } }
