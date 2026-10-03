@@ -14,7 +14,7 @@ This batch follows the separately frozen PR30–32 stack. It implements the six 
 
 All new geometry is original Blender work, with editable source and repeatable scripts; pose curves are exported from the editable blend. No Meshy, paid purchase, external credential or permission change was used. Shader look, transparent overdraw, motion aesthetics and actual visibility on mobile remain engine/device acceptance items. The pooled lifecycle checks measure managed test object counts, not Unity allocator, Frame Debugger or FPS.
 
-Damage, cooldown, rank, growth, targeting, warning bounds and control timers are unchanged. Visual-only transitions do not manufacture damage events. Production checks cannot replace playtesting and artistic review. Full frozen aggregate results and exact input manifests are recorded separately when complete; earlier per-agent logs are supporting snapshots, not the final-tree authority.
+Damage, cooldown, rank, growth, targeting, warning bounds and control timers are unchanged. Visual-only transitions do not manufacture damage events. Production checks cannot replace playtesting and artistic review. The final isolated aggregate passes all215 checks with no source changes; three define compilations pass for265 runtime C# files. Exact trees, file hashes and complete raw logs are in Validation/Extended-Frozen. Earlier per-agent logs are supporting snapshots, not the final-tree authority.
 
 ## Input budget
 

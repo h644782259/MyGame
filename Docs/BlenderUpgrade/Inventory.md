@@ -1,5 +1,7 @@
 # Blender art upgrade: bounded inventory and acceptance
 
+This is the original inventory. The later explicitly requested E01–E06 plus wolf silhouette work and its evidence are detailed in `Extended-Delivery.md`. Selected shared modules are not a claim that every entire character, fashion or skill was redesigned or accepted in Unity.
+
 Start state verified against remote main on 2026-10-03: Windows `25096ba7dbf6e9d7ba9463ec29104c2c462da426`; iOS `1cd7ce36c77064757899788e23520fb796266888`. Both clean. Android provided baseline `8654c803eb29b87dea7d69f09678ec21e1955f6d` cannot be independently verified: remote Git and connected GitHub API return repository not found. No repository creation, login or credentials change is authorized or attempted.
 
 No AGENTS.md, .instructions or .agents/skills present in these checkouts; workspace .agents/.codex empty. Blender 4.3.2, FFmpeg and Python are available. Historical Unity/.NET paths are absent in this fresh environment. .NET 8.0.425 reinstalled from the official dotnet installer to workspace tools for source checks. Unity execution/device capture remains unverified.
