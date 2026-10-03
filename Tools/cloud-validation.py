@@ -371,6 +371,14 @@ def main():
         for pilot_test in ["BlenderPilotAdapterProductionTests.py","PilotStarterCompatibilityTests.py","PilotFacingCommitProductionTests.py"]:
             passed = run_check(pilot_test[:-3], [[sys.executable,str(ROOT/"Tests"/pilot_test),dotnet]], dict(env,DOTNET=dotnet), output, report)
             failed = failed or not passed
+        for name, script in [("authored-actor-modules", "ActorModulesProductionTests.py"),
+                             ("blender-skill-vfx-production", "BlenderSkillVfxProductionTests.py"),
+                             ("blender-scenery-production", "BlenderSceneryProductionTests.py"),
+                             ("authored-spell-bases", "AuthoredSpellBasesProductionTests.py"),
+                             ("authored-spell-integration", "AuthoredSpellIntegrationTests.py"),
+                             ("camera-occlusion-slots", "CameraOcclusionSlotsProductionTests.py")]:
+            passed = run_check(name, [[sys.executable, str(ROOT/"Tests"/script), dotnet]], dict(env, DOTNET=dotnet), output, report)
+            failed = failed or not passed
         if args.compile or args.download_references or args.compile_android:
             try:
                 refs = unity_references(args.download_references)
