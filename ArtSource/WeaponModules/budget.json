@@ -1,0 +1,81 @@
+{
+  "source": "ArtSource/BlenderPilot/Emberfall-Pilot-Props.blend",
+  "source_sha256": "91271db448c2bbb915997963f06ba9d983fcf850ab362d34f272b23b924768e2",
+  "source_anchors_blender": {
+    "Anchor_BladeRoot": [
+      0.0,
+      0.0,
+      0.20000001788139343
+    ],
+    "Anchor_Emission": [
+      0.0,
+      0.0,
+      0.22999998927116394
+    ],
+    "Anchor_Grip": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "Anchor_Guard": [
+      0.0,
+      0.0,
+      0.1599999964237213
+    ],
+    "Anchor_Pommel": [
+      0.0,
+      0.0,
+      -0.17000000178813934
+    ],
+    "Anchor_Tip": [
+      0.0,
+      0.0,
+      1.2999999523162842
+    ]
+  },
+  "modules": [
+    {
+      "name": "StarBlade",
+      "triangles": 28,
+      "bytes": 3036
+    },
+    {
+      "name": "StarGuard",
+      "triangles": 132,
+      "bytes": 14268
+    },
+    {
+      "name": "StarGrip",
+      "triangles": 140,
+      "bytes": 15132
+    },
+    {
+      "name": "StarPommel",
+      "triangles": 44,
+      "bytes": 4764
+    },
+    {
+      "name": "BowJoiner",
+      "triangles": 32,
+      "bytes": 3468
+    },
+    {
+      "name": "StaffShaft",
+      "triangles": 20,
+      "bytes": 2172
+    },
+    {
+      "name": "MechanicalHoop",
+      "triangles": 72,
+      "bytes": 7788
+    },
+    {
+      "name": "Facet",
+      "triangles": 8,
+      "bytes": 876
+    }
+  ],
+  "texture_bytes": 0,
+  "new_materials": 0,
+  "total_bytes": 51504
+}

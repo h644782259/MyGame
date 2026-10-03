@@ -117,6 +117,7 @@ namespace Emberfall
             if (hero == HeroClass.Summoner) model.SummonerCrown();
             model.BuildClassCostume();
             model.CaptureBaseCostume();
+            model.ApplyWeaponArt(null);
             model.ConfigureBlenderPilot();
             model.ConfigureVanguardArt();
             return model;
@@ -153,6 +154,7 @@ namespace Emberfall
                 fashionWeapon.localPosition = weaponAnchor == null ? new Vector3(0, -.26f, .17f) : Vector3.zero;
                 BuildWeaponFashionShape(weapon);
             }
+            ApplyWeaponFashionArt();
         }
 
         public void ApplyEquipment(ItemData weapon, ItemData armor, ItemData relic)
@@ -201,6 +203,7 @@ namespace Emberfall
                 equipmentRelic = null;
                 if (relic != null) BuildEquipmentRelic(new EquipmentAppearance(relic));
             }
+            ApplyWeaponArt(weapon);
             if(resumePilot&&!pilotHasGear)SetBlenderPilotVisible(true); // Capture the rebuilt procedural state, then hide it.
         }
 
