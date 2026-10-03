@@ -26,7 +26,7 @@ namespace Emberfall {
  }
  public class ChapterDouble {public bool DoorUnlocked;public RoomObjective Objective;public int Seals;public float Progress;}
  public sealed partial class GameSession:MonoBehaviour {
-  public bool PracticeActive=>false;public float PracticeSupportMultiplier(EnemyController e)=>throw new System.InvalidOperationException("Room seal fixture must not enter practice support");
+  public bool PracticeActive=>false;public void EndPractice(bool keepResult=true)=>throw new System.InvalidOperationException("Room seal fixture must not enter practice exit");public float PracticeSupportMultiplier(EnemyController e)=>throw new System.InvalidOperationException("Room seal fixture must not enter practice support");
   public RoomChainState RoomChainRun;public PlayerController Player=new PlayerController();public List<EnemyController> Enemies=new List<EnemyController>();
   public SaveDouble Progression=new SaveDouble();public ChoiceDouble RunChoices=new ChoiceDouble();
   public bool Paused,BackgroundPaused,IsDead,HasStarted=true,InDungeon=true;public bool InputBlocked=>Paused||BackgroundPaused||IsDead;
