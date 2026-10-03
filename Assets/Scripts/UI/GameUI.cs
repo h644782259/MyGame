@@ -386,10 +386,12 @@ namespace Emberfall
         {
             HeroClass hero = profile.heroClass;
             string result = GameBalance.SkillName(hero, skill) + " · " + GameBalance.SkillRankName(rank) + "\n" + GameBalance.SkillDescription(hero, skill);
+            string venom=BuildCatalog.VenomSkillOverride(profile,skill,rank);
+            if(venom.Length>0)result=venom;
             if (GameBalance.IsPassive(skill)) return result;
             result += "\n冷却 " + GameBalance.EffectiveCooldown(hero, skill, rank).ToString("0.#") + " 秒 · 消耗 " +
                 GameBalance.SkillEnergyCost(hero, skill).ToString("0") + " " + GameBalance.EnergyName(hero);
-            string budget=SkillBudgetHint(hero,skill,rank);if(budget.Length>0)result+="\n"+budget;
+            string budget=BuildCatalog.ConcentratedVenomEquipped(profile)&&hero==HeroClass.Ranger&&skill==0?"":SkillBudgetHint(hero,skill,rank);if(budget.Length>0)result+="\n"+budget;
             float charge = SkillChargeController.Duration(hero, skill);
             if (charge > 0) result += "\n蓄力 " + charge.ToString("0.##") + " 秒";
             return result;

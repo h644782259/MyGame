@@ -788,11 +788,9 @@ namespace Emberfall
         {
             if(skill<0||skill>=GameBalance.SkillCount||rank<1||rank>3)return "未习得";
             HeroClass hero=Profile.heroClass;
-            if(hero==HeroClass.Ranger&&skill==0&&SelectedMechanicB(EquipmentMechanic.VenomSpread))
-                return "收束毒矢 · 蔓毒护符 B：一发窄幅实体毒矢，直伤 "+(100*BuildCatalog.ConcentratedVenomCoefficient(rank)).ToString("0.##")+"%攻击；只命中首个实际拦截目标，遵守墙体与前排碰撞，固定目标意图不保证送达。取消扇形、多目标爆炸与毒传播；保留普通三毒引爆，独立且一次。";
-            string text=GameBalance.SkillEvolution(hero,skill,rank);
             if(hero==HeroClass.Ranger&&skill==0&&HasMechanic(EquipmentMechanic.VenomSpread))
-                return text+"\n"+BuildCatalog.MechanicDescription(EquipmentMechanic.VenomSpread).Split(new[]{"变体B："},StringSplitOptions.None)[0];
+                return BuildCatalog.VenomSkillSummary(rank,SelectedMechanicB(EquipmentMechanic.VenomSpread));
+            string text=GameBalance.SkillEvolution(hero,skill,rank);
             if(hero==HeroClass.Arcanist&&skill==0&&HasMechanic(EquipmentMechanic.FrostEcho))
             {
                 bool wide=SelectedMechanicB(EquipmentMechanic.FrostEcho);

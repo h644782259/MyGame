@@ -33,6 +33,11 @@ legacy=simulation.replace(steering+'\n','').replace('                EnemyContro
 practice_identity=',practiceCastId:!basicAttack&&companionSource==null?castId:0'
 assert legacy.count(practice_identity)==1,'practice attribution must occur once on the actual accepted hit'
 legacy=legacy.replace(practice_identity,'',1)
+visual_contact='                    if(concentrated&&enemy.Health<healthBefore)VenomSkillVfx.Contact(owner,owner.EnemyBodyPoint(enemy),false);\n'
+assert legacy.count(visual_contact)==1
+legacy=legacy.replace(visual_contact,'',1)
+assert legacy.count('if(!concentrated)CombatFx.Ring(hitPosition, .7f, color, .2f);')==1
+legacy=legacy.replace('if(!concentrated)CombatFx.Ring(hitPosition, .7f, color, .2f);','CombatFx.Ring(hitPosition, .7f, color, .2f);',1)
 assert hashlib.sha256(legacy.encode()).hexdigest()=='8d83dce7d455676baea8b32bf87ee0dc0f32547b42de1e19289e4524d89feab1','non-variant simulation changed outside reviewed venom opt-in blocks'
 print('PASS original projectile Update SHA preserved after excluding only explicit B-only steering/selection/filter.')
 # Execute exactly the changed area cosmetic setup and age gate; gameplay scheduling is not duplicated.

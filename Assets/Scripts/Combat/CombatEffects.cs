@@ -192,7 +192,16 @@ namespace Emberfall
             projectile.skillIndex = skillIndex; projectile.castId = castId==0?player.NewCastId():castId;projectile.castReceipt=player.RetainCastReceipt(projectile.castId);
             projectile.transform.localScale *= size;
             projectile.radius *= Mathf.Min(2f,size);
-            if(concentrated) projectile.radius = ConcentratedVenomRules.Radius;
+            if(concentrated)
+            {
+                projectile.radius = ConcentratedVenomRules.Radius;
+                // Body/trail only: the simulation root, hit radius and speed retain their budgets.
+                projectile.visualBody.localScale=new Vector3(.68f,1.12f,.68f);
+                projectile.visualBody.gameObject.name="Concentrated venom arrow";
+                projectile.visualTrail.startWidth=.045f;
+                projectile.visualTrail.endWidth=0;
+                projectile.visualTrail.time=EffectPreferences.ReducedEffects?.06f:.1f;
+            }
             projectile.BindVisualOrigin(companionSource==null?player:null);
             if (velocity > 0) projectile.speed = velocity;
             if (tracking != null) projectile.lifetime = 2.5f;
@@ -414,9 +423,10 @@ namespace Emberfall
                     if (LockedImpactMarkPolicy.ShouldApply(impactMarkTarget, enemy, !enemy.IsDead, impact.Amount, impactMarkStrength) && enemy.StatusEffects != null)
                         enemy.StatusEffects.Mark(4f, impactMarkStrength);
                     if(impact.Amount>0){if(!basicAttack&&companionSource==null)owner.RegisterSkillHit(castId);enemy.TakeDamage(owner.ResolveSkillImpact(enemy, skillIndex, castId, impact.Amount, impact.IsCritical, impact.CriticalMultiplier), direction, .18f, critical:impact.IsCritical,practiceCastId:!basicAttack&&companionSource==null?castId:0);}
+                    if(concentrated&&enemy.Health<healthBefore)VenomSkillVfx.Contact(owner,owner.EnemyBodyPoint(enemy),false);
                     if (CombatReviewEvents.Enabled) CombatReviewEvents.Emit("projectilehit",CombatReviewObjectId.Get(owner),CombatReviewObjectId.Get(enemy),Mathf.Max(0,healthBefore-enemy.Health),skillIndex,CombatReviewObjectId.Get(this).ToString());
                     if (companionSource != null) {companionSource.OnConfirmedHit(enemy);companionSource.RecordEmpoweredHit(enemy,Mathf.Max(0,healthBefore-enemy.Health),empoweredCompanionShot);}
-                    CombatFx.Ring(hitPosition, .7f, color, .2f);
+                    if(!concentrated)CombatFx.Ring(hitPosition, .7f, color, .2f);
                     if (basicAttack && !energyAwarded)
                     {
                         energyAwarded = true;

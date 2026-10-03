@@ -812,6 +812,7 @@ namespace Emberfall
                 float bonus;
                 if (status.ConsumePoison(this, castId, out bonus))
                 {
+                    VenomSkillVfx.Contact(this,EnemyBodyPoint(enemy),true);
                     bool spread = HasMechanic(EquipmentMechanic.VenomSpread) && !ConcentratedVenom;
                     baseDamage += bonus * (spread ? .8f : 1f);
                     session.SpawnMechanismText(enemy.transform.position + Vector3.up * 2f, "三毒引爆！", new Color(.6f, 1f, .3f));
