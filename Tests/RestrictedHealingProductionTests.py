@@ -26,6 +26,7 @@ def adapt(f):
  f=f.replace('public static AdvancedSkillVfx Rune(params object[] a)=>new AdvancedSkillVfx();','public static AdvancedSkillVfx Rune(PlayerController owner,Vector3 at,float r,Color c,float duration,int rank,bool follows=false,int identity=0)=>new AdvancedSkillVfx();')
  # Real SummonerSpell dispatch uses this same Spawn call for slot six. All other spells remain boundary recorders.
  f=f.replace('player.RecordEmission(point,target);','if(skill==6)AdvancedSkillSequence.Spawn(player,game,skill,rank,point,player.transform.forward,new CombatDamage(),new Color(),castId);else player.RecordEmission(point,target);')
+ f=f.replace('public class AdvancedSkillVfx:MonoBehaviour{','public class AdvancedSkillVfx:MonoBehaviour{public static AdvancedSkillVfx Healing(PlayerController h,float r,Color c,float life,int detail,System.Func<bool> active)=>new AdvancedSkillVfx();public void Stop(){}')
  return f
 
 def add_production(p):
@@ -40,7 +41,7 @@ def add_production(p):
  methods=''.join(member(path,s) for path,s in [('Core/GameSession.Expedition.cs','public bool TrySpendHealingCharge('),('Core/GameSession.cs','public void DrinkPotion(')])
  (p/'HealingSession.cs').write_text('using UnityEngine;namespace Emberfall{public partial class GameSession{'+methods+'}}')
  (p/'HealingTests.cs').write_text((root/'Tests/RestrictedHealingProductionTests.cs').read_text())
- (p/'SequenceBoundary.cs').write_text('using UnityEngine;namespace Emberfall{public enum CombatVisualPriority{ActionBody,RealContact}public class FilledSkillVfx{public static bool IdentityContact(PlayerController owner,Vector3 at,Vector3 forward,float r,Color c,int identity,CombatVisualPriority priority=CombatVisualPriority.RealContact)=>false;public struct ArrowBatchHandle{}public static ArrowBatchHandle BeginArrowBatch(PlayerController p,Vector3 t,float r,Color c,CombatVisualPriority priority=CombatVisualPriority.ActionBody,int castId=0)=>default;}}')
+ (p/'SequenceBoundary.cs').write_text('using UnityEngine;namespace Emberfall{public enum CombatVisualPriority{ActionBody,RealContact}public class FilledSkillVfx{public static void HealingPulse(PlayerController h,Color c,Transform recipient=null){}public static bool IdentityContact(PlayerController owner,Vector3 at,Vector3 forward,float r,Color c,int identity,CombatVisualPriority priority=CombatVisualPriority.RealContact)=>false;public struct ArrowBatchHandle{}public static ArrowBatchHandle BeginArrowBatch(PlayerController p,Vector3 t,float r,Color c,CombatVisualPriority priority=CombatVisualPriority.ActionBody,int castId=0)=>default;}}')
 
 # Reuse construction/compilation setup, not the old test body or mutations.
 harness=(root/'Tests/MobilePinnedTargetProductionTests.py').read_text().split(' env=dict')[0]

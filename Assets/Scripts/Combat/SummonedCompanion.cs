@@ -465,7 +465,12 @@ namespace Emberfall
         public static void HealAll(PlayerController owner, float fraction)
         {
             foreach (var pet in active)
-                if (pet != null && pet.IsAlive && pet.Owner == owner) pet.Health = Mathf.Min(pet.MaxHealth, pet.Health + pet.MaxHealth * fraction);
+                if (pet != null && pet.IsAlive && pet.Owner == owner)
+                {
+                    float before=pet.Health;
+                    pet.Health = Mathf.Min(pet.MaxHealth, pet.Health + pet.MaxHealth * fraction);
+                    if(pet.Health>before)FilledSkillVfx.HealingPulse(owner,new Color(.53f,1f,.56f),pet.transform);
+                }
         }
 
         public static SummonedCompanion ThreatTarget(EnemyController enemy, Vector3 playerPosition)

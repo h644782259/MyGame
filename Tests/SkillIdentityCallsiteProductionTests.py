@@ -6,7 +6,7 @@ root=Path(__file__).resolve().parents[1]
 # Reuse only the clearly bounded Unity/resource doubles from the integration runner.
 setup=(root/'Tests/AuthoredSpellIntegrationTests.py').read_text().split('with tempfile.TemporaryDirectory',1)[0]
 ns={'__file__':str(root/'Tests/AuthoredSpellIntegrationTests.py')};exec(setup,ns);stubs=ns['s']
-stubs=stubs.replace('public bool IsDead;public int CombatEpoch;', 'public bool IsDead;public int CombatEpoch;public float MaxHealth=100,Healed,Energy;public void Heal(float n){Healed+=n;}public void RestoreSkillEnergy(float n){Energy+=n;}')
+stubs=stubs.replace('public bool IsDead;public int CombatEpoch;', 'public bool IsDead;public int CombatEpoch;public float Health=1,MaxHealth=100,Healed,Energy;public void Heal(float n){float delta=Math.Min(n,MaxHealth-Health);Health+=delta;Healed+=delta;}public void RestoreSkillEnergy(float n){Energy+=n;}')
 stubs=stubs.replace('public static class CombatFx{','public static class CombatFx{public static void Ring(params object[] args){}').replace('public static Vector3 forward=>','public static Vector3 right=>new Vector3(1,0,0);public static Vector3 forward=>')
 source=(root/'Assets/Scripts/Combat/AdvancedSkillSequence.cs').read_text();a=source.index('        private void Healing()');b=source.index('        private void Vanguard()',a);method=source[a:b]
 # Release-mode flag is an explicit input; the Healing body and loaded identity are production code.
