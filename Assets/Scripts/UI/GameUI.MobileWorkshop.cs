@@ -173,8 +173,7 @@ namespace Emberfall
                 () => MobileWorkshopResult(p.SetAutoSell(Rarity.Rare, !p.Profile.autoSellRare), "稀有装备自动出售设置已更新"));
             MobileWorkshopAction(ref y, width, "批量出售背包低品质装备", gold, true, draw, () =>
             {
-                int sold = p.BulkSellLowQuality();
-                MobileWorkshopResult(sold > 0 || string.IsNullOrEmpty(p.LastError), sold > 0 ? "已出售 " + sold + " 件" : "没有可出售的低品质装备");
+                RequestPresetSale(null,true);
             });
             var mailbox = new List<ItemData>(p.Profile.pendingLoot);
             mailbox.AddRange(p.Profile.recoveryLoot);

@@ -133,7 +133,7 @@ namespace Emberfall
             {
                 if(Button(new Rect(w.x+32,w.y+165,278,38),"普通自动卖："+(p.Profile.autoSellCommon?"开":"关"),jade))p.SetAutoSell(Rarity.Common,!p.Profile.autoSellCommon);
                 if(Button(new Rect(w.x+322,w.y+165,278,38),"稀有自动卖："+(p.Profile.autoSellRare?"开":"关"),jade))p.SetAutoSell(Rarity.Rare,!p.Profile.autoSellRare);
-                if(Button(new Rect(w.x+612,w.y+165,304,38),"批量出售低品质",gold,true,"穿戴、锁定及机制装备受保护")){int sold=p.BulkSellLowQuality();if(sold>0)Feedback(true,"已出售 "+sold+" 件");else if(!string.IsNullOrEmpty(p.LastError))Feedback(false,"");else session.Notify("没有可出售的低品质装备。");}
+                if(Button(new Rect(w.x+612,w.y+165,304,38),"批量出售低品质",gold,true,"穿戴、锁定及机制装备受保护")){RequestPresetSale(null,true);}
                 Text(new Rect(w.x+32,w.y+216,884,24),"待领取 "+p.Profile.pendingLoot.Count+"/24 · 恢复栏 "+p.RecoveryLootCount+" · 锁定、穿戴和机制装备受保护",14,muted);
                 var mailbox=new System.Collections.Generic.List<ItemData>(p.Profile.pendingLoot); mailbox.AddRange(p.Profile.recoveryLoot);
                 Rect viewport=new Rect(w.x+32,w.y+254,884,280);

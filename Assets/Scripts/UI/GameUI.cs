@@ -294,6 +294,7 @@ namespace Emberfall
                 else if (session.RunChoices.AwaitingChoice) DrawBlessingChoice();
                 else if(session.ChapterFinished)DrawChapterResult();
                 else if(session.ModeFinished){if(DrawStructuredRunRecap(false))session.ReturnToCamp();}
+                else if (DrawPresetSaleConfirmation()) {}
                 else if (panel == Panel.Inventory) DrawInventory();
                 else if (panel == Panel.Skills) DrawSkills();
                 else if (panel == Panel.Bindings) DrawBindings();
@@ -1300,7 +1301,7 @@ namespace Emberfall
                 Text(new Rect(row.x + 12, row.y + 33, 125, 16), levelLocked?"锁 · 需要 "+item.level+"级":"等级 " + item.level, 11, levelLocked?new Color(.9f,.58f,.4f):muted);
                 Text(new Rect(row.x + 143, row.y + 33, 62, 16), GameBalance.RarityName(item.rarity), 11, color);
                 Text(new Rect(row.x + 212, row.y + 33, 62, 16), GameBalance.SlotName(item.slot), 11, muted);
-                Text(new Rect(row.x + 12, row.y + 51, 250, 14), "换装评分 " + ProgressionService.EquipmentScore(preview).ToString("0.#"), 10, muted);
+                Text(new Rect(row.x + 12, row.y + 51, 250, 14), "换装评分 " + ProgressionService.EquipmentScore(preview).ToString("0.#")+" · "+session.Progression.PresetReferences(item.id), 10, muted);
                 Rect selectRect = new Rect(row.x, row.y, 278, row.height);
                 if (GUI.Button(selectRect, GUIContent.none, invisibleButton)) {selectedItem = item.id;ReviewEquipment(item);}
                 Rect sellRect = new Rect(row.x + 281, row.y + 13, 106, 40);
@@ -1402,14 +1403,15 @@ namespace Emberfall
             return replacement;
         }
 
-        private void SellInventoryItem(string id)
+        private void SellInventoryItem(string id,bool confirmed=false)
         {
+            if(!confirmed&&session.Progression.PresetReferences(id).Length>0){RequestPresetSale(id);return;}
             int row = bagItems.FindIndex(item => item.id == id);
             if (row < 0) return;
             ItemData item = bagItems[row];
             if (IsEquipped(item)) return;
             int before = session.Progression.Profile.gold;
-            bool sold = session.Progression.Sell(id);
+            bool sold = session.Progression.Sell(id,confirmed);
             int gained = session.Progression.Profile.gold - before;
             Feedback(sold, "已出售 " + item.name + " · +" + gained + " 金币");
             if (!sold) return;
@@ -1442,7 +1444,7 @@ namespace Emberfall
             Color rarityColor = GameBalance.RarityColor(item.rarity);
             bool levelLocked=!ProgressionAttention.LevelEligible(progression.Profile,item);
             Fill(new Rect(r.x, r.y, r.width, 3), rarityColor);
-            Text(new Rect(r.x + 18, r.y + 17, r.width - 36, 23), GameBalance.RarityName(item.rarity) + " / " + GameBalance.SlotName(item.slot), 13, rarityColor, true);
+            Text(new Rect(r.x + 18, r.y + 17, r.width - 36, 23), GameBalance.RarityName(item.rarity) + " / " + GameBalance.SlotName(item.slot)+" · "+progression.PresetReferences(item.id), 13, rarityColor, true);
             Text(new Rect(r.x+18,r.y+45,r.width-36,31),ItemTitle(preview),22,levelLocked?muted*.65f:pale,true);
             if(DrawEquipmentAppearanceDetail(new Rect(r.x+18,r.y+82,r.width-36,r.height-90),item,1))return;
             ItemData equipped=progression.Equipped(item.slot);
@@ -1806,6 +1808,7 @@ namespace Emberfall
 
         private void ClosePanel()
         {
+            if(presetSaleOpen){CancelPresetSale();return;}
             if(CloseChapterSelection())return;
             if(CloseRouteSkill())return;
             if(CloseMobileInventoryDetail())return;

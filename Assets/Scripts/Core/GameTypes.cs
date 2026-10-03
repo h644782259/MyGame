@@ -225,6 +225,7 @@ namespace Emberfall
         public string weaponId, armorId, relicId;
         // Null in legacy presets: preserve current item variants. -1 means no unlocked variant captured.
         public int[] equipmentVariants;
+        public EquipmentMechanic[] equipmentMechanics;
     }
 
     public enum ProgressionGoalKind { None, Core, Variant, Ascension, SecondPreset, Tier, Reforge, ClassTutorial }
