@@ -14,10 +14,21 @@ This batch follows the separately frozen PR30–32 stack. It implements the six 
 
 All new geometry is original Blender work, with editable source and repeatable scripts; pose curves are exported from the editable blend. No Meshy, paid purchase, external credential or permission change was used. Shader look, transparent overdraw, motion aesthetics and actual visibility on mobile remain engine/device acceptance items. The pooled lifecycle checks measure managed test object counts, not Unity allocator, Frame Debugger or FPS.
 
-Damage, cooldown, rank, growth, targeting, warning bounds and control timers are unchanged. Visual-only transitions do not manufacture damage events. Production checks cannot replace playtesting and artistic review. The final isolated aggregate passes all215 checks with no source changes; three define compilations pass for265 runtime C# files. Exact trees, file hashes and complete raw logs are in Validation/Extended-Frozen. Earlier per-agent logs are supporting snapshots, not the final-tree authority.
+Damage, cooldown, rank, growth, targeting, warning bounds and control timers are unchanged. Visual-only transitions do not manufacture damage events. Production checks cannot replace playtesting and artistic review. The earlier isolated aggregate passed215 checks at its recorded snapshot, but review subsequently found lifecycle and presentation defects that those checks did not cover. `Validation/Extended-Frozen` is retained as historical evidence, not acceptance of the corrected tree. The corrected snapshot requires a new isolated aggregate and source manifest. Earlier per-agent logs are supporting snapshots, not the final-tree authority.
 
 ## Input budget
 
 The full initial stack plus this extension contains 50 runtime resource files totaling 480,568 bytes, an increase of 141,776 bytes from frozen PR32. The extension comprises wolf +44,544 bytes, four skill identities25,792 bytes, tactical attachments25,092 bytes and swordguard pose curves46,348 bytes. These are resource input bytes, not Unity packaged/compressed/resident size. The separate frozen PR32 report continues to describe its own38-file338,792-byte snapshot. `ResourceBudget.json` describes this latest tree.
 
 Corrected renderer-enabled factory images and read-only treant/ranger geometry measurements are in `ArtSource/ActorModules/EnabledReview`. Static shoulder intersections were found on the treant. Ranger chest-wrap overlap exists but is pre-existing geometry, and the far-side bow is also occluded by its body/arms in the base outfit; the measurements do not establish a new in-game identity defect. No further character changes were made on that basis.
+
+
+## PR35 review corrections
+
+- Retained arrow batches carry an immutable rental generation. Append, stop, Dispose and retained lease callbacks cannot affect a reused component. Real sequence methods, actual priority eviction and same-component reuse are checked for the same owner/cast ID, different owners, room epochs and sessions, with generation-removal negative controls.
+- Enemy death finalizes the last fully displayed knockdown pose before the dissolve component captures it. Tests include base-animation Update followed by fatal damage before status LateUpdate, recovery, airborne and paused cases. The Guardian low/side samples use one actual factory pose: feet and thick shoulder armor support it; chest/back clearance is explicitly reported rather than claimed flush with the floor.
+- Hunt-badge object transforms are baked into exported vertices/normals, verified from actual bytes. Real enemy assemblies show identity, supplier, hunt, supported and combined roles. Sockets clear outer armor and preserve Slime/Wisp eye visibility.
+- Swordguard death uses a static authored terminal pose because actual player death freezes scaled time. The thirteen channels remain additive refinements of one complete rig. A real recovery/cancel/equipment path checks sword-tip continuity and the actual death-pause path.
+- Renderer caches detach subscriptions immediately for moved subtrees and are disposed when the owning model is destroyed.
+
+All corrections retain gameplay timings, damage budgets and control durations. Added screenshots are Blender reconstructions of actual factory geometry and sampled transforms; they are not Unity screenshots.

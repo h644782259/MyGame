@@ -378,11 +378,13 @@ def main():
                              ("authored-spell-integration", "AuthoredSpellIntegrationTests.py"),
                              ("camera-occlusion-slots", "CameraOcclusionSlotsProductionTests.py"),
                              ("vanguard-actions-production", "VanguardActionsProductionTests.py"),
+                             ("vanguard-recovery-integration", "VanguardRecoveryIntegrationTests.py"),
                              ("status-feedback-production", "StatusFeedbackProductionTests.py"),
                              ("skill-identity-callsite-production", "SkillIdentityCallsiteProductionTests.py"),
                              ("enemy-knockdown-production", "EnemyKnockdownProductionTests.py"),
                              ("enemy-knockdown-geometry", "EnemyKnockdownGeometryTests.py"),
                              ("tactical-attachments-production", "TacticalAttachmentsProductionTests.py"),
+                             ("tactical-enemy-assembly", "TacticalEnemyAssemblyTests.py"),
                              ("filled-vfx-pool-production", "FilledVfxPoolProductionTests.py"),
                              ("arrow-batch-generation-production", "ArrowBatchGenerationProductionTests.py"),
                              ("wolf-silhouette-production", "WolfSilhouetteProductionTests.py")]:
