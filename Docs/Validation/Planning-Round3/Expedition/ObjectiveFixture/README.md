@@ -17,3 +17,9 @@
 - room-failure-evidence：原26条生产失败快照断言、654条复盘断言及两个编译负控均已通过，只有末尾源码排序检查仍寻找旧 ChangeZone 保存守卫。更新为包含 `!retryingRoomChain` 的现行精确守卫，继续要求 preflight 在 Abandoned 快照及 epoch 改变前；专项全部通过，未删除原断言。
 
 对应 `*-original.log` 是冻结v2原样失败；`*-fixed.log` 是本tree专项原始输出。仍未改运行时源码。
+
+## v2 chapter-entry-production 编译边界
+
+真实 ClosePanel 新增方案引用装备的出售确认框取消分支，章节入口 UI 独立 fixture 缺 `presetSaleOpen` 与 `CancelPresetSale`，导致编译失败，尚未进入原章节断言。仅给此章节测试 shell 增加 `presetSaleOpen=>false`，取消方法若意外被调用则抛异常，明确该 fixture 不打开出售弹窗；不复制出售逻辑、不吞掉错误路径，也未修改 runtime。
+
+`chapter-entry-production-original.log` 保留冻结失败；`chapter-entry-production-fixed.log` 原344条章节 UI/真实进度持久化重放断言通过，6个旧 Back/首领遮罩/位置/滚动/保存失败阅读位置的编译负控均按预期失败。原有3条 fixture 未使用字段编译警告保留，0错误。命令：`python Tests/ChapterEntryProductionTests.py /workspace/shared/emberfall-tools/dotnet/dotnet`。无Unity执行。
