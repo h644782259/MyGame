@@ -6,13 +6,19 @@ using Emberfall;
 namespace UnityEngine
 {
  public struct Color{}
+ public struct Vector2{public float x,y;public Vector2(float x,float y){this.x=x;this.y=y;}}
+ public struct Vector3{public float x,y,z;public Vector3(float x,float y,float z){this.x=x;this.y=y;this.z=z;}}
+ public struct Quaternion{public static Quaternion identity=>new Quaternion();}
+ public struct Matrix4x4{float x,y,sx,sy;public static Matrix4x4 identity=>new Matrix4x4{sx=1,sy=1};public static Matrix4x4 TRS(Vector2 p,Quaternion q,Vector3 scale)=>new Matrix4x4{x=p.x,y=p.y,sx=scale.x,sy=scale.y};public Rect Apply(Rect r)=>new Rect(x+r.x*sx,y+r.y*sy,r.width*sx,r.height*sy);}
+ public static class GUI{public static Matrix4x4 matrix=Matrix4x4.identity;}public static class Screen{public static float height;}
+
  public struct Rect{public float x,y,width,height;public float xMax=>x+width;public float yMax=>y+height;public Rect(float a,float b,float c,float d){x=a;y=b;width=c;height=d;}}
  public class GUIContent{public string text;public GUIContent(string value){text=value;}}
  public static class Mathf{public static float Max(float a,float b)=>Math.Max(a,b);public static int RoundToInt(float n)=>(int)Math.Round(n);public static float Ceil(float n)=>(float)Math.Ceiling(n);}
 }
 namespace Emberfall
 {
- public static class MobileControls{public static bool Active;}
+ public static class MobileControls{public static bool Active;public static Rect SafeArea;public static MobileControlLayout Layout=new MobileControlLayout(568,320,163);}
  public class ProgressionService{public class BuildDraft{}}
  public class PlayerController{public float Health=33,MaxHealth=100,Energy=44;}
  public class GameSession
@@ -23,9 +29,9 @@ namespace Emberfall
  }
  public sealed partial class GameUI
  {
-  public enum Panel{None,Skills}private Panel panel=Panel.Skills;private float width=568,height=320;private float TouchRatio=1;private Color muted,pale,gold,jade;private List<Rect> blockedRects=new List<Rect>();public GameSession session;
-  public readonly List<(Rect area,string text)> Labels=new List<(Rect,string)>();public readonly List<(Rect area,string text)> Buttons=new List<(Rect,string)>();public string Click;public int Hotbars,MobileHotbars,Companions,Charge,Targeting,Cancellations;
-  private bool Button(Rect r,string text,Color c,bool enabled=true){Buttons.Add((r,text));if(enabled&&Click==text){Click=null;return true;}return false;}
+  public enum Panel{None,Skills}private Panel panel=Panel.Skills;private float width=568,height=320;private float scale=1;private Vector2 guiOffset;private Rect hotbarBounds;private Rect[] hotbarSlots=new Rect[10];private void ObserveTouchViewport(Rect safe){}private Color muted,pale,gold,jade;private List<Rect> blockedRects=new List<Rect>();public GameSession session;
+  public readonly List<(Rect area,string text)> Labels=new List<(Rect,string)>();public readonly List<(Rect area,string text)> Buttons=new List<(Rect,string)>();public readonly List<Rect> PixelButtons=new List<Rect>();public string Click;public int Hotbars,MobileHotbars,Companions,Charge,Targeting,Cancellations;
+  private bool Button(Rect r,string text,Color c,bool enabled=true){Buttons.Add((r,text));PixelButtons.Add(GUI.matrix.Apply(r));if(enabled&&Click==text){Click=null;return true;}return false;}
   private void Text(Rect r,string text,int size,Color c,bool bold=false,bool wrap=false){Labels.Add((r,text));}
   // Text measuring is an explicit managed substitute; actual Unity font rendering is not claimed.
   private sealed class FontBoundary{public float CalcHeight(GUIContent c,float w){return Math.Max(1,c.text.Split('\n').Sum(s=>(int)Math.Ceiling(Math.Max(1,s.Length)*13f/Math.Max(1,w))))*17;}}
@@ -60,6 +66,15 @@ class Program
   {
    MobileControls.Active=mobile;var game=new GameSession{PracticeRecord=Run()};game.PracticeRecord.Prepare();var ui=new GameUI{session=game};ui.EnterPracticePanel();ui.EnterPracticePanel();C(ui.BattlePanel&&ui.Cancellations==3,"panel handoff cancels old pointers once");ui.Frame(568,320);C(ui.Buttons.Count==2&&ui.Buttons.Any(x=>x.text=="开始")&&ui.Buttons.Any(x=>x.text=="结束"),"actual preparation GUI emits only two top actions");C(ui.Labels.Count==2&&ui.Labels.All(x=>x.area.yMax<=70),"actual combat labels stay within compact top band");ui.Click="开始";ui.Frame(568,320);C(game.Starts==1&&game.PracticeRecord.Started,"actual GUI start routes to explicit lifecycle boundary");ui.Click="重开";ui.Frame(568,320);C(game.Restarts==1&&!game.PracticeRecord.Started,"actual GUI restart returns to preparation");ui.Click="结束";ui.Frame(568,320);ui.LeavePracticePanel();ui.LeavePracticePanel();C(game.Ends==1&&ui.OriginalPanel,"actual GUI exit restores prior draft panel once");C(mobile?ui.MobileHotbars==4&&ui.Hotbars==0:ui.Hotbars==4&&ui.MobileHotbars==0,"actual practice GUI reuses platform hotbar helper");
    game.PracticeRecord=b;game.PreviousPracticeRecord=frozen;float measured=ui.Results(false),drawn=ui.Results(true);C(measured==drawn&&drawn>0,"results table uses same measured and rendered row flow");C(ui.Labels.Any(x=>x.text=="固定基准 A")&&ui.Labels.Any(x=>x.text=="本轮 B")&&!ui.Labels.Any(x=>x.text.Contains("heroClass")),"actual GUI emits structured frozen result columns without profile JSON");
+  }
+  foreach(bool mobile in new[]{true,false})foreach(var shape in new[]{(568f,320f),(640f,360f),(1170f,780f),(2048f,1536f)})foreach(float dpi in new[]{0f,120f,163f,326f,700f})
+  {
+   MobileControls.Active=mobile;MobileControls.SafeArea=new Rect(23,17,shape.Item1,shape.Item2);Screen.height=shape.Item2+58;MobileControls.Layout=new MobileControlLayout(shape.Item1,shape.Item2,dpi);var ui=new GameUI{session=new GameSession{PracticeRecord=Run()}};ui.PixelFrame();
+   float top=Screen.height-MobileControls.SafeArea.yMax;C(ui.PixelButtons.Count==2,"pixel replay executes actual overlay buttons");
+   foreach(var r in ui.PixelButtons){C(r.width>=47.999f&&r.height>=47.999f,"physical practice actions remain at least 48 pixels after production transforms");C(r.x>=23&&r.xMax<=23+shape.Item1+.001f&&r.y>=top&&r.yMax<=top+shape.Item2,"actual pixel actions remain inside offset safe area");
+    if(mobile){var l=MobileControls.Layout;Func<MobileControlLayout.Area,Rect> physical=a=>new Rect(23+a.X*l.Scale,top+a.Y*l.Scale,a.Width*l.Scale,a.Height*l.Scale);Func<Rect,Rect,bool> overlap=(a,b)=>a.x<b.xMax&&a.xMax>b.x&&a.y<b.yMax&&a.yMax>b.y;foreach(var skill in l.Skills)C(!overlap(r,physical(skill)),"pixel actions preserve all ten transformed skill targets");C(!overlap(r,physical(l.CombatView)),"pixel actions preserve transformed foot-view");}
+   }
+   if(mobile&&dpi==0&&shape.Item1==568)Console.WriteLine("PIXEL EVIDENCE 568x320 dpi0 safeOffset=23,41 touchScale="+MobileControls.Layout.Scale+" action="+ui.PixelButtons[0].width+"x"+ui.PixelButtons[0].height);
   }
   Console.WriteLine("PASS "+n+" actual practice HUD/presentation/frozen baseline/layout assertions; GUI/font boundaries managed, not Unity rendering");
  }

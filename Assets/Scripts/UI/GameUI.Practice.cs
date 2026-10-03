@@ -49,7 +49,7 @@ namespace Emberfall
         private void DrawPracticeOverlay()
         {
             var r=session.PracticeRecord;float unit=MobileControls.Active?TouchRatio:1;
-            var layout=new PracticeHudLayout(width/unit);
+            var layout=new PracticeHudLayout(width/unit,unit*scale);
             string header=CampPracticeRecord.ScenarioLabel(r.Scenario)+"\n"+(r.Started?"剩余 "+Mathf.Max(0,r.Duration-r.Elapsed).ToString("0.0")+"秒":"准备 · "+r.Duration+"秒上限");
             Text(BuildPlanRect(layout.Header,unit),header,Mathf.RoundToInt(13*unit),pale,true,true);
             string side="HP "+session.Player.Health.ToString("0")+" / "+session.Player.MaxHealth.ToString("0")+" · 能量 "+session.Player.Energy.ToString("0")+"\n伤害 "+r.ActualDamage.ToString("0")+" · DPS "+r.DamagePerSecond.ToString("0.0")+"\n耗能 "+r.EnergySpent.ToString("0.0")+" / 回复 "+r.EnergyRestored.ToString("0.0")+"\n受伤 "+r.DamageTaken.ToString("0")+" / 治疗 "+r.EffectiveHealing.ToString("0");
