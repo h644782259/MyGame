@@ -374,7 +374,9 @@ def main():
         for name, script in [("authored-actor-modules", "ActorModulesProductionTests.py"),
                              ("blender-skill-vfx-production", "BlenderSkillVfxProductionTests.py"),
                              ("blender-scenery-production", "BlenderSceneryProductionTests.py"),
-                             ("authored-spell-bases", "AuthoredSpellBasesProductionTests.py")]:
+                             ("authored-spell-bases", "AuthoredSpellBasesProductionTests.py"),
+                             ("authored-spell-integration", "AuthoredSpellIntegrationTests.py"),
+                             ("camera-occlusion-slots", "CameraOcclusionSlotsProductionTests.py")]:
             passed = run_check(name, [[sys.executable, str(ROOT/"Tests"/script), dotnet]], dict(env, DOTNET=dotnet), output, report)
             failed = failed or not passed
         if args.compile or args.download_references or args.compile_android:
