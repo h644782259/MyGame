@@ -32,6 +32,9 @@ def main():
         for title,expected in cases:
             directory=Path(temporary)/title;directory.mkdir()
             (directory/'FixtureMath.cs').write_text(fixture);(directory/'ChapterEnums.cs').write_text(enums)
+            # Combat-rule suite: rigid anchor art does not own damage, phase or timing.
+            # Actual F2 resource/mesh application is covered by the combined actor-art suite.
+            (directory/'AnchorArtBoundary.cs').write_text('using UnityEngine;namespace Emberfall { internal static class EnemySilhouetteArt { internal static void ApplyAnchors(Transform root) {} } }')
             files=['Combat/EnemyControlPolicy','Core/GuardArmorRules','Core/AdventureResultPolicy','Core/CombatVisualBudget','Core/CombatImpactBatch','Core/LargeBossPhaseState','Core/ChapterBossPattern','Core/ArenaPulseRules','Core/CombatSightRules','World/ChapterRoomGeometry','World/WorldTraversal','World/ChapterHazards','World/ChapterHazardGeometry','Combat/LargeExpeditionBoss','Combat/CombatSight','Combat/ThreatVisualStyle']
             for name in files:
                 source=(ROOT/('Assets/Scripts/'+name+'.cs')).read_text()
