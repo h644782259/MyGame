@@ -4,7 +4,7 @@ from pathlib import Path
 exec((Path(__file__).with_name('HeroPoseCommitTests.py')).read_text().split('with tempfile.TemporaryDirectory')[0])
 with tempfile.TemporaryDirectory(prefix='preview-pose-') as directory:
  p=Path(directory)
- for name in ['GameTypes','CombatBalance','SkillDamageBudgets','BasicActionTimeline','VisualMotionEnvelope','CasterPoseRecipe']:(p/(name+'.cs')).write_text((root/'Assets/Scripts/Core'/(name+'.cs')).read_text())
+ for name in ['GameTypes','CombatBalance','SkillDamageBudgets','BasicActionTimeline','VisualMotionEnvelope','CasterPoseRecipe','HeroMotionStyle']:(p/(name+'.cs')).write_text((root/'Assets/Scripts/Core'/(name+'.cs')).read_text())
  for f in ['Assets/Scripts/Combat/CombatModel.Recovery.cs','Assets/Scripts/Combat/CombatModel.CastPoses.cs','Assets/Scripts/Combat/CombatModel.Preview.cs','Assets/Scripts/UI/CollectionPreviewComposition.cs','Tests/HeroPoseCommitFixture.cs','Tests/CollectionPoseIsolationProductionTests.cs']:(p/Path(f).name).write_text((root/f).read_text())
  body='using UnityEngine;namespace Emberfall {public sealed partial class CombatModel {'+'\n'.join(method(x) for x in ['public bool SwordActionActive','public bool TryClaimSwordRibbon(', 'public void PlayAction(','public void CancelAction(','public void ReleaseCharge(','private void CommitActionPose(','private static Quaternion Pose(','private void AnimateHero('])+'}}'
  production=p/'Model.cs';production.write_text(body);(p/'Program.cs').write_text('System.Console.WriteLine(CollectionPoseIsolationProductionTests.Run());')

@@ -12,6 +12,9 @@ ns={'__file__':str(root/'ArtSource/ActorSilhouettes/F1/export.py')}
 sys.argv=['export',str(out),dotnet]
 exec((root/'ArtSource/ActorSilhouettes/F1/export.py').read_text().rsplit('\nsubprocess.run(',1)[0],ns)
 p=out/'export';extract=ns['extract'];source=(root/'Assets/Scripts/Combat/CombatModel.cs').read_text()
+# The actor assembly executes real skill budgets; include the exact catalog helper
+# they now call instead of copying a coefficient into the managed boundary.
+(p/'BuildCatalogDamage.cs').write_text('namespace Emberfall{public static class BuildCatalog{'+extract((root/'Assets/Scripts/Core/GameTypes.cs').read_text(),'public static float CinderTrailTickMultiplier(')+'}}')
 for path in ['Combat/WeaponModules','Combat/CombatModel.WeaponArt','Combat/VanguardActionLibrary','Combat/CombatModel.VanguardArt','Combat/CombatModel.Recovery','Combat/EnemySilhouetteArt','Combat/CombatModel.Knockdown','Core/SkillDamageBudgets','Core/CombatBalance']:
  (p/(path.split('/')[-1]+'.cs')).write_text((root/'Assets/Scripts'/(path+'.cs')).read_text())
 b=p/'OptionalPilotBoundary.cs';s=b.read_text()

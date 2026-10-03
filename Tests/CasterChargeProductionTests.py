@@ -4,7 +4,7 @@ from pathlib import Path
 exec((Path(__file__).with_name('HeroPoseCommitTests.py')).read_text().split('with tempfile.TemporaryDirectory')[0])
 with tempfile.TemporaryDirectory(prefix='caster-charge-') as directory:
  p=Path(directory)
- for name in ['GameTypes','CombatBalance','SkillDamageBudgets','BasicActionTimeline','VisualMotionEnvelope','CasterPoseRecipe']:(p/(name+'.cs')).write_text((root/'Assets/Scripts/Core'/(name+'.cs')).read_text())
+ for name in ['GameTypes','CombatBalance','SkillDamageBudgets','BasicActionTimeline','VisualMotionEnvelope','CasterPoseRecipe','HeroMotionStyle']:(p/(name+'.cs')).write_text((root/'Assets/Scripts/Core'/(name+'.cs')).read_text())
  for f in ['Assets/Scripts/Combat/CombatModel.Recovery.cs','Assets/Scripts/Combat/CombatModel.CastPoses.cs','Tests/CasterChargeProductionTests.cs']:(p/Path(f).name).write_text((root/f).read_text())
  fixture=(root/'Tests/HeroPoseCommitFixture.cs').read_text().replace('public static float Clamp01','public static float Lerp(float a,float b,float t)=>a+(b-a)*Clamp01(t);public static float Clamp01')
  (p/'Fixture.cs').write_text(fixture)

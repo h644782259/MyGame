@@ -4,6 +4,8 @@ public enum ExpeditionModeFailure{PlayerDefeated}public enum RoomFailureReason{D
 public class FakeRun{public void Fail(object x){}}public class FakeChoice{public void Cancel(){}}
 public class GroundLootPickup{public bool Retired;public void Retire(){Retired=true;}}
 public partial class GameSession{
+ // These death/receipt cases are ordinary runs; practice isolation has its own suite.
+ public bool PracticeActive=>false;public void EndPractice(string reason){throw new InvalidOperationException("ordinary loot fixture cannot end practice");}
  public ProgressionService Progression;public bool IsDead,ChapterActive,DungeonSelectionOpen,Paused,uiBlocking;public FakeRun ModeRun,RoomChainRun;FakeChoice pendingRoomChoice=new FakeChoice();public string LastRunSummary,Notification;public int TimescaleUpdates,Transitions;
  class PendingLoot{public ItemData Item;public GroundLootPickup Pickup;public bool Collecting;}readonly Dictionary<string,PendingLoot> pendingLoot=new Dictionary<string,PendingLoot>();readonly HashSet<string> collectedGroundLoot=new HashSet<string>();
  public int PendingCount=>pendingLoot.Count;public GroundLootPickup Drop(ItemData i){var p=new GroundLootPickup();pendingLoot.Add(i.id,new PendingLoot{Item=i,Pickup=p});return p;}

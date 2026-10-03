@@ -5,6 +5,7 @@ namespace Emberfall
     public sealed class GameProfile
     {
         public int chapterCompletedMask,chapterFirstRewardMask,chapterRevision,chapterHighestAdventureTier,chapterPriorAdventureTier;
+        public int chapterDifficultyRewardRevision,chapterDifficultyRewardMask,mechanicMaterials;
         public int chapterMasteryMask;public int[] chapterMasteryTiers;
         public int[] chapterHighestDifficulties;
         public long chapterRewardSequence;
