@@ -1,6 +1,6 @@
 {
   "result": "PASS",
-  "coverage": "9 buffers, unit normals, strict envelope, per-asset fallback wiring, unchanged mobile cap and anchored clipping source contract; NOT Unity validation",
+  "coverage": "11 buffers, unit normals, strict envelope, per-asset fallback wiring, unchanged mobile cap and anchored clipping source contract; NOT Unity validation",
   "assets": {
     "ArcaneShard": {
       "vertices": 16,
@@ -22,10 +22,20 @@
       "triangles": 44,
       "bytes": 1308
     },
+    "FirePrimary": {
+      "vertices": 108,
+      "triangles": 204,
+      "bytes": 5916
+    },
     "Flame": {
       "vertices": 72,
       "triangles": 140,
       "bytes": 3996
+    },
+    "IcePrimary": {
+      "vertices": 44,
+      "triangles": 68,
+      "bytes": 2236
     },
     "Lightning": {
       "vertices": 64,
@@ -48,5 +58,5 @@
       "bytes": 4412
     }
   },
-  "runtimeBytes": 25852
+  "runtimeBytes": 34004
 }

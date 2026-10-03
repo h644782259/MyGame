@@ -70,5 +70,30 @@ for i in range(1,8):
  nx,nz=math.sin(i*.9)*.55,i*.25;n=(nx,.04,nz);s.beam(last,n,.035,endwidth=.027);last=n
  if i%2:s.beam(n,(nx+(.3 if i%4==1 else -.3),.14,nz+.18),.024,endwidth=.006)
 s.export('Vine')
+# Dedicated primary silhouettes: repeated ornaments and beam/thrust meshes remain unchanged.
+s=Shape()
+for y,r,x,z in [(0,.05,0,0),(.18,.29,0,0),(.7,.19,.035,.02),(1,.006,.08,.04)]:
+ for j in range(6):s.v.append((x+r*math.cos(j*math.tau/6),y,z+r*math.sin(j*math.tau/6)));s.uv.append((j/6,y))
+for ring in range(3):
+ for j in range(6):s.f.append((ring*6+j,ring*6+(j+1)%6,(ring+1)*6+(j+1)%6,(ring+1)*6+j))
+s.f.extend([tuple(reversed(range(6))),tuple(range(18,24))])
+for j in range(4):
+ a=j*math.tau/4+.35;cx,cz=math.cos(a)*.28,math.sin(a)*.28;n=len(s.v)
+ for k in range(4):s.v.append((cx+math.cos(k*math.tau/4)*.12,.055,cz+math.sin(k*math.tau/4)*.12));s.uv.append((k/4,0))
+ s.v.append((cx*1.16,.43+(j%2)*.13,cz*1.16));s.uv.append((.5,1))
+ s.f.append((n+3,n+2,n+1,n))
+ for k in range(4):s.f.append((n+k,n+(k+1)%4,n+4))
+s.export('IcePrimary')
+s=Shape()
+for offset,height,lean,width in [(0,1,.22,.19),(-.2,.73,-.105,.105),(.21,.64,.115,.10)]:
+ n=len(s.v)
+ for i in range(6):
+  t=i/5;r=.004+width*math.sin(t*math.pi)**.7
+  for j in range(6):
+   a=j*math.tau/6;s.v.append((offset+lean*t*t+r*math.cos(a),height*t,.02+math.sin(t*4)*.035+r*math.sin(a)));s.uv.append((j/6,t))
+ for i in range(5):
+  for j in range(6):s.f.append((n+i*6+j,n+i*6+(j+1)%6,n+(i+1)*6+(j+1)%6,n+(i+1)*6+j))
+ s.f.extend([tuple(n+j for j in reversed(range(6))),tuple(n+30+j for j in range(6))])
+s.export('FirePrimary')
 bpy.ops.wm.save_as_mainfile(filepath=str(SRC/'Reusable-Spell-Volumes.blend'))
 (SRC/'budget.json').write_text(json.dumps(records,indent=2)+'\n');print('SPELL_BASES_BUILD_OK',json.dumps(records))

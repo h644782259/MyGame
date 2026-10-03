@@ -1,6 +1,6 @@
 from pathlib import Path
 import struct, math, json
-root=Path(__file__).resolve().parents[2];results={};expected={'Crescent','Crystal','Flame','Sword','Lightning','Rupture','ArcaneShard','Arrow','Vine'}
+root=Path(__file__).resolve().parents[2];results={};expected={'Crescent','Crystal','Flame','Sword','Lightning','Rupture','ArcaneShard','Arrow','Vine','IcePrimary','FirePrimary'}
 for p in sorted((root/'Assets/Resources/BlenderSpellBases').glob('*.bytes')):
  b=p.read_bytes();magic,n,k=struct.unpack_from('<Iii',b);assert magic==0x45464D31 and 0<n<=4096 and 0<k<=12288 and k%3==0 and len(b)==12+n*32+k*4
  for i in range(n):
@@ -12,8 +12,8 @@ for p in sorted((root/'Assets/Resources/BlenderSpellBases').glob('*.bytes')):
  assert all(0<=i<n for i in struct.unpack_from('<%di'%k,b,12+n*32));results[p.stem]={'vertices':n,'triangles':k//3,'bytes':len(b)}
 assert set(results)==expected
 s=(root/'Assets/Scripts/Combat/FilledSkillVfx.cs').read_text()
-for name in expected:assert 'AuthoredSpellBases.Load("'+name+'")??Mesh(FilledVfxRecipes.'+name+'()' in s
+for name in expected-{'IcePrimary','FirePrimary'}:assert 'AuthoredSpellBases.Load("'+name+'")??Mesh(FilledVfxRecipes.'+name+'()' in s
 assert 'ReducedEffects?FilledVfxRecipes.ReducedParts:Application.isMobilePlatform?10:FilledVfxRecipes.MaximumParts' in s
 assert 'AnchoredImpactMesh.Create(mesh,transform,at,dimensions*1.15f,rotation)' in s
 assert max(x['triangles'] for x in results.values())<=300
-print(json.dumps({'result':'PASS','coverage':'9 buffers, unit normals, strict envelope, per-asset fallback wiring, unchanged mobile cap and anchored clipping source contract; NOT Unity validation','assets':results,'runtimeBytes':sum(x['bytes'] for x in results.values())},indent=2))
+print(json.dumps({'result':'PASS','coverage':'11 buffers, unit normals, strict envelope, per-asset fallback wiring, unchanged mobile cap and anchored clipping source contract; NOT Unity validation','assets':results,'runtimeBytes':sum(x['bytes'] for x in results.values())},indent=2))

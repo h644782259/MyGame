@@ -10,8 +10,9 @@ namespace Emberfall
         {
             public Transform Transform; public Renderer Renderer;
             public Vector3 Position, Scale; public Quaternion Rotation;
-            public float Delay, Phase, TravelScale=1; public int Motion; public bool Anchored; public Mesh OwnedMesh;
+            public float Delay, Phase, TravelScale=1; public int Motion; public bool Anchored, Secondary; public Mesh OwnedMesh;
         }
+        private static Mesh icePrimary,firePrimary;
         private static Mesh crescent, crystal, flame, sword, lightning, arcane, rupture, arcaneShard, arrow, vine;
         private static Material sharedMaterial;
         private static int active;
@@ -42,6 +43,7 @@ namespace Emberfall
         private static void ResetAssets()
         {
             finales.Clear();
+            if(icePrimary!=null)Destroy(icePrimary);if(firePrimary!=null)Destroy(firePrimary);icePrimary=firePrimary=null;
             if(crescent!=null)Destroy(crescent);if(crystal!=null)Destroy(crystal);if(flame!=null)Destroy(flame);
             if(sword!=null)Destroy(sword);if(lightning!=null)Destroy(lightning);if(arcane!=null)Destroy(arcane);if(rupture!=null)Destroy(rupture);if(arcaneShard!=null)Destroy(arcaneShard);
             if(arrow!=null)Destroy(arrow);if(vine!=null)Destroy(vine);arrow=vine=null;
@@ -55,6 +57,8 @@ namespace Emberfall
         }
         private static void EnsureAssets()
         {
+            if(icePrimary==null)icePrimary=AuthoredSpellBases.Load("IcePrimary");
+            if(firePrimary==null)firePrimary=AuthoredSpellBases.Load("FirePrimary");
             if(crescent==null)crescent=AuthoredSpellBases.Load("Crescent")??Mesh(FilledVfxRecipes.Crescent(),"Filled curved crescent volume");
             if(crystal==null)crystal=AuthoredSpellBases.Load("Crystal")??Mesh(FilledVfxRecipes.Crystal(),"Faceted ice spear");
             if(flame==null)flame=AuthoredSpellBases.Load("Flame")??Mesh(FilledVfxRecipes.Flame(),"Curved flame tongue volume");
@@ -94,8 +98,8 @@ namespace Emberfall
             // Allocate landing base, identity silhouette and contact flash BEFORE repeated ornaments.
             // Add's actual budget is still the last authority: mobile 10, reduced 7.
             fx.Add(rupture,Vector3.up*.07f,new Vector3(fx.size*.58f,.8f,fx.size*.58f),Quaternion.identity,0,5,0,fx.size*.7f,"Landing base",true);
-            Mesh main=type==FilledVfxKind.Sword?sword:type==FilledVfxKind.Lightning?lightning:type==FilledVfxKind.Arcane?arcane:type==FilledVfxKind.Ice?crystal:type==FilledVfxKind.Fire?flame:crescent;
-            int motion=type==FilledVfxKind.Sword?8:type==FilledVfxKind.Lightning?9:type==FilledVfxKind.Arcane?10:type==FilledVfxKind.Ice?1:type==FilledVfxKind.Fire?2:3;
+            Mesh main=type==FilledVfxKind.Sword?sword:type==FilledVfxKind.Lightning?lightning:type==FilledVfxKind.Arcane?arcane:type==FilledVfxKind.Ice?(icePrimary??crystal):type==FilledVfxKind.Fire?(firePrimary??flame):crescent;
+            int motion=type==FilledVfxKind.Sword?8:type==FilledVfxKind.Lightning?9:type==FilledVfxKind.Arcane?10:type==FilledVfxKind.Ice?(icePrimary!=null?13:1):type==FilledVfxKind.Fire?(firePrimary!=null?14:2):3;
             Vector3 dimensions=type==FilledVfxKind.Sword?new Vector3(.95f,3.2f,.95f)*unit:type==FilledVfxKind.Lightning?new Vector3(1.3f,2.2f,1.3f)*unit:Vector3.one*unit*1.65f;
             fx.Add(main,Vector3.zero,dimensions,Quaternion.identity,0,motion,0,
                 type==FilledVfxKind.Sword?unit*.55f:type==FilledVfxKind.Lightning?unit*.85f:type==FilledVfxKind.Summon?unit*1.8f+fx.size*.3f:unit*2f,"Primary "+type,true);
@@ -167,6 +171,8 @@ namespace Emberfall
         }
         private void Add(Mesh mesh,Vector3 at,Vector3 dimensions,Quaternion rotation,float delay,int motion,float phase,float footprint=0,string label="Repeated ornament",bool anchored=false)
         {
+            bool secondary=label=="Repeated ornament"&&((kind==FilledVfxKind.Ice&&icePrimary!=null)||(kind==FilledVfxKind.Fire&&firePrimary!=null));
+            if(secondary)dimensions*=.6f; // Keep authored primary readable; footprint reservation stays conservative.
             int cap=EffectPreferences.ReducedEffects?FilledVfxRecipes.ReducedParts:Application.isMobilePlatform?10:FilledVfxRecipes.MaximumParts;
             if(count>=cap)return;
             float fit=1;
@@ -189,7 +195,7 @@ namespace Emberfall
             var obj=new GameObject("Filled spell surface / "+label);obj.transform.SetParent(transform,false);
             obj.AddComponent<MeshFilter>().sharedMesh=mesh;var renderer=obj.AddComponent<MeshRenderer>();renderer.sharedMaterial=sharedMaterial;
             renderer.shadowCastingMode=UnityEngine.Rendering.ShadowCastingMode.Off;renderer.receiveShadows=false;renderer.sortingOrder=10;
-            var piece=new Piece{Transform=obj.transform,Renderer=renderer,Position=at,Scale=dimensions,Rotation=rotation,Delay=delay,Motion=motion,Phase=phase,TravelScale=footprint>0?fit:1,Anchored=anchored,OwnedMesh=owned};pieces[count++]=piece;
+            var piece=new Piece{Transform=obj.transform,Renderer=renderer,Position=at,Scale=dimensions,Rotation=rotation,Delay=delay,Motion=motion,Phase=phase,TravelScale=footprint>0?fit:1,Anchored=anchored,Secondary=secondary,OwnedMesh=owned};pieces[count++]=piece;
             Animate(piece); // The mesh exists at the actual hit frame, before the next Update.
         }
         private void Update()
@@ -216,6 +222,10 @@ namespace Emberfall
             float t=f.Progress;
             switch(p.Motion)
             {
+                // Authored primary visual beats only: visible at release, quick rise, readable hold, then contraction.
+                // Radial scale only contracts; anchored certification and actual hit time remain unchanged.
+                case 13: scale.y*=local<.09f?Mathf.Lerp(.45f,1,local/.09f):local<.42f?1:Mathf.Lerp(1,.62f,Mathf.Clamp01((local-.42f)/.5f));break;
+                case 14: scale.y*=local<.07f?Mathf.Lerp(.55f,1,local/.07f):local<.23f?1:Mathf.Lerp(1,.48f,Mathf.Clamp01((local-.23f)/.5f));scale.x*=1-Mathf.Clamp01((local-.23f)/.5f)*.24f;scale.z*=1-Mathf.Clamp01((local-.23f)/.5f)*.24f;break;
                 case 0: float handed=p.Phase<0?-1:1;scale*=.85f+t*.3f;rotation*=Quaternion.Euler(0,Mathf.Lerp(-18,38,t)*handed,-t*11*handed);break;
                 case 1: scale.y*=.25f+.75f*Mathf.Min(1,local*18);at.y-=Mathf.Max(0,t-.55f)*1.3f;break;
                 case 2: scale*=f.Expansion;scale.y*=1+t*.55f;at.y+=t*.65f;rotation*=Quaternion.Euler(0,t*45,0);break;
@@ -235,7 +245,7 @@ namespace Emberfall
             p.Transform.localPosition=at;p.Transform.localScale=scale;p.Transform.localRotation=rotation;
             // Placement reserved the complete motion footprint once. Do not toggle a whole
             // primary silhouette each frame when a growing bounds circle grazes a wall.
-            Color color=tint;color.a*=f.Opacity*(kind==FilledVfxKind.Charge?.35f:.9f)*Mathf.Lerp(.55f,1,EffectPreferences.EffectsScale);
+            Color color=tint;if(p.Secondary)color.a*=.55f*Mathf.Clamp01((.62f-local)/.2f);color.a*=f.Opacity*(kind==FilledVfxKind.Charge?.35f:.9f)*Mathf.Lerp(.55f,1,EffectPreferences.EffectsScale);
             block.SetColor("_Color",color);block.SetFloat("_Opacity",f.Opacity);block.SetFloat("_Progress",t);
             block.SetFloat("_Style",kind==FilledVfxKind.Fire||kind==FilledVfxKind.Summon?1:.35f);p.Renderer.SetPropertyBlock(block);
         }

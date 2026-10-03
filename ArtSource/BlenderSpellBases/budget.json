@@ -70,5 +70,21 @@
     "textures": 0,
     "bytes": 4412,
     "sha256": "31a391cf40de07fb8a5b5472a4796052fbd7418b5af755de9bce08b089a6b618"
+  },
+  "IcePrimary": {
+    "vertices": 44,
+    "triangles": 68,
+    "materials": 1,
+    "textures": 0,
+    "bytes": 2236,
+    "sha256": "72c6e83b64b3bea791dd9e2828a83230336d4f09f1267b1b3dc873b83df92a0f"
+  },
+  "FirePrimary": {
+    "vertices": 108,
+    "triangles": 204,
+    "materials": 1,
+    "textures": 0,
+    "bytes": 5916,
+    "sha256": "afca70715706d053ff7d098cf44b6b9745147a9bd416d409bf008ff454789b5a"
   }
 }
