@@ -387,6 +387,7 @@ def main():
                              ("vanguard-recovery-integration", "VanguardRecoveryIntegrationTests.py"),
                              ("status-feedback-production", "StatusFeedbackProductionTests.py"),
                              ("defense-identity-production", "DefenseIdentityProductionTests.py"),
+                             ("final-body-envelope-production", "FinalBodyEnvelopeProductionTests.py"),
                              ("skill-identity-callsite-production", "SkillIdentityCallsiteProductionTests.py"),
                              ("enemy-knockdown-production", "EnemyKnockdownProductionTests.py"),
                              ("enemy-knockdown-geometry", "EnemyKnockdownGeometryTests.py"),
