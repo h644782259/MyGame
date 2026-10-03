@@ -165,7 +165,7 @@ namespace Emberfall
 
         public static void Friendly(PlayerController player, GameSession game, Vector3 at, Vector3 forward, CombatDamage amount, Color tint, bool piercing = false, bool arrow = false, bool basic = false, float size = 1f, float velocity = 0f, EnemyController tracking = null, CombatDamage blastDamage = default(CombatDamage), float blastRadius = 0f, int skillIndex = -1, int castId = 0, SummonedCompanion companionSource = null, ProjectileVolleyBudget<EnemyController> volley = null, EnemyController markTarget = null, float markStrength = 0)
         {
-            CombatProjectile projectile = Make(at, forward, tint, arrow);
+            CombatProjectile projectile = Make(at, forward, tint, arrow, AuthoredProjectileMeshes.FriendlyKey(arrow,player.HeroClass,companionSource!=null));
             projectile.owner = player;
             projectile.playerGeneration = player;
             projectile.session = game;
@@ -210,7 +210,7 @@ namespace Emberfall
             {if (CombatReviewEvents.Enabled) CombatReviewEvents.Emit("basicmiss",CombatReviewObjectId.Get(player),detail:"blocked_muzzle;prop_may_have_been_hit");CombatFx.Ring(player.transform.position,.4f,tint,.15f);return;}
             Vector3 direction=CombatFx.Flat(target-muzzle);
             if(direction.sqrMagnitude<.0001f) direction=player.transform.forward;
-            CombatProjectile projectile=Make(muzzle,direction,tint,arrow);
+            CombatProjectile projectile=Make(muzzle,direction,tint,arrow,AuthoredProjectileMeshes.FriendlyKey(arrow,player.HeroClass,false));
             projectile.owner=player;
             projectile.playerGeneration=player;
             projectile.session=game;
@@ -236,7 +236,7 @@ namespace Emberfall
 
         public static void Hostile(GameSession game, Vector3 at, Vector3 forward, float amount, float velocity = 8f, string sourceName = "敌方弹幕")
         {
-            CombatProjectile projectile = Make(at, forward, new Color(1f,.31f,.48f), false);
+            CombatProjectile projectile = Make(at, forward, new Color(1f,.31f,.48f), false,"HostileBolt");
             projectile.session = game;
             projectile.playerGeneration = game.Player;
             projectile.epoch = game.Player.CombatEpoch;
@@ -267,12 +267,14 @@ namespace Emberfall
             }
         }
 
-        private static CombatProjectile Make(Vector3 at, Vector3 forward, Color tint, bool arrow)
+        private static CombatProjectile Make(Vector3 at, Vector3 forward, Color tint, bool arrow,string identity)
         {
             Material surface = new Material(Shader.Find("Standard")) { color = tint };
             ProceduralVisuals.ApplySurface(surface,arrow ? VisualSurface.Metal : VisualSurface.Crystal);
             GameObject obj = new GameObject("Projectile simulation root");
             GameObject body = ProceduralVisuals.Create(arrow ? "Spectral Arrow" : "Arcane Bolt",arrow ? PrimitiveType.Capsule : PrimitiveType.Sphere,surface);
+            Mesh authored=AuthoredProjectileMeshes.Load(identity);
+            if(authored!=null)body.GetComponent<MeshFilter>().sharedMesh=authored;
             body.transform.SetParent(obj.transform,false);
             obj.transform.position = new Vector3(at.x, 1f, at.z);
             Vector3 normalized = CombatFx.Flat(forward).normalized;
@@ -447,7 +449,7 @@ namespace Emberfall
         private int statusSkill = -1, statusRank = 1, castId;
         private int epoch;
         private Color color;
-        private GameObject marker, fallingOrb;
+        private GameObject marker, fallingOrb, trapCore;
         private Material orbMaterial;
         private bool fireVisual, poisonVisual, lightningVisual, solidImpactSpawned;
         private SkillVisualRecipe visualRecipe;
@@ -474,13 +476,15 @@ namespace Emberfall
             area.fireVisual = visual == SkillVisualRecipe.Fire;
             area.poisonVisual = visual == SkillVisualRecipe.Poison;
             area.lightningVisual = visual == SkillVisualRecipe.Lightning;
+            if(visual==SkillVisualRecipe.Neutral && player.HeroClass==HeroClass.Ranger && statusSkill==1 && startup>0)
+                area.trapCore=AuthoredTrapVisual.Create(obj.transform,tint,size);
             if (fallingMeteor)
             {
                 area.orbMaterial = new Material(Shader.Find("Standard")) { color = new Color(.64f,.19f,.075f) };
                 ProceduralVisuals.ApplySurface(area.orbMaterial,VisualSurface.Crystal);
                 area.orbMaterial.SetColor("_EmissionColor",new Color(.85f,.21f,.035f));
                 area.fallingOrb = ProceduralVisuals.Create("Falling Meteor",PrimitiveType.Sphere,area.orbMaterial);
-                area.fallingOrb.GetComponent<MeshFilter>().sharedMesh=ProceduralVisuals.WeatheredRock;
+                area.fallingOrb.GetComponent<MeshFilter>().sharedMesh=AuthoredProjectileMeshes.Load("MeteorRock")??ProceduralVisuals.WeatheredRock;
                 area.fallingOrb.transform.SetParent(obj.transform, false);
                 area.fallingOrb.transform.localPosition = Vector3.up * 9f;
                 area.fallingOrb.transform.localScale = Vector3.one * 1.1f;
@@ -507,6 +511,7 @@ namespace Emberfall
                         enemy.ApplyPull(delta.normalized * Mathf.Min(delta.magnitude - .55f, pullStrength * Time.deltaTime));
                 }
             }
+            if(trapCore!=null && age>=delay){Destroy(trapCore);trapCore=null;}
             if (fallingOrb != null)
             {
                 float fallProgress=Mathf.Clamp01(age/Mathf.Max(.01f,delay));
