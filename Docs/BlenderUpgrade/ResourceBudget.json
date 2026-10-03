@@ -1,0 +1,290 @@
+{
+  "scope": "New runtime resource input inventory, not packaged/compressed/resident size",
+  "assets": [
+    {
+      "path": "Assets/Resources/ActorModules/BarkTorso.bytes",
+      "bytes": 10164,
+      "sha256": "11f0e606c4501694ddf0737dba7cd03c0af7b1a44b64c75e7a01e5d4a09f1ee4",
+      "guid": "7b0d13cc027e05f44095925e7158795e",
+      "vertices": 282,
+      "triangles": 94
+    },
+    {
+      "path": "Assets/Resources/ActorModules/Boot.bytes",
+      "bytes": 8220,
+      "sha256": "e9482ff1bc0ac0b950440bd8f8403db0542893b4375c4a415167ba1e5af2dc6c",
+      "guid": "da355235f38a46c532b6bb2106902276",
+      "vertices": 228,
+      "triangles": 76
+    },
+    {
+      "path": "Assets/Resources/ActorModules/BossHousing.bytes",
+      "bytes": 17724,
+      "sha256": "502ded3154505d7daae842c940ee98a23a1034f7500ee8e2d09126d31480e89f",
+      "guid": "bd7bb1c613d54c2b8d91f37abbce645b",
+      "vertices": 492,
+      "triangles": 164
+    },
+    {
+      "path": "Assets/Resources/ActorModules/BossPlate.bytes",
+      "bytes": 9948,
+      "sha256": "3dfe218a4f5b4d67e4b2605a2756cad7f5dd43655742716e7fdb5d51e65507dd",
+      "guid": "f6fa372ae13a00d424dcf575cbfc17a6",
+      "vertices": 276,
+      "triangles": 92
+    },
+    {
+      "path": "Assets/Resources/ActorModules/BowLimb.bytes",
+      "bytes": 8220,
+      "sha256": "b7b882bdb49b596719c5d981f9a6e6a21aaa4fe0d03c2ad5be3ab40a1a5725c4",
+      "guid": "bf0ecf77d908426271e7022fbe6c883e",
+      "vertices": 228,
+      "triangles": 76
+    },
+    {
+      "path": "Assets/Resources/ActorModules/ClothShoulder.bytes",
+      "bytes": 14700,
+      "sha256": "975033c5ee2c14626ac50a0909e713018822c3c31652a46fa52620f175530555",
+      "guid": "2d95f9415cb7ae3b49ddc8ee73020e1e",
+      "vertices": 408,
+      "triangles": 136
+    },
+    {
+      "path": "Assets/Resources/ActorModules/ClothTorso.bytes",
+      "bytes": 17724,
+      "sha256": "080fe67c97f711e47fe715e5af0272b99efd0becd4566a8102a0adf3f737a20d",
+      "guid": "dd3bba242b894843f0a6ac9a1c1ca1ed",
+      "vertices": 492,
+      "triangles": 164
+    },
+    {
+      "path": "Assets/Resources/ActorModules/Cuirass.bytes",
+      "bytes": 12540,
+      "sha256": "ed0ed4a315f20206e668a2de78d28744d6fbe42dc00f491cd8534fd3e5479893",
+      "guid": "0064d4c6031652b3ce3c19a741718bfc",
+      "vertices": 348,
+      "triangles": 116
+    },
+    {
+      "path": "Assets/Resources/ActorModules/CuirassPlate.bytes",
+      "bytes": 10380,
+      "sha256": "ef6c86db94f3a0f8dc1b36e0a5143ad04541f0783c03dde177292944f3126436",
+      "guid": "84985289d5b23a8fa58cef25f50a5969",
+      "vertices": 288,
+      "triangles": 96
+    },
+    {
+      "path": "Assets/Resources/ActorModules/Hammer.bytes",
+      "bytes": 13404,
+      "sha256": "7e9044cc395ff7bc306b79d7315c3cf2ef8913487a1682010e50e323c5ab593f",
+      "guid": "3cf2fbe003ef831a67cc76a5a674a3a9",
+      "vertices": 372,
+      "triangles": 124
+    },
+    {
+      "path": "Assets/Resources/ActorModules/Helmet.bytes",
+      "bytes": 12540,
+      "sha256": "341a85889ba92c0edca4757a25749748434bac24adb408aa18d5012a68f74858",
+      "guid": "8d50ab0735697c3865a5a833d0de29be",
+      "vertices": 348,
+      "triangles": 116
+    },
+    {
+      "path": "Assets/Resources/ActorModules/Pauldron.bytes",
+      "bytes": 12540,
+      "sha256": "fcda101be8ce47346c5c4399499da2b7e261cd71acab8c62da9075307a7177b3",
+      "guid": "240ffaf849bec518fadcb2accefbc956",
+      "vertices": 348,
+      "triangles": 116
+    },
+    {
+      "path": "Assets/Resources/ActorModules/Paw.bytes",
+      "bytes": 8220,
+      "sha256": "bfcf722f60b8942c651cad5816f0d516920b5705871e550224f369b4bd6b94ed",
+      "guid": "4fb65901448abc7b04da7e7324bd49b0",
+      "vertices": 228,
+      "triangles": 76
+    },
+    {
+      "path": "Assets/Resources/ActorModules/Slime.bytes",
+      "bytes": 17724,
+      "sha256": "06762d18e1214fb20e85684c5fff951213f1bd4d5b2cea6e3c9352509f5352cd",
+      "guid": "977542e2fafc5f78cbf5610c464daecf",
+      "vertices": 492,
+      "triangles": 164
+    },
+    {
+      "path": "Assets/Resources/ActorModules/SpiritCore.bytes",
+      "bytes": 8220,
+      "sha256": "222ac41a95a51ce6504a5cda5a3bed97d557d14f114e6895cbf9e3cc16bb34c6",
+      "guid": "bd90dc18379bcc2c2df96018509b5210",
+      "vertices": 228,
+      "triangles": 76
+    },
+    {
+      "path": "Assets/Resources/ActorModules/StaffCrown.bytes",
+      "bytes": 6060,
+      "sha256": "e6375fc72ca280dee1a2a0b3557ddbab333a12b2cdde0b78a4b83b4c03bca5ac",
+      "guid": "06f209f7276bbb46158ce4abf40d8cce",
+      "vertices": 168,
+      "triangles": 56
+    },
+    {
+      "path": "Assets/Resources/ActorModules/SwordGuard.bytes",
+      "bytes": 8220,
+      "sha256": "cfe1e970d9469f72a66ae342577906599f9e62f71064faae4f3acff063640065",
+      "guid": "457508a3e72823aa52c2e50ad0818f4a",
+      "vertices": 228,
+      "triangles": 76
+    },
+    {
+      "path": "Assets/Resources/ActorModules/Totem.bytes",
+      "bytes": 7356,
+      "sha256": "9dd1f1f9e640deaef9aeb8e1d3bf9e8ae780aa99892cd74d54b12a5b5ac723b8",
+      "guid": "85545c4123fa3117cb924576d56a6632",
+      "vertices": 204,
+      "triangles": 68
+    },
+    {
+      "path": "Assets/Resources/ActorModules/WolfHead.bytes",
+      "bytes": 3900,
+      "sha256": "b3d3edb2600d0331665972399c33d3d9c9862bc764b40bb617233db77eefdc9b",
+      "guid": "fa374262a7970773cc1b31aa2a7c5e97",
+      "vertices": 108,
+      "triangles": 36
+    },
+    {
+      "path": "Assets/Resources/ActorModules/WolfTorso.bytes",
+      "bytes": 15132,
+      "sha256": "285f8012f970e80ade85ad2f9645ae3db677f039a379fbf94a8d1d47d0ed135f",
+      "guid": "08568f9a99ab4f03c003e55e5c782231",
+      "vertices": 420,
+      "triangles": 140
+    },
+    {
+      "path": "Assets/Resources/BlenderVfx/Crescent.bytes",
+      "bytes": 5564,
+      "sha256": "9c73efc3c01ae3043c392a7037f8e4e4937ff05e04c0e9b3851b013b83ae55a2",
+      "guid": "40e8988fb6201633fc87248eac429a73",
+      "vertices": 100,
+      "triangles": 196
+    },
+    {
+      "path": "Assets/Resources/BlenderVfx/CrescentCore.bytes",
+      "bytes": 5564,
+      "sha256": "b2a1dc7e5a13e5ad19bb98745884b706e1c7d2a4c6ed53ab58d75c59b561da81",
+      "guid": "cbc20be8cfb2c770305f4133907826fa",
+      "vertices": 100,
+      "triangles": 196
+    },
+    {
+      "path": "Assets/Resources/BlenderVfx/Fault.bytes",
+      "bytes": 252,
+      "sha256": "00beb38b54a77c8166899d4434e76c2dbeb2fb54f1e5fa3e9fbeffd977840e62",
+      "guid": "0d2470dd60f2bc7799bd349d0bbb03e6",
+      "vertices": 6,
+      "triangles": 4
+    },
+    {
+      "path": "Assets/Resources/BlenderVfx/Shard.bytes",
+      "bytes": 244,
+      "sha256": "64c47cfb2d2e7e891b44f141bd5dd88432fbdae841ffac06ace4e960427abc67",
+      "guid": "b185fec88d62bb16552173d2193ffb63",
+      "vertices": 5,
+      "triangles": 6
+    },
+    {
+      "path": "Assets/Resources/BlenderScenery/FracturedRubble.fbx",
+      "bytes": 16972,
+      "sha256": "93173280fb6ce494f63a1907d0ea7c939c092e8b221fc0656ca050e7195bc7c4",
+      "guid": "24aa04c824b0a4447652f8e566da9491"
+    },
+    {
+      "path": "Assets/Resources/BlenderScenery/OpenCanopyTree.fbx",
+      "bytes": 32316,
+      "sha256": "13a9783db16cb38c3b6f25c9514d604f867c4a450f58912d30950d2150a2d9e0",
+      "guid": "bdf0670e6723366759a53e4e58529fd0"
+    },
+    {
+      "path": "Assets/Resources/BlenderScenery/WayfarerPot.fbx",
+      "bytes": 20940,
+      "sha256": "38c0f39b506653722096c75a2d1ec3127adc2321fd0fedb07208da0593ceae1a",
+      "guid": "d606e883b51672b830be48be54f4a7bf"
+    },
+    {
+      "path": "Assets/Resources/BlenderSpellBases/ArcaneShard.bytes",
+      "bytes": 812,
+      "sha256": "363f76bc597d890c027700ef42b2fff5d8a61fa3f0e2302af47bfa66205d97be",
+      "guid": "801b0f445be811746da1656cd5b34fd3",
+      "vertices": 16,
+      "triangles": 24
+    },
+    {
+      "path": "Assets/Resources/BlenderSpellBases/Arrow.bytes",
+      "bytes": 1444,
+      "sha256": "a1f8aaabcf7da3c4c8b26f9caebd9edce319f0d82d86d17999f8f622d6569005",
+      "guid": "cc359a12af8443885b396515b3b222b5",
+      "vertices": 29,
+      "triangles": 42
+    },
+    {
+      "path": "Assets/Resources/BlenderSpellBases/Crescent.bytes",
+      "bytes": 5564,
+      "sha256": "7ce5b4ec77769d7e3f645a8e78a2c2e0d7b1a8f7e5839c50a11ac3900610e11d",
+      "guid": "fc9d04d8229cd2f8fa13a086699fc865",
+      "vertices": 100,
+      "triangles": 196
+    },
+    {
+      "path": "Assets/Resources/BlenderSpellBases/Crystal.bytes",
+      "bytes": 1308,
+      "sha256": "aca4390bc1ecb56c049b758e61dce8883c64b911bba583a84484560d803e7ff4",
+      "guid": "4337e72699d07268b62adeceefc1c018",
+      "vertices": 24,
+      "triangles": 44
+    },
+    {
+      "path": "Assets/Resources/BlenderSpellBases/Flame.bytes",
+      "bytes": 3996,
+      "sha256": "e531453265853fc95e73e9bd0d6dee13bb814bfe0842fa1657f223036d991679",
+      "guid": "9e33d7236e27f8a748e4e39fce393003",
+      "vertices": 72,
+      "triangles": 140
+    },
+    {
+      "path": "Assets/Resources/BlenderSpellBases/Lightning.bytes",
+      "bytes": 3212,
+      "sha256": "baa98f27ab25de6744387d9ba8a63b8ec85b94f599223658b612c63bdda14c3b",
+      "guid": "d195255defb60e9ab5255c627d386d7b",
+      "vertices": 64,
+      "triangles": 96
+    },
+    {
+      "path": "Assets/Resources/BlenderSpellBases/Rupture.bytes",
+      "bytes": 3612,
+      "sha256": "9b37b06ff1b33803c968d003a19f51d9fea48c91c5d33deedbf4b947b4f18dd9",
+      "guid": "edcc0be75c1c925889d5a7b710c69313",
+      "vertices": 72,
+      "triangles": 108
+    },
+    {
+      "path": "Assets/Resources/BlenderSpellBases/Sword.bytes",
+      "bytes": 1492,
+      "sha256": "ade0784f50933878f76eb2e920db2af94c8d9997e073c98512c72b84872cc14a",
+      "guid": "2fa2bc08a195da5a921e2488e21058ae",
+      "vertices": 29,
+      "triangles": 46
+    },
+    {
+      "path": "Assets/Resources/BlenderSpellBases/Vine.bytes",
+      "bytes": 4412,
+      "sha256": "31a391cf40de07fb8a5b5472a4796052fbd7418b5af755de9bce08b089a6b618",
+      "guid": "fa4db51637424319d7c460ccf92b1625",
+      "vertices": 88,
+      "triangles": 132
+    }
+  ],
+  "newResourceBytes": 330640,
+  "newTextures": 0,
+  "existingGuidsPreserved": 306
+}
