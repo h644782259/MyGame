@@ -13,3 +13,5 @@ All five requested suites passed against these combined sources:
 Commands: `python3 Tests/<suite>.py /workspace/shared/emberfall-tools/dotnet/dotnet`, with isolated DOTNET_CLI_HOME; logs adjacent. Source hashes of the combined production tree are recorded in source-manifest.json. Expected negative-control exception traces and failed-save diagnostics remain in the raw logs.
 
 No full aggregate or platform compilation was launched here. These are managed source/fixture tests; no Unity frame loop, shaders, physics, device delivery or player build is claimed. Parent owns the final frozen aggregate and publication.
+
+After PR44 fractional-health correction, the healing fixture explicitly marks its non-draft RefreshStats boundary as false. Initial missing-property compile log and final 640-assertion/seven-negative-control logs are retained. The real draft event signal and vitals are tested by CampBuildDraftProductionTests; this healing fixture does not simulate draft application. No production code changed in this repair.
