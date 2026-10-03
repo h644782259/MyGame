@@ -353,7 +353,8 @@ def main():
             failed = failed or not passed
         passed = run_check("room-free-seal-host", [[sys.executable,str(ROOT/"Tests/RoomFreeSealHostTests.py"),dotnet]], dict(env,DOTNET=dotnet), output, report)
         failed = failed or not passed
-        for name, script in [("scenery-presentation-production", "SceneryPresentationProductionTests.py"),
+        for name, script in [("camp-build-draft-production", "CampBuildDraftProductionTests.py"),
+                             ("scenery-presentation-production", "SceneryPresentationProductionTests.py"),
                              ("companion-path-allocation", "CompanionPathAllocationTests.py"),
                              ("combat-review-impact-production", "CombatReviewImpactProductionTests.py"),
                              ("room-first-choice-production", "RoomFirstChoiceProductionTests.py"),
