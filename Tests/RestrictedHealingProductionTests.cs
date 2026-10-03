@@ -54,6 +54,25 @@ public static class RestrictedHealingProductionTests
    p.session.ChallengeRun=false;sequence.Tick(1);Near(p.Health,241,"cast snapshots mode across session flag refresh");p.session.Progression.Profile.skillRanks[6]=3;sequence.Tick(1);Near(p.Health,361,"skill rank refresh cannot inflate active cast");
    p.Health=490;p.session.Progression.RefreshedMaxHealth=500;p.RefreshStats(false);sequence.Tick(1);Near(p.Health,500,"maximum-health refresh retains existing per-pulse percentage and clamps");sequence.Tick(1);C(sequence.gameObject.destroyed,"refresh does not extend five-event budget");
   }
+  {
+   var p=New(HeroClass.Vanguard,1);p.CastHeal();var sequence=AdvancedSkillSequence.Last;sequence.Tick(1);Near(p.Health,121,"current-max first pulse before refresh");
+   p.session.Progression.RefreshedMaxHealth=500;p.RefreshStats(false);Near(p.Health,121,"stat refresh itself never heals");
+   sequence.Tick(1);Near(p.Health,181,"noncapped pulse uses refreshed current max");sequence.Tick(1);Near(p.Health,241,"later pulse keeps refreshed current max");
+   p.session.Progression.RefreshedMaxHealth=2000;p.RefreshStats(false);sequence.Tick(1);Near(p.Health,481,"noncapped pulse follows increased current max");
+   sequence.Tick(1);Near(p.Health,721,"fifth pulse uses current max without restarting");C(sequence.gameObject.destroyed,"changing max cannot extend sequence");
+  }
+  {
+   var p=New(HeroClass.Vanguard,1,true,1);p.session.InDungeon=false;p.CastHeal();var sequence=AdvancedSkillSequence.Last;
+   C(sequence!=null&&p.session.HealingCharges==3,"wounded challenge outside dungeon does not pay limited charge");
+   for(int tick=1;tick<=5;tick++){sequence.Tick(1);Near(p.Health,1+60*tick,"wounded challenge outside dungeon retains ordinary thirty percent");}
+  }
+  foreach(string stop in new[]{"death","epoch","replacement","ended","notstarted"})
+  {
+   var p=New(HeroClass.Summoner,3);p.CastHeal();var sequence=AdvancedSkillSequence.Last;sequence.Tick(1);sequence.Tick(1);float energy=p.Energy;
+   switch(stop){case "death":p.IsDead=true;break;case "epoch":p.CombatEpoch++;break;case "replacement":p.session.Player=new PlayerController(new GameSession());break;case "ended":p.session.CombatEnded=true;break;case "notstarted":p.session.HasStarted=false;break;}
+   sequence.Tick(3);Near(p.Energy,energy,"cancelled rank three never emits final energy refund "+stop);C(sequence.gameObject.destroyed,"cancelled rank three retires "+stop);
+   sequence.Tick(10);Near(p.Energy,energy,"retired rank three cannot later emit energy refund "+stop);
+  }
   foreach(bool empty in new[]{false,true}){var p=New(HeroClass.Vanguard,1);if(empty)p.session.HealingCharges=0;else typeof(SkillRuntime).GetProperty("Energy").SetValue(p.skillRuntime,0f);p.CastHeal();C(AdvancedSkillSequence.Last==null,"insufficient charge or energy refuses sequence");C(p.session.HealingCharges==(empty?0:3),"failure cannot spend charge");Near(p.skillRuntime.Remaining(6),0,"failure cannot start cooldown");}
   foreach(bool restricted in new[]{false,true}){var p=New(HeroClass.Vanguard,1,restricted);p.session.DrinkPotion();Near(p.Health,501,"potion remains instant fifty percent");C(AdvancedSkillSequence.Last==null,"potion creates no delayed sequence");C(p.session.HealingCharges==(restricted?2:3),"potion restricted charge unchanged");C(p.session.Progression.Potions==(restricted?3:2),"normal potion inventory unchanged");p.Health=1000;p.session.DrinkPotion();C(p.session.HealingCharges==(restricted?2:3)&&p.session.Progression.Potions==(restricted?3:2),"full-health potion never pays");}
   return "PASS "+checks+" actual cast/sequence/Heal/potion/companion-predicate assertions; managed engine shell, not Unity";
