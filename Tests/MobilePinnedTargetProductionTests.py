@@ -11,10 +11,10 @@ def extract(path,signature):
  return s[a:b]
 with tempfile.TemporaryDirectory(prefix='mobile-pin-production-') as t:
  p=Path(t)
- for path in ['Core/SkillRuntime.cs','Core/GameTypes.cs','Core/CombatBalance.cs','Core/MobileCameraGesture.cs','Core/SkillDamageBudgets.cs','Combat/MobileSkillPolicy.cs','Combat/PlayerController.MobileFocus.cs','Combat/SkillChargeController.cs','UI/MobileControlLayout.cs']:(p/Path(path).name).write_text((r/'Assets/Scripts'/path).read_text())
+ for path in ['Core/SkillRuntime.cs','Core/GameTypes.cs','Core/CombatBalance.cs','Core/MobileCameraGesture.cs','Core/SkillDamageBudgets.cs','Combat/MobileSkillPolicy.cs','Combat/PlayerController.MobileFocus.cs','Combat/SkillChargeController.cs','UI/MobileControlLayout.cs','Core/CombatOpportunityState.cs','UI/MobileControls.OpportunityInput.cs','Core/CastFirstHitReceipt.cs','Combat/PlayerController.CastReceipts.cs']:(p/Path(path).name).write_text((r/'Assets/Scripts'/path).read_text())
  (p/'Fixture.cs').write_text((r/'Tests/MobilePinnedTargetProductionTests.cs').read_text())
- player=['private Vector3 ResolveMobileAim(','internal void PrepareMobileSkillAim(','internal void ResolveMobileSkillAim(','private static bool ValidAimTarget(','private static bool ProjectedBounds(','private void FaceAim(','private EnemyController MagicConeTarget(','private void BasicAttack(','internal bool CastImmediateSkill(','internal bool ConfirmTargetedSkill(','internal bool ExecuteChargedSkill(','private bool CanUseMovementSkill(','internal bool SkillTargetingReady(','internal bool CanBeginSkillTargeting(','internal Vector3 ResolveSkillGroundTarget(','private void CastSkill(','private void CastSkillCore(']
- controls=['public bool ProcessPointer(','public static void ResetInput()','private void Update()']
+ player=['internal int NewCastId()','private Vector3 ResolveMobileAim(','internal void PrepareMobileSkillAim(','internal void ResolveMobileSkillAim(','private static bool ValidAimTarget(','private static bool ProjectedBounds(','private void FaceAim(','private EnemyController MagicConeTarget(','private void BasicAttack(','internal bool CastImmediateSkill(','internal bool ConfirmTargetedSkill(','internal bool ExecuteChargedSkill(','private bool CanUseMovementSkill(','internal bool SkillTargetingReady(','internal bool CanBeginSkillTargeting(','internal Vector3 ResolveSkillGroundTarget(','private void CastSkill(','private void CastSkillCore(']
+ controls=['public static bool IsScreenPointOverControls(', 'public bool ProcessPointer(','public static void ResetInput()','private void Update()']
  target=['public enum Shape','public struct Preview','public static Preview Describe(','public static bool RequiresConfirmation(','public bool Begin(','public void Cancel()']
  (p/'PlayerMethods.cs').write_text('using System.Collections.Generic;using UnityEngine;namespace Emberfall{public sealed partial class PlayerController{'+''.join(extract('Combat/PlayerController.cs',x) for x in player)+'}}')
  (p/'PointerMethods.cs').write_text('using System.Collections.Generic;using UnityEngine;namespace Emberfall{public sealed partial class MobileControls{'+''.join(extract('UI/MobileControls.cs',x) for x in controls)+'}}')
@@ -62,6 +62,6 @@ assert 'MobilePinnedActionReason' not in head and 'pinned.DisplayName' in head
 assert 'LabelControl(Attack,basicReason,true)' in feedback
 feedback=(r/'Assets/Scripts/UI/GameUI.MobileFeedback.cs').read_text()
 assert 'state.Length==0&&session.Player!=null?session.Player.MobilePinnedActionReason(skill)' in feedback
-assert 'Text(caption,MobileCombatPresentation.SkillRejectionCaption(targetReason)' in feedback and 'Text(caption,state' in feedback
+assert 'Text(caption,MobileCombatPresentation.SkillRejectionCaption(reason)' in feedback and 'state=="缺能"' in feedback
 assert '点敌人固定目标；点战场空白取消' in (r/'Assets/Scripts/UI/GameUI.Mobile.cs').read_text()
 print('PASS: source wiring for identity-only pin, per-action target/resource reasons and touch help (not rendered UI)')
