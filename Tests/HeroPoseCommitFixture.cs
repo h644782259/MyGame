@@ -27,6 +27,13 @@ namespace Emberfall
   // Optional imported visual boundary: disabled, always returns to procedural poses.
   // It records arguments only; no Animator, asset importer or render behavior is simulated.
   private bool pilotCharging;
+  // Explicit optional authored-motion boundary. This legacy suite owns original pose
+  // timing/handoff only; real binary loading and authored offsets are covered by
+  // VanguardActionsProductionTests and the actual factory/AnimateHero pose export.
+  private void ApplyAuthoredVanguardPose(bool acting,float progress,bool hurt) {}
+  private object blenderPilot;
+  private void ConfigureBlenderPilot() { blenderPilot=null; }
+
   // This fixture executes procedural poses only; imported rig sampling has its own suite.
   private void SetBlenderPilotVisible(bool visible){if(visible)throw new Exception("Procedural pose fixture cannot enable imported visual");}
   public bool PilotCharging=>pilotCharging;public void PretendPilotCharge(){pilotCharging=true;}

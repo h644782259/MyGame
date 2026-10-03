@@ -13,7 +13,7 @@ namespace Emberfall
 {
     internal static class FilledSkillVfx{internal static int Confirmed;internal static void ConfirmFinale(PlayerController hero,int castId){Confirmed++;}}
     public enum HeroClass{Arcanist}public enum ElementalistSpecialization{None,Burn,Shatter}
-    public class CombatModel:MonoBehaviour{}
+    public class CombatModel:MonoBehaviour{internal bool TryAnimateKnockdown(float remaining,bool airborne,float dt)=>false;}
     public class GameSession{public static GameSession Instance;public bool HasStarted=true,CombatEnded,InputBlocked;public PlayerController Player;public List<EnemyController> Enemies=new List<EnemyController>();public void RecordClassTutorial(HeroClass hero){} }
     public class EnemyController:MonoBehaviour
     {
@@ -29,7 +29,7 @@ namespace Emberfall
         private bool ValidAimTarget(EnemyController e)=>e!=null&&!e.IsDead;
         internal void RegisterSkillHit(int cast){ProcHits++;}private void ApplySpellDodgeBoon(EnemyController enemy){Boons++;if(DodgeBurn)enemy.StatusEffects.Burn(this,2,200);}
     }
-    public static class ElementalCombatVfx{public enum Element{Fire,Poison}public static int Clears;public static void OnEnemy(EnemyController e,Element element,float duration){}public static void ClearFire(EnemyController e){Clears++;}}
+    public static class ElementalCombatVfx{public enum Element{Fire,Poison}public static int Clears;public static void OnEnemy(EnemyController e,Element element,float duration){}public static void ClearFire(EnemyController e){Clears++;}public static void ClearPoison(EnemyController e){}}
     public static class CombatFx{public static int CashContacts;public static void BurnContact(PlayerController owner,Vector3 point,bool finale=false){CashContacts++;}public static Vector3 Flat(Vector3 v){v.y=0;return v;}public static void Ring(Vector3 p,float r,Color c,float duration,float width){} }
     public static class CombatSight{public static bool Area(Vector3 a,Vector3 b)=>true;}
     public static class DestructibleProp{public static Action OnStrike;public static void StrikeArea(PlayerController p,Vector3 at,float r,CombatDamage d,int cast){OnStrike?.Invoke();} }

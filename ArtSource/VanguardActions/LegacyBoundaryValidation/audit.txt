@@ -1,0 +1,9 @@
+Legacy extraction boundary audit
+
+HeroPoseCommitFixture.cs supplies explicitly disabled optional authored-motion Apply boundary to HeroPoseCommitTests, CasterChargeProductionTests and CollectionPoseIsolationProductionTests. The latter also needs an explicitly disabled imported-preview constructor field/method. All preserve original extracted production methods and existing negative controls.
+
+EquipmentCompositionPilotBoundary.cs supplies the optional ConfigureVanguardArt boundary to EquipmentCompositionProductionTests, ClassTierStructureProductionTests and WeaponFashionStructureProductionTests. ActorModules/export_constructions uses that same boundary, with its redundant ad hoc declaration removed. VanguardActions/export_actions deliberately removes the named boundary and compiles the real library and adapter; rerun passed all 13 actual final pose cases.
+
+BlenderPilotAdapterProductionTests extracts only AnimateHero prefix ending before stride generation, thus no authored-motion hook. TreeOcclusionRegistryTests, AuthoredSceneryProductionTests and PreviewClothProductionTests reuse extraction helpers/types but do not instantiate the shared Hero body or full AnimateHero. No other complete Hero or AnimateHero extraction entry was found by rg across Tests/*.py.
+
+All six affected legacy suites and their existing compiled negative controls returned exit 0 after the fixture fixes. These runs do not replace the final aggregate run and do not validate Unity engine behavior. The separate VanguardActionsProductionTests loads the real binary and executes the actual authored adapter, preventing this explicit legacy boundary from being mistaken for new-art validation.

@@ -22,6 +22,7 @@ def adapt(f):
  f=f.replace('public bool TrySpendHealingCharge()=>true;','')
  f=f.replace('public class FakeProgression{','public class FakeProgression{public float RefreshedMaxHealth=1000;public PlayerController.Stats GetStats()=>new PlayerController.Stats{MaxHealth=RefreshedMaxHealth};public object EquippedFashion(FashionSlot slot)=>null;public object Equipped(ItemSlot slot)=>null;public int Potions=3;public string LastError="none";public bool UsePotion(){if(Potions==0)return false;Potions--;return true;}')
  f=f.replace('public class AdvancedSkillVfx:MonoBehaviour{','public class AdvancedSkillVfx:MonoBehaviour{public static void Beam(params object[] a){}')
+ f=f.replace('public static AdvancedSkillVfx Rune(params object[] a)=>new AdvancedSkillVfx();','public static AdvancedSkillVfx Rune(PlayerController owner,Vector3 at,float r,Color c,float duration,int rank,bool follows=false,int identity=0)=>new AdvancedSkillVfx();')
  # Real SummonerSpell dispatch uses this same Spawn call for slot six. All other spells remain boundary recorders.
  f=f.replace('player.RecordEmission(point,target);','if(skill==6)AdvancedSkillSequence.Spawn(player,game,skill,rank,point,player.transform.forward,new CombatDamage(),new Color(),castId);else player.RecordEmission(point,target);')
  return f
@@ -38,7 +39,7 @@ def add_production(p):
  methods=''.join(member(path,s) for path,s in [('Core/GameSession.Expedition.cs','public bool TrySpendHealingCharge('),('Core/GameSession.cs','public void DrinkPotion(')])
  (p/'HealingSession.cs').write_text('using UnityEngine;namespace Emberfall{public partial class GameSession{'+methods+'}}')
  (p/'HealingTests.cs').write_text((root/'Tests/RestrictedHealingProductionTests.cs').read_text())
- (p/'SequenceBoundary.cs').write_text('using UnityEngine;namespace Emberfall{public enum CombatVisualPriority{ActionBody}public class FilledSkillVfx{public static FilledSkillVfx BeginArrowBatch(PlayerController p,Vector3 t,float r,Color c,CombatVisualPriority priority=CombatVisualPriority.ActionBody,int castId=0)=>null;}}')
+ (p/'SequenceBoundary.cs').write_text('using UnityEngine;namespace Emberfall{public enum CombatVisualPriority{ActionBody}public class FilledSkillVfx{public struct ArrowBatchHandle{}public static ArrowBatchHandle BeginArrowBatch(PlayerController p,Vector3 t,float r,Color c,CombatVisualPriority priority=CombatVisualPriority.ActionBody,int castId=0)=>default;}}')
 
 # Reuse construction/compilation setup, not the old test body or mutations.
 harness=(root/'Tests/MobilePinnedTargetProductionTests.py').read_text().split(' env=dict')[0]

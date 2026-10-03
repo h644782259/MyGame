@@ -1,3 +1,4 @@
+// Imported-adapter tests explicitly authorize preview construction; subsequent clock tests exercise its sampler in isolation.
 // Managed animation/transform boundaries, deliberately independent of production owner tables.
 // Clips overwrite every bone, so retaining stale lower locals cannot accidentally pass.
 using System;
@@ -82,7 +83,7 @@ static class LayerFixture
             Rejected("duplicate "+n,g=>{var d=new GameObject(n);d.transform.SetParent(Bone(g,"Hand.R"));});
             Rejected("wrong parent "+n,g=>Bone(g,n).SetParent(Bone(g,"Hand.L")));
         }
-        ResourcesReady();var host=new GameObject("layer host");var m=host.AddComponent<CombatModel>();m.heroClass=HeroClass.Vanguard;m.Init();
+        ResourcesReady();var host=new GameObject("layer host");var m=host.AddComponent<CombatModel>();m.heroClass=HeroClass.Vanguard;m.isolatedPreview=true;m.Init();m.isolatedPreview=false;
         foreach(float speed in new[]{0f,.049f,.05f,.051f,.2f,.75f,1f,2f,-1f,float.NaN,float.PositiveInfinity})
         foreach(float phase in new[]{0f,.7f,3f,6.28f,6.29f,14f})
         {
@@ -156,7 +157,7 @@ static class LayerFixture
         {
             ResourcesReady();var h=new GameObject("failure host");var visible=h.AddComponent<Renderer>();visible.enabled=true;
             var hidden=new GameObject("hidden procedural");hidden.transform.SetParent(h.transform);var hiddenRenderer=hidden.AddComponent<Renderer>();hiddenRenderer.enabled=false;
-            var model=h.AddComponent<CombatModel>();model.heroClass=HeroClass.Vanguard;model.Init();model.locomotion.Speed=.7f;model.actionBasic=true;
+            var model=h.AddComponent<CombatModel>();model.heroClass=HeroClass.Vanguard;model.isolatedPreview=true;model.Init();model.isolatedPreview=false;model.locomotion.Speed=.7f;model.actionBasic=true;
             if(initiallyVisible)model.Sample(true,.52f);
             Resources.Clips.Single(c=>c.name==failingClip).ThrowOnSample=true;
             C(!model.Sample(true,.52f)&&!model.Visible&&!model.View.gameObject.activeSelf&&visible.enabled&&!hiddenRenderer.enabled,"each failed composition stage restores original renderer states");

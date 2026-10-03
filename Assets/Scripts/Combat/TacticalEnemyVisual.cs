@@ -5,12 +5,14 @@ namespace Emberfall
     public sealed class TacticalEnemyVisual:MonoBehaviour
     {
         private EnemyController enemy;private GameSession session;private int epoch;
+        private TacticalAttachmentArt attachments;private PlayerController owner;
         private Material material;private Transform head;private LineRenderer crown,hunt,ward,feet;private bool supported;private float severedUntil;
         public static void Attach(EnemyController enemy,GameSession session)
         {
             if(enemy==null||session==null||enemy.GetComponentInChildren<TacticalEnemyVisual>(true)!=null)return;
             var root=new GameObject("Live tactical relations");root.transform.SetParent(enemy.transform,false);
             var visual=root.AddComponent<TacticalEnemyVisual>();visual.enemy=enemy;visual.session=session;visual.epoch=session.Player.CombatEpoch;
+            visual.owner=session.Player;visual.attachments=TacticalAttachmentArt.Create(enemy);
             visual.material=CombatFx.NewGlow();var head=new GameObject("Tactical head billboard");head.transform.SetParent(root.transform,false);head.transform.localPosition=Vector3.up*2.25f;visual.head=head.transform;
             visual.crown=visual.Line("Supplier crown",new Color(1,.8f,.2f),6,true);
             visual.hunt=visual.Line("Hunt target crosshair",new Color(1,.42f,.25f),9,true);
@@ -28,20 +30,23 @@ namespace Emberfall
         private void LateUpdate(){Refresh();}
         private void Refresh()
         {
-            if(enemy==null||enemy.IsDead||!enemy.isActiveAndEnabled||session==null||session.Player==null||session.Player.CombatEpoch!=epoch||session.CombatEnded)
+            if(enemy==null||enemy.IsDead||!enemy.isActiveAndEnabled||session==null||session.Player==null||!object.ReferenceEquals(session.Player,owner)||session.Player.CombatEpoch!=epoch||session.CombatEnded)
             {Hide();return;}
             if(Camera.main!=null)head.rotation=Camera.main.transform.rotation;
-            crown.enabled=session.IsRoomSupplier(enemy)||session.IsChapterSupplier(enemy);
-            hunt.enabled=session.IsChapterHuntTarget(enemy)||(session.IsRoomSupplier(enemy)&&session.RoomChainRun!=null&&session.RoomChainRun.Room.Objective==RoomObjective.Hunt);
+            bool supplier=session.IsRoomSupplier(enemy)||session.IsChapterSupplier(enemy);
+            bool supplierMesh=attachments.Set(0,supplier);crown.enabled=supplier&&!supplierMesh;
+            bool hunted=session.IsChapterHuntTarget(enemy)||(session.IsRoomSupplier(enemy)&&session.RoomChainRun!=null&&session.RoomChainRun.Room.Objective==RoomObjective.Hunt);
+            bool huntMesh=attachments.Set(1,hunted);hunt.enabled=hunted&&!huntMesh;
             bool next=session.RoomSupportMultiplier(enemy)<1||session.ChapterSupportMultiplier(enemy)<1;
             if(supported&&!next)severedUntil=Time.time+.24f;
             supported=next;ward.enabled=next||Time.time<severedUntil;
+            bool supportMesh=attachments.Set(2,next);if(supportMesh)ward.enabled=false;
             ward.startColor=ward.endColor=next?new Color(.2f,.85f,1):new Color(.55f,.55f,.55f);
             ward.widthMultiplier=next?.07f:.025f;
             feet.enabled=session.IsRoomContesting(enemy)||session.IsChapterContesting(enemy);
         }
-        private void Hide(){if(crown!=null)crown.enabled=false;if(hunt!=null)hunt.enabled=false;if(ward!=null)ward.enabled=false;if(feet!=null)feet.enabled=false;}
+        private void Hide(){if(attachments!=null)attachments.Hide();if(crown!=null)crown.enabled=false;if(hunt!=null)hunt.enabled=false;if(ward!=null)ward.enabled=false;if(feet!=null)feet.enabled=false;}
         private void OnDisable(){Hide();supported=false;severedUntil=0;}
-        private void OnDestroy(){if(material!=null)Destroy(material);}
+        private void OnDestroy(){if(attachments!=null)attachments.Destroy();if(material!=null)Destroy(material);}
     }
 }

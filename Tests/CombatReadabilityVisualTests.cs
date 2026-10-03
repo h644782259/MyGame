@@ -23,7 +23,7 @@ namespace Emberfall
     }
     public partial class ArrowSequenceFixture
     {
-        PlayerController owner;GameSession session;FilledSkillVfx arrowBatch;int step,steps,rank,skill=9,castId=73;
+        PlayerController owner;GameSession session;FilledSkillVfx.ArrowBatchHandle arrowBatch;int step,steps,rank,skill=9,castId=73;
         HeroClass heroClass=HeroClass.Ranger;Vector3 target;float range=1;Color color=new Color(1,1,1);CombatDamage damage=new CombatDamage(10,true,2);
         public ArrowSequenceFixture(PlayerController hero,int rank){owner=hero;session=GameSession.Instance;this.rank=rank;steps=SkillDamageBudgets.AdvancedSteps(heroClass,skill,rank);arrowBatch=FilledSkillVfx.BeginArrowBatch(hero,target,6,color);}
         public void Run(){while(step<steps){Event();step++;}}
@@ -109,8 +109,8 @@ public static class CombatReadabilityVisualTests
         }
         {
             var hero=Reset();var fx=FilledSkillVfx.BeginArrowBatch(hero,Vector3.zero,4,new Color(1,1,1));
-            fx.ArrowBeat(Vector3.zero,4,false);GameSession.Instance.InputBlocked=true;hero.CombatEpoch++;Time.deltaTime=0;fx.gameObject.Call("Update");
-            Check(!fx.gameObject.activeInHierarchy&&CombatVisualLease.Active==0,"old epoch batch retires even while blocked at zero time");
+            fx.ArrowBeat(Vector3.zero,4,false);var effect=Effects().Single();GameSession.Instance.InputBlocked=true;hero.CombatEpoch++;Time.deltaTime=0;effect.Call("Update");
+            Check(!fx.IsValid&&!effect.activeInHierarchy&&CombatVisualLease.Active==0,"old epoch batch retires even while blocked at zero time");
         }
         Reset();return "PASS: "+checks+" production visual priority/batch/anchor/resource checks (managed substitutes, not Unity)";
     }

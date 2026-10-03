@@ -15,6 +15,7 @@ if source.count(guard) != 1:
 expected = 'failed stage creation releases partial lights, materials and contact texture immediately'
 with tempfile.TemporaryDirectory(prefix='collection-stage-recovery-negative-') as temporary:
     folder = Path(temporary)
+    (folder/'RendererGroupCache.cs').write_text((root/'Assets/Scripts/Core/RendererGroupCache.cs').read_text())
     (folder / 'CollectionModelPreview.cs').write_text(source.replace(guard, 'CreateStage();', 1))
     for name in ['CollectionPreviewState', 'CollectionPreviewComposition']:
         (folder / (name + '.cs')).write_text((root / ('Assets/Scripts/UI/' + name + '.cs')).read_text())

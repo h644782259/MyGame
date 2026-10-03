@@ -699,11 +699,12 @@ namespace Emberfall
                 if (openingFrost.RecordHit(openingFrostIdentity, ValidAimTarget(enemy), session.Progression.Profile.skillRanks[0] > 0) &&
                     enemy.StatusEffects != null && openingFrostProc.TryTrigger(PlayerUpgradeRules.BasicFrostProcCooldown))
                 {
-                    if (Specialization == ElementalistSpecialization.Burn) enemy.StatusEffects.Burn(this, 2f, CombatAttack * .35f);
+                    bool burning = Specialization == ElementalistSpecialization.Burn;
+                    if (burning) enemy.StatusEffects.Burn(this, 2f, CombatAttack * .35f);
                     else if (session.Progression.Profile.skillRanks[0] > 0) enemy.StatusEffects.FrostMark(PlayerUpgradeRules.BasicFrostMarkDuration);
                     else enemy.StatusEffects.Freeze(.35f);
-                    CombatFx.Ring(position, 1f, new Color(.5f, .9f, 1f), .35f, .12f);
-                    session.SpawnMechanismText(position + Vector3.up * 2f, "霜触", new Color(.55f, .95f, 1f));
+                    CombatFx.Ring(position, 1f, burning ? new Color(1f, .46f, .08f) : new Color(.5f, .9f, 1f), .35f, .12f);
+                    session.SpawnMechanismText(position + Vector3.up * 2f, burning ? "灼触" : "霜触", burning ? new Color(1f, .55f, .18f) : new Color(.55f, .95f, 1f));
                     session.RecordCombatAction("职业能力");
                 }
             }

@@ -34,6 +34,9 @@ namespace Emberfall
         internal static void ClearFire(EnemyController enemy)
         {var aura=enemy==null?null:enemy.GetComponent<ElementalEnemyAura>();if(aura!=null)aura.ClearFire();}
 
+        internal static void ClearPoison(EnemyController enemy)
+        {var aura=enemy==null?null:enemy.GetComponent<ElementalEnemyAura>();if(aura!=null)aura.ClearPoison();}
+
         internal static ParticleSystem Create(Transform parent, string name, Element element, float rate, float radius)
         {
             GameObject obj = new GameObject(name);
@@ -127,6 +130,11 @@ namespace Emberfall
 
         internal void ClearFire()
         {fireUntil=Time.time;if(fire!=null){fire.Stop(true,ParticleSystemStopBehavior.StopEmittingAndClear);fire.gameObject.SetActive(false);}if(fireShape!=null)fireShape.gameObject.SetActive(false);}
+
+        // Retire only the sustained poison channel synchronously. Keep its reusable
+        // components alive so same-frame reapplication cannot inherit a queued Destroy.
+        internal void ClearPoison()
+        {poisonUntil=Time.time;if(poison!=null){poison.Stop(true,ParticleSystemStopBehavior.StopEmittingAndClear);poison.gameObject.SetActive(false);}if(poisonShape!=null)poisonShape.gameObject.SetActive(false);}
 
         private void Update()
         {

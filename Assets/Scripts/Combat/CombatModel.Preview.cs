@@ -10,6 +10,7 @@ namespace Emberfall
         public void ConfigurePreview()
         {
             isolatedPreview=true;previewTime=0;
+            if(blenderPilot==null)ConfigureBlenderPilot();
             previewOrbit=fashionWings==null?null:fashionWings.Find("Mechanical star-ring orbit");
             if(previewOrbit!=null)previewOrbitRest=previewOrbit.localRotation;
             if(decoration!=null)previewDecorationRest=decoration.localRotation;

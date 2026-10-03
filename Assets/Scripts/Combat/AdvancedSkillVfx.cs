@@ -15,13 +15,13 @@ namespace Emberfall
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetCount(){activeEffects=0;}
 
-        public static AdvancedSkillVfx Rune(PlayerController hero,Vector3 at,float size,Color color,float lifetime,int detail,bool followHero=false)
+        public static AdvancedSkillVfx Rune(PlayerController hero,Vector3 at,float size,Color color,float lifetime,int detail,bool followHero=false,int identity=0)
         {
             if(hero==null||hero.IsDead||activeEffects>=MaximumEffects)return null;
             var obj=new GameObject("Cancellable filled charge envelope");obj.transform.position=at;
             var fx=obj.AddComponent<AdvancedSkillVfx>();fx.owner=hero;fx.epoch=hero.CombatEpoch;
             fx.duration=Mathf.Clamp(lifetime,.12f,12);fx.follow=followHero;fx.registered=true;activeEffects++;
-            FilledSkillVfx.Charge(fx.transform,hero,at,size,color,fx.duration);
+            FilledSkillVfx.Charge(fx.transform,hero,at,size,color,fx.duration,identity);
             return fx;
         }
         public static void Beam(PlayerController hero,Vector3 start,Vector3 end,Color color,float lifetime,float width=.18f)
