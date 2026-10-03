@@ -171,6 +171,7 @@ namespace Emberfall
 
         public void NewGame(HeroClass heroClass)
         {
+            if(IsPracticeOnly){Fail("试招角色不能重建真实存档。");return;}
             if (!Enum.IsDefined(typeof(HeroClass), heroClass)) heroClass = HeroClass.Vanguard;
             // A deleted character has no autosave destination. An explicit new game
             // gets a fresh ID rather than recycling its deleted filename.
