@@ -1208,6 +1208,10 @@ namespace Emberfall
                 return;
             }
             if (!CanUseMovementSkill(slot, rank)) { TraversalFailure(); return; }
+            // Limited healing rank one has no defensive benefit: do not pay for an empty heal.
+            if (slot == 6 && rank == 1 && session.ChallengeRun && session.InDungeon && Health >= MaxHealth
+                && (HeroClass != HeroClass.Summoner || !SummonedCompanion.HasHealingTarget(this)))
+            { session.Notify("生命已满，无需使用治疗技能。"); return; }
             if (slot == 6 && skillRuntime.Remaining(slot) <= 0 && Energy >= GameBalance.SkillEnergyCost(HeroClass, slot) && !session.TrySpendHealingCharge()) return;
             if (!skillRuntime.TryConsume(slot, rank, ActiveRunBonuses == null ? 1f : ActiveRunBonuses.CooldownMultiplier))
             {

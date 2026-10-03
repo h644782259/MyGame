@@ -449,8 +449,9 @@ namespace Emberfall
             }
             if (skill == 6)
             {
-                if (hero == HeroClass.Summoner) return new[] { "5秒内为自身与召唤物恢复30%最大生命。", "5秒为自身与召唤物恢复42%生命，自身获得18%减伤。", "5秒为自身与召唤物恢复55%生命，自身获得25%减伤并回复8灵力。" }[stage];
-                return new[] { "5秒内恢复30%最大生命，不造成伤害。", "5秒恢复42%生命，获得18%减伤。", "5秒恢复55%生命，获得25%减伤并回复8能量。" }[stage];
+                string limited = " 限疗模式：5秒内自身恢复" + new[] { "60%", "70%", "80%" }[stage] + "最大生命，消耗1次治疗充能。";
+                if (hero == HeroClass.Summoner) return new[] { "5秒内为自身与召唤物恢复30%最大生命。", "5秒为自身与召唤物恢复42%生命，自身获得18%减伤。", "5秒为自身与召唤物恢复55%生命，自身获得25%减伤并回复8灵力。" }[stage] + limited + "召唤物治疗量不变。";
+                return new[] { "5秒内恢复30%最大生命，不造成伤害。", "5秒恢复42%生命，获得18%减伤。", "5秒恢复55%生命，获得25%减伤并回复8能量。" }[stage] + limited;
             }
             if (stage == 0) return SkillDescription(hero, skill);
             return stage == 1 ? ReinforcedEffects[(int)hero,skill] : AwakenedEffects[(int)hero,skill];
