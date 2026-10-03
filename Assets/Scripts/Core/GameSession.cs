@@ -462,7 +462,7 @@ namespace Emberfall
 
         public void OnEnemyKilled(EnemyController enemy)
         {
-            if(PracticeActive){if(enemy!=null&&Enemies.Remove(enemy))enemy.BeginDeath();return;}
+            if(PracticeActive){if(enemy!=null&&Enemies.Remove(enemy)){PracticeRecord.Defeat(enemy.Kind.ToString(),PracticeRecord.HasSupplier&&enemy.Kind==EnemyKind.Wisp,Enemies.Count==0);enemy.BeginDeath();}return;}
             if (enemy == null || !AdventureResultPolicy.AcceptsKill(HasStarted,CombatEnded,Enemies.Contains(enemy))) return;
             int chapterExperience=0;bool chapterKill=ChapterActive;
             if(chapterKill&&!RecordChapterDefeat(enemy,out chapterExperience))return;
@@ -526,7 +526,7 @@ namespace Emberfall
 
         public void OnPlayerDied()
         {
-            if(PracticeActive){EndPractice("角色倒下 · 记录提前结束");return;}
+            if(PracticeActive){PracticeRecord.PlayerDefeated();EndPractice("角色倒下 · 记录提前结束");return;}
             if (IsDead) return;
             IsDead = true;
             if(ModeRun!=null)ModeRun.Fail(ExpeditionModeFailure.PlayerDefeated);
