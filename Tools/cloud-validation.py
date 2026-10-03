@@ -380,6 +380,7 @@ def main():
                              ("blender-scenery-production", "BlenderSceneryProductionTests.py"),
                              ("authored-projectile-production", "AuthoredProjectileProductionTests.py"),
                              ("fixed-scenery-production", "FixedSceneryProductionTests.py"),
+                             ("fixed-scenery-enabled-integration", "FixedSceneryEnabledIntegrationTests.py"),
                              ("authored-spell-bases", "AuthoredSpellBasesProductionTests.py"),
                              ("authored-spell-integration", "AuthoredSpellIntegrationTests.py"),
                              ("camera-occlusion-slots", "CameraOcclusionSlotsProductionTests.py"),
