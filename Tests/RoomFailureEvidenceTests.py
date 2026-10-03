@@ -34,7 +34,7 @@ main=(root/'Assets/Scripts/Core/GameSession.cs').read_text()
 assert 'RoomChainRun.Fail(RoomFailureReason.Death)' in method(main,'public void OnPlayerDied(')
 for name in ['GameSession.RoomChain.cs','GameSession.RoomTactics.cs']:
  source=(root/'Assets/Scripts/Core'/name).read_text();assert 'RoomChainRun.Fail();' not in source and 'RoomFailureReason.GenerationOrPathFailure' in source
-assert main.index('if (!loadingSaveSnapshot && !enteringChapter && !SaveBeforeLeaving()) return false;')<main.index('LastRunSummary=BuildRunSummary(false, "Abandoned")')<main.index('int previousCombatEpoch = Player.CombatEpoch;',main.index('private bool ChangeZone'))
+assert main.index('if (!loadingSaveSnapshot && !enteringChapter && !retryingRoomChain && !SaveBeforeLeaving()) return false;')<main.index('LastRunSummary=BuildRunSummary(false, "Abandoned")')<main.index('int previousCombatEpoch = Player.CombatEpoch;',main.index('private bool ChangeZone'))
 print('PASS: death/path/abandon callsite contracts; no Unity engine execution')
 
 player=(root/"Assets/Scripts/Combat/PlayerController.cs").read_text()

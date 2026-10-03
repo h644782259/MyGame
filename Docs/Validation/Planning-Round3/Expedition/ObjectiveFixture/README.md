@@ -10,3 +10,10 @@
 结果：mobile-room-objective-fixed.log 171 断言；room-blessing-preview-fixed.log 27,504 断言。两份日志亦分别执行 `git show b853f84:Tests/<原fixture>.cs` 与完全相同现行生产源码，精确重现冻结同一异常，证明是旧 fixture 未履行新分支契约，未放宽 runtime 推进条件。
 
 仍可用已登记的 `Tests/Run-CloudValidation.sh --dotnet /workspace/shared/emberfall-tools/dotnet/dotnet` 重跑。这里是文本/状态/布局的 managed 检查，不是 Unity 渲染或实机验收。未修改根工作树和冻结目录。
+
+## v2 后续两项源契约兼容
+
+- room-preview-ui-contract：旧字符串 `Boss ? 3 : 6` 同时约束了 Boss 与非 Boss 房间人数，守印侧廊新增4敌后已不匹配。改为精确检查 `EnemyCount = Interlude ? 0 : Boss ? 3 :`，继续约束休憩0敌/首领3敌但不假定非首领分支人数；增加 Boss 人数3→4的源负控。桌面/移动实际副标题接线与原两个旧文案负控保留且通过。
+- room-failure-evidence：原26条生产失败快照断言、654条复盘断言及两个编译负控均已通过，只有末尾源码排序检查仍寻找旧 ChangeZone 保存守卫。更新为包含 `!retryingRoomChain` 的现行精确守卫，继续要求 preflight 在 Abandoned 快照及 epoch 改变前；专项全部通过，未删除原断言。
+
+对应 `*-original.log` 是冻结v2原样失败；`*-fixed.log` 是本tree专项原始输出。仍未改运行时源码。
