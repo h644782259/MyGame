@@ -13,7 +13,7 @@ Console.WriteLine("PASS "+n+" actual cast/factory checks; managed Unity boundari
 '''
 with tempfile.TemporaryDirectory(prefix='venom-launch-') as t:
  p=Path(t);(p/'Stubs.cs').write_text(s);(p/'Projectile.cs').write_text(ns['projectile']);(p/'Test.cs').write_text(fixture)
- for f in ['Combat/ConcentratedVenomRules','Combat/AuthoredProjectileMeshes','Combat/AuthoredActorMeshes','Combat/VisualMeshRecipes','Combat/AnchoredImpactMesh','Combat/CombatVisualLease','Core/CombatVisualBudget']:(p/(Path(f).name+'.cs')).write_text((r/'Assets/Scripts'/(f+'.cs')).read_text())
+ for f in ['Combat/ConcentratedVenomRules','Combat/AuthoredProjectileMeshes','Combat/AuthoredActorMeshes','Combat/VisualMeshRecipes','Combat/AnchoredImpactMesh','Combat/CombatVisualLease','Core/CombatVisualBudget','Core/CastFirstHitReceipt']:(p/(Path(f).name+'.cs')).write_text((r/'Assets/Scripts'/(f+'.cs')).read_text())
  (p/'Test.csproj').write_text('<Project Sdk="Microsoft.NET.Sdk"><PropertyGroup><TargetFramework>net8.0</TargetFramework><OutputType>Exe</OutputType><NoWarn>0649;0414</NoWarn></PropertyGroup></Project>');(p/'NuGet.Config').write_text('<configuration><packageSources><clear/></packageSources></configuration>');env=dict(os.environ,DOTNET_CLI_HOME=str(p/'cli'),DOTNET_NOLOGO='1')
  def run(expected=None):
   subprocess.run([sys.argv[1],'build',str(p/'Test.csproj'),'--configfile',str(p/'NuGet.Config'),'-v:q'],env=env,check=True);out=subprocess.run([sys.argv[1],str(p/'bin/Debug/net8.0/Test.dll'),str(r/'Assets/Resources')],env=env,capture_output=True,text=True);print(out.stdout+out.stderr)
