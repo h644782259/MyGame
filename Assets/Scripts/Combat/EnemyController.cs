@@ -93,6 +93,7 @@ namespace Emberfall
             attackCooldown = Random.Range(.5f,1.2f);
             model = CombatModel.Enemy(transform,kind,boss);
             StatusEffects = gameObject.AddComponent<EnemyStatusEffects>();
+            EnemyStatusVisual.Attach(this);
             BuildHealthBar();
             guardArmorVisual=GuardArmorVisual.Attach(this);
         }
