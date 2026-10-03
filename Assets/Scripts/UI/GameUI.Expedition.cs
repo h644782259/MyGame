@@ -100,7 +100,7 @@ namespace Emberfall
                     if(equipped!=null&&equipped.mechanic==mechanic)
                     {
                         if(Button(new Rect(c.x+660,c.y+55,99,36),"重铸档位",jade,session.IsInCamp&&p.QuoteReforge(equipped.id)!=null,"选择提升5级、金币可达或追平等级"))OpenReforgeSurface(equipped.id);
-                        if(BuildCatalog.HasMechanicVariant(mechanic)&&Button(new Rect(c.x+766,c.y+55,99,36),equipped.mechanicVariantUnlocked?(equipped.mechanicVariant==0?"变体 A":"变体 B"):"变体 · 4",jade,string.IsNullOrEmpty(p.VariantLockReason(equipped.id,session.IsInCamp)),"首次解锁4碎片，之后免费切换互斥效果"))Feedback(p.ToggleMechanicVariant(equipped.id,session.IsInCamp),"装备变体已切换");
+                        if(BuildCatalog.HasMechanicVariant(mechanic)&&Button(new Rect(c.x+766,c.y+55,99,36),p.HasVariant(equipped)?(equipped.mechanicVariant==0?"变体 A":"变体 B"):"变体 · 4",jade,string.IsNullOrEmpty(p.VariantLockReason(equipped.id,session.IsInCamp)),"本角色首次学习4碎片，同机制装备免费选已学变体"))Feedback(p.ToggleMechanicVariant(equipped.id,session.IsInCamp),"装备变体已切换");
                         string ascension = p.AscensionLockReason(equipped.id,session.IsInCamp);
                         if(Button(new Rect(c.x+660,c.y+101,205,36),equipped.rarity==Rarity.Legendary?"已是传说品质":"传说升华 · 24碎片",gold,string.IsNullOrEmpty(ascension),string.IsNullOrEmpty(ascension)?"保留物品编号、等级、机制变体和部位强化；基础属性按25/18提升，无随机重抽。":ascension))Feedback(p.AscendMechanic(equipped.id,session.IsInCamp),"机制装备已升华为传说；身份、变体与部位强化保留");
                     }

@@ -273,6 +273,8 @@ namespace Emberfall
         public int[] slotUpgradeRanks = new int[3];
         public bool slotUpgradesInitialized;
         public int mechanicMaterials;
+        public int variantKnowledgeRevision;
+        public List<EquipmentMechanic> variantKnowledge = new List<EquipmentMechanic>();
         public int materialRewardedClears;
         public bool firstClearRewardClaimed;
         public bool pendingFirstClearReward;

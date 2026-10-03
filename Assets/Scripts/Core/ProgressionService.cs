@@ -205,7 +205,9 @@ namespace Emberfall
                 // Migration is written before selecting/publishing the loaded role.
                 // A failed save leaves the active role and durable reward flags intact.
                 string migrationFailure;
-                if (ChapterProgression.BackfillDifficultyRewards(loaded) && !TryWriteProfile(loaded, candidatePath, false, out migrationFailure))
+                bool migrationRequired=ChapterProgression.BackfillDifficultyRewards(loaded);
+                if(loaded.variantKnowledgeRevision<1){loaded.variantKnowledgeRevision=1;migrationRequired=true;}
+                if (migrationRequired && !TryWriteProfile(loaded, candidatePath, false, out migrationFailure))
                     return Fail(migrationFailure);
                 if (currentSlotId != normalized) collectedLootIds.Clear();
                 SelectSlotPath(normalized);
@@ -779,7 +781,7 @@ namespace Emberfall
         {
             if(!HasMechanic(mechanic))return false;
             ItemData item=Equipped(BuildCatalog.MechanicSlot(mechanic));
-            return item!=null&&item.mechanicVariantUnlocked&&item.mechanicVariant==1;
+            return HasVariant(item)&&item.mechanicVariant==1;
         }
         /// <summary>Rank effects under the actually worn class-valid mechanism, shared by current and draft previews.</summary>
         public string SkillEffectSummary(int skill,int rank)
@@ -1269,7 +1271,7 @@ namespace Emberfall
         private int CapturedVariant(string id)
         {
             ItemData item=FindItem(id);
-            return item!=null && item.mechanicVariantUnlocked && HasElementVariant(item) ? item.mechanicVariant : -1;
+            return HasVariant(item) ? item.mechanicVariant : -1;
         }
         private static bool HasElementVariant(ItemData item)
         {return item!=null && BuildCatalog.HasMechanicVariant(item.mechanic);}
@@ -1362,7 +1364,7 @@ namespace Emberfall
             {
                 string[] ids={preset.weaponId,preset.armorId,preset.relicId};
                 for(int i=0;i<3;i++)if(preset.equipmentVariants[i]>=0)
-                    candidate.inventory.Find(item=>item.id==ids[i]).mechanicVariant=preset.equipmentVariants[i];
+                    {var selected=candidate.inventory.Find(item=>item.id==ids[i]);selected.mechanicVariant=preset.equipmentVariants[i];selected.mechanicVariantUnlocked=true;}
             }
             return CommitCandidate(candidate);
         }
@@ -1427,7 +1429,7 @@ namespace Emberfall
                 if(preset.equipmentVariants!=null)
                 {
                     int variant=preset.equipmentVariants[slot];
-                    if(variant < -1 || variant>1 || variant>=0 && (!HasElementVariant(item)||!item.mechanicVariantUnlocked))
+                    if(variant < -1 || variant>1 || variant>=0 && !HasVariant(item))
                         return "方案引用了未解锁或无效的装备变体；不会消耗材料或自动解锁。";
                 }
             }
@@ -1550,7 +1552,10 @@ namespace Emberfall
         {
             string reason=VariantLockReason(id,inCamp);if(reason.Length>0)return Fail(reason);
             GameProfile candidate = Snapshot(); ItemData item = candidate.inventory.Find(x => x.id == id);
-            if (!item.mechanicVariantUnlocked) candidate.mechanicMaterials -= VariantCost;
+            if (!HasVariant(item)) candidate.mechanicMaterials -= VariantCost;
+            if(candidate.variantKnowledge==null)candidate.variantKnowledge=new List<EquipmentMechanic>();
+            if(!candidate.variantKnowledge.Contains(item.mechanic))candidate.variantKnowledge.Add(item.mechanic);
+            candidate.variantKnowledgeRevision=1;
             item.mechanicVariantUnlocked = true; item.mechanicVariant = 1 - item.mechanicVariant;
             return CommitCandidate(candidate);
         }
@@ -1732,16 +1737,31 @@ namespace Emberfall
         }
         public string ReforgeLockReason(string id,bool inCamp)
         { return ReforgeLockReason(QuoteReforge(id),inCamp); }
+        public bool HasVariant(ItemData item)
+        {return item!=null&&BuildCatalog.HasMechanicVariant(item.mechanic)&&BuildCatalog.MechanicClass(item.mechanic)==Profile.heroClass&&item.slot==BuildCatalog.MechanicSlot(item.mechanic)&&
+            (Profile.variantKnowledge!=null&&Profile.variantKnowledge.Contains(item.mechanic)||Profile.variantKnowledgeRevision<1&&item.mechanicVariantUnlocked);}
+        private static void NormalizeVariantKnowledge(GameProfile profile)
+        {
+            var learned=new List<EquipmentMechanic>();
+            if(profile.variantKnowledge!=null)foreach(var mechanic in profile.variantKnowledge)
+                if(BuildCatalog.HasMechanicVariant(mechanic)&&BuildCatalog.MechanicClass(mechanic)==profile.heroClass&&!learned.Contains(mechanic))learned.Add(mechanic);
+            var items=new List<ItemData>(profile.inventory);items.AddRange(profile.pendingLoot);items.AddRange(profile.recoveryLoot);
+            if(profile.variantKnowledgeRevision<1)foreach(var item in items)
+                if(item.mechanicVariantUnlocked&&BuildCatalog.HasMechanicVariant(item.mechanic)&&BuildCatalog.MechanicClass(item.mechanic)==profile.heroClass&&item.slot==BuildCatalog.MechanicSlot(item.mechanic)&&!learned.Contains(item.mechanic))learned.Add(item.mechanic);
+            profile.variantKnowledge=learned;
+            foreach(var item in items)
+            {item.mechanicVariantUnlocked=learned.Contains(item.mechanic);if(!item.mechanicVariantUnlocked)item.mechanicVariant=0;}
+        }
         public string VariantLockReason(string id,bool inCamp)
         {
             if(!inCamp)return "只能在营地切换元素机制变体。";
             string reason=MechanicGoalEligibility(id,ProgressionGoalKind.Variant);if(reason.Length>0)return reason;
-            return !FindItem(id).mechanicVariantUnlocked&&Profile.mechanicMaterials<VariantCost?"首次解锁变体需要4枚碎片，之后免费切换。":string.Empty;
+            return !HasVariant(FindItem(id))&&Profile.mechanicMaterials<VariantCost?"本角色首次学习该机制变体需要4枚碎片，同机制装备之后可免费选择。":string.Empty;
         }
         public bool UnlockMechanicVariant(string id,bool inCamp)
         {
             string reason=VariantLockReason(id,inCamp);if(reason.Length>0)return Fail(reason);
-            if(FindItem(id).mechanicVariantUnlocked){LastError=string.Empty;return true;}
+            if(HasVariant(FindItem(id))){LastError=string.Empty;return true;}
             return ToggleMechanicVariant(id,inCamp);
         }
         public bool SelectCoreGoal(EquipmentMechanic mechanic,Rarity minimumRarity=Rarity.Common)
@@ -1809,7 +1829,7 @@ namespace Emberfall
                     goal.ItemId=Profile.progressionGoalItemId;
                     goal.Title=(Profile.progressionGoal==ProgressionGoalKind.Variant?"解锁变体":Profile.progressionGoal==ProgressionGoalKind.Ascension?"传说升华":"重铸至 "+Profile.progressionGoalLevel+" 级")+" · "+(item==null?"原目标装备":item.name);
                     if(item==null){goal.Step="原目标装备不在背包；同名装备不会替代它";break;}
-                    goal.Done=Profile.progressionGoal==ProgressionGoalKind.Variant?item.mechanicVariantUnlocked:Profile.progressionGoal==ProgressionGoalKind.Ascension?item.rarity==Rarity.Legendary:item.level>=Profile.progressionGoalLevel;
+                    goal.Done=Profile.progressionGoal==ProgressionGoalKind.Variant?HasVariant(item):Profile.progressionGoal==ProgressionGoalKind.Ascension?item.rarity==Rarity.Legendary:item.level>=Profile.progressionGoalLevel;
                     if(goal.Done){goal.Step="保留当前目标，可自行选择下一目标";break;}
                     goal.MaterialCost=Profile.progressionGoal==ProgressionGoalKind.Variant?VariantCost:Profile.progressionGoal==ProgressionGoalKind.Ascension?AscensionCost:0;
                     goal.Action=Profile.progressionGoal==ProgressionGoalKind.Variant?ProgressionGoalAction.UnlockVariant:Profile.progressionGoal==ProgressionGoalKind.Ascension?ProgressionGoalAction.Ascend:ProgressionGoalAction.Reforge;
@@ -2460,7 +2480,7 @@ namespace Emberfall
 
         private static GameProfile CreateProfile(HeroClass heroClass)
         {
-            var profile = new GameProfile { heroClass = heroClass, chapterDifficultyRewardRevision = 1 };
+            var profile = new GameProfile { heroClass = heroClass, chapterDifficultyRewardRevision = 1, variantKnowledgeRevision = 1 };
             profile.skillRanks[0] = 1;
             for (int slot = 0; slot < 3; slot++) AddStarterItem(profile, (ItemSlot)slot);
             return profile;
@@ -2694,6 +2714,7 @@ namespace Emberfall
             }
             if (recovery.Count > RecoveryLootCapacity) throw new ArgumentException("临时保管栏超过安全容量；保留原存档，请从备份恢复。");
             profile.recoveryLoot = recovery;
+            NormalizeVariantKnowledge(profile);
             var discovered = new List<EquipmentMechanic>();
             if (profile.discoveredMechanics != null)
                 foreach (EquipmentMechanic mechanic in profile.discoveredMechanics)

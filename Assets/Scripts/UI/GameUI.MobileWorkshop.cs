@@ -150,7 +150,7 @@ namespace Emberfall
                 if (BuildCatalog.HasMechanicVariant(mechanic))
                 {
                     MobileWorkshopParagraph(ref y, width, "当前变体 " + (item.mechanicVariant == 0 ? "A" : "B") + "；首次解锁4碎片，此后免费切换互斥效果。", muted, draw);
-                    MobileWorkshopAction(ref y, width, item.mechanicVariantUnlocked ? "切换到变体 " + (item.mechanicVariant == 0 ? "B" : "A") : "解锁变体 B · 4碎片", jade,
+                    MobileWorkshopAction(ref y, width, p.HasVariant(item) ? "切换到变体 " + (item.mechanicVariant == 0 ? "B" : "A") : "解锁变体 B · 4碎片", jade,
                         string.IsNullOrEmpty(p.VariantLockReason(id,session.IsInCamp)), draw,
                         () => MobileWorkshopResult(p.ToggleMechanicVariant(id, session.IsInCamp), "装备变体已切换"));
                 }
