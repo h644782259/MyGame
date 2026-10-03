@@ -55,16 +55,16 @@ namespace Emberfall
         }
         private static void EnsureAssets()
         {
-            if(crescent==null)crescent=Mesh(FilledVfxRecipes.Crescent(),"Filled curved crescent volume");
-            if(crystal==null)crystal=Mesh(FilledVfxRecipes.Crystal(),"Faceted ice spear");
-            if(flame==null)flame=Mesh(FilledVfxRecipes.Flame(),"Curved flame tongue volume");
-            if(sword==null)sword=Mesh(FilledVfxRecipes.Sword(),"Ridged sword blade guard and grip");
-            if(lightning==null)lightning=Mesh(FilledVfxRecipes.Lightning(),"Angular branched lightning volume");
+            if(crescent==null)crescent=AuthoredSpellBases.Load("Crescent")??Mesh(FilledVfxRecipes.Crescent(),"Filled curved crescent volume");
+            if(crystal==null)crystal=AuthoredSpellBases.Load("Crystal")??Mesh(FilledVfxRecipes.Crystal(),"Faceted ice spear");
+            if(flame==null)flame=AuthoredSpellBases.Load("Flame")??Mesh(FilledVfxRecipes.Flame(),"Curved flame tongue volume");
+            if(sword==null)sword=AuthoredSpellBases.Load("Sword")??Mesh(FilledVfxRecipes.Sword(),"Ridged sword blade guard and grip");
+            if(lightning==null)lightning=AuthoredSpellBases.Load("Lightning")??Mesh(FilledVfxRecipes.Lightning(),"Angular branched lightning volume");
             if(arcane==null)arcane=Mesh(FilledVfxRecipes.Arcane(),"Arcane cubical lattice");
-            if(rupture==null)rupture=Mesh(FilledVfxRecipes.Rupture(),"Ground rupture branches");
-            if(arcaneShard==null)arcaneShard=Mesh(FilledVfxRecipes.ArcaneShard(),"Broken arcane strut");
-            if(arrow==null)arrow=Mesh(FilledVfxRecipes.Arrow(),"Narrow arrow shaft head and fletching");
-            if(vine==null)vine=Mesh(FilledVfxRecipes.Vine(),"Branching poison vine");
+            if(rupture==null)rupture=AuthoredSpellBases.Load("Rupture")??Mesh(FilledVfxRecipes.Rupture(),"Ground rupture branches");
+            if(arcaneShard==null)arcaneShard=AuthoredSpellBases.Load("ArcaneShard")??Mesh(FilledVfxRecipes.ArcaneShard(),"Broken arcane strut");
+            if(arrow==null)arrow=AuthoredSpellBases.Load("Arrow")??Mesh(FilledVfxRecipes.Arrow(),"Narrow arrow shaft head and fletching");
+            if(vine==null)vine=AuthoredSpellBases.Load("Vine")??Mesh(FilledVfxRecipes.Vine(),"Branching poison vine");
             if(sharedMaterial==null)
             {Shader shader=Resources.Load<Shader>("FilledSpell");sharedMaterial=new Material(shader!=null?shader:Shader.Find("Sprites/Default"));sharedMaterial.renderQueue=3070;}
         }
