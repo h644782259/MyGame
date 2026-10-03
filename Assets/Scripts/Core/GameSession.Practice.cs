@@ -20,6 +20,7 @@ namespace Emberfall
         public bool BeginPractice(CampPracticeScenario scenario,int seconds,ProgressionService.BuildDraft draft=null)
         {
             if(practiceBusy||PracticeActive||!IsInCamp||IsDead||seconds!=10&&seconds!=60||(int)scenario<0||(int)scenario>2)return false;
+            try{if(!PracticeEntrySafe())return false;}catch(Exception exception){Debug.LogException(exception);return false;}
             var charging=Player.GetComponent<SkillChargeController>();if(charging!=null&&charging.IsCharging)return false;
             ProgressionService copy=draft==null?Progression.CreatePracticeCopy():draft.CreatePracticeCopy();
             if(copy==null||!copy.IsPracticeOnly)return false;
@@ -47,6 +48,19 @@ namespace Emberfall
             }
             catch(Exception exception){Debug.LogException(exception);EndPractice("试招异常中止 · 已恢复原角色");return false;}
             finally{practiceBusy=false;}
+        }
+        private bool PracticeEntrySafe()
+        {
+            // Suspending an engaged enemy invokes OnDisable/CancelAttack. Refuse
+            // before any roots change so practice cannot erase a real attack.
+            foreach(var enemy in Enemies)
+                if(enemy!=null&&enemy.gameObject.activeInHierarchy&&!enemy.IsDead&&
+                    (enemy.IsAggro||enemy.IsPreparingAttack||(enemy.transform.position-Player.transform.position).sqrMagnitude<=144f))
+                {Notify("附近有敌人或仍在交战；请先脱离追击、结束预警后再试招。");return false;}
+            foreach(var root in gameObject.scene.GetRootGameObjects())
+                if(root.activeSelf&&root.GetComponentInChildren<CombatProjectile>()!=null)
+                {Notify("场上仍有飞行弹体；请等战斗结束后再试招。");return false;}
+            return true;
         }
         public bool RestartPractice()
         {

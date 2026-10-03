@@ -8,7 +8,7 @@ assert 'if(PracticeActive){TickPractice();return;}' in s
 assert 'if(PracticeActive){if(enemy!=null&&Enemies.Remove(enemy))enemy.BeginDeath();return;}' in s
 assert 'if(PracticeActive){EndPractice("角色倒下' in s
 assert 'if(PracticeActive)return false;' in s[s.index('public bool TryCollectGroundLoot(string'):s.index('public void CollectRemainingDungeonLoot')]
-assert 'if(PracticeActive)return false;' in s[s.index('public bool SaveBeforeLeaving()'):]
+leave=s[s.index('public bool SaveBeforeLeaving()'):s.index('public bool ExitApplication(')];assert 'EndPractice(' in leave and leave.index('EndPractice(')<leave.index('Progression.Save()')
 assert 'if(PracticeActive){PracticeRecord.Mechanism(key);return;}' in text('Core/GameSession.Expedition.cs')
 assert 'if(PracticeActive)return;' in text('Core/GameSession.Expedition.cs')
 assert 'PracticeRecord.ConfirmedHealthLoss(previousHealth-Health,practiceCastId)' in text('Combat/EnemyController.cs')

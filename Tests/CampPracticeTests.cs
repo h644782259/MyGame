@@ -13,7 +13,13 @@ public static class CampPracticeTests
   var profile=p.Profile;var disk=File.ReadAllText(p.SaveFilePath);string original=State(p);var draft=p.BeginBuildDraft(true);
   Check(p.PracticeConfigurationSummary().Contains("等级 50")&&p.PracticeConfigurationSummary().Contains(p.CurrentBuildSummary()),"human practice configuration uses frozen authoritative build summary");
   var a=draft.CreatePracticeCopy();Check(a.IsPracticeOnly&&!ReferenceEquals(a.Profile,profile),"deep isolated practice profile");
-  int files=Directory.GetFiles(root).Length;a.Profile.gold+=100;a.Profile.skillRanks[0]=1;a.Save();Check(Directory.GetFiles(root).Length==files&&File.ReadAllText(p.SaveFilePath)==disk&&State(p)==original&&draft.IsCurrent,"practice save never persists or invalidates draft");
+  Check(a.SaveDirectory==null&&a.SaveFilePath==null&&a.CurrentSlotId==null&&!a.HasActiveSave&&!a.HasSave,"practice has no storage destination or real slot");
+  Check(a.BeginBuildDraft(true)==null,"memory practice cannot create a real-path draft preview");
+  ProgressionService candidate;string transitionError;bool rejected=false;try{rejected=!SaveSlotTransition.TryStage(a,p.CurrentSlotId,out candidate,out transitionError)&&candidate==null&&transitionError.Contains("试招");}catch(Exception){}Check(rejected,"practice transition rejects before default storage constructor");
+  a.Profile.pendingFashionChest=true;Check(a.OpenDungeonChest(0)==null&&a.LastError.Contains("试招")&&a.Profile.pendingFashionChest,"practice cannot open inherited chest receipt");
+  var write=typeof(ProgressionService).GetMethod("TryWriteProfile",System.Reflection.BindingFlags.Static|System.Reflection.BindingFlags.NonPublic);object[] args={a.Profile,a.SaveFilePath,false,null};
+  Check(!(bool)write.Invoke(null,args)&&Directory.GetFiles(root).Length==2&&File.ReadAllText(p.SaveFilePath)==disk,"low-level missing guard cannot target real saves");
+  int files=Directory.GetFiles(root).Length;a.Profile.gold+=100;a.Profile.skillRanks[0]=1;a.Save();Check(string.IsNullOrEmpty(a.LastError),"practice memory save succeeds without persistence");Check(Directory.GetFiles(root).Length==files&&File.ReadAllText(p.SaveFilePath)==disk&&State(p)==original&&draft.IsCurrent,"practice save never persists or invalidates draft");
   Check(!a.SaveAsNewSlot()&&!a.CreateNewSlot(HeroClass.Ranger)&&!a.LoadSlot(p.CurrentSlotId),"practice cannot create or load saves");
   SaveDeletionRequest request;p.PrepareSaveDeletion(p.CurrentSlotId,out request);Check(!a.DeleteSaveSlot(request),"practice cannot delete real saves");
   for(int i=0;i<3;i++)Check(draft.ChangeMastery(0,-1)&&draft.ChangeMastery(1,1),"move three legal points");

@@ -75,6 +75,7 @@ namespace Emberfall
         {
             candidate = null; error = null;
             if (current == null) { error = "当前存档服务不可用。"; return false; }
+            if(current.IsPracticeOnly){error="试招角色不能切换持久存档。";return false;}
             var staged = new ProgressionService(current.SaveDirectory);
             if (!staged.LoadSlot(targetId)) { error = staged.LastError; return false; }
             current.CarryPendingChestContextTo(staged);

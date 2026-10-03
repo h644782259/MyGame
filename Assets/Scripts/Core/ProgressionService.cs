@@ -154,7 +154,11 @@ namespace Emberfall
         public bool IsPracticeOnly { get; private set; }
         public ProgressionService CreatePracticeCopy() { return CreatePracticeSnapshot(Profile); }
         private ProgressionService CreatePracticeSnapshot(GameProfile source)
-        { var copy=new ProgressionService(saveDirectory);copy.IsPracticeOnly=true;copy.Profile=JsonUtility.FromJson<GameProfile>(JsonUtility.ToJson(source,true));return copy; }
+        { var copy=new ProgressionService(JsonUtility.FromJson<GameProfile>(JsonUtility.ToJson(source,true)));copy.IsPracticeOnly=true;return copy; }
+        // A practice service has no storage destination at all. It never routes
+        // through the public null-directory constructor (which selects real saves).
+        private ProgressionService(GameProfile memoryProfile)
+        {saveDirectory=null;savePath=null;currentSlotId=null;Profile=memoryProfile;LastError=string.Empty;}
 
         public ProgressionService(string saveDirectory = null)
         {
@@ -533,6 +537,7 @@ namespace Emberfall
 
         private static bool TryWriteProfile(GameProfile profile, string primary, bool createOnly, out string failure)
         {
+            if(string.IsNullOrEmpty(primary)){failure="试招角色没有持久化目的地。";return false;}
             string backup = primary + ".bak", temporary = primary + ".tmp";
             bool ownsTemporary = false, ownsBackup = false;
             failure = string.Empty;
@@ -1224,6 +1229,7 @@ namespace Emberfall
         }
         public BuildDraft BeginBuildDraft(bool inCamp)
         {
+            if(IsPracticeOnly){Fail("试招角色不能创建持久角色草稿。");return null;}
             if(!inCamp){Fail("只能在营地调整配点草稿。");return null;}
             return new BuildDraft(this);
         }
@@ -1581,6 +1587,7 @@ namespace Emberfall
         // cannot consume the chest, expose a reward, mutate currency or emit a change.
         public string OpenDungeonChest(int choice)
         {
+            if(IsPracticeOnly){Fail("试招期间不能开启真实宝箱。");return null;}
             if (choice < 0 || choice >= 3 || !Profile.pendingFashionChest)
             {
                 Fail("当前没有可开启的通关宝箱。");

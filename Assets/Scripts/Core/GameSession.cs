@@ -708,7 +708,9 @@ namespace Emberfall
 
         public bool SaveBeforeLeaving()
         {
-            if(PracticeActive)return false;
+            if(PracticeActive)
+            {try{EndPractice("保存或离开 · 试招结束，恢复原角色");}
+             catch(System.Exception exception){Debug.LogException(exception);Notify("试招收尾出现异常，请重试保存退出。");return false;}}
             if (!HasStarted) return true;
             if(!TrySettleSideEventRewards())return false;
             if(DungeonRewardPending&&!TrySettleDungeonReward())return false;
