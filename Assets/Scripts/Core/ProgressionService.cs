@@ -1050,6 +1050,40 @@ namespace Emberfall
             public int Level { get { return source.level; } }
             public int Core { get { return preview.Profile.masteryCore; } }
             public bool CanUndo { get { return history.Count>0; } }
+            public int OriginalSkillRank(int index){return index>=0&&index<GameBalance.SkillCount?source.skillRanks[index]:0;}
+            public int OriginalMasteryRank(int index){return index>=0&&index<4?source.masteryRanks[index]:0;}
+            public bool SkillChanged(int index){return OriginalSkillRank(index)!=SkillRank(index);}
+            public bool MasteryChanged(int index){return OriginalMasteryRank(index)!=MasteryRank(index);}
+            private static string CoreLabel(int core,int invested){return core<0?"无核心":BuildCatalog.MasteryName((MasteryType)core)+(MasteryCoreRules.Tier(invested)==2?" · 增强":" · 初阶");}
+            public string CoreChangeSummary
+            {
+                get
+                {
+                    int oldCore=source.masteryCore;int oldRank=oldCore<0?0:OriginalMasteryRank(oldCore),newRank=Core<0?0:MasteryRank(Core);
+                    string result="核心："+CoreLabel(oldCore,oldRank)+" → "+CoreLabel(Core,newRank);
+                    if(oldCore>=0&&(Core!=oldCore||MasteryCoreRules.Tier(newRank)<MasteryCoreRules.Tier(oldRank)))result+=" · 失效："+CoreLabel(oldCore,oldRank)+(Core==oldCore?"增强效果":"能力");
+                    return result;
+                }
+            }
+            public string ChangeSummary
+            {
+                get
+                {
+                    var lines=new List<string>();int spent=0,refunded=0;
+                    for(int i=0;i<GameBalance.SkillCount;i++)if(SkillChanged(i)){int delta=SkillRank(i)-OriginalSkillRank(i);spent+=Math.Max(0,delta);refunded+=Math.Max(0,-delta);lines.Add(GameBalance.SkillName(source.heroClass,i)+" "+OriginalSkillRank(i)+"→"+SkillRank(i)+"阶"+(delta<0?"（退阶）":""));}
+                    for(int i=0;i<4;i++)if(MasteryChanged(i)){int delta=MasteryRank(i)-OriginalMasteryRank(i);spent+=Math.Max(0,delta);refunded+=Math.Max(0,-delta);lines.Add(BuildCatalog.MasteryName((MasteryType)i)+" "+OriginalMasteryRank(i)+"→"+MasteryRank(i));}
+                    return "草稿改动 · 退回 "+refunded+" / 投入 "+spent+"点 · 剩余 "+Points+"点\n"+(lines.Count==0?"技能与精通点数未改变":string.Join("；",lines.ToArray()))+"\n"+CoreChangeSummary;
+                }
+            }
+            public string SkillChangeEffects(int index)
+            {
+                if(index<0||index>=GameBalance.SkillCount||!SkillChanged(index))return "";
+                int before=OriginalSkillRank(index),after=SkillRank(index);
+                string text=(after<before?"退阶：撤回原阶效果，按新阶能力结算。":"进阶：按新阶能力结算。")+"\n原 "+before+"阶："+GameBalance.SkillEvolution(source.heroClass,index,before)+"\n新 "+after+"阶："+GameBalance.SkillEvolution(source.heroClass,index,after);
+                if(!GameBalance.IsPassive(index))text+="\n基础冷却 "+GameBalance.EffectiveCooldown(source.heroClass,index,before).ToString("0.##")+" → "+GameBalance.EffectiveCooldown(source.heroClass,index,after).ToString("0.##")+"秒；消耗 "+GameBalance.SkillEnergyCost(source.heroClass,index).ToString("0.##")+"（不变）";
+                return text;
+            }
+
             public int SkillRank(int index) { return index>=0&&index<GameBalance.SkillCount?preview.Profile.skillRanks[index]:0; }
             public int MasteryRank(int index) { return index>=0&&index<4?preview.Profile.masteryRanks[index]:0; }
             public StatBlock Stats { get { return preview.GetStats(); } }
@@ -1168,6 +1202,16 @@ namespace Emberfall
         {return item!=null && BuildCatalog.HasMechanicVariant(item.mechanic);}
 
         public string CurrentBuildSummary() { return DescribeBuild(CaptureBuild()); }
+        public string PracticeConfigurationSummary()
+        {
+            int spent=0;foreach(int rank in Profile.skillRanks)spent+=rank;foreach(int rank in Profile.masteryRanks)spent+=rank;
+            string text="等级 "+Profile.level+" · 剩余配点 "+(GameBalance.SkillPointBudget(Profile.level)-spent)+"\n"+CurrentBuildSummary();
+            foreach(string id in new[]{Profile.weaponId,Profile.armorId,Profile.relicId})
+            {ItemData item=Profile.inventory.Find(x=>x!=null&&x.id==id);if(item!=null)text+="\n"+item.name+" · "+GameBalance.RarityName(item.rarity)+" · 强化 +"+item.upgradeLevel;}
+            if(Profile.masteryCore>=0)text+="\n核心阶段："+(MasteryCoreRules.Tier(Profile.masteryRanks[Profile.masteryCore])==2?"增强":"初阶");
+            return text;
+        }
+
         public string BuildPresetSummary(int slot)
         { return HasBuildPreset(slot) ? DescribeBuild(Profile.buildPresets[slot]) : "空方案 · 可保存当前技能、精通、专精、快捷栏与穿戴装备"; }
 

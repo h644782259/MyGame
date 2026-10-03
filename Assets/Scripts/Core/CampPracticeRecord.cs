@@ -9,6 +9,7 @@ namespace Emberfall
         public readonly CampPracticeScenario Scenario;
         public readonly int Duration, Seed;
         public readonly string Configuration;
+        public readonly string ConfigurationSummary;
         public float Elapsed { get; private set; }
         public float ActualDamage { get; private set; }
         public float EnergySpent { get; private set; }
@@ -19,8 +20,8 @@ namespace Emberfall
         public readonly Dictionary<int,int> SkillCasts=new Dictionary<int,int>(), EffectiveSkillCasts=new Dictionary<int,int>();
         private readonly Dictionary<int,int> casts=new Dictionary<int,int>();
         private readonly HashSet<int> hitCasts=new HashSet<int>();
-        public CampPracticeRecord(CampPracticeScenario scenario,int duration,string configuration,int seed=7319)
-        {if(duration!=10&&duration!=60)throw new ArgumentOutOfRangeException("duration");Scenario=scenario;Duration=duration;Configuration=configuration;Seed=seed;}
+        public CampPracticeRecord(CampPracticeScenario scenario,int duration,string configuration,int seed=7319,string configurationSummary="")
+        {if(duration!=10&&duration!=60)throw new ArgumentOutOfRangeException("duration");Scenario=scenario;Duration=duration;Configuration=configuration;ConfigurationSummary=configurationSummary;Seed=seed;}
         private static bool Valid(float n){return n>0&&!float.IsNaN(n)&&!float.IsInfinity(n);}
         public void Advance(float dt){if(!Finished&&Valid(dt)){Elapsed=Math.Min(Duration,Elapsed+dt);if(Elapsed>=Duration)Finish("计时完成");}}
         public void ConfirmedHealthLoss(float amount,int castId=0){if(!Finished&&Valid(amount)){Damage(amount);Hit(castId);}}

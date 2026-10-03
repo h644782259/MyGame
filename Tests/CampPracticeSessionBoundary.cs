@@ -13,7 +13,7 @@ namespace UnityEngine
   public T AddComponent<T>() where T:Component,new(){var c=new T{gameObject=this};components.Add(c);return c;}
   public T GetComponent<T>() where T:class{return components.OfType<T>().FirstOrDefault();}public T GetComponentInChildren<T>() where T:class{return GetComponent<T>();}
  }
- public class Scene{public GameObject[] GetRootGameObjects(){return GameObject.Roots.ToArray();}}
+ public class Scene{public static bool FailSnapshot;public GameObject[] GetRootGameObjects(){if(FailSnapshot)throw new Exception("snapshot failure");return GameObject.Roots.ToArray();}}
  public class Camera:Component{}public class Light:Component{}
  public struct Vector3 {public float x,y,z;public Vector3(float x,float y,float z){this.x=x;this.y=y;this.z=z;}public float sqrMagnitude{get{return x*x+y*y+z*z;}}public static Vector3 forward{get{return new Vector3(0,0,1);}}public static Vector3 operator *(Vector3 a,float b){return new Vector3(a.x*b,a.y*b,a.z*b);}public static Vector3 operator +(Vector3 a,Vector3 b){return new Vector3(a.x+b.x,a.y+b.y,a.z+b.z);}public static Vector3 operator -(Vector3 a,Vector3 b){return new Vector3(a.x-b.x,a.y-b.y,a.z-b.z);}public static Vector3 ClampMagnitude(Vector3 a,float b){return a;}}
  public static class Random{public struct State{public int value;}public static State state;public static void InitState(int n){state=new State{value=n};}}
@@ -29,7 +29,7 @@ namespace Emberfall
  public enum HeroClass{Vanguard}public enum EnemyKind{Guardian,Wisp}
  public class GameProfile{public HeroClass heroClass;public int level=10;}
  public class ProgressionService
- {public bool IsPracticeOnly;public GameProfile Profile=new GameProfile();public ProgressionService CreatePracticeCopy(){return new ProgressionService{IsPracticeOnly=true};}public class BuildDraft{public bool valid=true;public ProgressionService CreatePracticeCopy(){return valid?new ProgressionService{IsPracticeOnly=true}:null;}}}
+ {public string PracticeConfigurationSummary(){return "Human summary";}public bool IsPracticeOnly;public GameProfile Profile=new GameProfile();public ProgressionService CreatePracticeCopy(){return new ProgressionService{IsPracticeOnly=true};}public class BuildDraft{public bool valid=true;public ProgressionService CreatePracticeCopy(){return valid?new ProgressionService{IsPracticeOnly=true}:null;}}}
  public class GameUI{public void EnterPracticePanel(){}public void LeavePracticePanel(){}}
  public class SkillChargeController:Component{public bool IsCharging;public void Initialize(PlayerController p,GameSession s){}}
  public class SkillTargetingController:Component{public void Initialize(PlayerController p,GameSession s){}}
@@ -62,6 +62,7 @@ public static class CampPracticeSessionTests
    s.RecordPracticeCast(1,0);s.RecordPracticeSkillHit(1);s.RecordPracticeEnergy(-15);Check(s.RestartPractice()&&s.PracticeRecord.ActualDamage==0&&s.PracticeRecord.EnergySpent==0,"refresh only temporary actors and new record");
    UnityEngine.Time.deltaTime=10;s.TestTick();Check(!s.PracticeActive&&s.Player==original&&s.Progression==owner&&s.Enemies==enemies,"timed finish restores exact references");Check(original.Health==37&&original.Energy==23&&original.Cooldown==8&&original.gameObject.activeSelf,"no original vitals or cooldown refresh");Check(UnityEngine.Random.state.value==42,"random state restored");s.EndPractice("duplicate");
   }
+  int roots=UnityEngine.GameObject.Roots.Count;UnityEngine.Scene.FailSnapshot=true;Check(!s.BeginPractice(Emberfall.CampPracticeScenario.Stationary,10)&&!s.PracticeActive&&s.Player==original&&UnityEngine.GameObject.Roots.Count==roots&&original.gameObject.activeSelf,"snapshot failure cannot retire original roots");UnityEngine.Scene.FailSnapshot=false;
   Emberfall.PlayerController.ThrowOnInitialize=true;Check(!s.BeginPractice(Emberfall.CampPracticeScenario.Moving,10,draft)&&s.Player==original&&s.Progression==owner&&!s.PracticeActive&&original.gameObject.activeSelf,"injected creation failure rolls ownership back");Emberfall.PlayerController.ThrowOnInitialize=false;
   draft.valid=false;Check(!s.BeginPractice(Emberfall.CampPracticeScenario.Moving,10,draft)&&s.Player==original,"stale draft cannot start");
   Check(s.BeginPractice(Emberfall.CampPracticeScenario.Moving,60),"current build sixty second scenario");s.EndPractice("death");Check(s.Player==original&&s.PracticeRecord.EndReason=="death","early exit restores original");

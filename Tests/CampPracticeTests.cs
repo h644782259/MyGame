@@ -9,13 +9,15 @@ public static class CampPracticeTests
  static string State(ProgressionService p){return JsonUtility.ToJson(p.Profile,true);}
  public static string Run(string root)
  {
-  var p=new ProgressionService(root);Check(p.CreateNewSlot(HeroClass.Vanguard),"create original");p.Profile.level=50;p.Profile.masteryRanks=new[]{10,0,0,0};p.Profile.skillRanks[0]=3;p.Save();
+  var p=new ProgressionService(root);Check(p.CreateNewSlot(HeroClass.Vanguard),"create original");p.Profile.level=50;p.Profile.masteryRanks=new[]{10,0,0,0};p.Profile.masteryCore=0;p.Profile.skillRanks[0]=3;p.Save();
   var profile=p.Profile;var disk=File.ReadAllText(p.SaveFilePath);string original=State(p);var draft=p.BeginBuildDraft(true);
+  Check(p.PracticeConfigurationSummary().Contains("等级 50")&&p.PracticeConfigurationSummary().Contains(p.CurrentBuildSummary()),"human practice configuration uses frozen authoritative build summary");
   var a=draft.CreatePracticeCopy();Check(a.IsPracticeOnly&&!ReferenceEquals(a.Profile,profile),"deep isolated practice profile");
   int files=Directory.GetFiles(root).Length;a.Profile.gold+=100;a.Profile.skillRanks[0]=1;a.Save();Check(Directory.GetFiles(root).Length==files&&File.ReadAllText(p.SaveFilePath)==disk&&State(p)==original&&draft.IsCurrent,"practice save never persists or invalidates draft");
   Check(!a.SaveAsNewSlot()&&!a.CreateNewSlot(HeroClass.Ranger)&&!a.LoadSlot(p.CurrentSlotId),"practice cannot create or load saves");
   SaveDeletionRequest request;p.PrepareSaveDeletion(p.CurrentSlotId,out request);Check(!a.DeleteSaveSlot(request),"practice cannot delete real saves");
   for(int i=0;i<3;i++)Check(draft.ChangeMastery(0,-1)&&draft.ChangeMastery(1,1),"move three legal points");
+  Check(draft.ChangeSummary.Contains("退回 3 / 投入 3点")&&draft.CoreChangeSummary.Contains("失效"),"fixed draft summary exposes transferred points and lost core capability");
   var b=draft.CreatePracticeCopy();Check(b.Profile.masteryRanks[0]==7&&b.Profile.masteryRanks[1]==3&&a.Profile.masteryRanks[0]==10,"second practice uses new draft snapshot and A remains frozen");
   Directory.CreateDirectory(p.SaveFilePath+".tmp");Check(!draft.Apply(true)&&draft.IsCurrent&&ReferenceEquals(profile,p.Profile)&&File.ReadAllText(p.SaveFilePath)==disk,"failed apply preserves real profile draft and disk");Directory.Delete(p.SaveFilePath+".tmp");
   Check(draft.Apply(true)&&p.Profile.masteryRanks[1]==3&&!draft.Apply(true),"apply once after two practices");

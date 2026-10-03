@@ -17,12 +17,12 @@ namespace Emberfall
             var record=session.PracticeRecord;if(record==null)return;
             BuildPlanParagraph(ref y,width,unit,PracticeSummary(record),pale,draw);
             if(session.PreviousPracticeRecord!=null)BuildPlanParagraph(ref y,width,unit,"上一轮 A：\n"+PracticeSummary(session.PreviousPracticeRecord)+"\n"+record.Comparison(session.PreviousPracticeRecord),gold,draw);
-            BuildPlanParagraph(ref y,width,unit,"本轮 B 固定配置快照（仅内存）：\n"+record.Configuration,muted,draw);
-            if(session.PreviousPracticeRecord!=null)BuildPlanParagraph(ref y,width,unit,"上一轮 A 固定配置快照：\n"+session.PreviousPracticeRecord.Configuration,muted,draw);
+            BuildPlanParagraph(ref y,width,unit,"本轮 B 固定配装摘要：\n"+record.ConfigurationSummary,muted,draw);
+            if(session.PreviousPracticeRecord!=null)BuildPlanParagraph(ref y,width,unit,"上一轮 A 固定配装摘要：\n"+session.PreviousPracticeRecord.ConfigurationSummary,muted,draw);
         }
         private string PracticeSummary(CampPracticeRecord record)
         {
-            string text=record.Scenario+" · "+record.Elapsed.ToString("0.0")+" / "+record.Duration+"秒 · "+record.EndReason+"\n实际扣血 "+record.ActualDamage.ToString("0.0")+" · 耗能 "+record.EnergySpent.ToString("0.0")+" / 实际回复 "+record.EnergyRestored.ToString("0.0");
+            string text=new[]{"静止单目标","持续移动目标","前排 + 后排供能"}[(int)record.Scenario]+" · "+record.Elapsed.ToString("0.0")+" / "+record.Duration+"秒 · "+record.EndReason+"\n实际扣血 "+record.ActualDamage.ToString("0.0")+" · 耗能 "+record.EnergySpent.ToString("0.0")+" / 实际回复 "+record.EnergyRestored.ToString("0.0");
             foreach(var entry in record.SkillCasts){int hits;record.EffectiveSkillCasts.TryGetValue(entry.Key,out hits);text+="\n"+GameBalance.SkillName(session.Progression.Profile.heroClass,entry.Key)+"：有效命中施法 "+hits+" / "+entry.Value;}
             foreach(var entry in record.Mechanisms)text+="\n"+entry.Key+"：实际发生 "+entry.Value;
             return text;

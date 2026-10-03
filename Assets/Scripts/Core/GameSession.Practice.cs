@@ -26,13 +26,13 @@ namespace Emberfall
             practiceBusy=true;
             try
             {
-                PreviousPracticeRecord=PracticeRecord;
-                PracticeRecord=new CampPracticeRecord(scenario,seconds,JsonUtility.ToJson(copy.Profile,true));
-                practiceDraft=draft;practiceOwner=Progression;practiceOriginalPlayer=Player;practiceOriginalEnemies=Enemies;
-                practiceOriginalUI=uiBlocking;practiceOriginalPaused=Paused;practiceRandom=UnityEngine.Random.state;
                 practiceOriginalRoots.Clear();practiceSuspendedRoots.Clear();
                 GameObject[] originalRoots=gameObject.scene.GetRootGameObjects();
                 foreach(GameObject root in originalRoots)practiceOriginalRoots.Add(root);
+                PreviousPracticeRecord=PracticeRecord;
+                PracticeRecord=new CampPracticeRecord(scenario,seconds,JsonUtility.ToJson(copy.Profile,true),configurationSummary:copy.PracticeConfigurationSummary());
+                practiceDraft=draft;practiceOwner=Progression;practiceOriginalPlayer=Player;practiceOriginalEnemies=Enemies;
+                practiceOriginalUI=uiBlocking;practiceOriginalPaused=Paused;practiceRandom=UnityEngine.Random.state;
                 foreach(GameObject root in originalRoots)
                 {
                     if(root==gameObject||root==world||root.GetComponentInChildren<Camera>()!=null||root.GetComponentInChildren<Light>()!=null||!root.activeSelf)continue;
