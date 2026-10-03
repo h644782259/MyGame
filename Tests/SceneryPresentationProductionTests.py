@@ -30,6 +30,7 @@ def guard_links():
 if scope in ('all','environment','hub'):guard_links()
 fixture=(root/'Tests/EquipmentCompositionProductionTests.Fixture.cs').read_text().split('public static class EquipmentCompositionProductionTests')[0]
 fixture=fixture.replace('bool inactive)','bool inactive=false)')
+fixture=fixture.replace('public Material sharedMaterial;','private Material[] slots=new Material[0];public Material[] sharedMaterials{get=>(Material[])slots.Clone();set=>slots=value==null?new Material[0]:(Material[])value.Clone();}public Material sharedMaterial{get=>slots.Length==0?null:slots[0];set{if(slots.Length==0)slots=new Material[1];slots[0]=value;}}')
 fixture=fixture.replace('public class MonoBehaviour:Component {}','public class MonoBehaviour:Component {public bool enabled=true;}')
 fixture=fixture.replace('public void SetActive(bool a){activeSelf=a;}','public void SetActive(bool a){if(activeSelf==a)return;var all=GetComponentsInChildren<MonoBehaviour>(true);activeSelf=a;foreach(var c in all)Call(c,a?"OnEnable":"OnDisable");}')
 fixture=fixture.replace('Call(c,"Awake");return c;','Call(c,"Awake");if(activeInHierarchy)Call(c,"OnEnable");return c;')
