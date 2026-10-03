@@ -957,9 +957,9 @@ namespace Emberfall
                     Fill(new Rect(slot.xMax - countWidth - 2, slot.yMax - 17, countWidth, 15), new Color(.015f, .025f, .04f, .94f));
                     Text(new Rect(slot.xMax - countWidth - 3, slot.yMax - 18, countWidth, 17), count, 11, locked ? muted : pale, true, false, TextAnchor.MiddleRight);
                 }
+                if(actionable)Border(slot,jade,2);
                 if(actionCaption.Length>0)
                 {
-                    if(actionable)Border(slot,jade,2);
                     Rect caption=new Rect(slot.x+2,slot.yMax-12,slot.width-4,11);
                     Fill(caption,new Color(.025f,.055f,.06f,.96f));
                     Text(caption,actionCaption,8,actionable?jade:gold,true,false,TextAnchor.MiddleCenter);
