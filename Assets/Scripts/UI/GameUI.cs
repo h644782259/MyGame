@@ -167,6 +167,7 @@ namespace Emberfall
             ReconcileMobileScroll();
             ReconcileCollectionPreview();
             if (session == null || session.BackgroundPaused) return;
+            if(session.PracticeActive){if(Input.GetKeyDown(KeyCode.Escape))session.EndPractice("主动离开 · 记录提前结束");return;}
             ReconcileBuildPlanSurface();
             ReconcileProgressionGoalSurface();
             bool gameplayBackAllowed=GameplayBackAllowed;
@@ -267,6 +268,8 @@ namespace Emberfall
             {
                 DrawExitConfirmation();GUI.matrix=oldMatrix;GUI.color=oldColor;GUI.contentColor=oldContentColor;GUI.enabled=oldEnabled;return;
             }
+            if(session.PracticeActive)
+            { DrawPracticeCombatHUD();DrawPracticeOverlay();GUI.matrix=oldMatrix;GUI.color=oldColor;GUI.contentColor=oldContentColor;GUI.enabled=oldEnabled;return; }
             HandleBindingInput();
 
             if (!session.HasStarted)

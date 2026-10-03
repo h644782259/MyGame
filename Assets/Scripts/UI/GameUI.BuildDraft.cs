@@ -53,6 +53,7 @@ namespace Emberfall
             BuildPlanParagraph(ref y,width,unit,"所有 +/- 仅修改临时草稿；取消不会改变角色、存档或方案。应用不会回复生命、能量或刷新冷却。",muted,draw);
             var before=session.Progression.GetStats();var after=draft.Stats;
             BuildPlanParagraph(ref y,width,unit,"属性预览（当前 → 草稿）\n伤害 "+before.Damage.ToString("0.0")+" → "+after.Damage.ToString("0.0")+" · 生命上限 "+before.MaxHealth.ToString("0")+" → "+after.MaxHealth.ToString("0")+"\n护甲 "+before.Armor.ToString("0.0")+" → "+after.Armor.ToString("0.0")+" · 暴击 "+before.CritChance.ToString("P0")+" → "+after.CritChance.ToString("P0")+" · 移速 "+before.MoveSpeed.ToString("0.0")+" → "+after.MoveSpeed.ToString("0.0"),pale,draw);
+            DrawPracticeChoices(ref y,width,unit,draw,fresh,draft);
             DraftButton(ref y,width,unit,"撤销上一步",draft.CanUndo&&fresh,draw,()=>draft.Undo());
             for(int i=0;i<GameBalance.SkillCount;i++)
             {

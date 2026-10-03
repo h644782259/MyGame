@@ -51,6 +51,7 @@ namespace Emberfall
         }
         private void ReconcileBuildPlanSurface()
         {
+            if(session.PracticeActive)return;
             if(buildPlansOpen&&(panel!=Panel.Camp||buildPlanOwner!=session.Progression||
                 buildPlanHero!=session.Player||buildPlanCharacterId!=session.Progression.CurrentSlotId))ResetBuildPlanSurface();
         }
@@ -133,6 +134,7 @@ namespace Emberfall
                 if(!session.IsInCamp)BuildPlanParagraph(ref y,width,unit,"请先安全返回营地再操作。",gold,draw);
                 return y;
             }
+            DrawPracticeChoices(ref y,width,unit,draw,session.IsInCamp,null);
             DraftButton(ref y,width,unit,"局部调整配点 · 临时草稿",session.IsInCamp,draw,OpenAllocationDraft);
             BuildPlanParagraph(ref y,width,unit,"当前配装",gold,draw,true);
             BuildPlanParagraph(ref y,width,unit,p.CurrentBuildSummary(),pale,draw);

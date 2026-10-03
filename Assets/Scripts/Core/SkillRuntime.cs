@@ -5,6 +5,7 @@ namespace Emberfall
     /// <summary>Combat resources are keyed by learned skill, never by page or keyboard key.</summary>
     public sealed class SkillRuntime
     {
+        public Action<float> EnergyChanged;
         public const float MaximumEnergy = 100f;
         public const float EnergyPerSecond = 4f;
         public HeroClass HeroClass { get; }
@@ -36,6 +37,7 @@ namespace Emberfall
             float cost = GameBalance.SkillEnergyCost(HeroClass, skill);
             if (Energy < cost) return false;
             Energy -= cost;
+            if(EnergyChanged!=null)EnergyChanged(-cost);
             cooldowns[skill] = ModifiedCooldown(GameBalance.EffectiveCooldown(HeroClass, skill, rank), cooldownMultiplier);
             return true;
         }
@@ -51,7 +53,8 @@ namespace Emberfall
         public void RestoreEnergy(float amount)
         {
             if (amount <= 0 || float.IsNaN(amount) || float.IsInfinity(amount)) return;
-            Energy = Math.Min(MaximumEnergy, Energy + amount);
+            float before=Energy;Energy = Math.Min(MaximumEnergy, Energy + amount);
+            if(EnergyChanged!=null)EnergyChanged(Energy-before);
         }
 
         public void ReduceCooldowns(float seconds)

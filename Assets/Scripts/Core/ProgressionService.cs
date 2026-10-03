@@ -123,6 +123,11 @@ namespace Emberfall
         public bool HasActiveSave { get { return !activeSlotDeleted && attachedSaveExists; } }
         public bool HasSave { get { return DiscoverSlotIds().Count > 0; } }
 
+        public bool IsPracticeOnly { get; private set; }
+        public ProgressionService CreatePracticeCopy() { return CreatePracticeSnapshot(Profile); }
+        private ProgressionService CreatePracticeSnapshot(GameProfile source)
+        { var copy=new ProgressionService(saveDirectory);copy.IsPracticeOnly=true;copy.Profile=JsonUtility.FromJson<GameProfile>(JsonUtility.ToJson(source,true));return copy; }
+
         public ProgressionService(string saveDirectory = null)
         {
             string directory = string.IsNullOrWhiteSpace(saveDirectory) ? Application.persistentDataPath : saveDirectory;
@@ -154,6 +159,7 @@ namespace Emberfall
 
         public bool LoadSlot(string id)
         {
+            if(IsPracticeOnly)return Fail("试招角色不能读写角色存档。");
             string normalized;
             if (!TryNormalizeSlotId(id, out normalized)) return Fail("无效的存档编号。");
             string candidatePath = SlotPath(normalized);
@@ -241,6 +247,7 @@ namespace Emberfall
         /// another explicit confirmation to finish. Existing unrelated files stay untouched.</summary>
         public bool DeleteSaveSlot(SaveDeletionRequest request)
         {
+            if(IsPracticeOnly)return Fail("试招角色不能读写角色存档。");
             if (request == null || !string.Equals(request.Directory, saveDirectory, StringComparison.Ordinal))
                 return Fail("删除确认无效，请重新选择存档。");
             string id;
@@ -354,6 +361,7 @@ namespace Emberfall
 
         private bool CreateSlot(GameProfile candidate, bool newCharacter)
         {
+            if(IsPracticeOnly)return Fail("试招角色不能读写角色存档。");
             lock (StorageGate)
             {
                 if (DiscoverSlotIds(true).Count >= MaximumSaveSlots)
@@ -470,6 +478,7 @@ namespace Emberfall
 
         private bool TryWriteAttachedProfile(GameProfile profile, out string failure)
         {
+            if(IsPracticeOnly){failure=string.Empty;return true;}
             lock (StorageGate)
             {
                 if (activeSlotDeleted || File.Exists(savePath + DeletionSuffix) ||
@@ -1036,6 +1045,7 @@ namespace Emberfall
             }
             private bool Attached { get { return !completed && owner.CurrentSlotId==slot && ReferenceEquals(source,owner.Profile); } }
             public bool IsCurrent { get { return Attached && fingerprint==JsonUtility.ToJson(owner.Profile,true); } }
+            public ProgressionService CreatePracticeCopy() { return IsCurrent ? owner.CreatePracticeSnapshot(preview.Profile) : null; }
             public int Points { get { int spent=0;foreach(int rank in preview.Profile.skillRanks)spent+=rank;foreach(int rank in preview.Profile.masteryRanks)spent+=rank;return GameBalance.SkillPointBudget(source.level)-spent; } }
             public int Level { get { return source.level; } }
             public int Core { get { return preview.Profile.masteryCore; } }

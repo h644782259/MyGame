@@ -98,6 +98,9 @@ namespace Emberfall
             guardArmorVisual=GuardArmorVisual.Attach(this);
         }
 
+        public void ConfigurePracticeTarget()
+        { if(session==null||!session.PracticeActive)return;MaxHealth=Health=1000000;DisplayName=session.PracticeRecord.Scenario==CampPracticeScenario.FrontAndSupplier&&Kind==EnemyKind.Wisp?"试招供能者 · 减伤30%":"试招目标 · 实际伤害"; }
+
         public void ConfigureArenaBoss(int pattern)
         {
             // A preference only: health/damage, navigation, windup and ordinary
@@ -171,6 +174,7 @@ namespace Emberfall
             amount*=armorMultiplier;
             float previousHealth = Health;
             Health = Mathf.Max(0,Health-amount);
+            if(session.PracticeActive)session.PracticeRecord.Damage(previousHealth-Health);
             if(actualHealthLoss!=null&&Health<previousHealth)actualHealthLoss(previousHealth-Health);
             if(guardArmorVisual!=null&&Health<previousHealth)guardArmorVisual.RecordImpact(armorMultiplier<1,preparing);
             if (CombatReviewEvents.Enabled) CombatReviewEvents.Emit("damage","0",CombatReviewObjectId.Get(this),previousHealth-Health,detail:"enemy_health_loss");
@@ -260,6 +264,7 @@ namespace Emberfall
             if (session == null || session.Player == null || IsDead || !session.HasStarted || session.Paused || session.IsDead) return;
             if (largeBoss != null && (session.InputBlocked || largeBoss.State.Phase == LargeBossPhase.Finished)) return;
             if (session.InputBlocked) return;
+            if(session.PracticeActive && session.MovePracticeTarget(this)){transform.position=WorldTraversal.Move(transform.position,knockVelocity*Time.deltaTime,NavigationRadius);knockVelocity=Vector3.Lerp(knockVelocity,Vector3.zero,Mathf.Min(1,Time.deltaTime*12f));stunTime=Mathf.Max(0,stunTime-Time.deltaTime);hurtTime=Mathf.Max(0,hurtTime-Time.deltaTime);controlPolicy.Advance(Time.deltaTime);AnimateModel(session.PracticeRecord.Scenario==CampPracticeScenario.Moving?.7f:0,0,hurtTime>0);return;}
             float dt = Time.deltaTime;
             if (dt <= 0) return;
             walkingDisplacement = Vector3.zero;

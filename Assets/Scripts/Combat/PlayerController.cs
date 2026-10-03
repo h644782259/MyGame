@@ -88,6 +88,7 @@ namespace Emberfall
             else if (skillRuntime.HeroClass != heroClass)
                 throw new System.InvalidOperationException("A player controller cannot change class during an adventure.");
             session = game;
+            if(session!=null&&session.PracticeActive)skillRuntime.EnergyChanged=session.RecordPracticeEnergy;
             inputUI = game == null ? null : game.GetComponent<GameUI>();
             HeroClass = heroClass;
             gameObject.name = "Hero - " + GameBalance.ClassName(heroClass);
@@ -860,7 +861,7 @@ namespace Emberfall
             return item != null && item.mechanic == mechanic ? item.mechanicVariant : 0;
         }
         internal int NewCastId() { return ++nextCastId; }
-        internal void RegisterSkillHit(int castId){if(session!=null&&!session.InputBlocked&&!session.CombatEnded&&!IsDead)masteryCore.SkillHit(castId);}
+        internal void RegisterSkillHit(int castId){if(session!=null&&!session.InputBlocked&&!session.CombatEnded&&!IsDead){masteryCore.SkillHit(castId);session.RecordPracticeSkillHit(castId);}}
         internal void ElementalAdvancedArea(Vector3 at, float radius, CombatDamage direct, int castId, bool final)
         {
             CombatImpactBatch.Begin();
@@ -1254,6 +1255,7 @@ namespace Emberfall
             MasteryResourceProc resourceProc=masteryCore.SkillSpent(GameBalance.SkillEnergyCost(HeroClass,slot));
             if(resourceProc.Energy>0){skillRuntime.RestoreEnergy(resourceProc.Energy);skillRuntime.ReduceCooldowns(resourceProc.CooldownReduction);session.RecordCombatAction("循能核心");}
             int castId = ++nextCastId;
+            session.RecordPracticeCast(castId,slot);
             session.RecordCombatAction("职业能力");
             if (executingChargedSkill && session.HasBlessing(RunBlessing.ChargedWard)) chargedWardTime = Mathf.Max(chargedWardTime, 2f);
             GameAudio.Play(SoundCue.Cast);

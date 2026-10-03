@@ -14,8 +14,9 @@ namespace Emberfall {
   public void Bind(GameSession s){session=s;RefreshStats(false);skillRuntime.TryConsume(0,3);}
  }
 
- public partial class GameSession {public bool HasStarted=true;string equipmentFingerprint;void RecordCombatAction(string value){}public void Bind(){Player.Bind(this);Progression.Changed+=OnProgressChanged;}public ProgressionService Progression;public PlayerController Player=new PlayerController();public bool IsInCamp=true;public void Notify(string value){}}
+ public partial class GameSession {public bool HasStarted=true;string equipmentFingerprint;void RecordCombatAction(string value){}public void Bind(){Player.Bind(this);Progression.Changed+=OnProgressChanged;}public ProgressionService Progression;public PlayerController Player=new PlayerController();public bool IsInCamp=true;public bool PracticeActive;public void Notify(string value){}}
  public sealed partial class GameUI {
+  private void DrawPracticeChoices(ref float y,float width,float unit,bool draw,bool enabled,ProgressionService.BuildDraft draft){}
   enum Panel{Camp}Panel panel;GameSession session;float width=1000,height=700,TouchRatio=1;Color gold,jade,pale,muted;List<Rect> blockedRects=new List<Rect>();string click;int clickIndex,seen;List<string> labels=new List<string>();
   bool Button(Rect r,string s,Color c,bool enabled=true,string reason=null){labels.Add(s);if(s!=click)return false;if(seen++!=clickIndex)return false;return enabled;}
   void Text(Rect r,string s,int z,Color c,bool b=false,bool wrap=false){labels.Add(s);}void Fill(Rect r,Color c){}void Box(Rect r,Color c,bool b){}GUIStyle Style(int s,bool b,bool w)=>new GUIStyle();
