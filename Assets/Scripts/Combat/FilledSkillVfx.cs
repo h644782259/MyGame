@@ -8,17 +8,23 @@ namespace Emberfall
     {
         private sealed class Piece
         {
-            public Transform Transform; public Renderer Renderer;
+            public Transform Transform; public Renderer Renderer; public MeshFilter Filter;
             public Vector3 Position, Scale; public Quaternion Rotation;
             public float Delay, Phase, TravelScale=1; public int Motion; public bool Anchored, Secondary; public Mesh OwnedMesh;
         }
+        private static Mesh identityBlade,identityFork,identityContract,identityProtection;
         private static Mesh icePrimary,firePrimary;
         private static Mesh crescent, crystal, flame, sword, lightning, arcane, rupture, arcaneShard, arrow, vine;
         private static Material sharedMaterial;
         private static int active;
         private readonly Piece[] pieces=new Piece[FilledVfxRecipes.MaximumParts];
         private readonly MaterialPropertyBlock block=new MaterialPropertyBlock();
-        private int count,epoch;
+        private int count,epoch,allocated;
+        private GameSession session;
+        private bool pooled,disposing;
+        private const int PoolCapacity=8;
+        private static readonly System.Collections.Generic.Stack<FilledSkillVfx> idle=new System.Collections.Generic.Stack<FilledSkillVfx>();
+        private static readonly System.Collections.Generic.HashSet<FilledSkillVfx> instances=new System.Collections.Generic.HashSet<FilledSkillVfx>();
         private PlayerController owner;
         private FilledVfxKind kind;
         private Color tint;
@@ -42,7 +48,11 @@ namespace Emberfall
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetAssets()
         {
+            foreach(var fx in new System.Collections.Generic.List<FilledSkillVfx>(instances))if(fx!=null){fx.disposing=true;fx.gameObject.SetActive(false);Destroy(fx.gameObject);}
+            instances.Clear();idle.Clear();
             finales.Clear();
+            if(identityBlade!=null)Destroy(identityBlade);if(identityFork!=null)Destroy(identityFork);if(identityContract!=null)Destroy(identityContract);if(identityProtection!=null)Destroy(identityProtection);identityBlade=identityFork=identityContract=identityProtection=null;
+
             if(icePrimary!=null)Destroy(icePrimary);if(firePrimary!=null)Destroy(firePrimary);icePrimary=firePrimary=null;
             if(crescent!=null)Destroy(crescent);if(crystal!=null)Destroy(crystal);if(flame!=null)Destroy(flame);
             if(sword!=null)Destroy(sword);if(lightning!=null)Destroy(lightning);if(arcane!=null)Destroy(arcane);if(rupture!=null)Destroy(rupture);if(arcaneShard!=null)Destroy(arcaneShard);
@@ -57,6 +67,10 @@ namespace Emberfall
         }
         private static void EnsureAssets()
         {
+            if(identityBlade==null)identityBlade=AuthoredSpellBases.Identity("BladeSlices");
+            if(identityFork==null)identityFork=AuthoredSpellBases.Identity("ForkPulse");
+            if(identityContract==null)identityContract=AuthoredSpellBases.Identity("ContractSigil");
+            if(identityProtection==null)identityProtection=AuthoredSpellBases.Identity("ProtectionCage");
             if(icePrimary==null)icePrimary=AuthoredSpellBases.Load("IcePrimary");
             if(firePrimary==null)firePrimary=AuthoredSpellBases.Load("FirePrimary");
             if(crescent==null)crescent=AuthoredSpellBases.Load("Crescent")??Mesh(FilledVfxRecipes.Crescent(),"Filled curved crescent volume");
@@ -75,18 +89,25 @@ namespace Emberfall
         private static FilledSkillVfx Create(PlayerController hero,Vector3 at,Vector3 forward,FilledVfxKind type,float radius,Color color,float duration,Transform parent=null,CombatVisualPriority priority=CombatVisualPriority.Decoration)
         {
             if(hero==null||hero.IsDead||!Finite(radius)||radius<=0||!Finite(forward.x)||!Finite(forward.y)||!Finite(forward.z)||!Finite(duration)||duration<=0||!Finite(at.x)||!Finite(at.y)||!Finite(at.z))return null;
-            EnsureAssets();var root=new GameObject("Filled "+type+" effect");if(parent!=null)root.transform.SetParent(parent,true);root.transform.position=at;
+            EnsureAssets();FilledSkillVfx fx=null;
+            while(idle.Count>0&&fx==null){var candidate=idle.Pop();if(candidate!=null&&!candidate.disposing)fx=candidate;}
+            if(fx==null){var fresh=new GameObject("Filled effect");fresh.SetActive(false);fx=fresh.AddComponent<FilledSkillVfx>();instances.Add(fx);}
+            var root=fx.gameObject;fx.pooled=false;root.name="Filled "+type+" effect";root.transform.SetParent(parent,false);root.transform.localScale=Vector3.one;root.transform.position=at;
             root.transform.rotation=Quaternion.LookRotation(forward.sqrMagnitude>.0001f?forward.normalized:Vector3.forward);
-            var ticket=CombatVisualLease.Attach(root,priority);if(ticket==null)return null;
-            var fx=root.AddComponent<FilledSkillVfx>();fx.lease=ticket;fx.owner=hero;fx.epoch=hero.CombatEpoch;fx.kind=type;fx.size=Mathf.Clamp(radius,.15f,8);
-            fx.tint=color;fx.life=Mathf.Clamp(duration,.12f,12);fx.Register();return fx;
+            fx.owner=hero;fx.session=GameSession.Instance;fx.epoch=hero.CombatEpoch;fx.kind=type;fx.size=Mathf.Clamp(radius,.15f,8);
+            fx.tint=color;fx.life=Mathf.Clamp(duration,.12f,12);fx.age=0;fx.terminalAge=0;fx.finaleCast=0;fx.confirmedFinale=false;
+            fx.lease=CombatVisualLease.Attach(root,priority,fx.Retire);if(fx.lease==null)return null;
+            root.SetActive(true);fx.Register();return fx;
         }
         public static void Crescent(PlayerController hero,Vector3 at,Vector3 forward,float radius,Color color,int swingSide=1,CombatVisualPriority priority=CombatVisualPriority.Decoration,int castId=0)
         {
             var fx=Create(hero,at+Vector3.up*.82f,forward,FilledVfxKind.Crescent,radius,color,.34f,priority:priority);if(fx==null)return;
             if(priority==CombatVisualPriority.Finale)fx.RegisterFinale(castId);
+            if(identityBlade!=null)fx.Add(identityBlade,Vector3.zero,new Vector3(fx.size,fx.size*.7f,fx.size),Quaternion.Euler(-12,0,0),0,15,swingSide,fx.size*1.1f,"Identity blade slice",true);
+            else {
             fx.Add(crescent,Vector3.zero,new Vector3(fx.size,fx.size*.7f,fx.size),Quaternion.Euler(-12,0,0),0,0,swingSide);
             fx.Add(crescent,new Vector3(0,.08f,-.1f),Vector3.one*fx.size*.88f,Quaternion.Euler(8,-16*swingSide,0),.02f,0,swingSide);
+            }
             for(int i=0;i<4;i++)fx.Add(crystal,new Vector3((i-1.5f)*.25f,.1f,.8f)*fx.size,new Vector3(.09f,.4f,.12f)*fx.size,Quaternion.Euler(85,i*33,0),.02f+i*.018f,4,i);
         }
         public static void Impact(PlayerController hero,Vector3 at,float radius,FilledVfxKind type,Color color,CombatVisualPriority priority=CombatVisualPriority.ActionBody,int castId=0)
@@ -98,8 +119,8 @@ namespace Emberfall
             // Allocate landing base, identity silhouette and contact flash BEFORE repeated ornaments.
             // Add's actual budget is still the last authority: mobile 10, reduced 7.
             fx.Add(rupture,Vector3.up*.07f,new Vector3(fx.size*.58f,.8f,fx.size*.58f),Quaternion.identity,0,5,0,fx.size*.7f,"Landing base",true);
-            Mesh main=type==FilledVfxKind.Sword?sword:type==FilledVfxKind.Lightning?lightning:type==FilledVfxKind.Arcane?arcane:type==FilledVfxKind.Ice?(icePrimary??crystal):type==FilledVfxKind.Fire?(firePrimary??flame):crescent;
-            int motion=type==FilledVfxKind.Sword?8:type==FilledVfxKind.Lightning?9:type==FilledVfxKind.Arcane?10:type==FilledVfxKind.Ice?(icePrimary!=null?13:1):type==FilledVfxKind.Fire?(firePrimary!=null?14:2):3;
+            Mesh main=type==FilledVfxKind.Sword?sword:type==FilledVfxKind.Lightning?(identityFork??lightning):type==FilledVfxKind.Arcane?arcane:type==FilledVfxKind.Ice?(icePrimary??crystal):type==FilledVfxKind.Fire?(firePrimary??flame):(identityContract??crescent);
+            int motion=type==FilledVfxKind.Sword?8:type==FilledVfxKind.Lightning?(identityFork!=null?17:9):type==FilledVfxKind.Arcane?10:type==FilledVfxKind.Ice?(icePrimary!=null?13:1):type==FilledVfxKind.Fire?(firePrimary!=null?14:2):(identityContract!=null?16:3);
             Vector3 dimensions=type==FilledVfxKind.Sword?new Vector3(.95f,3.2f,.95f)*unit:type==FilledVfxKind.Lightning?new Vector3(1.3f,2.2f,1.3f)*unit:Vector3.one*unit*1.65f;
             fx.Add(main,Vector3.zero,dimensions,Quaternion.identity,0,motion,0,
                 type==FilledVfxKind.Sword?unit*.55f:type==FilledVfxKind.Lightning?unit*.85f:type==FilledVfxKind.Summon?unit*1.8f+fx.size*.3f:unit*2f,"Primary "+type,true);
@@ -148,10 +169,19 @@ namespace Emberfall
             var fx=Create(hero,at,Vector3.forward,FilledVfxKind.Vine,radius,color,1.05f,priority:CombatVisualPriority.SustainedBackground);if(fx==null)return;
             for(int i=0;i<3;i++)fx.Add(vine,Vector3.zero,new Vector3(radius*.5f,1,radius*.5f),Quaternion.Euler(0,i*120,0),0,0,0,radius,"Poison branch vine",true);
         }
-        public static void Charge(Transform parent,PlayerController hero,Vector3 at,float radius,Color color,float duration)
+        public static void Charge(Transform parent,PlayerController hero,Vector3 at,float radius,Color color,float duration,int identity=0)
         {
             var fx=Create(hero,at,Vector3.forward,FilledVfxKind.Charge,Mathf.Min(radius,3.5f),color,duration,parent,CombatVisualPriority.SustainedBackground);if(fx==null)return;
+            Mesh authored=identity==1?identityBlade:identity==2?identityFork:identity==3?identityContract:identity==4?identityProtection:null;
+            if(authored!=null){fx.Add(authored,Vector3.up*.08f,new Vector3(fx.size*.55f,fx.size*.55f,fx.size*.55f),Quaternion.identity,0,18,identity,fx.size*.8f,"Identity preparation",true);return;}
             for(int i=0;i<3;i++)fx.Add(crescent,Vector3.up*(.18f+i*.2f),new Vector3(fx.size*.65f,.8f,fx.size*.65f),Quaternion.Euler(i*12,i*120,0),0,6,i);
+        }
+        // Visual endpoints consume the actual caller's release/hit position; no target search or damage lives here.
+        internal static bool IdentityContact(PlayerController hero,Vector3 at,Vector3 forward,float radius,Color color,int identity,CombatVisualPriority priority=CombatVisualPriority.ActionBody)
+        {
+            EnsureAssets();Mesh mesh=identity==2?identityFork:identity==3?identityContract:identity==4?identityProtection:identityBlade;if(mesh==null)return false;
+            var fx=Create(hero,at,forward,identity==2?FilledVfxKind.Lightning:FilledVfxKind.Summon,radius,color,.6f,priority:priority);if(fx==null)return true;
+            float unit=Mathf.Min(1.6f,radius);fx.Add(mesh,Vector3.up*.07f,Vector3.one*unit,Quaternion.identity,0,identity==2?17:identity==3?16:19,0,unit,"Identity actual event",true);return true;
         }
         public static void Thrust(PlayerController hero,Vector3 start,Vector3 end,Color color,float lifetime,float width,CombatVisualPriority priority=CombatVisualPriority.ActionBody)
         {
@@ -192,16 +222,17 @@ namespace Emberfall
                 owned=AnchoredImpactMesh.Create(mesh,transform,at,dimensions*1.15f,rotation);
                 mesh=owned;at=Vector3.zero;dimensions=Vector3.one/1.15f;rotation=Quaternion.identity;
             }
-            var obj=new GameObject("Filled spell surface / "+label);obj.transform.SetParent(transform,false);
-            obj.AddComponent<MeshFilter>().sharedMesh=mesh;var renderer=obj.AddComponent<MeshRenderer>();renderer.sharedMaterial=sharedMaterial;
+            Piece piece=pieces[count];
+            if(piece==null){var obj=new GameObject();obj.transform.SetParent(transform,false);piece=new Piece{Transform=obj.transform,Filter=obj.AddComponent<MeshFilter>(),Renderer=obj.AddComponent<MeshRenderer>()};pieces[count]=piece;allocated=Mathf.Max(allocated,count+1);}
+            var renderer=piece.Renderer;piece.Transform.gameObject.name="Filled spell surface / "+label;piece.Filter.sharedMesh=mesh;renderer.sharedMaterial=sharedMaterial;renderer.enabled=true;
             renderer.shadowCastingMode=UnityEngine.Rendering.ShadowCastingMode.Off;renderer.receiveShadows=false;renderer.sortingOrder=10;
-            var piece=new Piece{Transform=obj.transform,Renderer=renderer,Position=at,Scale=dimensions,Rotation=rotation,Delay=delay,Motion=motion,Phase=phase,TravelScale=footprint>0?fit:1,Anchored=anchored,Secondary=secondary,OwnedMesh=owned};pieces[count++]=piece;
+            piece.Position=at;piece.Scale=dimensions;piece.Rotation=rotation;piece.Delay=delay;piece.Motion=motion;piece.Phase=phase;piece.TravelScale=footprint>0?fit:1;piece.Anchored=anchored;piece.Secondary=secondary;piece.OwnedMesh=owned;count++;
             Animate(piece); // The mesh exists at the actual hit frame, before the next Update.
         }
         private void Update()
         {
             var game=GameSession.Instance;
-            if(owner==null||owner.IsDead||owner.CombatEpoch!=epoch||game==null||game.Player!=owner||!game.HasStarted){Retire();return;}
+            if(owner==null||owner.IsDead||owner.CombatEpoch!=epoch||game==null||game!=session||game.Player!=owner||!game.HasStarted){Retire();return;}
             if(game.ModeFinished)
             {
                 if(!confirmedFinale){Retire();return;}
@@ -224,6 +255,11 @@ namespace Emberfall
             {
                 // Authored primary visual beats only: visible at release, quick rise, readable hold, then contraction.
                 // Radial scale only contracts; anchored certification and actual hit time remain unchanged.
+                case 15: float sliceHand=p.Phase<0?-1:1;rotation*=Quaternion.Euler(0,Mathf.Lerp(-12,42,t)*sliceHand,0);scale*=1-t*.15f;break;
+                case 16: scale.y*=.82f+.18f*Mathf.Min(1,local/.08f);break;
+                case 17: scale.y*=1-Mathf.Clamp01(local/.45f)*.25f;break;
+                case 18: scale.y*=.65f+.35f*Mathf.Min(1,local/.18f);break;
+                case 19: scale.y*=.82f+.18f*Mathf.Min(1,local/.1f);break;
                 case 13: scale.y*=local<.09f?Mathf.Lerp(.45f,1,local/.09f):local<.42f?1:Mathf.Lerp(1,.62f,Mathf.Clamp01((local-.42f)/.5f));break;
                 case 14: scale.y*=local<.07f?Mathf.Lerp(.55f,1,local/.07f):local<.23f?1:Mathf.Lerp(1,.48f,Mathf.Clamp01((local-.23f)/.5f));scale.x*=1-Mathf.Clamp01((local-.23f)/.5f)*.24f;scale.z*=1-Mathf.Clamp01((local-.23f)/.5f)*.24f;break;
                 case 0: float handed=p.Phase<0?-1:1;scale*=.85f+t*.3f;rotation*=Quaternion.Euler(0,Mathf.Lerp(-18,38,t)*handed,-t*11*handed);break;
@@ -245,7 +281,7 @@ namespace Emberfall
             p.Transform.localPosition=at;p.Transform.localScale=scale;p.Transform.localRotation=rotation;
             // Placement reserved the complete motion footprint once. Do not toggle a whole
             // primary silhouette each frame when a growing bounds circle grazes a wall.
-            Color color=tint;if(p.Secondary)color.a*=.55f*Mathf.Clamp01((.62f-local)/.2f);color.a*=f.Opacity*(kind==FilledVfxKind.Charge?.35f:.9f)*Mathf.Lerp(.55f,1,EffectPreferences.EffectsScale);
+            Color color=tint;if(p.Motion==17)color.a*=local<.07f?1:local<.14f?.48f:local<.22f?.82f:.55f;if(p.Secondary)color.a*=.55f*Mathf.Clamp01((.62f-local)/.2f);color.a*=f.Opacity*(kind==FilledVfxKind.Charge?.35f:.9f)*Mathf.Lerp(.55f,1,EffectPreferences.EffectsScale);
             block.SetColor("_Color",color);block.SetFloat("_Opacity",f.Opacity);block.SetFloat("_Progress",t);
             block.SetFloat("_Style",kind==FilledVfxKind.Fire||kind==FilledVfxKind.Summon?1:.35f);p.Renderer.SetPropertyBlock(block);
         }
@@ -257,10 +293,30 @@ namespace Emberfall
             if(!gameObject.activeInHierarchy||owner==null||registered)return;
             Register();
         }
-        internal void Retire(){gameObject.SetActive(false);Destroy(gameObject);}
+        internal void Retire()
+        {
+            if(pooled||disposing)return;
+            pooled=true;gameObject.SetActive(false);finales.Remove(this);Release();
+            var ticket=GetComponent<CombatVisualLease>();if(ticket!=null)ticket.Suspend();lease=null;
+            ClearPieces();owner=null;session=null;epoch=0;age=life=size=terminalAge=0;kind=default(FilledVfxKind);tint=default(Color);finaleCast=0;confirmedFinale=false;
+            transform.SetParent(null,false);transform.localPosition=Vector3.zero;transform.localRotation=Quaternion.identity;transform.localScale=Vector3.one;
+            if(idle.Count<PoolCapacity)idle.Push(this);else{disposing=true;Destroy(gameObject);}
+        }
         private void ClearPieces()
-        {for(int i=0;i<count;i++){var piece=pieces[i];if(piece.Transform!=null){piece.Transform.gameObject.SetActive(false);Destroy(piece.Transform.gameObject);}if(piece.OwnedMesh!=null)Destroy(piece.OwnedMesh);pieces[i]=null;}count=0;}
-        private void OnDestroy(){Release();ClearPieces();}
+        {
+            block.SetColor("_Color",new Color(0,0,0,0));block.SetFloat("_Opacity",0);block.SetFloat("_Progress",0);block.SetFloat("_Style",0);
+            for(int i=0;i<allocated;i++)
+            {
+                var p=pieces[i];if(p==null)continue;
+                if(p.OwnedMesh!=null)Destroy(p.OwnedMesh);p.OwnedMesh=null;
+                if(p.Transform!=null){p.Transform.gameObject.SetActive(false);p.Transform.localPosition=Vector3.zero;p.Transform.localScale=Vector3.one;p.Transform.localRotation=Quaternion.identity;}
+                if(p.Filter!=null)p.Filter.sharedMesh=null;
+                if(p.Renderer!=null){p.Renderer.SetPropertyBlock(block);p.Renderer.sharedMaterial=null;p.Renderer.enabled=false;}
+                p.Position=Vector3.zero;p.Scale=Vector3.one;p.Rotation=Quaternion.identity;p.Delay=p.Phase=0;p.TravelScale=1;p.Motion=0;p.Anchored=p.Secondary=false;
+            }
+            count=0;
+        }
+        private void OnDestroy(){disposing=true;instances.Remove(this);finales.Remove(this);Release();ClearPieces();owner=null;session=null;}
         private static bool Finite(float value){return !float.IsNaN(value)&&!float.IsInfinity(value);}
     }
 }

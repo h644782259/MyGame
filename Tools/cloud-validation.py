@@ -282,9 +282,9 @@ def main():
             'using System; internal static class Program { static void Main() { Console.WriteLine(RoomBlessingRouteTests.Run()); } }'))
         checks.append(("mobile-pause-navigation",[ROOT/"Assets/Scripts/UI/GameUI.PauseNavigation.cs",ROOT/"Tests/MobilePauseNavigationTests.cs"],
             'using System; internal static class Program { static void Main() { Console.WriteLine(MobilePauseNavigationTests.Run()); } }'))
-        checks.append(("collection-render-lifecycle",[ROOT/"Assets/Scripts/UI/CollectionModelPreview.cs",ROOT/"Assets/Scripts/UI/CollectionPreviewState.cs",ROOT/"Assets/Scripts/UI/CollectionPreviewComposition.cs",ROOT/"Tests/CollectionRenderLifecycleTests.cs"],
+        checks.append(("collection-render-lifecycle",[ROOT/"Assets/Scripts/Core/RendererGroupCache.cs",ROOT/"Assets/Scripts/UI/CollectionModelPreview.cs",ROOT/"Assets/Scripts/UI/CollectionPreviewState.cs",ROOT/"Assets/Scripts/UI/CollectionPreviewComposition.cs",ROOT/"Tests/CollectionRenderLifecycleTests.cs"],
             'using System; internal static class Program { static void Main() { Console.WriteLine(CollectionRenderLifecycleTests.Run()); } }'))
-        checks.append(("collection-render-lifecycle-modern",[ROOT/"Assets/Scripts/UI/CollectionModelPreview.cs",ROOT/"Assets/Scripts/UI/CollectionPreviewState.cs",ROOT/"Assets/Scripts/UI/CollectionPreviewComposition.cs",ROOT/"Tests/CollectionRenderLifecycleTests.cs"],
+        checks.append(("collection-render-lifecycle-modern",[ROOT/"Assets/Scripts/Core/RendererGroupCache.cs",ROOT/"Assets/Scripts/UI/CollectionModelPreview.cs",ROOT/"Assets/Scripts/UI/CollectionPreviewState.cs",ROOT/"Assets/Scripts/UI/CollectionPreviewComposition.cs",ROOT/"Tests/CollectionRenderLifecycleTests.cs"],
             'using System; internal static class Program { static void Main() { Console.WriteLine(CollectionRenderLifecycleTests.Run()); } }'))
         checks.append(("ui-render-cache",[ROOT/"Assets/Scripts/Core/GameTypes.cs",ROOT/"Assets/Scripts/Core/ProgressionService.cs",ROOT/"Tests/ProgressionTests.cs",ROOT/"Assets/Scripts/UI/CollectionPreviewState.cs",ROOT/"Assets/Scripts/Combat/CombatTextMetrics.cs",ROOT/"Assets/Scripts/Combat/CombatTextLayout.cs",ROOT/"Tests/UiRenderCacheTests.cs"],
             'using System; internal static class Program { static void Main() { Console.WriteLine(UiRenderCacheTests.Run()); } }'))
@@ -376,7 +376,15 @@ def main():
                              ("blender-scenery-production", "BlenderSceneryProductionTests.py"),
                              ("authored-spell-bases", "AuthoredSpellBasesProductionTests.py"),
                              ("authored-spell-integration", "AuthoredSpellIntegrationTests.py"),
-                             ("camera-occlusion-slots", "CameraOcclusionSlotsProductionTests.py")]:
+                             ("camera-occlusion-slots", "CameraOcclusionSlotsProductionTests.py"),
+                             ("vanguard-actions-production", "VanguardActionsProductionTests.py"),
+                             ("status-feedback-production", "StatusFeedbackProductionTests.py"),
+                             ("skill-identity-callsite-production", "SkillIdentityCallsiteProductionTests.py"),
+                             ("enemy-knockdown-production", "EnemyKnockdownProductionTests.py"),
+                             ("enemy-knockdown-geometry", "EnemyKnockdownGeometryTests.py"),
+                             ("tactical-attachments-production", "TacticalAttachmentsProductionTests.py"),
+                             ("filled-vfx-pool-production", "FilledVfxPoolProductionTests.py"),
+                             ("wolf-silhouette-production", "WolfSilhouetteProductionTests.py")]:
             passed = run_check(name, [[sys.executable, str(ROOT/"Tests"/script), dotnet]], dict(env, DOTNET=dotnet), output, report)
             failed = failed or not passed
         if args.compile or args.download_references or args.compile_android:

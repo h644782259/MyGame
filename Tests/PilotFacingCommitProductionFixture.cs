@@ -1,3 +1,4 @@
+// Imported-adapter tests explicitly authorize preview construction; subsequent clock tests exercise its sampler in isolation.
 using System;using System.Linq;using UnityEngine;using Emberfall;
 namespace UnityEngine{
  public struct Vector2{public float x,y;}
@@ -29,7 +30,7 @@ static class PilotFacingFixture{
  static PlayerController Create(){
   var asset=new GameObject("asset");asset.AddComponent<Renderer>();asset.AddComponent<MeshFilter>().sharedMesh=new Mesh();LayerFixture.Build(asset);
   Resources.Items["BlenderPilot/Vanguard"]=asset;Resources.Items["BlenderPilot/Pilot_Atlas_Standard"]=new Material();Resources.Clips=new[]{"Pilot_Idle","Pilot_Move","Pilot_Basic","Pilot_Hit","Pilot_Skill"}.Select(s=>new AnimationClip{name=s,length=2}).ToArray();BlenderPilotArt.Enabled=true;
-  var root=new GameObject("player");var player=root.AddComponent<PlayerController>();var model=new GameObject("model");model.transform.SetParent(root.transform);player.model=model.AddComponent<CombatModel>();player.model.heroClass=HeroClass.Vanguard;player.model.Init();player.Setup();return player;
+  var root=new GameObject("player");var player=root.AddComponent<PlayerController>();var model=new GameObject("model");model.transform.SetParent(root.transform);player.model=model.AddComponent<CombatModel>();player.model.heroClass=HeroClass.Vanguard;player.model.isolatedPreview=true;player.model.Init();player.model.isolatedPreview=false;player.Setup();return player;
  }
  static void Frame(PlayerController p,Vector3 walk,Vector3 aim){Time.frameCount++;Time.deltaTime=.02f;Time.time+=.02f;p.attackCooldown=0;p.Aim=p.transform.position+walk*.12f+aim*10;p.FacingFrame(walk,.02f);}
  public static void Run(){

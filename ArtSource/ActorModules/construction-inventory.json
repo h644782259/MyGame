@@ -1,5 +1,5 @@
 {
-  "source_geometry_sha256": "f5248febf90da33f7cc0f76ceb20e8e7236217a20cac19446b221e33ddd0778c",
+  "source_geometry_sha256": "29a0eca2ad7bd1c32a417bd2e79968ed568675e01a7eef28c11f96d9cdd92e15",
   "scope": "Actual factory construction and decoder with managed Unity TRS doubles; static Blender preview, not Unity",
   "cases": [
     {
@@ -90,9 +90,13 @@
       "authored_module_instances": {
         "Blender actor WolfTorso": 1,
         "Blender actor WolfHead": 1,
-        "Blender actor Paw": 4
+        "Blender actor WolfMuzzle": 1,
+        "Blender actor WolfEar": 2,
+        "Blender actor Paw": 2,
+        "Blender actor WolfHindLeg": 2,
+        "Blender actor WolfTail": 1
       },
-      "total_scene_triangles": 2564
+      "total_scene_triangles": 1676
     },
     {
       "case": "Companion-1",
@@ -134,17 +138,17 @@
     },
     {
       "top_world_y": 0.53,
-      "inside_torso_vertices": 11,
+      "inside_torso_vertices": 17,
       "sampled_cap_vertices": 42
     },
     {
       "top_world_y": 0.53,
-      "inside_torso_vertices": 10,
+      "inside_torso_vertices": 17,
       "sampled_cap_vertices": 42
     }
   ],
   "wolf_eye_overlap_vertices": [
-    12,
-    11
+    86,
+    76
   ]
 }

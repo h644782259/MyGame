@@ -8,6 +8,7 @@ namespace Emberfall
     public sealed partial class CombatModel
     {
         private bool pilotHasGear, pilotHasFashion, pilotVisible;
+        private void InvalidatePilotRendererGroup() {} // No display cache in this disabled-feature boundary.
         private BlenderPilotVisual blenderPilot;
         private static bool PilotStarterCompatible(ItemData item,ItemSlot slot) { return false; }
         private void ConfigureBlenderPilot() { blenderPilot=null;pilotVisible=false; }

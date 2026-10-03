@@ -14,6 +14,8 @@ namespace Emberfall
         Material shadowMaterial,ringMaterial;
         Texture2D shadowTexture;
         Renderer[] renderers;
+        RendererGroupCache rendererGroup;
+        int rendererRevision=-1;
         Light[] sceneLights;
         int[] sceneMasks;
         CollectionPreviewState state=new CollectionPreviewState();
@@ -34,7 +36,7 @@ namespace Emberfall
         {if(((int)value<0||(int)value>2)||composition==value)return;composition=value;framingDirty=true;state.SetYaw(CollectionPreviewFraming.DefaultYaw(value));state.Invalidate();}
         public void SetViewport(float pixelWidth,float pixelHeight,bool mobile)
         {requested=new CollectionPreviewSurface(pixelWidth,pixelHeight,mobile);}
-        public void Invalidate(){state.Invalidate();sceneLights=null;}
+        public void Invalidate(){state.Invalidate();sceneLights=null;if(rendererGroup!=null)rendererGroup.Invalidate();}
         public Texture Render(HeroClass hero,ItemData weapon,ItemData armor,ItemData relic,FashionData wings,FashionData fashionWeapon)
         {
             if(Event.current==null||Event.current.type!=EventType.Repaint)return texture!=null&&texture.IsCreated()?texture:null;
@@ -53,9 +55,11 @@ namespace Emberfall
             if(!texture.IsCreated()){texture.Create();state.InvalidateTexture();}
             if(!texture.IsCreated())return null;
             if(!equipmentFraming&&motion.Advance(Time.unscaledDeltaTime,Time.frameCount))state.Invalidate();
+            if(rendererGroup!=null&&rendererGroup.Dirty){state.Invalidate();framingDirty=true;}
             if(!state.ShouldRender(true,Time.frameCount))return texture;
             if(state.NeedsModel)
             {
+                if(rendererGroup!=null){rendererGroup.Dispose();rendererGroup=null;}
                 if(avatar!=null){avatar.SetActive(false);UnityEngine.Object.Destroy(avatar);}
                 avatar=new GameObject("Preview mannequin");avatar.transform.SetParent(stage.transform,false);
                 var random=UnityEngine.Random.state;
@@ -63,11 +67,11 @@ namespace Emberfall
                 finally {UnityEngine.Random.state=random;}
                 foreach(var t in avatar.GetComponentsInChildren<Transform>(true))t.gameObject.layer=PreviewLayer;
                 foreach(var c in avatar.GetComponentsInChildren<Collider>(true))c.enabled=false;
-                foreach(var behaviour in avatar.GetComponentsInChildren<MonoBehaviour>(true))behaviour.enabled=false;
-                renderers=avatar.GetComponentsInChildren<Renderer>(true);
-                foreach(var renderer in renderers){renderer.shadowCastingMode=UnityEngine.Rendering.ShadowCastingMode.Off;renderer.receiveShadows=false;}
+                foreach(var behaviour in avatar.GetComponentsInChildren<MonoBehaviour>(true))if(!(behaviour is RendererGroupObserver))behaviour.enabled=false;
+                rendererGroup=new RendererGroupCache(avatar.transform);rendererRevision=-1;
                 framingDirty=true;state.ModelReady();
             }
+            RefreshRendererGroup();
             avatar.transform.localRotation=Quaternion.Euler(0,state.Yaw,0);
             avatar.transform.localScale=Vector3.one;
             if(framingDirty){FrameModel();framingDirty=false;}
@@ -77,6 +81,16 @@ namespace Emberfall
             turnRing.localRotation=Quaternion.Euler(0,motion.RingYaw,0);
             RenderIsolated();state.Rendered(Time.frameCount);
             return texture;
+        }
+        void RefreshRendererGroup()
+        {
+            renderers=rendererGroup.Read();if(rendererRevision==rendererGroup.Revision)return;
+            rendererRevision=rendererGroup.Revision;framingDirty=true;
+            // A late authored part must obey the same isolation contract as the model.
+            foreach(var t in avatar.GetComponentsInChildren<Transform>(true))t.gameObject.layer=PreviewLayer;
+            foreach(var c in avatar.GetComponentsInChildren<Collider>(true))c.enabled=false;
+            foreach(var behaviour in avatar.GetComponentsInChildren<MonoBehaviour>(true))if(!(behaviour is RendererGroupObserver))behaviour.enabled=false;
+            foreach(var renderer in renderers)if(renderer!=null){renderer.shadowCastingMode=UnityEngine.Rendering.ShadowCastingMode.Off;renderer.receiveShadows=false;}
         }
         bool InComposition(Transform part)
         {
@@ -184,6 +198,7 @@ namespace Emberfall
         }
         public void Dispose()
         {
+            if(rendererGroup!=null){rendererGroup.Dispose();rendererGroup=null;}rendererRevision=-1;
             if(camera!=null)camera.targetTexture=null;
             if(stage!=null){stage.SetActive(false);UnityEngine.Object.Destroy(stage);}
             if(texture!=null){texture.Release();UnityEngine.Object.Destroy(texture);}

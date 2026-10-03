@@ -19,10 +19,16 @@ namespace Emberfall
         {pilotOwnerDead=!alive;if(!alive)SetBlenderPilotVisible(false);}
         private float pilotHurtStarted=-10;
         private Renderer[] pilotHiddenRenderers;
-        private bool[] pilotRendererStates;
+        private bool[] pilotRendererStates,pilotRendererOwned;
+        private RendererGroupCache pilotRendererGroup;
+        private int pilotRendererRevision=-1;
+        internal void InvalidatePilotRendererGroup()
+        {RendererGroupCache.Invalidate(transform);if(pilotRendererGroup!=null)pilotRendererGroup.Invalidate();}
         private void ConfigureBlenderPilot()
         {
-            if (heroClass == HeroClass.Vanguard && BlenderPilotArt.Enabled)
+            // Complete combat rigs keep one body for the entire equipment/action lifecycle.
+            // This five-clip imported outfit is authorized only by ConfigurePreview.
+            if (isolatedPreview && heroClass == HeroClass.Vanguard && BlenderPilotArt.Enabled)
                 blenderPilot = BlenderPilotVisual.Create(transform);
         }
         private Vector3 pilotAcceptedWalkingWorld;
@@ -84,23 +90,34 @@ namespace Emberfall
         {
             if (blenderPilot == null) return;
             blenderPilot.gameObject.SetActive(visible);
-            if (visible == pilotVisible) return;
-            pilotVisible = visible;
-            if (visible)
+            if(!visible)
             {
-                pilotHiddenRenderers = GetComponentsInChildren<Renderer>(true);
-                pilotRendererStates = new bool[pilotHiddenRenderers.Length];
-                for (int i=0;i<pilotHiddenRenderers.Length;i++)
-                {
-                    Renderer renderer=pilotHiddenRenderers[i];
-                    pilotRendererStates[i]=renderer.enabled;
-                    if (!renderer.transform.IsChildOf(blenderPilot.transform)) renderer.enabled=false;
-                }
+                RestorePilotRendererStates();pilotVisible=false;return;
             }
-            else if (pilotHiddenRenderers != null)
-                for (int i=0;i<pilotHiddenRenderers.Length;i++)
-                    if(pilotHiddenRenderers[i]!=null&&!pilotHiddenRenderers[i].transform.IsChildOf(blenderPilot.transform))
-                        pilotHiddenRenderers[i].enabled=pilotRendererStates[i];
+            if(pilotRendererGroup==null)pilotRendererGroup=new RendererGroupCache(transform);
+            if(!pilotVisible)pilotRendererGroup.Invalidate();
+            Renderer[] current=pilotRendererGroup.Read();
+            if(pilotVisible&&pilotRendererRevision==pilotRendererGroup.Revision)return;
+            // Preserve pre-hide states by renderer identity across a membership refresh.
+            // Removed/reparented renderers recover before we take ownership of new ones.
+            RestorePilotRendererStates();
+            pilotHiddenRenderers=current;pilotRendererStates=new bool[current.Length];pilotRendererOwned=new bool[current.Length];
+            for(int i=0;i<current.Length;i++)
+            {
+                Renderer renderer=current[i];if(renderer==null)continue;
+                pilotRendererStates[i]=renderer.enabled;
+                pilotRendererOwned[i]=!renderer.transform.IsChildOf(blenderPilot.transform);
+                if(pilotRendererOwned[i])renderer.enabled=false;
+            }
+            pilotVisible=true;pilotRendererRevision=pilotRendererGroup.Revision;
+        }
+        private void RestorePilotRendererStates()
+        {
+            if(pilotHiddenRenderers==null)return;
+            for(int i=0;i<pilotHiddenRenderers.Length;i++)
+                if(pilotHiddenRenderers[i]!=null&&pilotRendererOwned[i])
+                    pilotHiddenRenderers[i].enabled=pilotRendererStates[i];
+            pilotHiddenRenderers=null;pilotRendererStates=pilotRendererOwned=null;
         }
     }
 }

@@ -91,7 +91,7 @@ namespace Emberfall
 
         private void LateUpdate()
         {
-            if (isHero) return;
+            if (isHero) { SampleVanguardDeath(); return; }
             if (dying)
             {
                 foreach (var pair in palette)
@@ -117,6 +117,7 @@ namespace Emberfall
             model.BuildClassCostume();
             model.CaptureBaseCostume();
             model.ConfigureBlenderPilot();
+            model.ConfigureVanguardArt();
             return model;
         }
 
@@ -127,6 +128,7 @@ namespace Emberfall
             string wingId = wings == null ? null : wings.id;
             string weaponId = weapon == null ? null : weapon.id;
             if (wingId == fashionWingsId && weaponId == fashionWeaponId) return;
+            InvalidatePilotRendererGroup(); // Component-only replacements must invalidate all display owners.
             fashionWingsId = wingId;
             fashionWeaponId = weaponId;
             activeWeaponFashion = weapon;
@@ -155,6 +157,7 @@ namespace Emberfall
         public void ApplyEquipment(ItemData weapon, ItemData armor, ItemData relic)
         {
             if (!isHero || spine == null) return;
+            InvalidatePilotRendererGroup(); // Includes renderer replacement without a Transform change.
             bool resumePilot=pilotVisible;
             SetBlenderPilotVisible(false); // Restore owned renderer states before equipment builders edit them.
             pilotHasGear = !PilotStarterCompatible(weapon,ItemSlot.Weapon) || !PilotStarterCompatible(armor,ItemSlot.Armor) || !PilotStarterCompatible(relic,ItemSlot.Relic);
@@ -442,11 +445,11 @@ namespace Emberfall
                 model.bodyRestRotation = model.body.localRotation;
                 model.Part("Wolf head", PrimitiveType.Cube, new Vector3(0,.9f,.55f), new Vector3(.42f,.42f,.52f), fur);
                 model.wolfJaw = model.Joint("Wolf bite hinge", new Vector3(0,.79f,.72f));
-                model.Part("Muzzle", PrimitiveType.Cube, new Vector3(0,0,.18f), new Vector3(.28f,.2f,.3f), new Color(.27f,.47f,.45f), model.wolfJaw);
+                model.Part("Muzzle", PrimitiveType.Cube, new Vector3(0,0,.18f), new Vector3(.28f,.2f,.3f), new Color(.27f,.47f,.45f), model.wolfJaw, meshModule:"Wolf muzzle");
                 for (int sign = -1; sign <= 1; sign += 2)
                 {
-                    model.Part("Ear", PrimitiveType.Cube, new Vector3(sign*.17f,1.2f,.5f), new Vector3(.1f,.32f,.19f), fur).localRotation=Quaternion.Euler(-15,0,sign*15);
-                    model.Part("Luminous eye", PrimitiveType.Sphere, new Vector3(sign*.22f,.96f,.72f), Vector3.one*.09f, new Color(.75f,1f,.6f));
+                    model.Part("Ear", PrimitiveType.Cube, new Vector3(sign*.17f,1.2f,.5f), new Vector3(.19f,.32f,.19f), fur, meshModule:"Wolf ear").localRotation=Quaternion.Euler(-15,0,sign*15);
+                    model.Part("Luminous eye", PrimitiveType.Sphere, new Vector3(sign*.16f,.96f,.64f), Vector3.one*.09f, new Color(.75f,1f,.6f));
                 }
                 model.quadruped = true;
                 model.pawOrigins = new Vector3[4];
@@ -454,10 +457,10 @@ namespace Emberfall
                 {
                     model.pawOrigins[i] = new Vector3(i % 2 == 0 ? -.22f : .22f, .47f, i < 2 ? .4f : -.4f);
                     model.paws[i] = model.Joint("Wolf articulated leg", model.pawOrigins[i]);
-                    model.Part("Paw", PrimitiveType.Capsule, new Vector3(0,-.18f,.035f), new Vector3(.15f,.24f,.2f), fur, model.paws[i]);
+                    model.Part("Paw", PrimitiveType.Capsule, new Vector3(0,-.18f,.035f), new Vector3(i<2?.23f:.28f,.24f,.25f), fur, model.paws[i], meshModule:i<2?"Wolf foreleg":"Wolf hindleg");
                 }
                 model.tailRig = model.Joint("Wolf tail base", new Vector3(0,.75f,-.5f));
-                model.Part("Tail",PrimitiveType.Capsule,new Vector3(0,0,-.22f),new Vector3(.18f,.4f,.19f),fur,model.tailRig).localRotation=Quaternion.Euler(-60,0,0);
+                model.Part("Tail",PrimitiveType.Capsule,new Vector3(0,0,-.22f),new Vector3(.27f,.4f,.27f),fur,model.tailRig,meshModule:"Wolf tail").localRotation=Quaternion.Euler(-60,0,0);
             }
             return model;
         }
@@ -984,6 +987,7 @@ namespace Emberfall
                 AimArm(rightArm, rightElbow, stringHand, new Vector3(1, -.2f, -.2f));
                 arrowRig.gameObject.SetActive(actionBasic ? BasicActionTimeline.ArrowVisible(t, acting) : !acting || t < .44f || t > .83f);
             }
+            ApplyAuthoredVanguardPose(acting,t,hurt);
             ApplyVisualRecovery(dt);
             if (decoration != null) decoration.Rotate(0, dt * (acting ? 145f : 42f), 0, Space.Self);
         }
@@ -1152,6 +1156,7 @@ namespace Emberfall
         public void Animate(float speed, float attack, bool hurt)
         {
             if (isHero) { pilotCharging=false; AnimateHero(speed, attack, hurt, Time.deltaTime); return; }
+            RestoreKnockdownBase();
             // Rebuild the authored pose each frame; recoil is an additive layer, never its replacement.
             if (body != null) body.localRotation = bodyRestRotation;
             if (largeBossRig != null) { transform.localPosition = Vector3.zero; largeBossRig.Animate(speed, attack); ApplyRecoil(); return; }

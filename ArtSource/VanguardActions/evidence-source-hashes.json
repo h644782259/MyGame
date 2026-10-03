@@ -1,0 +1,7 @@
+{
+  "Assets/Scripts/Combat/CombatModel.cs": "3eaefff824fb326b799d8caddfe615e2cda70cd9b602166ae5d808b36ad13803",
+  "Assets/Scripts/Combat/CombatModel.Motion.cs": "9ce6e80ef70d59a23413ab68bc9750eeb2680c75540b4024b6fdd73a2d6092e1",
+  "Assets/Scripts/Combat/CombatModel.VanguardArt.cs": "063fab61eebd07ea8ba532ad7f87100e4a5dca93d61cbb413e0342d825a6fa79",
+  "Assets/Scripts/Combat/VanguardActionLibrary.cs": "d5aa47b4de24abd2cff7d14f35997b95969bcd90f4f6bf690c624d0a83bd9a51",
+  "Assets/Resources/VanguardActions/Swordguard.bytes": "867f3d4ba49950b3031657e06856693c9cb08ef9c71ea0796ffa4eb50701a2dc"
+}

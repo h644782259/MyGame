@@ -39,15 +39,15 @@ namespace Emberfall
             if(skill==6)
             {
                 owner.HealingProtection(rank);
-                AdvancedSkillVfx.Rune(owner,origin,3.2f*range,color,5.3f,rank,true);
+                AdvancedSkillVfx.Rune(owner,origin,3.2f*range,color,5.3f,rank,true,4);
                 return;
             }
             if(heroClass==HeroClass.Ranger&&skill==9)
             {arrowBatch=FilledSkillVfx.BeginArrowBatch(owner,target,6f*range,color,priority:CombatVisualPriority.ActionBody,castId:castId);return;}
             if(heroClass==HeroClass.Ranger&&skill==7)lockedTarget=Nearest(target,10f*range);
             if (skill >= 6)
-                AdvancedSkillVfx.Rune(owner,skill==7 && heroClass==HeroClass.Ranger?origin:target,4.2f*range,color,nextEvent+steps*interval+.5f,rank+1);
-            else AdvancedSkillVfx.Rune(owner,origin,1.6f*range,color,.7f,rank);
+                AdvancedSkillVfx.Rune(owner,skill==7 && heroClass==HeroClass.Ranger?origin:target,4.2f*range,color,nextEvent+steps*interval+.5f,rank+1,identity:heroClass==HeroClass.Vanguard?1:heroClass==HeroClass.Summoner?3:heroClass==HeroClass.Arcanist&&skill==4?2:0);
+            else AdvancedSkillVfx.Rune(owner,origin,1.6f*range,color,.7f,rank,identity:heroClass==HeroClass.Vanguard?1:heroClass==HeroClass.Summoner?3:heroClass==HeroClass.Arcanist&&skill==4?2:0);
         }
 
         private void Update()
@@ -79,6 +79,8 @@ namespace Emberfall
             if (heroClass == HeroClass.Summoner) SummonedCompanion.HealAll(owner, total / 5f);
             Vector3 at=owner.transform.position;
             CombatFx.Ring(at,3.2f*range,color,.7f,.13f);
+            bool authoredProtection=FilledSkillVfx.IdentityContact(owner,at,Vector3.forward,1.6f*range,color,4,CombatVisualPriority.RealContact);
+            if(!authoredProtection) { // Healing already applied; replace only generic decorative beams.
             if(heroClass==HeroClass.Vanguard)
             {
                 AdvancedSkillVfx.Beam(owner,at,at+Vector3.up*3.5f,new Color(1f,.85f,.38f),.85f,.12f);
@@ -96,6 +98,7 @@ namespace Emberfall
                     Vector3 root=at+Circle(i*Mathf.PI*.5f,1.4f*range);
                     AdvancedSkillVfx.Beam(owner,root,Vector3.Lerp(root,at,.5f)+Vector3.up*2.8f,new Color(.53f,1f,.56f),.75f,.09f);
                 }
+            }
             }
             if(rank==3 && step==steps-1) owner.RestoreSkillEnergy(8f);
         }
@@ -256,11 +259,14 @@ namespace Emberfall
                 if(nearest==null) break;
                 struck.Add(nearest);
                 Vector3 position=nearest.transform.position;
-                AdvancedSkillVfx.Beam(owner,previous+Vector3.up*1.1f,position+Vector3.up*1.1f,new Color(.7f,.85f,1f),.55f,.17f);
+                float endpointHealth=nearest.Health;
                 ElementalCombatVfx.Lightning(previous + Vector3.up * 1.15f, position + Vector3.up * 1.15f);
                 owner.RegisterSkillHit(castId);
                 owner.ApplySpellDodgeBoon(nearest);
                 nearest.TakeDamage(damage.Amount*SkillDamageBudgets.AdvancedImpact(heroClass,skill,rank,step),forward,.05f,.35f+rank*.15f, critical:damage.IsCritical);
+                if(nearest.Health<endpointHealth) {
+                if(!FilledSkillVfx.IdentityContact(owner,position,Vector3.forward,.85f,new Color(.7f,.85f,1f),2,CombatVisualPriority.RealContact)) AdvancedSkillVfx.Beam(owner,previous+Vector3.up*1.1f,position+Vector3.up*1.1f,new Color(.7f,.85f,1f),.55f,.17f);
+                }
                 if(rank==3) owner.HitArea(position,1.8f*range,damage*SkillDamageBudgets.AdvancedAuxiliary(heroClass,skill,rank),0,.1f,castId:castId);
                 previous=search=position;
             }

@@ -1,0 +1,23 @@
+{
+  "SupplierBackpack": {
+    "triangles": 112,
+    "bytes": 12108,
+    "materials": 1,
+    "textures": 0,
+    "sha256": "d762899c7c66a751dc3d0c4fd3f524fc93ca23d67afdce5700a2ecd203bf08b0"
+  },
+  "HuntBadge": {
+    "triangles": 56,
+    "bytes": 6060,
+    "materials": 1,
+    "textures": 0,
+    "sha256": "38e7dae12a4002cdf83dc962d41b907d52fcc63cfd8b9a188f3b0fe42e58c283"
+  },
+  "SupportMantle": {
+    "triangles": 64,
+    "bytes": 6924,
+    "materials": 1,
+    "textures": 0,
+    "sha256": "c229733b9410804c1650b20cc8abbf5ab8ef66df338348da05893a2e624f64c1"
+  }
+}
