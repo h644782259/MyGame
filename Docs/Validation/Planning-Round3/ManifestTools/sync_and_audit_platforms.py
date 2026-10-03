@@ -4,18 +4,19 @@ import subprocess,hashlib,json,sys,re
 win,ios,android,out=map(Path,sys.argv[1:5]);out.mkdir(parents=True,exist_ok=True)
 base='fce5efc4361614aed3eca070ed2574b7d7204a8e';ibase='fd3fe241fd65d3d6ca1a577bef296412094c5af9'
 def git(root,*args):return subprocess.check_output(['git',*args],cwd=root)
+def names(root,*args):return [p for p in git(root,*args).decode().split('\0') if p]
 def sha(data):return hashlib.sha256(data).hexdigest()
 def blob(root,rev,path):return git(root,'show',rev+':'+path)
 def private(root):return {str(p.relative_to(root)):sha(p.read_bytes()) for name in ('ProjectSettings','Packages','Assets/Editor') for p in (root/name).rglob('*') if p.is_file()}
 assert not (android/'.git').exists()
-changes=git(win,'diff','--name-only',base,'HEAD').decode().splitlines()
+changes=names(win,'diff','--name-only','-z',base,'HEAD')
 assert not any(p.startswith(('ProjectSettings/','Packages/','Assets/Editor/')) for p in changes)
 before=private(android);old_android={}
-paths=git(win,'ls-files','Assets/Scripts','Assets/Resources','Tests','ArtSource','Tools').decode().splitlines()
+paths=names(win,'ls-files','-z','Assets/Scripts','Assets/Resources','Tests','ArtSource','Tools')
 for rel in paths:
  p=android/rel
  if p.is_file():old_android[rel]=sha(p.read_bytes())
-current=set(git(win,'ls-files').decode().splitlines());copied={}
+current=set(names(win,'ls-files','-z'));copied={}
 for rel in changes:
  dest=android/rel
  if rel not in current:
@@ -34,7 +35,7 @@ for rel in paths:
   assert sha(peer)==prior,(label,rel,'changed platform override')
   assert rel not in changes,(label,rel,'changed shared file differs')
   differences[label+':'+rel]={'sha256':sha(peer),'baselineSha256':prior,'unchanged':True}
-metas=git(win,'ls-files','*.meta').decode().splitlines();old=set(git(win,'ls-tree','-r','--name-only',base).decode().splitlines());new={};seen={}
+metas=names(win,'ls-files','-z','*.meta');old=set(names(win,'ls-tree','-r','--name-only','-z',base));new={};seen={}
 for rel in metas:
  content=blob(win,'HEAD',rel).decode();m=re.search(r'^guid: (.+)$',content,re.M);guid=m.group(1) if m else None
  if guid:assert guid not in seen,(rel,seen.get(guid));seen[guid]=rel
