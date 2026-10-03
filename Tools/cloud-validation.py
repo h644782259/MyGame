@@ -356,6 +356,7 @@ def main():
         for name, script in [("scenery-presentation-production", "SceneryPresentationProductionTests.py"),
                              ("companion-path-allocation", "CompanionPathAllocationTests.py"),
                              ("combat-review-impact-production", "CombatReviewImpactProductionTests.py"),
+                             ("death-loot-persistence-production", "DeathLootPersistenceProductionTests.py"),
                              ("room-first-choice-production", "RoomFirstChoiceProductionTests.py"),
                              ("redrock-replay-geometry", "RedrockReplayGeometryTests.py")]:
             passed = run_check(name, [[sys.executable,str(ROOT/"Tests"/script),dotnet]], dict(env,DOTNET=dotnet), output, report)
