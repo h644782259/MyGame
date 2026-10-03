@@ -29,7 +29,7 @@ namespace Emberfall {
  public static class MobileControls{public static bool Active;}
  public class SkillChargeController{public bool IsCharging,ConsumedThisFrame;public int SkillIndex;}
  public class PlayerController{
-  public float Energy=100;public bool IsDead,MasteryComboReady;public CombatOpportunityState SkillWindow,BasicWindow;public CombatOpportunityState SkillOpportunityWindow(int skill)=>SkillWindow;public CombatOpportunityState BasicOpportunityWindow(bool mastery=false)=>mastery&&MasteryComboReady?new CombatOpportunityState(CombatOpportunityKind.MasteryCombo,6):BasicWindow;public float[] Cooldowns=new float[10];public List<int> Queries=new List<int>();public int BasicQueries;
+  public float Energy=100;public bool IsDead,MasteryComboReady;public CombatOpportunityState SkillWindow,BasicWindow;public CombatOpportunityState SkillOpportunityWindow(int skill){if(skill<0||skill==3||skill==8)return default;if(!Queries.Contains(skill)&&skill>=0&&skill!=3&&skill!=8)Queries.Add(skill);return SkillWindow.Window?SkillWindow:Observations.TryGetValue(skill,out var state)?state:default;}public CombatOpportunityState BasicOpportunityWindow(bool mastery=false)=>mastery&&MasteryComboReady?new CombatOpportunityState(CombatOpportunityKind.MasteryCombo,6):BasicWindow;public float[] Cooldowns=new float[10];public List<int> Queries=new List<int>();public int BasicQueries;
   public Dictionary<int,CombatOpportunityState> Observations=new Dictionary<int,CombatOpportunityState>();public CombatOpportunityState Basic;
   public SkillChargeController Charge=new SkillChargeController();public T GetComponent<T>()where T:class=>Charge as T;
   public float CooldownRemaining(int slot)=>Cooldowns[slot];
@@ -56,17 +56,19 @@ namespace Emberfall {
    Check(view.emphasis.Count==1&&view.emphasis[0].x==view.hotbarSlots[0].x&&view.identities.SequenceEqual(new[]{1}),"opportunity border and skill icon stay on remapped actual slot");
    Check(view.utilityIcons==1&&view.At(2,"3")&&!hero.Queries.Contains(-2)&&!hero.Queries.Contains(3),"potion and passive/empty slots never query actionable skill identity");
    Check(Enumerable.Range(0,10).All(i=>view.At(i,GameBalance.KeyName(p.hotbarKeys[i]))),"opportunity preserves all ten configured key labels");
-   Check(view.labels.Where(x=>x.Value=="碎冰 1.3").All(x=>x.Rect.y>=view.hotbarSlots[0].y+30),"opportunity caption reserves lower strip below key labels");
+   Check(view.labels.Where(x=>x.Value=="碎冰 1.3"&&x.Rect.y>=view.hotbarSlots[0].y).All(x=>x.Rect.y>=view.hotbarSlots[0].y+30),"opportunity caption reserves lower strip below key labels");
    hero.Observations[1]=default;view.Draw();Check(!view.Has("碎冰 1.3")&&view.emphasis.Count==0,"expired observation removes actual hotbar emphasis");
-   hero.Observations[1]=new CombatOpportunityState(CombatOpportunityKind.Shatter,2);hero.Cooldowns[0]=1.5f;view.Draw();Check(view.At(0,"1.5")&&!view.Has("碎冰 2.0")&&hero.Queries.Count==0,"slot cooldown overlay wins before opportunity query");
-   hero.Cooldowns[0]=0;hero.Energy=0;view.Draw();Check(view.At(0,"缺能")&&!view.Has("碎冰 2.0")&&hero.Queries.Count==0,"energy shortage wins before opportunity query");hero.Energy=100;
-   hero.Charge.IsCharging=true;hero.Charge.SkillIndex=1;view.Draw();Check(view.At(0,"蓄力")&&!view.Has("碎冰 2.0")&&hero.Queries.Count==0,"captured mapped charge remains charging rather than future opportunity");
-   hero.Charge.SkillIndex=4;view.Draw();Check(!view.Has("碎冰 2.0")&&hero.Queries.Count==0,"another captured charge suppresses new-action promise");hero.Charge.IsCharging=false;hero.Charge.ConsumedThisFrame=true;view.Draw();Check(hero.Queries.Count==0,"frame-consumed charge suppresses opportunity");hero.Charge.ConsumedThisFrame=false;
-   view.session.Failures["skill1"]="目标被遮挡";view.Draw();Check(view.At(0,"目标被遮挡")&&!view.Has("碎冰 2.0")&&hero.Queries.Count==0,"mapped skill rejection takes priority without losing icon or key");Check(view.identities.Contains(1)&&view.At(0,GameBalance.KeyName(p.hotbarKeys[0])),"failure retains mapped icon and hotkey");view.session.Failures.Clear();
-   view.session.InputBlocked=true;view.Draw();Check(hero.Queries.Count==0&&hero.BasicQueries==0&&!view.Has("碎冰 2.0"),"blocked UI does not publish active opportunities");view.session.InputBlocked=false;
-   hero.IsDead=true;view.Draw();Check(hero.Queries.Count==0&&hero.BasicQueries==0,"death hides opportunities before querying host");hero.IsDead=false;
+   hero.Observations[1]=new CombatOpportunityState(CombatOpportunityKind.Shatter,2);hero.Cooldowns[0]=1.5f;view.Draw();Check(view.At(0,"1.5")&&!view.At(0,"碎冰 2.0"),"slot cooldown overlay wins before opportunity query");
+   hero.Cooldowns[0]=0;hero.Energy=0;view.Draw();Check(view.At(0,"缺能")&&!view.At(0,"碎冰 2.0"),"energy shortage wins before opportunity query");hero.Energy=100;
+   hero.Charge.IsCharging=true;hero.Charge.SkillIndex=1;view.Draw();Check(view.At(0,"蓄力")&&!view.At(0,"碎冰 2.0"),"captured mapped charge remains charging rather than future opportunity");
+   hero.Charge.SkillIndex=4;view.Draw();Check(!view.At(0,"碎冰 2.0"),"another captured charge suppresses new-action promise");hero.Charge.IsCharging=false;hero.Charge.ConsumedThisFrame=true;view.Draw();Check(!view.At(0,"碎冰 2.0"),"frame-consumed charge suppresses opportunity");hero.Charge.ConsumedThisFrame=false;
+   view.session.Failures["skill1"]="目标被遮挡";view.Draw();Check(view.At(0,"目标被遮挡")&&!view.At(0,"碎冰 2.0"),"mapped skill rejection takes priority without losing icon or key");Check(view.identities.Contains(1)&&view.At(0,GameBalance.KeyName(p.hotbarKeys[0])),"failure retains mapped icon and hotkey");view.session.Failures.Clear();
+   view.session.InputBlocked=true;view.Draw();Check(hero.BasicQueries==0&&!view.At(0,"碎冰 2.0"),"blocked UI does not publish active opportunities");view.session.InputBlocked=false;
+   hero.IsDead=true;view.Draw();Check(hero.BasicQueries==0,"death hides opportunities before querying host");hero.IsDead=false;
    p.skillRanks[1]=0;view.Draw();Check(hero.Queries.Count==0&&!view.identities.Contains(1),"unlearned remapped skill remains empty");p.skillRanks[1]=1;
    p.heroClass=HeroClass.Summoner;p.equippedSkills[0]=-1;p.equippedSkills[7]=4;hero.Observations[4]=new CombatOpportunityState(CombatOpportunityKind.EmpoweredContract,7.5f);view.Draw();Check(view.At(7,"强化 7.5")&&hero.Queries.SequenceEqual(new[]{4}),"actual remapped contract reads skill four in slot seven");
+   hero.SkillWindow=new CombatOpportunityState(CombatOpportunityKind.EmpoweredContract,7.5f,blockReason:"无目标");view.Draw();Check(view.Has("强化 7.5")&&!view.At(7,"强化 7.5")&&view.emphasis.Count==0,"summoner no target keeps real clock without executable caption or green border");
+   hero.SkillWindow=new CombatOpportunityState(CombatOpportunityKind.EmpoweredContract,6.2f);view.Draw();Check(view.At(7,"强化 6.2")&&view.emphasis.Count==1,"summoner legal target restores executable emphasis and current time");hero.SkillWindow=default;
    p.heroClass=HeroClass.Vanguard;hero.Basic=new CombatOpportunityState(CombatOpportunityKind.Counter,.8f);view.Draw();Check(view.Has("左键普攻 · 反击 0.8"),"desktop basic control names left click and actual counter window");hero.Basic=default;view.Draw();Check(view.Has("技能快捷栏")&&!view.Has("左键普攻 · 反击 0.8"),"expired counter restores ordinary hotbar heading");
    hero.MasteryComboReady=true;view.Draw();Check(view.Has("左键普攻 · 连击 6.0"),"actual core readiness appears near basic action");hero.MasteryComboReady=false;
    hero.Basic=new CombatOpportunityState(CombatOpportunityKind.Counter,1);view.session.Failures["attack"]="距离不足";view.Draw();Check(view.Has("左键普攻 · 距离不足")&&hero.BasicQueries==0,"basic rejection takes priority over opportunity");
@@ -88,7 +90,8 @@ with tempfile.TemporaryDirectory(prefix='desktop-opportunity-') as t:
   if result.returncode:print(result.stdout);result.check_returncode()
  command=[dotnet,str(p/'bin/Debug/net8.0/Test.dll')];build();subprocess.run(command,check=True)
  for before,after,oracle in [
-  ('if(window.Window)Text','if(false)Text','desktop separate window survives shortage caption'),
+  ('var opportunity=hero.SkillOpportunityWindow(skill);actionable=opportunity.Actionable;','var opportunity=hero.SkillOpportunity(skill);actionable=opportunity.Actionable;','summoner no target keeps real clock without executable caption or green border'),
+  ('if(window.Window)Text','if(false)Text','summoner no target keeps real clock without executable caption or green border'),
   ('float identitySize=mobile?44:32;','float identitySize=mobile?44:actionCaption.Length>0?24:32;','fixed desktop icon footprint across status changes'),
   ('DesktopSkillOpportunityCaption(skill,locked,lacksEnergy,cooldown,out actionable)','""','actual remapped meteor slot reads skill identity not slot index'),
   ('DesktopSkillOpportunityCaption(skill,locked,lacksEnergy,cooldown,out actionable)','DesktopSkillOpportunityCaption(slotIndex,locked,lacksEnergy,cooldown,out actionable)','actual remapped meteor slot reads skill identity not slot index'),

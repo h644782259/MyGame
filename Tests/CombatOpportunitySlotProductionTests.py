@@ -18,7 +18,7 @@ namespace UnityEngine {
  public struct Vector2{public float x,y;public Vector2(float a,float b){x=a;y=b;}}
  public static class Mathf{public static int RoundToInt(float x)=>(int)Math.Round(x);}
  public struct Rect {public Vector2 center=>new Vector2(x+width*.5f,y+height*.5f);public float x,y,width,height;public float xMax=>x+width;public float yMax=>y+height;public Rect(float a,float b,float c,float d){x=a;y=b;width=c;height=d;}}
- public struct Color{public Color(float r,float g,float b,float a=1){}}
+ public struct Color{public float r,g,b;public Color(float r,float g,float b,float a=1){this.r=r;this.g=g;this.b=b;}}
  public enum TextAnchor{MiddleCenter}
 }
 namespace Emberfall {
@@ -28,40 +28,44 @@ namespace Emberfall {
  public class Profile {public int[] skillRanks={1,1,1,1,1,1,1,1,1,1};public HeroClass heroClass;}
  public class Progression {public Profile Profile=new Profile();}
  public class SkillChargeController {public bool IsCharging;public int SkillIndex;public float Progress=.5f;}
- public class PlayerController {public CombatOpportunityState Window;public CombatOpportunityState SkillOpportunityWindow(int skill)=>Window;public string TargetReason="";public int TargetSkill=-1;public string MobilePinnedActionReason(int skill){TargetSkill=skill;return TargetReason;}public float Energy=100,Cooldown;public SkillChargeController Charge=new SkillChargeController();public CombatOpportunityState Observation;public int ObservedSkill=-1;public T GetComponent<T>()where T:class=>Charge as T;public float SkillCooldownRemaining(int skill)=>Cooldown;public CombatOpportunityState SkillOpportunity(int skill){ObservedSkill=skill;return Observation;}}
+ public class PlayerController {public CombatOpportunityState Window;public CombatOpportunityState SkillOpportunityWindow(int skill){if(skill==3||skill==8)return default;ObservedSkill=skill;return Window.Window?Window:Observation;}public string TargetReason="";public int TargetSkill=-1;public string MobilePinnedActionReason(int skill){TargetSkill=skill;return TargetReason;}public float Energy=100,Cooldown;public SkillChargeController Charge=new SkillChargeController();public CombatOpportunityState Observation;public int ObservedSkill=-1;public T GetComponent<T>()where T:class=>Charge as T;public float SkillCooldownRemaining(int skill)=>Cooldown;public CombatOpportunityState SkillOpportunity(int skill){ObservedSkill=skill;return Observation;}}
  public class GameSession {public Progression Progression=new Progression();public PlayerController Player=new PlayerController();public bool ChallengeRun,InDungeon;public int HealingCharges=1;public string Failure="";public string FailureKey;public string ControlFailure(string key){FailureKey=key;return Failure;}}
  public partial class GameUI {
-  GameSession session=new GameSession();float TouchRatio=1;Color gold=new Color(),jade=new Color();List<string> labels=new List<string>();
-  struct Drawn {public Rect Rect;public string Text;public int Font;public bool Wrap;}List<Drawn> drawn=new List<Drawn>();
-  void Fill(Rect r,Color c){}void Bar(Rect r,float n,Color c){}void Text(Rect r,string s,int size,Color color,bool bold,bool wrap,TextAnchor anchor){labels.Add(s);drawn.Add(new Drawn{Rect=r,Text=s,Font=size,Wrap=wrap});}
+  GameSession session=new GameSession();float TouchRatio=1;Color gold=new Color(1,.8f,.2f),jade=new Color(.2f,.8f,.5f);List<string> labels=new List<string>();
+  struct Drawn {public Rect Rect;public string Text;public int Font;public bool Wrap;public Color Color;}List<Drawn> drawn=new List<Drawn>();
+  List<Color> fills=new List<Color>();void Fill(Rect r,Color c){fills.Add(c);}void Bar(Rect r,float n,Color c){}void Text(Rect r,string s,int size,Color color,bool bold,bool wrap,TextAnchor anchor){labels.Add(s);drawn.Add(new Drawn{Rect=r,Text=s,Font=size,Wrap=wrap,Color=color});}
   static void Check(bool ok,string why){if(!ok)throw new Exception(why);}
   public static void Run(){var ui=new GameUI();var p=ui.session.Player;var r=new Rect(0,0,48,48);int n=0;
    var minimum=new MobileControlLayout(568,320,163);Check(minimum.Skills[1].Width==48&&minimum.Scale==1,"actual minimum touch layout fixture");n++;
    var area=minimum.Skills[1];var compact=ui.MobileVisualRect(new Rect(area.X,area.Y,area.Width,area.Height));
    Check(Math.Abs(compact.width-41.28f)<.001f,"actual compact visual rectangle uses .86 preference");n++;
-   p.Observation=default;ui.DrawMobileSkillAvailability(r,1);Check(ui.labels.Count==0,"inactive observation cannot draw an opportunity caption");n++;ui.drawn.Clear();ui.labels.Clear();
+   p.Observation=default;ui.DrawMobileSkillAvailability(r,1);Check(ui.labels.Count==0,"inactive observation cannot draw an opportunity caption");n++;ui.drawn.Clear();ui.labels.Clear();ui.drawn.Clear();
    foreach(string reason in new[]{"目标被遮挡","距离不足"})foreach(bool explicitFailure in new[]{false,true}) {
-    p.Observation=default;p.TargetReason=explicitFailure?"":reason;ui.session.Failure=explicitFailure?reason:"";ui.drawn.Clear();ui.labels.Clear();
+    p.Observation=default;p.TargetReason=explicitFailure?"":reason;ui.session.Failure=explicitFailure?reason:"";ui.drawn.Clear();ui.labels.Clear();ui.drawn.Clear();
     ui.DrawMobileSkillAvailability(compact,1);Check(ui.drawn.Count==1,"each rejection path draws one slot caption");n++;
     var text=ui.drawn[0];float conservativeWidth=text.Text.Length*text.Font*1.1f+2;
     Check(!text.Wrap&&conservativeWidth<=text.Rect.width,"actual rejection caption fits minimum compact CJK width");n++;
     Check(text.Text==(reason=="目标被遮挡"?"被遮挡":"太远"),"only display reason is compacted");n++;
     Check((explicitFailure?ui.session.Failure:p.TargetReason)==reason&&p.TargetSkill==1&&ui.session.FailureKey=="skill1","full semantic rejection and skill identity remain intact");n++;
    }
-   p.TargetReason="";ui.session.Failure="";ui.labels.Clear();
-   p.Observation=new CombatOpportunityState(CombatOpportunityKind.Shatter,1.25f);ui.DrawMobileSkillAvailability(r,1);Check(p.ObservedSkill==1&&ui.labels.Contains("碎冰 1.3"),"actual skill slot displays typed opportunity and actual expiry");n++;
-   p.TargetReason="距离不足";ui.labels.Clear();ui.DrawMobileSkillAvailability(r,1);Check(p.TargetSkill==1&&ui.labels.Contains("太远")&&!ui.labels.Exists(x=>x.StartsWith("碎冰")),"pinned rejection is queried for actual skill and suppresses opportunity");n++;p.TargetReason="";
-   ui.labels.Clear();p.Energy=0;ui.DrawMobileSkillAvailability(r,1);Check(ui.labels.Contains("缺能")&&!ui.labels.Exists(x=>x.StartsWith("碎冰")),"no-energy slot cannot show opportunity even with stale observation");n++;
-   p.Energy=100;p.Cooldown=1;ui.labels.Clear();ui.DrawMobileSkillAvailability(r,1);Check(!ui.labels.Exists(x=>x.StartsWith("碎冰")),"cooldown slot never advertises ready opportunity");n++;
-   p.Cooldown=0;p.Charge.IsCharging=true;p.Charge.SkillIndex=1;ui.labels.Clear();ui.DrawMobileSkillAvailability(r,1);Check(ui.labels.Contains("蓄力")&&!ui.labels.Exists(x=>x.StartsWith("碎冰")),"captured charge remains charging instead of next-action opportunity");n++;
-   p.Charge.IsCharging=false;ui.session.Failure="目标被遮挡";ui.labels.Clear();ui.DrawMobileSkillAvailability(r,1);Check(ui.labels[ui.labels.Count-1]=="被遮挡","explicit action rejection has final caption priority");n++;
-   ui.session.Failure="";p.Observation=default;ui.labels.Clear();ui.DrawMobileSkillAvailability(r,1);Check(ui.labels.Count==0,"expired observation leaves ordinary slot ready marker");n++;
-   p.Observation=new CombatOpportunityState(CombatOpportunityKind.EmpoweredContract,7);ui.labels.Clear();ui.DrawMobileSkillAvailability(r,4);Check(p.ObservedSkill==4&&ui.labels.Contains("强化 7.0"),"each actual slot queries its own skill identity");n++;
-   ui.labels.Clear();ui.DrawMobileSkillAvailability(r,3);Check(ui.labels.Count==0,"passive slot retains icon without actionable caption");n++;
-   p.Window=new CombatOpportunityState(CombatOpportunityKind.Shatter,1.25f,blockReason:"缺能");p.Observation=default;p.Energy=0;ui.labels.Clear();ui.drawn.Clear();ui.DrawMobileSkillAvailability(compact,1);
+   p.TargetReason="";ui.session.Failure="";ui.labels.Clear();ui.drawn.Clear();
+   p.Observation=new CombatOpportunityState(CombatOpportunityKind.Shatter,1.25f);ui.DrawMobileSkillAvailability(r,1);Check(p.ObservedSkill==1&&ui.drawn.Exists(x=>x.Text=="碎冰 1.3"&&x.Rect.y<r.yMax),"actual skill slot displays typed opportunity and actual expiry");n++;
+   p.TargetReason="距离不足";ui.labels.Clear();ui.drawn.Clear();ui.DrawMobileSkillAvailability(r,1);Check(p.TargetSkill==1&&ui.labels.Contains("太远")&&!ui.drawn.Exists(x=>x.Text.StartsWith("碎冰")&&x.Rect.y<r.yMax),"pinned rejection is queried for actual skill and suppresses opportunity");n++;p.TargetReason="";
+   ui.labels.Clear();ui.drawn.Clear();p.Energy=0;ui.DrawMobileSkillAvailability(r,1);Check(ui.labels.Contains("缺能")&&!ui.drawn.Exists(x=>x.Text.StartsWith("碎冰")&&x.Rect.y<r.yMax),"no-energy slot cannot show opportunity even with stale observation");n++;
+   p.Energy=100;p.Cooldown=1;ui.labels.Clear();ui.drawn.Clear();ui.DrawMobileSkillAvailability(r,1);Check(!ui.drawn.Exists(x=>x.Text.StartsWith("碎冰")&&x.Rect.y<r.yMax),"cooldown slot never advertises ready opportunity");n++;
+   p.Cooldown=0;p.Charge.IsCharging=true;p.Charge.SkillIndex=1;ui.labels.Clear();ui.drawn.Clear();ui.DrawMobileSkillAvailability(r,1);Check(ui.labels.Contains("蓄力")&&!ui.drawn.Exists(x=>x.Text.StartsWith("碎冰")&&x.Rect.y<r.yMax),"captured charge remains charging instead of next-action opportunity");n++;
+   p.Charge.IsCharging=false;ui.session.Failure="目标被遮挡";ui.labels.Clear();ui.drawn.Clear();ui.DrawMobileSkillAvailability(r,1);Check(ui.labels[ui.labels.Count-1]=="被遮挡","explicit action rejection has final caption priority");n++;
+   ui.session.Failure="";p.Observation=default;ui.labels.Clear();ui.drawn.Clear();ui.DrawMobileSkillAvailability(r,1);Check(ui.labels.Count==0,"expired observation leaves ordinary slot ready marker");n++;
+   p.Observation=new CombatOpportunityState(CombatOpportunityKind.EmpoweredContract,7);ui.labels.Clear();ui.drawn.Clear();ui.DrawMobileSkillAvailability(r,4);Check(p.ObservedSkill==4&&ui.drawn.Exists(x=>x.Text=="强化 7.0"&&x.Rect.y<r.yMax),"each actual slot queries its own skill identity");n++;
+   ui.labels.Clear();ui.drawn.Clear();ui.DrawMobileSkillAvailability(r,3);Check(ui.labels.Count==0,"passive slot retains icon without actionable caption");n++;
+   p.Window=new CombatOpportunityState(CombatOpportunityKind.Shatter,1.25f,blockReason:"缺能");p.Observation=default;p.Energy=0;ui.labels.Clear();ui.drawn.Clear();ui.drawn.Clear();ui.DrawMobileSkillAvailability(compact,1);
    Check(ui.labels.Contains("碎冰 1.3")&&ui.labels.Contains("缺能"),"blocked window clock and rejection coexist");n++;
    var clock=ui.drawn.Find(x=>x.Text=="碎冰 1.3");Check(clock.Rect.y>=compact.yMax&&clock.Rect.yMax<minimum.Skills[6].Y,"clock fits actual inter-row gap at minimum compact layout");n++;
-   p.Window=default;ui.labels.Clear();ui.DrawMobileSkillAvailability(compact,1);Check(!ui.labels.Contains("碎冰 1.3"),"expired separate clock vanishes");n++;
+   p.Window=default;ui.labels.Clear();ui.drawn.Clear();ui.DrawMobileSkillAvailability(compact,1);Check(!ui.labels.Contains("碎冰 1.3"),"expired separate clock vanishes");n++;
+   p.Energy=100;p.Cooldown=0;p.TargetReason="";ui.session.Failure="";p.Observation=new CombatOpportunityState(CombatOpportunityKind.EmpoweredContract,7.5f);p.Window=new CombatOpportunityState(CombatOpportunityKind.EmpoweredContract,7.5f,blockReason:"无目标");ui.drawn.Clear();ui.labels.Clear();ui.fills.Clear();ui.DrawMobileSkillAvailability(r,4);
+   Check(ui.drawn.FindAll(x=>x.Text=="强化 7.5").Count==1&&ui.drawn.Find(x=>x.Text=="强化 7.5").Rect.y>=r.yMax,"summoner no target keeps only real clock outside ready caption");n++;
+   Check(ui.drawn.Find(x=>x.Text=="强化 7.5").Color.g<.7f&&!ui.fills.Exists(c=>c.r==ui.jade.r&&c.g==ui.jade.g),"summoner blocked clock is muted and no green ready dot remains");n++;
+   p.Window=new CombatOpportunityState(CombatOpportunityKind.EmpoweredContract,6.2f);ui.drawn.Clear();ui.labels.Clear();ui.DrawMobileSkillAvailability(r,4);Check(ui.drawn.Exists(x=>x.Text=="强化 6.2"&&x.Rect.y<r.yMax&&x.Color.g==ui.jade.g),"summoner legal target restores green caption with real remaining time");n++;
    Console.WriteLine("PASS: "+n+" actual skill-slot caption/priority observations (managed draw recorder)");
   }
  }
@@ -83,6 +87,8 @@ with tempfile.TemporaryDirectory(prefix='opportunity-slot-') as t:
 
  method.write_text(original)
  for before,after,expected in [
+  ('var opportunity=window;','var opportunity=session.Player==null?default(CombatOpportunityState):session.Player.SkillOpportunity(skill);','summoner no target keeps only real clock outside ready caption'),
+  ('&&(!window.Window||window.Actionable)','', 'summoner blocked clock is muted and no green ready dot remains'),
   ('if(window.Window)','if(false)','blocked window clock and rejection coexist'),
   ('if(state.Length==0&&targetReason.Length==0&&opportunity.Actionable)','if(state.Length==0&&opportunity.Actionable)','pinned rejection is queried for actual skill and suppresses opportunity'),
   ('if(state.Length==0&&targetReason.Length==0&&opportunity.Actionable)','if(state.Length==0&&targetReason.Length==0)','inactive observation cannot draw an opportunity caption')]:

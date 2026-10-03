@@ -51,7 +51,7 @@ namespace Emberfall
             if(pending!=null&&(pending.IsCharging||pending.ConsumedThisFrame))return pending.IsCharging&&pending.SkillIndex==skill?"蓄力":"";
             if(cooldown>.01f)return ""; // Preserve the existing central cooldown overlay.
             if(lacksEnergy)return "缺能";
-            var opportunity=hero.SkillOpportunity(skill);actionable=opportunity.Actionable;
+            var opportunity=hero.SkillOpportunityWindow(skill);actionable=opportunity.Actionable;
             return actionable?opportunity.Caption:"";
         }
         private string DesktopBasicOpportunityCaption()
