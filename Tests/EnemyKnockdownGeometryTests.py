@@ -3,19 +3,25 @@
 Managed mesh/TRS sampling, not Unity rendering or gameplay collision validation.
 """
 import os
+import argparse
 import sys
 from pathlib import Path
 import subprocess
 import tempfile
 root=Path(__file__).resolve().parents[1]
-dotnet=os.environ.get('DOTNET','dotnet')
+parser=argparse.ArgumentParser(description=__doc__)
+parser.add_argument('dotnet',nargs='?',default=os.environ.get('DOTNET','dotnet'))
+parser.add_argument('--output',type=Path,default=Path('/tmp/enemy-knockdown-geometry.json'))
+args=parser.parse_args()
+dotnet=args.dotnet
+output=args.output
+if output.suffix.lower()!='.json':parser.error('--output must name a .json file')
 def member(source,signature):
     start=source.index(signature);end=source.index('{',start)+1;depth=1
     while depth:
         depth+=(source[end]=='{')-(source[end]=='}');end+=1
     return source[start:end]
 source=(root/'Assets/Scripts/Combat/CombatModel.cs').read_text();status=(root/'Assets/Scripts/Combat/EnemyStatusEffects.cs').read_text()
-output=Path(sys.argv[1]) if len(sys.argv)>1 else Path('/tmp/enemy-knockdown-geometry.json')
 f=(root/'Tests/EquipmentCompositionProductionTests.Fixture.cs').read_text().split('public static class EquipmentCompositionProductionTests')[0]
 f=f.replace('public class EnemyController:MonoBehaviour{}','')
 f=f.replace('public static float deltaTime=.016f;', 'public static float deltaTime=.016f,time;public static int frameCount;')

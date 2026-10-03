@@ -10,7 +10,7 @@ Reproduce from the repository root:
 
 ```sh
 DOTNET=/path/to/dotnet python3 Tests/EnemyKnockdownProductionTests.py
-DOTNET=/path/to/dotnet python3 Tests/EnemyKnockdownGeometryTests.py /tmp/enemy-knockdown-geometry.json
+DOTNET=/path/to/dotnet python3 Tests/EnemyKnockdownGeometryTests.py --output /tmp/enemy-knockdown-geometry.json
 blender -b --factory-startup --threads 2 --python ArtSource/EnemyKnockdown/render_pose_review.py -- /tmp/enemy-knockdown-geometry.json /tmp/enemy-knockdown-review.png
 ```
 
