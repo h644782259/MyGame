@@ -21,7 +21,8 @@ def adapt(f):
  f=f.replace('public class GameSession{','public partial class GameSession{public bool IsDead,CombatEnded;public int HealingCharges=3;public float Healed;public void RecordActualHealing(float h){Healed+=h;}public void SpawnFloatingText(params object[] a){}')
  f=f.replace('public bool TrySpendHealingCharge()=>true;','')
  f=f.replace('public class FakeProgression{','public class FakeProgression{public float RefreshedMaxHealth=1000;public PlayerController.Stats GetStats()=>new PlayerController.Stats{MaxHealth=RefreshedMaxHealth};public object EquippedFashion(FashionSlot slot)=>null;public object Equipped(ItemSlot slot)=>null;public int Potions=3;public string LastError="none";public bool UsePotion(){if(Potions==0)return false;Potions--;return true;}')
- f=f.replace('public class AdvancedSkillVfx:MonoBehaviour{','public class AdvancedSkillVfx:MonoBehaviour{public static void Beam(params object[] a){}')
+ # The shared mobile shell now declares Beam for F6; do not inject a duplicate.
+ assert f.count('public static void Beam(params object[] a){}')==1
  f=f.replace('public static AdvancedSkillVfx Rune(params object[] a)=>new AdvancedSkillVfx();','public static AdvancedSkillVfx Rune(PlayerController owner,Vector3 at,float r,Color c,float duration,int rank,bool follows=false,int identity=0)=>new AdvancedSkillVfx();')
  # Real SummonerSpell dispatch uses this same Spawn call for slot six. All other spells remain boundary recorders.
  f=f.replace('player.RecordEmission(point,target);','if(skill==6)AdvancedSkillSequence.Spawn(player,game,skill,rank,point,player.transform.forward,new CombatDamage(),new Color(),castId);else player.RecordEmission(point,target);')
