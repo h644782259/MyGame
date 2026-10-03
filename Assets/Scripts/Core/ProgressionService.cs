@@ -1264,6 +1264,7 @@ namespace Emberfall
                 equippedSkills = (int[])Profile.equippedSkills.Clone(), hotbarKeys = (int[])Profile.hotbarKeys.Clone(), hotbarPage = Profile.hotbarPage,
                 weaponId = Profile.weaponId, armorId = Profile.armorId, relicId = Profile.relicId,
                 equipmentVariants = new[] { CapturedVariant(Profile.weaponId), CapturedVariant(Profile.armorId), CapturedVariant(Profile.relicId) },
+                equipmentMechanicKnownMask = 7,
                 equipmentMechanics = new[] { Equipped(ItemSlot.Weapon)?.mechanic??EquipmentMechanic.None, Equipped(ItemSlot.Armor)?.mechanic??EquipmentMechanic.None, Equipped(ItemSlot.Relic)?.mechanic??EquipmentMechanic.None }
             };
         }
@@ -1354,15 +1355,20 @@ namespace Emberfall
             {Owner=owner;Source=owner.Profile;State=owner.BuildStateFingerprint();Plan=plan;Slot=slot;ItemId=id;Variant=variant;Summary=summary;Error=error;}
         }
         private static string PresetItemId(BuildPreset p,int slot){return slot==0?p.weaponId:slot==1?p.armorId:p.relicId;}
-        private EquipmentMechanic PresetMechanic(BuildPreset p,int slot)
-        {var item=FindItem(PresetItemId(p,slot));return item!=null?item.mechanic:p.equipmentMechanics!=null&&p.equipmentMechanics.Length==3?p.equipmentMechanics[slot]:EquipmentMechanic.None;}
+        private EquipmentMechanic? PresetMechanic(BuildPreset p,int slot)
+        {
+            var item=FindItem(PresetItemId(p,slot));
+            if(item!=null&&item.slot==(ItemSlot)slot)return item.mechanic;
+            if((p.equipmentMechanicKnownMask&(1<<slot))!=0&&p.equipmentMechanics!=null&&p.equipmentMechanics.Length==3&&Enum.IsDefined(typeof(EquipmentMechanic),p.equipmentMechanics[slot]))return p.equipmentMechanics[slot];
+            return null;
+        }
         public List<ItemData> PresetReplacementCandidates(int plan,ItemSlot slot)
         {
             var items=new List<ItemData>();if(!HasBuildPreset(plan)||!Enum.IsDefined(typeof(ItemSlot),slot))return items;
             var preset=Profile.buildPresets[plan];var mechanic=PresetMechanic(preset,(int)slot);
             int desired=preset.equipmentVariants!=null&&preset.equipmentVariants.Length==3?preset.equipmentVariants[(int)slot]:-1;
             foreach(var item in Profile.inventory)if(item!=null&&item.slot==slot)items.Add(item);
-            items.Sort((a,b)=>{int n=(b.mechanic==mechanic).CompareTo(a.mechanic==mechanic);if(n!=0)return n;n=(desired!=1||HasVariant(b)).CompareTo(desired!=1||HasVariant(a));if(n!=0)return n;n=(b.level<=Profile.level).CompareTo(a.level<=Profile.level);if(n!=0)return n;n=b.level.CompareTo(a.level);return n!=0?n:string.CompareOrdinal(a.id,b.id);});return items;
+            items.Sort((a,b)=>{int n=(mechanic.HasValue&&b.mechanic==mechanic.Value).CompareTo(mechanic.HasValue&&a.mechanic==mechanic.Value);if(n!=0)return n;n=(desired!=1||HasVariant(b)).CompareTo(desired!=1||HasVariant(a));if(n!=0)return n;n=(b.level<=Profile.level).CompareTo(a.level<=Profile.level);if(n!=0)return n;n=b.level.CompareTo(a.level);return n!=0?n:string.CompareOrdinal(a.id,b.id);});return items;
         }
         public PresetEquipmentQuote QuotePresetReplacement(int plan,ItemSlot slot,string itemId,int variant=-2)
         {
@@ -1373,7 +1379,8 @@ namespace Emberfall
             string error=preset.heroClass!=Profile.heroClass?"方案职业不符。":item==null?"候选装备已不在背包。":item.slot!=slot?"候选部位不符。":item.mechanic!=EquipmentMechanic.None&&BuildCatalog.MechanicClass(item.mechanic)!=Profile.heroClass?"候选机制不适合当前职业。":item.level>Profile.level?"候选装备超过角色等级。":variant < -1||variant>1?"变体数据无效。":variant==1&&!HasVariant(item)?"候选机制尚未学习变体 B，请先学习或明确选择 A。":null;
             if(item!=null&&!HasVariant(item)&&variant==0)variant=-1;
             var before=PreviewEquippedItem(old);var after=PreviewEquippedItem(item);
-            string summary="方案 "+(plan==0?"A":"B")+" · "+GameBalance.SlotName(slot)+"："+(old==null?"原引用缺失":old.name)+" → "+(item==null?"候选缺失":item.name)+"\n机制："+(old==null&&preset.equipmentMechanics==null?"未知（旧方案未记录）":BuildCatalog.MechanicName(PresetMechanic(preset,(int)slot)))+" → "+BuildCatalog.MechanicName(item==null?EquipmentMechanic.None:item.mechanic)+" · 选择 "+(variant==1?"B":variant==0?"A":"无变体")+"\n等级："+(old==null?"未知":old.level.ToString())+" → "+(item==null?"未知":item.level.ToString())+"（角色 "+Profile.level+"）";
+            var previousMechanic=PresetMechanic(preset,(int)slot);
+            string summary="方案 "+(plan==0?"A":"B")+" · "+GameBalance.SlotName(slot)+"："+(old==null?"原引用缺失":old.name)+" → "+(item==null?"候选缺失":item.name)+"\n机制："+(!previousMechanic.HasValue?"未知（旧方案未记录）":BuildCatalog.MechanicName(previousMechanic.Value))+" → "+BuildCatalog.MechanicName(item==null?EquipmentMechanic.None:item.mechanic)+" · 选择 "+(variant==1?"B":variant==0?"A":"无变体")+"\n等级："+(old==null?"未知":old.level.ToString())+" → "+(item==null?"未知":item.level.ToString())+"（角色 "+Profile.level+"）";
             if(after!=null)summary+="\n穿戴属性（继承部位强化）：攻 "+(before==null?"未知":before.attack.ToString())+" → "+after.attack+" / 防 "+(before==null?"未知":before.defense.ToString())+" → "+after.defense+" / 生命 "+(before==null?"未知":before.health.ToString())+" → "+after.health;
             summary+="\n仅更新该方案的此部位引用与选择；不穿戴、不改配点/快捷栏、不改另一方案。";
             return new PresetEquipmentQuote(this,plan,(int)slot,itemId,variant,summary,error);
@@ -1387,7 +1394,10 @@ namespace Emberfall
             var candidate=Snapshot();var preset=candidate.buildPresets[quote.Plan];
             if(quote.Slot==0)preset.weaponId=quote.ItemId;else if(quote.Slot==1)preset.armorId=quote.ItemId;else preset.relicId=quote.ItemId;
             if(preset.equipmentVariants==null)preset.equipmentVariants=new[]{-1,-1,-1};
-            if(preset.equipmentMechanics==null)preset.equipmentMechanics=new EquipmentMechanic[3];
+            var capturedMechanics=new EquipmentMechanic[3];int knownMask=0;
+            for(int slot=0;slot<3;slot++)
+            {var known=PresetMechanic(preset,slot);if(known.HasValue){capturedMechanics[slot]=known.Value;knownMask|=1<<slot;}}
+            preset.equipmentMechanics=capturedMechanics;preset.equipmentMechanicKnownMask=knownMask|(1<<quote.Slot);
             preset.equipmentVariants[quote.Slot]=quote.Variant;preset.equipmentMechanics[quote.Slot]=FindItem(quote.ItemId).mechanic;
             return CommitCandidate(candidate);
         }

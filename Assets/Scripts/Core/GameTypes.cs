@@ -247,6 +247,8 @@ namespace Emberfall
         // Null in legacy presets: preserve current item variants. -1 means no unlocked variant captured.
         public int[] equipmentVariants;
         public EquipmentMechanic[] equipmentMechanics;
+        // A zero enum entry is not evidence: each slot explicitly records whether its mechanism is known.
+        public int equipmentMechanicKnownMask;
     }
 
     public enum ProgressionGoalKind { None, Core, Variant, Ascension, SecondPreset, Tier, Reforge, ClassTutorial }

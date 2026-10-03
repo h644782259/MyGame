@@ -23,7 +23,7 @@ with tempfile.TemporaryDirectory(prefix='camp-practice-') as directory:
   q=subprocess.run([dotnet]+args,env=env,capture_output=True,text=True);print(q.stdout+q.stderr);return q
  assert run(['restore',str(project),'--configfile',str(config),'-v:q']).returncode==0
  assert run(['run','--project',str(project),'--no-restore','--',str(p/'saves')]).returncode==0
- controls=[('ProgressionService','if(!confirmPresetReferences&&PresetReferences(id).Length>0)','if(false)','reference markers and sale require confirmation'),('ProgressionService','preset.equipmentVariants[quote.Slot]=quote.Variant;','preset.equipmentVariants[quote.Slot]=0;','only selected plan slot changes')]
+ controls=[('ProgressionService','preset.equipmentMechanicKnownMask=knownMask|(1<<quote.Slot);','preset.equipmentMechanicKnownMask=7;','partial legacy repair keeps missing weapon unknown in actual UI'),('ProgressionService','if(!confirmPresetReferences&&PresetReferences(id).Length>0)','if(false)','reference markers and sale require confirmation'),('ProgressionService','preset.equipmentVariants[quote.Slot]=quote.Variant;','preset.equipmentVariants[quote.Slot]=0;','only selected plan slot changes')]
  for i,(name,old,new,message) in enumerate(controls):
   f=p/(name+'.cs');assert old in copies[f];f.write_text(copies[f].replace(old,new));q=run(['build',str(project),'--no-restore','-v:q']);assert q.returncode==0
   q=run([str(project.parent/'bin/Debug/net8.0/Validation.dll'),str(p/('negative-'+str(i)))]);assert q.returncode!=0 and message in q.stdout+q.stderr
