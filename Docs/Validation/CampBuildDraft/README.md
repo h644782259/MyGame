@@ -8,7 +8,7 @@ No editing action writes, emits Changed, or mutates the real profile. Apply vali
 
 Validation:
 
-- `production.log`: 252 checks executing real ProgressionService, real GameUI.BuildPlans/GameUI.BuildDraft button handlers, and extracted unchanged real GameSession.OnProgressChanged / PlayerController.RefreshStats methods with real SkillRuntime. Exercises levels 35/50/100, three-point transfers, single rank 3→2, rank-1 floor, mastery caps, shared-budget exhaustion, undo/core restoration, stale/cancel gates, failed atomic writes, apply-only, A and B, reload, desktop/mobile routes, and retained HP/energy/cooldowns. The existing 136 build-preset checks run alongside.
+- `production.log`: 259 checks executing real ProgressionService, real GameUI.BuildPlans/GameUI.BuildDraft button handlers, and extracted unchanged real GameSession.OnProgressChanged / PlayerController.RefreshStats methods with real SkillRuntime. Exercises levels 35/50/100, three-point transfers, single rank 3→2, rank-1 floor, mastery caps, shared-budget exhaustion, undo/core restoration, stale/cancel gates, failed atomic writes, apply-only, A and B, reload, desktop/mobile routes, and retained HP/energy/cooldowns. The existing 136 build-preset checks run alongside.
 - `existing-ui.log`: 20 existing build-plan source wiring contracts.
 - `api-compile.log`: complete runtime source compilation for Windows, iOS and Android against pinned Unity API references.
 

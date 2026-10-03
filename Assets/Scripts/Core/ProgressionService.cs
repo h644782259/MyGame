@@ -1022,7 +1022,8 @@ namespace Emberfall
                 fingerprint=JsonUtility.ToJson(source,true);
                 preview=new ProgressionService(owner.saveDirectory);preview.Profile=owner.Snapshot();
             }
-            public bool IsCurrent { get { return !completed && owner.CurrentSlotId==slot && ReferenceEquals(source,owner.Profile) && fingerprint==JsonUtility.ToJson(owner.Profile,true); } }
+            private bool Attached { get { return !completed && owner.CurrentSlotId==slot && ReferenceEquals(source,owner.Profile); } }
+            public bool IsCurrent { get { return Attached && fingerprint==JsonUtility.ToJson(owner.Profile,true); } }
             public int Points { get { int spent=0;foreach(int rank in preview.Profile.skillRanks)spent+=rank;foreach(int rank in preview.Profile.masteryRanks)spent+=rank;return GameBalance.SkillPointBudget(source.level)-spent; } }
             public int Level { get { return source.level; } }
             public int Core { get { return preview.Profile.masteryCore; } }
@@ -1038,7 +1039,7 @@ namespace Emberfall
             }
             public string SkillChangeReason(int index,int delta)
             {
-                if(!IsCurrent)return "角色资料已变化，请取消并重新打开草稿。";
+                if(!Attached)return "角色资料已变化，请取消并重新打开草稿。";
                 if(index<0||index>=GameBalance.SkillCount||(delta!=1&&delta!=-1))return "无效的技能调整。";
                 int rank=SkillRank(index);
                 if(rank<1)return "先在技能页学习1阶；草稿只调整已学技能的2/3阶。";
@@ -1049,12 +1050,13 @@ namespace Emberfall
             }
             public bool ChangeSkill(int index,int delta)
             {
+                if(!IsCurrent)return Reject("角色资料已变化，请取消并重新打开草稿。");
                 string reason=SkillChangeReason(index,delta);if(reason!=null)return Reject(reason);
                 Remember();preview.Profile.skillRanks[index]+=delta;return true;
             }
             public string MasteryChangeReason(int index,int delta)
             {
-                if(!IsCurrent)return "角色资料已变化，请取消并重新打开草稿。";
+                if(!Attached)return "角色资料已变化，请取消并重新打开草稿。";
                 if(index<0||index>=4||(delta!=1&&delta!=-1))return "无效的精通调整。";
                 if(delta<0)return MasteryRank(index)<=0?"没有可退还的投入。":null;
                 if(MasteryRank(index)>=MasteryCap(source.level))return "已达当前等级精通上限 "+MasteryCap(source.level)+"。";
@@ -1062,6 +1064,7 @@ namespace Emberfall
             }
             public bool ChangeMastery(int index,int delta)
             {
+                if(!IsCurrent)return Reject("角色资料已变化，请取消并重新打开草稿。");
                 string reason=MasteryChangeReason(index,delta);if(reason!=null)return Reject(reason);
                 Remember();preview.Profile.masteryRanks[index]+=delta;
                 if(Core==index&&MasteryRank(index)<MasteryCoreRules.InitialInvestment)preview.Profile.masteryCore=-1;

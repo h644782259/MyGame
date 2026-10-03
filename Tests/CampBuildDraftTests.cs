@@ -4,6 +4,7 @@ public static class CampBuildDraftTests
  static int n;static void Check(bool ok,string why){n++;if(!ok)throw new Exception(why);}static string State(ProgressionService p)=>JsonUtility.ToJson(p.Profile,true);
  public static string Run(string root)
  {
+  Check(GameBalance.SkillPointBudget(1)==1&&GameBalance.SkillPointBudget(2)==1,"level-one minimum budget");
   foreach(int level in new[]{35,50,100})foreach(int save in new[]{-1,0,1})
   {
    var p=Fresh(root,level);int events=0;p.Changed+=()=>events++;var live=p.Profile;string state=State(p),disk=File.ReadAllText(p.SaveFilePath);var d=p.BeginBuildDraft(true);
