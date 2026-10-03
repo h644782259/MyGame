@@ -8,7 +8,7 @@ fixture+='''class Program{static int n;static void C(bool b,string m){n++;if(!b)
 '''
 with tempfile.TemporaryDirectory(prefix='venom-visual-') as t:
  p=Path(t);(p/'Stubs.cs').write_text(s);(p/'Test.cs').write_text(fixture)
- files=['Combat/VenomSkillVfx','Combat/AuthoredProjectileMeshes','Combat/AuthoredActorMeshes','Combat/VisualMeshRecipes','Combat/AnchoredImpactMesh','Combat/CombatVisualLease','Core/CombatVisualBudget']
+ files=['Combat/VenomSkillVfx','Combat/AuthoredProjectileMeshes','Combat/AuthoredActorMeshes','Combat/VisualMeshRecipes','Combat/AnchoredImpactMesh','Combat/CombatVisualLease','Core/CombatVisualBudget','Core/CastFirstHitReceipt']
  for f in files:(p/(Path(f).name+'.cs')).write_text((r/'Assets/Scripts'/(f+'.cs')).read_text())
  (p/'Test.csproj').write_text('<Project Sdk="Microsoft.NET.Sdk"><PropertyGroup><TargetFramework>net8.0</TargetFramework><OutputType>Exe</OutputType><NoWarn>0649;0414</NoWarn></PropertyGroup></Project>');(p/'NuGet.Config').write_text('<configuration><packageSources><clear/></packageSources></configuration>');env=dict(os.environ,DOTNET_CLI_HOME=str(p/'cli'),DOTNET_NOLOGO='1')
  def run(expected=None):
