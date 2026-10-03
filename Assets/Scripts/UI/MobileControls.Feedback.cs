@@ -31,7 +31,8 @@ namespace Emberfall
             if(dodgeState.Length>0)LabelControl(Dodge,hero.DodgeCooldown>.01f?hero.DodgeCooldown.ToString("0.0"):dodgeState,true);
             string failure=session.ControlFailure("potion");if(!string.IsNullOrEmpty(failure))LabelControl(Potion,failure,true);
             else if(potionState=="满血")LabelControl(Potion,potionState,true);
-            if(hero.MasteryComboReady)LabelControl(Attack,"连击就绪",false);
+            var combo=hero.BasicOpportunityWindow(true);if(combo.Window)LabelControl(Attack,combo.Caption,false,combo.Actionable);
+            var counter=hero.BasicOpportunityWindow();if(counter.Window)LabelControl(new Rect(Attack.x,Attack.y,Attack.width,18),counter.Caption,true,counter.Actionable);
             var opportunity=hero.BasicOpportunity();if(opportunity.Actionable)LabelControl(Attack,opportunity.Caption,true);
             string basicReason=hero.MobilePinnedActionReason(-1);if(basicReason.Length>0)LabelControl(Attack,basicReason,true);
             failure=session.ControlFailure("attack");if(!string.IsNullOrEmpty(failure))LabelControl(Attack,failure,true);
@@ -51,11 +52,11 @@ namespace Emberfall
         }
         private static Rect VisualRect(Rect hit)
         {float ratio=EffectPreferences.TouchVisualScale;return new Rect(hit.center.x-hit.width*ratio*.5f,hit.center.y-hit.height*ratio*.5f,hit.width*ratio,hit.height*ratio);}
-        private void LabelControl(Rect area,string text,bool center)
+        private void LabelControl(Rect area,string text,bool center,bool available=true)
         {
             area=VisualRect(area);
             Rect r=center?new Rect(area.x,area.center.y-9,area.width,18):new Rect(area.x,area.yMax-18,area.width,16);
-            GUI.color=new Color(.015f,.025f,.04f,.9f*EffectPreferences.TouchOpacity);GUI.DrawTexture(r,Texture2D.whiteTexture);GUI.color=Color.white;GUI.Label(r,text,controlLabel);
+            GUI.color=new Color(.015f,.025f,.04f,.9f*EffectPreferences.TouchOpacity);GUI.DrawTexture(r,Texture2D.whiteTexture);GUI.color=Color.white;controlLabel.normal.textColor=available?Color.white:new Color(.58f,.61f,.65f);GUI.Label(r,text,controlLabel);controlLabel.normal.textColor=Color.white;
         }
     }
 }

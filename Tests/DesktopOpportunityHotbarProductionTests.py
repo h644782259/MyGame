@@ -29,7 +29,7 @@ namespace Emberfall {
  public static class MobileControls{public static bool Active;}
  public class SkillChargeController{public bool IsCharging,ConsumedThisFrame;public int SkillIndex;}
  public class PlayerController{
-  public float Energy=100;public bool IsDead,MasteryComboReady;public float[] Cooldowns=new float[10];public List<int> Queries=new List<int>();public int BasicQueries;
+  public float Energy=100;public bool IsDead,MasteryComboReady;public CombatOpportunityState SkillWindow,BasicWindow;public CombatOpportunityState SkillOpportunityWindow(int skill)=>SkillWindow;public CombatOpportunityState BasicOpportunityWindow(bool mastery=false)=>mastery&&MasteryComboReady?new CombatOpportunityState(CombatOpportunityKind.MasteryCombo,6):BasicWindow;public float[] Cooldowns=new float[10];public List<int> Queries=new List<int>();public int BasicQueries;
   public Dictionary<int,CombatOpportunityState> Observations=new Dictionary<int,CombatOpportunityState>();public CombatOpportunityState Basic;
   public SkillChargeController Charge=new SkillChargeController();public T GetComponent<T>()where T:class=>Charge as T;
   public float CooldownRemaining(int slot)=>Cooldowns[slot];
@@ -68,8 +68,9 @@ namespace Emberfall {
    p.skillRanks[1]=0;view.Draw();Check(hero.Queries.Count==0&&!view.identities.Contains(1),"unlearned remapped skill remains empty");p.skillRanks[1]=1;
    p.heroClass=HeroClass.Summoner;p.equippedSkills[0]=-1;p.equippedSkills[7]=4;hero.Observations[4]=new CombatOpportunityState(CombatOpportunityKind.EmpoweredContract,7.5f);view.Draw();Check(view.At(7,"强化 7.5")&&hero.Queries.SequenceEqual(new[]{4}),"actual remapped contract reads skill four in slot seven");
    p.heroClass=HeroClass.Vanguard;hero.Basic=new CombatOpportunityState(CombatOpportunityKind.Counter,.8f);view.Draw();Check(view.Has("左键普攻 · 反击 0.8"),"desktop basic control names left click and actual counter window");hero.Basic=default;view.Draw();Check(view.Has("技能快捷栏")&&!view.Has("左键普攻 · 反击 0.8"),"expired counter restores ordinary hotbar heading");
-   hero.MasteryComboReady=true;view.Draw();Check(view.Has("左键普攻 · 连击就绪"),"actual core readiness appears near basic action");hero.MasteryComboReady=false;
+   hero.MasteryComboReady=true;view.Draw();Check(view.Has("左键普攻 · 连击 6.0"),"actual core readiness appears near basic action");hero.MasteryComboReady=false;
    hero.Basic=new CombatOpportunityState(CombatOpportunityKind.Counter,1);view.session.Failures["attack"]="距离不足";view.Draw();Check(view.Has("左键普攻 · 距离不足")&&hero.BasicQueries==0,"basic rejection takes priority over opportunity");
+   hero.SkillWindow=new CombatOpportunityState(CombatOpportunityKind.Shatter,.7f,blockReason:"缺能");hero.Energy=0;view.Draw();Check(view.Has("碎冰 0.7")&&view.Has("缺能"),"desktop separate window survives shortage caption");hero.SkillWindow=default;hero.Energy=100;
    Check(view.dispatches==0,"drawing opportunity never dispatches any cast or panel");
    Console.WriteLine("PASS: "+checks+" real desktop DrawHotbar remapping/priority/input-state observations (managed drawing, not Unity)");
   }
@@ -87,6 +88,7 @@ with tempfile.TemporaryDirectory(prefix='desktop-opportunity-') as t:
   if result.returncode:print(result.stdout);result.check_returncode()
  command=[dotnet,str(p/'bin/Debug/net8.0/Test.dll')];build();subprocess.run(command,check=True)
  for before,after,oracle in [
+  ('if(window.Window)Text','if(false)Text','desktop separate window survives shortage caption'),
   ('float identitySize=mobile?44:32;','float identitySize=mobile?44:actionCaption.Length>0?24:32;','fixed desktop icon footprint across status changes'),
   ('DesktopSkillOpportunityCaption(skill,locked,lacksEnergy,cooldown,out actionable)','""','actual remapped meteor slot reads skill identity not slot index'),
   ('DesktopSkillOpportunityCaption(skill,locked,lacksEnergy,cooldown,out actionable)','DesktopSkillOpportunityCaption(slotIndex,locked,lacksEnergy,cooldown,out actionable)','actual remapped meteor slot reads skill identity not slot index'),

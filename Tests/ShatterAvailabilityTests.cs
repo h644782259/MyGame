@@ -62,7 +62,7 @@ namespace Emberfall
  public static class SummonedCompanion {public static float Opportunity;public static bool EmpoweredHitFeedback(PlayerController p,out int sequence,out int hits,out float age){sequence=hits=0;age=0;return false;}public static EnemyController ExplicitFocus(PlayerController p)=>null;public static void DescribeRoster(PlayerController p,out int count,out float life){count=0;life=0;}public static float CommandOpportunityRemaining(PlayerController p)=>Opportunity;}
  public partial class GameUI {private GameSession session;private PlayerController opportunityOwner;private int opportunityEpoch;public GameUI(GameSession value){session=value;}public string Read()=>CurrentCombatOpportunity();}
  public sealed partial class PlayerController
- {
+ { private int burnFeedbackCast;
   internal bool BurnCashFeedback(out int targets,out float remaining){targets=0;remaining=0;return false;}
   public bool PinAllowed=true;internal bool MobilePinnedActionAllowed(int skill,bool feedback)=>PinAllowed;
   public float attackCooldown;public class Recovery{public bool Blocked;}public Recovery skillBasicRecovery=new Recovery();

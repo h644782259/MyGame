@@ -60,6 +60,6 @@ with tempfile.TemporaryDirectory(prefix='core-round2-') as tmp:
   q=subprocess.run([dotnet,str(p/'bin/Debug/net8.0/Test.dll')],env=env,capture_output=True,text=True);print(mode,'RUN',q.stdout,q.stderr)
   if mode=='current':assert q.returncode==0
   else:assert q.returncode!=0 and {'baseline-coefficient':'new coefficient','baseline-reaction':'passive area cannot arm combo'}[mode] in q.stderr;print('PASS compiled baseline failure detected:',mode)
-assert 'if(hero.MasteryComboReady)LabelControl(Attack,"连击就绪",false)' in (root/'Assets/Scripts/UI/MobileControls.Feedback.cs').read_text()
-assert 'if(hero.MasteryComboReady)return "左键普攻 · 连击就绪"' in (root/'Assets/Scripts/UI/GameUI.CombatOpportunities.cs').read_text()
+assert 'hero.BasicOpportunityWindow(true)'  in (root/'Assets/Scripts/UI/MobileControls.Feedback.cs').read_text()
+assert 'hero.BasicOpportunityWindow(true)'  in (root/'Assets/Scripts/UI/GameUI.CombatOpportunities.cs').read_text()
 print('PASS desktop/mobile ready source hooks (no rendered UI claim)')

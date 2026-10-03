@@ -14,6 +14,14 @@ namespace Emberfall
         private void DrawMobileSkillAvailability(Rect r,int skill)
         {
             string state=MobileSkillState(skill);
+            var window=session.Player==null?default(CombatOpportunityState):session.Player.SkillOpportunityWindow(skill);
+            if(window.Window)
+            {
+                Rect clock=new Rect(r.x,r.yMax+2*TouchRatio,r.width,11*TouchRatio);
+                Fill(clock,new Color(.025f,.045f,.06f,.95f));
+                Text(clock,window.Caption,TouchFont(8),window.Actionable?jade:new Color(.58f,.61f,.65f),true,false,TextAnchor.MiddleCenter);
+            }
+
             string targetReason=state.Length==0&&session.Player!=null?session.Player.MobilePinnedActionReason(skill):"";
             Rect caption=new Rect(r.x,r.yMax-15*TouchRatio,r.width,15*TouchRatio);
             if(state=="蓄力")

@@ -99,6 +99,7 @@ namespace Emberfall
             DrawMobileHotbar();
             DrawCompanionCommands();
             Text(TouchRect(22,58,155,11),CurrentCombatOpportunity(),TouchFont(10),gold,true);
+            Text(TouchRect(22,71,155,11),CurrentCombatResult(),TouchFont(9),pale,true);
             string interaction=session.NearChapterExit?"沿星路前进":session.NearRoomExit?"进入下一间":session.SideEventAvailable?"晶核挑战":session.NearbyHubNpc!=HubNpcKind.None?HubNpcMobileLabel(session.NearbyHubNpc):session.IsInCamp?"营地工坊":session.InDungeon?"返回营地":session.IsNearDungeonEntrance?"进入副本":"靠近入口";
             Rect interact=TouchRect(l.Interact);blockedRects.Add(interact);
             // One pointer owner handles real touches and simulated/attached mice.

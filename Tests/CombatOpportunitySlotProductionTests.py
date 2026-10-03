@@ -28,7 +28,7 @@ namespace Emberfall {
  public class Profile {public int[] skillRanks={1,1,1,1,1,1,1,1,1,1};public HeroClass heroClass;}
  public class Progression {public Profile Profile=new Profile();}
  public class SkillChargeController {public bool IsCharging;public int SkillIndex;public float Progress=.5f;}
- public class PlayerController {public string TargetReason="";public int TargetSkill=-1;public string MobilePinnedActionReason(int skill){TargetSkill=skill;return TargetReason;}public float Energy=100,Cooldown;public SkillChargeController Charge=new SkillChargeController();public CombatOpportunityState Observation;public int ObservedSkill=-1;public T GetComponent<T>()where T:class=>Charge as T;public float SkillCooldownRemaining(int skill)=>Cooldown;public CombatOpportunityState SkillOpportunity(int skill){ObservedSkill=skill;return Observation;}}
+ public class PlayerController {public CombatOpportunityState Window;public CombatOpportunityState SkillOpportunityWindow(int skill)=>Window;public string TargetReason="";public int TargetSkill=-1;public string MobilePinnedActionReason(int skill){TargetSkill=skill;return TargetReason;}public float Energy=100,Cooldown;public SkillChargeController Charge=new SkillChargeController();public CombatOpportunityState Observation;public int ObservedSkill=-1;public T GetComponent<T>()where T:class=>Charge as T;public float SkillCooldownRemaining(int skill)=>Cooldown;public CombatOpportunityState SkillOpportunity(int skill){ObservedSkill=skill;return Observation;}}
  public class GameSession {public Progression Progression=new Progression();public PlayerController Player=new PlayerController();public bool ChallengeRun,InDungeon;public int HealingCharges=1;public string Failure="";public string FailureKey;public string ControlFailure(string key){FailureKey=key;return Failure;}}
  public partial class GameUI {
   GameSession session=new GameSession();float TouchRatio=1;Color gold=new Color(),jade=new Color();List<string> labels=new List<string>();
@@ -58,6 +58,10 @@ namespace Emberfall {
    ui.session.Failure="";p.Observation=default;ui.labels.Clear();ui.DrawMobileSkillAvailability(r,1);Check(ui.labels.Count==0,"expired observation leaves ordinary slot ready marker");n++;
    p.Observation=new CombatOpportunityState(CombatOpportunityKind.EmpoweredContract,7);ui.labels.Clear();ui.DrawMobileSkillAvailability(r,4);Check(p.ObservedSkill==4&&ui.labels.Contains("强化 7.0"),"each actual slot queries its own skill identity");n++;
    ui.labels.Clear();ui.DrawMobileSkillAvailability(r,3);Check(ui.labels.Count==0,"passive slot retains icon without actionable caption");n++;
+   p.Window=new CombatOpportunityState(CombatOpportunityKind.Shatter,1.25f,blockReason:"缺能");p.Observation=default;p.Energy=0;ui.labels.Clear();ui.drawn.Clear();ui.DrawMobileSkillAvailability(compact,1);
+   Check(ui.labels.Contains("碎冰 1.3")&&ui.labels.Contains("缺能"),"blocked window clock and rejection coexist");n++;
+   var clock=ui.drawn.Find(x=>x.Text=="碎冰 1.3");Check(clock.Rect.y>=compact.yMax&&clock.Rect.yMax<minimum.Skills[6].Y,"clock fits actual inter-row gap at minimum compact layout");n++;
+   p.Window=default;ui.labels.Clear();ui.DrawMobileSkillAvailability(compact,1);Check(!ui.labels.Contains("碎冰 1.3"),"expired separate clock vanishes");n++;
    Console.WriteLine("PASS: "+n+" actual skill-slot caption/priority observations (managed draw recorder)");
   }
  }
@@ -79,6 +83,7 @@ with tempfile.TemporaryDirectory(prefix='opportunity-slot-') as t:
 
  method.write_text(original)
  for before,after,expected in [
+  ('if(window.Window)','if(false)','blocked window clock and rejection coexist'),
   ('if(state.Length==0&&targetReason.Length==0&&opportunity.Actionable)','if(state.Length==0&&opportunity.Actionable)','pinned rejection is queried for actual skill and suppresses opportunity'),
   ('if(state.Length==0&&targetReason.Length==0&&opportunity.Actionable)','if(state.Length==0&&targetReason.Length==0)','inactive observation cannot draw an opportunity caption')]:
   mutated=original.replace(before,after);assert mutated!=original;method.write_text(mutated);build();r=subprocess.run(command,text=True,capture_output=True)

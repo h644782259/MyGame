@@ -59,10 +59,21 @@ namespace Emberfall
             var hero=session.Player;
             if(hero==null||hero.IsDead||session.InputBlocked||!session.HasStarted)return "技能快捷栏";
             string failure=session.ControlFailure("attack");
-            if(!string.IsNullOrEmpty(failure))return "左键普攻 · "+failure;
-            if(hero.MasteryComboReady)return "左键普攻 · 连击就绪";
+            var combo=hero.BasicOpportunityWindow(true);var counter=hero.BasicOpportunityWindow();
+            if(!string.IsNullOrEmpty(failure)&&!combo.Window&&!counter.Window)return "左键普攻 · "+failure;
+            if(combo.Window||counter.Window)return "左键普攻 · "+(counter.Window?counter.Caption+(counter.Actionable?"":"·待"):"")+(combo.Window?(counter.Window?" · ":"")+combo.Caption+(combo.Actionable?"":"·待"):"");
             var opportunity=hero.BasicOpportunity();
             return opportunity.Actionable?"左键普攻 · "+opportunity.Caption:"技能快捷栏";
+        }
+        private readonly CombatResultChannel resultChannel=new CombatResultChannel();
+        private CombatOpportunityState lastVisibleResult;
+        private string CurrentCombatResult()
+        {
+            var hero=session.Player;
+            bool blocked=hero==null||hero.IsDead||session.InputBlocked||!session.HasStarted;
+            var result=blocked?lastVisibleResult:hero.LatestCombatResult();
+            if(!blocked)lastVisibleResult=result;
+            return resultChannel.Observe(result,hero,hero==null?-1:hero.CombatEpoch,hero==null?null:hero.CurrentOpportunityTarget,blocked);
         }
         private string CurrentCombatOpportunity()
         {
@@ -70,7 +81,7 @@ namespace Emberfall
             if(hero==null||hero.IsDead||session.InputBlocked||!session.HasStarted)return "";
             if(opportunityOwner!=hero||opportunityEpoch!=hero.CombatEpoch)
             {opportunityOwner=hero;opportunityEpoch=hero.CombatEpoch;return "";}
-            var result=hero.LatestCombatResult();if(result.Kind!=CombatOpportunityKind.None)return result.Caption;
+
             if(hero.HeroClass==HeroClass.Vanguard)return CombatOpportunityPresentation.Vanguard(hero.CounterOpportunityRemaining);
             if(hero.HeroClass==HeroClass.Summoner)
             {
