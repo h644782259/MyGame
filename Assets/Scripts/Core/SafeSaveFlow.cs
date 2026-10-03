@@ -77,6 +77,7 @@ namespace Emberfall
             if (current == null) { error = "当前存档服务不可用。"; return false; }
             var staged = new ProgressionService(current.SaveDirectory);
             if (!staged.LoadSlot(targetId)) { error = staged.LastError; return false; }
+            current.CarryPendingChestContextTo(staged);
             candidate = staged;
             return true;
         }

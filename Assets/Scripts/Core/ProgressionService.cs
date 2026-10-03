@@ -100,6 +100,34 @@ namespace Emberfall
         private ChestReward pendingChestRoll;
         private string pendingChestRollPath;
         private int pendingChestRollClears, pendingChestRollTier;
+        private sealed class PendingChestContext
+        {
+            internal readonly ChestReward Roll;
+            internal readonly int Clears,Tier;
+            internal PendingChestContext(ChestReward roll,int clears,int tier){Roll=roll;Clears=clears;Tier=tier;}
+        }
+        // This process-local context follows staged service replacements, keyed by
+        // the exact slot path. It never enters GameProfile or a durable save file.
+        private Dictionary<string,PendingChestContext> pendingChestContexts=new Dictionary<string,PendingChestContext>(StringComparer.Ordinal);
+        private static ChestReward CopyChestRoll(ChestReward roll)
+        {return new ChestReward{rulesRevision=roll.rulesRevision,id=roll.id,choice=roll.choice,gold=roll.gold,rarityIndex=roll.rarityIndex};}
+        private void RestorePendingChestRoll()
+        {
+            PendingChestContext context;
+            if(!pendingChestContexts.TryGetValue(SaveFilePath,out context))return;
+            if(!Profile.pendingFashionChest||Profile.pendingChestReveal||context.Clears!=Profile.clearedRuns||context.Tier!=Profile.pendingChestTier)
+            {pendingChestContexts.Remove(SaveFilePath);pendingChestRoll=null;return;}
+            pendingChestRoll=CopyChestRoll(context.Roll);pendingChestRollPath=SaveFilePath;
+            pendingChestRollClears=context.Clears;pendingChestRollTier=context.Tier;
+        }
+        internal void CarryPendingChestContextTo(ProgressionService staged)
+        {
+            if(staged==null||IsPracticeOnly||staged.IsPracticeOnly||staged.SaveDirectory!=SaveDirectory)return;
+            // Copy the map: abandoning a staged candidate cannot clear the live
+            // service's pending draw. Entries are immutable private roll snapshots.
+            staged.pendingChestContexts=new Dictionary<string,PendingChestContext>(pendingChestContexts,StringComparer.Ordinal);
+            staged.RestorePendingChestRoll();
+        }
         private readonly HashSet<string> collectedLootIds = new HashSet<string>(StringComparer.Ordinal);
 
         [Serializable]
@@ -144,7 +172,7 @@ namespace Emberfall
             // gets a fresh ID rather than recycling its deleted filename.
             if (activeSlotDeleted || File.Exists(savePath + DeletionSuffix)) { CreateNewSlot(heroClass); return; }
             CancelChapterRun();
-            pendingChestRoll = null;
+            pendingChestRoll = null;pendingChestContexts.Remove(SaveFilePath);
             Profile = CreateProfile(heroClass);
             collectedLootIds.Clear();
             Commit();
@@ -1563,6 +1591,7 @@ namespace Emberfall
                 Fail("请先收起上一次的宝箱奖励展示；该奖励已保存，不会重新抽取。");
                 return null;
             }
+            RestorePendingChestRoll();
             if (pendingChestRoll != null && (pendingChestRollPath != SaveFilePath || pendingChestRollClears != Profile.clearedRuns || pendingChestRollTier != Profile.pendingChestTier))
                 pendingChestRoll = null;
             if (pendingChestRoll != null && pendingChestRoll.choice != choice)
@@ -1574,6 +1603,7 @@ namespace Emberfall
                 pendingChestRoll = new ChestReward { rulesRevision = 1, id = Guid.NewGuid().ToString("N"), choice = choice,
                     gold = choice == 2 ? baseGold * 3 / 2 : baseGold, rarityIndex = draw.HasValue ? (int)draw.Value : -1 };
                 pendingChestRollPath = SaveFilePath; pendingChestRollClears = Profile.clearedRuns; pendingChestRollTier = Profile.pendingChestTier;
+                pendingChestContexts[SaveFilePath]=new PendingChestContext(CopyChestRoll(pendingChestRoll),pendingChestRollClears,pendingChestRollTier);
             }
             GameProfile candidate = JsonUtility.FromJson<GameProfile>(JsonUtility.ToJson(Profile, true));
             candidate.pendingFashionChest = false;
@@ -1616,7 +1646,7 @@ namespace Emberfall
                 Fail(failure);
                 return null;
             }
-            pendingChestRoll = null;
+            pendingChestRoll = null;pendingChestContexts.Remove(SaveFilePath);
             Profile = candidate;
             LastError = string.Empty;
             RaiseChanged();

@@ -129,7 +129,7 @@ public static class RewardRevisionTests
         p.Profile.pendingFashionChest=true;p.Save();Directory.CreateDirectory(p.SaveFilePath+".tmp");Check(p.OpenDungeonChest(0)==null,"freeze before slot change");
         Directory.Delete(p.SaveFilePath+".tmp");string oldSlot=p.CurrentSlotId;Check(p.CreateNewSlot(HeroClass.Ranger),"switch to new role");p.Profile.pendingFashionChest=true;
         Check(p.OpenDungeonChest(1)!=null,"other save cannot inherit failed choice");
-        Check(p.LoadSlot(oldSlot)&&p.OpenDungeonChest(1)!=null,"leaving slot clears unpublished old draw before return");
+        Check(p.LoadSlot(oldSlot)&&p.OpenDungeonChest(1)==null&&p.OpenDungeonChest(0)!=null,"returning to slot preserves its unpublished draw without leaking another role choice");
         return "PASS: "+checks+" reward revision production assertions (all rolls, receipts, failure/retry/reload, six first clears and legacy migration)";
     }
 }
