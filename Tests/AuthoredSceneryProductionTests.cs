@@ -1,5 +1,8 @@
 using System;using System.Linq;using System.Collections.Generic;using UnityEngine;using Emberfall;
 namespace Emberfall {
+ // This suite exercises the retained procedural fallback; resource readiness has separate coverage.
+ public static class BlenderSceneryArt {public static GameObject Create(string n,Transform p,Vector3 at,WorldResources r)=>null;public static GameObject CreatePilotProp(string n,Transform p,Vector3 at)=>null;}
+
  public class WorldResources {public List<Mesh> owned=new List<Mesh>();internal Material Material(Color c,bool e=false,VisualSurface s=VisualSurface.Stone)=>new Material(Shader.Find("test"));public void Own(Mesh m){owned.Add(m);}}
  public static class WorldTraversal {public static int circles;public static float radius;public static void AddCircle(Vector3 p,float r){circles++;radius=r;}}
  public static class CameraOcclusionSurface {public static readonly HashSet<GameObject> marked=new HashSet<GameObject>();public static void Mark(GameObject o){marked.Add(o);}public static void MarkHierarchy(GameObject o){marked.Add(o);}}

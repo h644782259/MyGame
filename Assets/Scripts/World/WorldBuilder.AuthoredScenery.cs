@@ -7,6 +7,14 @@ namespace Emberfall
         // traversal registration stays in Tree; limbs and leaves are visual-only.
         private static void BuildBranchTree(Transform parent, WorldResources r, Vector3 p, float size, int seed)
         {
+            GameObject authored=BlenderSceneryArt.Create("OpenCanopyTree",parent,p,r);
+            if(authored!=null)
+            {
+                authored.transform.localScale=Vector3.one*size;
+                authored.transform.localRotation=Quaternion.Euler(0,seed*31f,0);
+                CameraOcclusionSurface.MarkHierarchy(authored);
+                return;
+            }
             int variant=((seed%3)+3)%3;
             Transform root=Region(parent,"Branching open canopy tree");root.localPosition=p;
             root.localScale=Vector3.one*size;root.localRotation=Quaternion.Euler(0,seed*31f,0);

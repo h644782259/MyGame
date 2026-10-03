@@ -1,5 +1,8 @@
 using System;using System.Linq;using System.Collections.Generic;using System.Reflection;using UnityEngine;using Emberfall;
 namespace Emberfall {
+ // This suite exercises the retained procedural fallback; resource readiness has separate coverage.
+ public static class BlenderSceneryArt {public static GameObject Create(string n,Transform p,Vector3 at,WorldResources r)=>null;public static GameObject CreatePilotProp(string n,Transform p,Vector3 at)=>null;}
+
  // Observe production material-category arguments; WorldResources and ApplySurface execute unchanged apart from this trace.
  internal static class SceneryTrace {internal static readonly Dictionary<Material,VisualSurface> surfaces=new Dictionary<Material,VisualSurface>();internal static void Record(Material m,VisualSurface s){surfaces[m]=s;}}
  // Traversal storage is a recording boundary, not a duplicate pathfinder. The real

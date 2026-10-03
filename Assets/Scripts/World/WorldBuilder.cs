@@ -420,24 +420,31 @@ namespace Emberfall
 
         private static void BuildCampfire(Transform parent, WorldResources r, Vector3 p)
         {
-            if(BlenderPilotArt.CreateProp("StarEmberCampfire",parent,p)!=null)
-            { PointLight(parent,p+Vector3.up*1.3f,new Color(1,.52f,.19f),2,8); return; }
+            bool authored=BlenderSceneryArt.CreatePilotProp("StarEmberCampfire",parent,p)!=null;
             Material wood=r.Material(new Color(.3f,.22f,.17f));
-            for(int i=0;i<3;i++) { GameObject log=Primitive(parent,"Firewood",PrimitiveType.Cylinder,p+new Vector3(0,.17f,0),new Vector3(.23f,.8f,.23f),wood); log.transform.rotation=Quaternion.Euler(90,i*60,0); }
+            if(!authored)for(int i=0;i<3;i++) { GameObject log=Primitive(parent,"Firewood",PrimitiveType.Cylinder,p+new Vector3(0,.17f,0),new Vector3(.23f,.8f,.23f),wood); log.transform.rotation=Quaternion.Euler(90,i*60,0); }
+            if(!authored)
+            {
             GameObject flame = Primitive(parent,"Amber flame",PrimitiveType.Sphere,p+Vector3.up*.67f,
                 new Vector3(.64f,1.05f,.6f),r.Material(new Color(1,.34f,.075f),true));
             flame.AddComponent<WorldMotion>().flame = true;
+            }
             GameObject core = Primitive(parent,"Golden flame",PrimitiveType.Sphere,p+new Vector3(0,.48f,.12f),
-                new Vector3(.36f,.64f,.34f),r.Material(new Color(1,.76f,.22f),true));
+                authored?new Vector3(.18f,.30f,.17f):new Vector3(.36f,.64f,.34f),r.Material(new Color(1,.76f,.22f),true));
             core.AddComponent<WorldMotion>().flame = true;
             PointLight(parent,p+Vector3.up*1.3f,new Color(1,.52f,.19f),2,8);
-            for(int i=0;i<8;i++) { float a=i*Mathf.PI/4; Rock(parent,r,p+new Vector3(Mathf.Cos(a)*.7f,0,Mathf.Sin(a)*.7f),.28f,i); }
+            for(int i=0;i<8;i++)
+            {
+                float a=i*Mathf.PI/4;Vector3 stone=p+new Vector3(Mathf.Cos(a)*.7f,0,Mathf.Sin(a)*.7f);
+                if(!authored)Rock(parent,r,stone,.28f,i);
+                else if(stone.y>=-.1f&&stone.sqrMagnitude<22f*22f)WorldTraversal.AddCircle(stone,.28f*.82f);
+            }
         }
 
         private static void Tent(Transform parent, WorldResources r, Vector3 p)
         {
             Material cloth=r.Material(new Color(.29f,.47f,.48f),false,VisualSurface.Cloth);
-            if(BlenderPilotArt.CreateProp("WayfarerTent",parent,p)==null)
+            if(BlenderSceneryArt.CreatePilotProp("WayfarerTent",parent,p)==null)
             for(int i=0;i<2;i++) { GameObject slope=Primitive(parent,"Camp tent",PrimitiveType.Cube,p+new Vector3(i==0?-.62f:.62f,1,0),new Vector3(.08f,2.5f,2.5f),cloth); slope.transform.rotation=Quaternion.Euler(0,0,i==0?-30:30); }
             Vector3 chest = p + new Vector3(2,.45f,0);
             Material wood = r.Material(new Color(.31f,.19f,.115f),false,VisualSurface.Wood);
