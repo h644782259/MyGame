@@ -22,6 +22,23 @@ namespace Emberfall
         private int count,epoch,allocated;
         private GameSession session;
         private bool pooled,disposing;
+        private ulong rentGeneration;
+        // A retained reference must identify the rental, not just the pooled component.
+        internal readonly struct ArrowBatchHandle : System.IDisposable
+        {
+            private readonly FilledSkillVfx effect;
+            private readonly ulong generation;
+            internal ArrowBatchHandle(FilledSkillVfx effect)
+            {this.effect=effect;generation=effect!=null?effect.rentGeneration:0;}
+            public bool IsValid => effect!=null && effect.rentGeneration==generation &&
+                !effect.pooled && !effect.disposing && effect.gameObject.activeInHierarchy &&
+                effect.owner!=null && !effect.owner.IsDead && effect.owner.CombatEpoch==effect.epoch &&
+                effect.session==GameSession.Instance;
+            public void ArrowBeat(Vector3 at,float radius,bool final)
+            {if(IsValid)effect.ArrowBeat(at,radius,final);}
+            public void Retire(){if(IsValid)effect.Retire();}
+            public void Dispose(){Retire();}
+        }
         private const int PoolCapacity=8;
         private static readonly System.Collections.Generic.Stack<FilledSkillVfx> idle=new System.Collections.Generic.Stack<FilledSkillVfx>();
         private static readonly System.Collections.Generic.HashSet<FilledSkillVfx> instances=new System.Collections.Generic.HashSet<FilledSkillVfx>();
@@ -92,11 +109,12 @@ namespace Emberfall
             EnsureAssets();FilledSkillVfx fx=null;
             while(idle.Count>0&&fx==null){var candidate=idle.Pop();if(candidate!=null&&!candidate.disposing)fx=candidate;}
             if(fx==null){var fresh=new GameObject("Filled effect");fresh.SetActive(false);fx=fresh.AddComponent<FilledSkillVfx>();instances.Add(fx);}
-            var root=fx.gameObject;fx.pooled=false;root.name="Filled "+type+" effect";root.transform.SetParent(parent,false);root.transform.localScale=Vector3.one;root.transform.position=at;
+            var root=fx.gameObject;checked{fx.rentGeneration++;}fx.pooled=false;root.name="Filled "+type+" effect";root.transform.SetParent(parent,false);root.transform.localScale=Vector3.one;root.transform.position=at;
             root.transform.rotation=Quaternion.LookRotation(forward.sqrMagnitude>.0001f?forward.normalized:Vector3.forward);
             fx.owner=hero;fx.session=GameSession.Instance;fx.epoch=hero.CombatEpoch;fx.kind=type;fx.size=Mathf.Clamp(radius,.15f,8);
             fx.tint=color;fx.life=Mathf.Clamp(duration,.12f,12);fx.age=0;fx.terminalAge=0;fx.finaleCast=0;fx.confirmedFinale=false;
-            fx.lease=CombatVisualLease.Attach(root,priority,fx.Retire);if(fx.lease==null)return null;
+            ulong generation=fx.rentGeneration;
+            fx.lease=CombatVisualLease.Attach(root,priority,()=>{if(fx.rentGeneration==generation)fx.Retire();});if(fx.lease==null)return null;
             root.SetActive(true);fx.Register();return fx;
         }
         public static void Crescent(PlayerController hero,Vector3 at,Vector3 forward,float radius,Color color,int swingSide=1,CombatVisualPriority priority=CombatVisualPriority.Decoration,int castId=0)
@@ -141,15 +159,15 @@ namespace Emberfall
                     fx.Add(type==FilledVfxKind.Sword?rupture:type==FilledVfxKind.Arcane?arcaneShard:main,radial*r+Vector3.up*.16f,Vector3.one*unit*.35f,Quaternion.Euler(0,i*51,0),(type==FilledVfxKind.Arcane?.34f:.08f)+i*.018f,type==FilledVfxKind.Sword?5:type==FilledVfxKind.Arcane?3:motion,angle,unit*.6f+(type==FilledVfxKind.Arcane?fx.size*.3f:0));
             }
         }
-        internal static FilledSkillVfx BeginArrowBatch(PlayerController hero,Vector3 at,float radius,Color color,bool final=false,CombatVisualPriority priority=CombatVisualPriority.ActionBody,int castId=0)
+        internal static ArrowBatchHandle BeginArrowBatch(PlayerController hero,Vector3 at,float radius,Color color,bool final=false,CombatVisualPriority priority=CombatVisualPriority.ActionBody,int castId=0)
         {
             var fx=Create(hero,at,Vector3.forward,FilledVfxKind.ArrowRain,radius,color,12,priority:final?CombatVisualPriority.Finale:priority);
             if(fx!=null){fx.finaleCast=castId;fx.kind=FilledVfxKind.Charge;fx.Add(crescent,Vector3.up*.18f,new Vector3(radius*.3f,.2f,radius*.3f),Quaternion.identity,0,6,0,radius*.4f,"Arrow charge envelope",true);}
-            return fx;
+            return new ArrowBatchHandle(fx);
         }
         internal static void ArrowRain(PlayerController hero,Vector3 at,float radius,Color color,bool final=false,CombatVisualPriority priority=CombatVisualPriority.ActionBody,int castId=0)
-        {var fx=BeginArrowBatch(hero,at,radius,color,final,priority,castId);if(fx!=null)fx.ArrowBeat(at,radius,final);}
-        internal void ArrowBeat(Vector3 at,float radius,bool final)
+        {var fx=BeginArrowBatch(hero,at,radius,color,final,priority,castId);if(fx.IsValid)fx.ArrowBeat(at,radius,final);}
+        private void ArrowBeat(Vector3 at,float radius,bool final)
         {
             if(!gameObject.activeInHierarchy||owner==null||owner.IsDead||owner.CombatEpoch!=epoch)return;
             ClearPieces();kind=FilledVfxKind.ArrowRain;transform.position=at;age=0;life=final?1.05f:.65f;size=Mathf.Clamp(radius,.15f,8);
