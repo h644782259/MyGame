@@ -119,7 +119,9 @@ namespace Emberfall
                 session.Progression.Equipped(ItemSlot.Armor), session.Progression.Equipped(ItemSlot.Relic));
             MaxHealth = Mathf.Max(1f, stats.MaxHealth);
             if (heal) Health = MaxHealth;
-            else if (!wasDead) Health = Mathf.Clamp(Health, 1, MaxHealth);
+            // A camp draft is a pure allocation change, including no-op applies.
+            // Preserve fractional living HP; other refresh callers retain their legacy floor.
+            else if (!wasDead) Health = session.Progression.IsApplyingBuildDraft ? Mathf.Min(Health, MaxHealth) : Mathf.Clamp(Health, 1, MaxHealth);
             if(model!=null)model.SetBlenderPilotOwnerAlive(!IsDead);
             SummonedCompanion.RefreshBuild(this);
         }
