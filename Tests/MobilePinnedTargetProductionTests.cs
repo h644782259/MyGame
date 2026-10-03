@@ -61,7 +61,7 @@ namespace Emberfall
   public class Stats{public float Damage=10;}Stats stats=new Stats();float CombatAttack=>stats.Damage;int MechanicVariant(EquipmentMechanic m)=>0;Mastery masteryCore=new Mastery();void TraversalFailure(){}
   public void RecordEmission(Vector3 target,EnemyController confirmedTarget=null){Casts++;LastCast=target;LastCastEnemy=confirmedTarget;}
 
-  CombatDamage Damage(float n)=>new CombatDamage();bool HasMechanic(EquipmentMechanic m)=>false;bool ReturningCounterVariant=>false;bool Melee(float r,float a,CombatDamage d,float k,float s,float knockdown=0,bool basic=false,int skillIndex=-1,int castId=0,bool counterThrust=false)=>false;
+  CombatDamage Damage(float n)=>new CombatDamage();bool HasMechanic(EquipmentMechanic m)=>false;bool ReturningCounterVariant=>false;bool ReturningCounterReady=>false;bool Melee(float r,float a,CombatDamage d,float k,float s,float knockdown=0,bool basic=false,int skillIndex=-1,int castId=0,bool counterThrust=false)=>false;
   public Vector3 Aim(Vector3 movement)=>ResolveMobileAim(movement);public void Attack()=>BasicAttack();public void AdvanceCharge(float dt){typeof(SkillChargeController).GetMethod("Advance",BindingFlags.Instance|BindingFlags.NonPublic).Invoke(charge,new object[]{dt});}
  }
  public partial class SkillTargetingController
@@ -145,4 +145,4 @@ public static class MobilePinnedTargetProductionTests
  }
 }
 
-namespace Emberfall{internal static class ReturningCounterRules{internal static UnityEngine.Vector3 Advance(UnityEngine.Vector3 a,UnityEngine.Vector3 b,UnityEngine.Vector3 c){throw new System.Exception("ReturningBlade is disabled in aim fixture; actual adapter has its own suite");}}}
+namespace Emberfall{internal static class ReturningCounterRules{internal static string Predict(UnityEngine.Vector3 a,UnityEngine.Vector3 b,bool boss,float footprint,out UnityEngine.Vector3 landing){throw new System.Exception("Counter disabled in pin-only suite");}internal static UnityEngine.Vector3 Advance(UnityEngine.Vector3 a,UnityEngine.Vector3 b,UnityEngine.Vector3 c){throw new System.Exception("ReturningBlade is disabled in aim fixture; actual adapter has its own suite");}}}
