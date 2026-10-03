@@ -235,7 +235,7 @@ namespace Emberfall
                 controlPolicy.ResetCastOwner();
             }
             float stagger;
-            if (!controlPolicy.TryInterrupt(castId, attackNumber, IsPreparingAttack,
+            if (!controlPolicy.TryInterrupt(source.CaptureCastReceipt(castId), attackNumber, IsPreparingAttack,
                 EnemyControlPolicy.IsInterruptSkill(source.HeroClass, skill), out stagger)) return false;
             stunTime = Mathf.Max(stunTime, stagger);
             bool specialWindup = largeBoss != null && largeBoss.State.Interruptible;

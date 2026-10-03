@@ -132,6 +132,7 @@ namespace Emberfall
 
     internal sealed class CombatProjectile : MonoBehaviour
     {
+        private CastFirstHitReceipt castReceipt;
         private static readonly List<CombatProjectile> hostileProjectiles = new List<CombatProjectile>();
         private Vector3 dodgeOrigin;
         private float dodgeDeadline;
@@ -188,7 +189,7 @@ namespace Emberfall
             projectile.arrowShape = arrow;
             projectile.explosionDamage = blastDamage;
             projectile.explosionRadius = blastRadius;
-            projectile.skillIndex = skillIndex; projectile.castId = castId==0?player.NewCastId():castId;
+            projectile.skillIndex = skillIndex; projectile.castId = castId==0?player.NewCastId():castId;projectile.castReceipt=player.RetainCastReceipt(projectile.castId);
             projectile.transform.localScale *= size;
             projectile.radius *= Mathf.Min(2f,size);
             if(concentrated) projectile.radius = ConcentratedVenomRules.Radius;
@@ -226,7 +227,7 @@ namespace Emberfall
             projectile.lifetime=1.15f;
             projectile.radius=.22f;
             projectile.basicAttack=true;
-            projectile.castId=attackId;
+            projectile.castId=attackId;projectile.castReceipt=player.RetainCastReceipt(attackId);
             projectile.arrowShape=arrow;
             projectile.basicAimTarget=selected;
             projectile.homingTarget=arrow?null:selected;
@@ -443,7 +444,7 @@ namespace Emberfall
         }
 
         private void OnDisable()
-        {var ended=hostileEnded;hostileEnded=null;if(ended!=null)ended();}
+        {castReceipt?.Release();castReceipt=null;var ended=hostileEnded;hostileEnded=null;if(ended!=null)ended();}
 
         private void OnDestroy()
         {
@@ -470,6 +471,7 @@ namespace Emberfall
 
     internal sealed class CombatArea : MonoBehaviour
     {
+        private CastFirstHitReceipt castReceipt;
         private RunMechanismEvidence.Instance mechanismInstance;
         private void RecordMechanismHealthLoss(float amount)
         {if(IsCurrentCast&&mechanismInstance!=null)mechanismInstance.Record(session.Player,owner.CombatEpoch,amount);}
@@ -499,7 +501,7 @@ namespace Emberfall
             area.delay = startup; area.duration = activeTime; area.interval = Mathf.Max(.1f,tickInterval);
             area.color = tint; area.follow = followPlayer; area.meteor = fallingMeteor;
             area.pullStrength = pulling; area.finalDamage = finisher;
-            area.statusSkill = statusSkill; area.statusRank = statusRank; area.castId = castId==0?player.NewCastId():castId;
+            area.statusSkill = statusSkill; area.statusRank = statusRank; area.castId = castId==0?player.NewCastId():castId;area.castReceipt=player.RetainCastReceipt(area.castId);
             area.nextTick = startup;
             if(area.IsCurrentCast&&game.InDungeon&&trackedMechanic>=0)area.mechanismInstance=game.MechanismEvidence.Register(player,area.epoch,trackedMechanic);
             if (startup > 0) FilledSkillVfx.Charge(obj.transform, player, obj.transform.position, size, tint, startup);
@@ -638,10 +640,11 @@ namespace Emberfall
         }
 
         private void Retire() { pendingTickTargets.Clear(); Destroy(gameObject); }
-        private void OnDisable() { pendingTickTargets.Clear(); }
+        private void OnDisable() { castReceipt?.Release();castReceipt=null;pendingTickTargets.Clear(); }
 
         private void OnDestroy()
         {
+            OnDisable();
             pendingTickTargets.Clear();
             if (marker != null) Destroy(marker);
             if (orbMaterial != null) Destroy(orbMaterial);

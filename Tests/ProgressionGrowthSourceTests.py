@@ -43,7 +43,7 @@ check('p.RefundSkillRanks(session.IsInCamp)' in mobile_ui and 'p.ResetMastery(se
       'mobile camp retains independent refunds alongside the combined reset')
 check('p.AscendMechanic(equipped.id,session.IsInCamp)' in ui and 'AscensionLockReason' in ui,'camp ascension uses selected stable item and real lock reason')
 core=read('Assets/Scripts/Core/MasteryCoreRuntime.cs')
-check('lastCast = castId' in core and 'castId <= lastCast' in core and 'comboRemaining = 6f' in core,'offense cast history is bounded and combo window explicit')
+check('cast.FirstCoreHit()' in core and 'ComboDuration=6f' in core and 'comboRemaining = ComboDuration' in core,'offense lifetime receipt deduplicates first contact and combo duration stays explicit')
 check('healthFraction <= 0' in core and 'healthFraction >= .5f' in core,'vitality cannot revive lethal hits or proc outside low health')
 check('Core == core && Tier == tier' in core and 'public void Reset()' in core,'routine profile refresh cannot reset proc budget; epoch reset remains explicit')
 print('PASS:',len(checks),'progression-growth source contracts (not Unity execution)')
