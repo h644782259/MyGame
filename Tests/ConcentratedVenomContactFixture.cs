@@ -41,4 +41,18 @@ namespace Emberfall {
   }
  }
 }
-class Program {static void Main(){Emberfall.CombatReviewImpactProductionTests.Run();}}
+class Program {
+static int n;static void C(bool b,string m){n++;if(!b)throw new Exception(m);}
+static Emberfall.EnemyController Enemy(float x,float z=0){var e=new Emberfall.EnemyController();e.Health=10000;e.transform.position=new UnityEngine.Vector3(x,0,z);return e;}
+static void Main(){
+foreach(int rank in new[]{1,2,3}) foreach(bool reverse in new[]{false,true}){
+ var p=new Emberfall.CombatProjectile{concentrated=true,pierce=false,skillIndex=0,radius=Emberfall.ConcentratedVenomRules.Radius,damage=100*Emberfall.ConcentratedVenomRules.DirectCoefficient(rank)};
+ var front=Enemy(3);var rear=Enemy(7);var side=Enemy(5,1);p.session.Enemies.AddRange(reverse?new[]{rear,front,side}:new[]{front,side,rear});
+ p.Contacts(new UnityEngine.Vector3());C(front.Health==10000-100*Emberfall.ConcentratedVenomRules.DirectCoefficient(rank)&&rear.Health==10000&&side.Health==10000,"front guard intercept independent of list order");C(p.hitTargets.Count==1&&p.gameObject.Destroyed,"one actual recipient and retired");
+}
+var boss=Enemy(7);boss.ProjectileHitRadius=2;var shot=new Emberfall.CombatProjectile{concentrated=true,pierce=false};shot.session.Enemies.Add(boss);shot.Contacts(new UnityEngine.Vector3());C(boss.Health==9996,"single boss contact");
+var blocked=Enemy(7);shot=new Emberfall.CombatProjectile{concentrated=true,pierce=false};shot.session.Enemies.Add(blocked);Emberfall.CombatSight.Blocked.Add(7);shot.Contacts(new UnityEngine.Vector3());C(blocked.Health==10000,"wall prevents damage");Emberfall.CombatSight.Blocked.Clear();
+shot=new Emberfall.CombatProjectile{concentrated=true,pierce=false};shot.session.Enemies.Add(blocked);Emberfall.DestructibleProp.Next=new Emberfall.DestructibleProp();Emberfall.DestructibleProp.Fraction=.2f;shot.Contacts(new UnityEngine.Vector3());C(blocked.Health==10000&&shot.gameObject.Destroyed,"solid front prop intercept");Emberfall.DestructibleProp.Next=null;
+shot=new Emberfall.CombatProjectile{concentrated=true,pierce=false};var moving=Enemy(7,3);shot.session.Enemies.Add(moving);shot.Contacts(new UnityEngine.Vector3());C(moving.Health==10000,"moved target may escape projectile");
+Console.WriteLine("PASS "+n+" production contact checks, managed scene boundary; not Unity physics");
+}}

@@ -810,10 +810,10 @@ namespace Emberfall
                 float bonus;
                 if (status.ConsumePoison(this, castId, out bonus))
                 {
-                    bool spread = HasMechanic(EquipmentMechanic.VenomSpread);
+                    bool spread = HasMechanic(EquipmentMechanic.VenomSpread) && !ConcentratedVenom;
                     baseDamage += bonus * (spread ? .8f : 1f);
                     session.SpawnMechanismText(enemy.transform.position + Vector3.up * 2f, "三毒引爆！", new Color(.6f, 1f, .3f));
-                    session.RecordCombatAction("毒层引爆");
+                    session.RecordCombatAction(ConcentratedVenom ? "收束毒爆" : "毒层引爆");
                     session.RecordClassTutorial(HeroClass.Ranger);
                     session.RecordCombatAction("职业能力");
                     if (spread && venomSpreadProc.TryTrigger(2f))
@@ -1375,6 +1375,11 @@ namespace Emberfall
             {
                 if (slot == 0)
                 {
+                    if (ConcentratedVenom)
+                    {
+                        CastConcentratedVenom(rank, range, color, castId);
+                        return;
+                    }
                     int arrows = 5+(rank-1)*2;
                     var volley=new ProjectileVolleyBudget<EnemyController>(CombatAttack,SkillDamageBudgets.FanTargetCap(rank));
                     for (int i=0;i<arrows;i++)

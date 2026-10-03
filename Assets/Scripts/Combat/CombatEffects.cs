@@ -155,6 +155,8 @@ namespace Emberfall
         private float impactMarkStrength;
         private string terminationReason = "disposed";
         private bool bodyHeightFlight;
+        private bool concentrated;
+        private EnemyController concentratedTarget;
         private float launchHeight, impactHeight, aimedDistance, distanceTravelled;
         private int epoch;
         private readonly HashSet<EnemyController> hitTargets = new HashSet<EnemyController>();
@@ -163,9 +165,11 @@ namespace Emberfall
         private TrailRenderer visualTrail;
         private Color color;
 
-        public static void Friendly(PlayerController player, GameSession game, Vector3 at, Vector3 forward, CombatDamage amount, Color tint, bool piercing = false, bool arrow = false, bool basic = false, float size = 1f, float velocity = 0f, EnemyController tracking = null, CombatDamage blastDamage = default(CombatDamage), float blastRadius = 0f, int skillIndex = -1, int castId = 0, SummonedCompanion companionSource = null, ProjectileVolleyBudget<EnemyController> volley = null, EnemyController markTarget = null, float markStrength = 0)
+        public static void Friendly(PlayerController player, GameSession game, Vector3 at, Vector3 forward, CombatDamage amount, Color tint, bool piercing = false, bool arrow = false, bool basic = false, float size = 1f, float velocity = 0f, EnemyController tracking = null, CombatDamage blastDamage = default(CombatDamage), float blastRadius = 0f, int skillIndex = -1, int castId = 0, SummonedCompanion companionSource = null, ProjectileVolleyBudget<EnemyController> volley = null, EnemyController markTarget = null, float markStrength = 0, EnemyController concentratedTarget = null, bool concentrated = false)
         {
             CombatProjectile projectile = Make(at, forward, tint, arrow, AuthoredProjectileMeshes.FriendlyKey(arrow,player.HeroClass,companionSource!=null));
+            projectile.concentrated = concentrated;
+            projectile.concentratedTarget = concentratedTarget;
             projectile.owner = player;
             projectile.playerGeneration = player;
             projectile.session = game;
@@ -186,6 +190,7 @@ namespace Emberfall
             projectile.skillIndex = skillIndex; projectile.castId = castId==0?player.NewCastId():castId;
             projectile.transform.localScale *= size;
             projectile.radius *= Mathf.Min(2f,size);
+            if(concentrated) projectile.radius = ConcentratedVenomRules.Radius;
             projectile.BindVisualOrigin(companionSource==null?player:null);
             if (velocity > 0) projectile.speed = velocity;
             if (tracking != null) projectile.lifetime = 2.5f;
@@ -320,6 +325,13 @@ namespace Emberfall
                 if(towards.sqrMagnitude>.01f && Vector3.Angle(direction,towards)<=18f)
                     direction=Vector3.RotateTowards(direction,towards,70f*Mathf.Deg2Rad*dt,0).normalized;
             }
+            if(concentrated && age<=ConcentratedVenomRules.SteeringSeconds && concentratedTarget!=null && !concentratedTarget.IsDead && concentratedTarget.gameObject.activeInHierarchy)
+            {
+                Vector3 towards=CombatFx.Flat(concentratedTarget.transform.position-transform.position).normalized;
+                if(towards.sqrMagnitude>.01f && Vector3.Angle(direction,towards)<=ConcentratedVenomRules.SteeringDegrees)
+                    direction=Vector3.RotateTowards(direction,towards,ConcentratedVenomRules.DegreesPerSecond*Mathf.Deg2Rad*dt,0).normalized;
+                transform.rotation = Quaternion.LookRotation(direction) * Quaternion.Euler(90,0,0);
+            }
             Vector3 previous = transform.position;
             Vector3 nextPosition = previous + direction * speed * dt;
             bool terrainHit = !CombatSight.Direct(previous, nextPosition);
@@ -370,10 +382,24 @@ namespace Emberfall
             {
                 DestructibleProp hitProp;float propFraction;
                 DestructibleProp.FindProjectileHit(owner,previous,transform.position,radius,out hitProp,out propFraction);
+                EnemyController firstIntercept = null;
+                if(concentrated)
+                {
+                    float firstFraction=float.PositiveInfinity;
+                    foreach(var candidate in session.Enemies)
+                    {
+                        if(candidate==null || candidate.IsDead || !candidate.gameObject.activeInHierarchy)continue;
+                        float extent=candidate.ProjectileHitRadius+radius;
+                        if(CombatFx.SegmentDistance(candidate.transform.position,previous,transform.position)>extent || !CombatSight.Direct(previous,candidate.transform.position))continue;
+                        float fraction=PropImpactGeometry.EntryFraction(previous.x,previous.z,transform.position.x,transform.position.z,candidate.transform.position.x,candidate.transform.position.z,extent);
+                        if(hitProp!=null && fraction>propFraction)continue;
+                        if(fraction<firstFraction){firstFraction=fraction;firstIntercept=candidate;}
+                    }
+                }
                 for (int i = session.Enemies.Count - 1; i >= 0; i--)
                 {
                     EnemyController enemy = session.Enemies[i];
-                    if (enemy == null || enemy.IsDead || hitTargets.Contains(enemy)) continue;
+                    if (enemy == null || enemy.IsDead || hitTargets.Contains(enemy) || concentrated && enemy!=firstIntercept) continue;
                     float hitRadius = enemy.ProjectileHitRadius;
                     if(hitProp!=null&&PropImpactGeometry.EntryFraction(previous.x,previous.z,transform.position.x,transform.position.z,enemy.transform.position.x,enemy.transform.position.z,hitRadius+radius)>propFraction)continue;
                     if (CombatFx.SegmentDistance(enemy.transform.position, previous, transform.position) > hitRadius + radius) continue;

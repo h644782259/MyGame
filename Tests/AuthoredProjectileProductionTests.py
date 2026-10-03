@@ -23,8 +23,12 @@ methods=['public static void Friendly','internal static bool CanLaunchFromMuzzle
 projectile='using System.Collections.Generic;using UnityEngine;namespace Emberfall{'+header+'\n'.join(member(source[source.index("    internal sealed class CombatProjectile"):],m) for m in methods)+'}}'
 # The simulation method stays entirely unchanged in this patch. Lock to reviewed pre-F5 tree.
 import hashlib
-assert hashlib.sha256(member(source[source.index('internal sealed class CombatProjectile'):],'private void Update()').encode()).hexdigest()=='8d83dce7d455676baea8b32bf87ee0dc0f32547b42de1e19289e4524d89feab1','projectile simulation changed; reviewed baseline 0daa0f2'
-print('PASS projectile actual Update byte-for-byte equal reviewed pre-F5 baseline (movement/contact/lifetime/epoch).')
+simulation=member(source[source.index('internal sealed class CombatProjectile'):],'private void Update()')
+steering=member(simulation,'            if(concentrated && age<=')
+selection=member(simulation,'                if(concentrated)')
+legacy=simulation.replace(steering+'\n','').replace('                EnemyController firstIntercept = null;\n','').replace(selection+'\n','').replace(' || concentrated && enemy!=firstIntercept','')
+assert hashlib.sha256(legacy.encode()).hexdigest()=='8d83dce7d455676baea8b32bf87ee0dc0f32547b42de1e19289e4524d89feab1','non-variant simulation changed outside reviewed venom opt-in blocks'
+print('PASS original projectile Update SHA preserved after excluding only explicit B-only steering/selection/filter.')
 # Execute exactly the changed area cosmetic setup and age gate; gameplay scheduling is not duplicated.
 area=source[source.index('internal sealed class CombatArea'):]
 start=area.index('            if(visual==SkillVisualRecipe.Neutral');end=area.index('\n        private void Update()')
@@ -36,7 +40,7 @@ area_fixture='''using UnityEngine;namespace Emberfall{internal sealed class Area
 s=s.replace('public void SetParent(Transform value,bool worldPositionStays)', 'public void Rotate(float x,float y,float z,Space space){localRotation=localRotation*Quaternion.Euler(x,y,z);}public void SetParent(Transform value,bool worldPositionStays)').replace('public enum PrimitiveType','public enum Space{Self}public enum PrimitiveType')
 with tempfile.TemporaryDirectory(prefix='projectile-art-') as d:
  p=Path(d);(p/'Stubs.cs').write_text(s);(p/'Projectile.cs').write_text(projectile);(p/'Area.cs').write_text(area_fixture)
- for f in ['Combat/AuthoredProjectileMeshes','Combat/AuthoredActorMeshes','Combat/VisualMeshRecipes','Combat/AnchoredImpactMesh','Combat/CombatVisualLease','Core/CombatVisualBudget']:(p/(Path(f).name+'.cs')).write_text((root/('Assets/Scripts/'+f+'.cs')).read_text())
+ for f in ['Combat/ConcentratedVenomRules','Combat/AuthoredProjectileMeshes','Combat/AuthoredActorMeshes','Combat/VisualMeshRecipes','Combat/AnchoredImpactMesh','Combat/CombatVisualLease','Core/CombatVisualBudget']:(p/(Path(f).name+'.cs')).write_text((root/('Assets/Scripts/'+f+'.cs')).read_text())
  (p/'Test.cs').write_text((root/'Tests/AuthoredProjectileProductionTests.cs').read_text());(p/'test.csproj').write_text('<Project Sdk="Microsoft.NET.Sdk"><PropertyGroup><TargetFramework>net8.0</TargetFramework><OutputType>Exe</OutputType><NoWarn>0649;0414</NoWarn></PropertyGroup></Project>');(p/'NuGet.Config').write_text('<configuration><packageSources><clear /></packageSources></configuration>')
  command=[sys.argv[1] if len(sys.argv)>1 else 'dotnet','run','--project',str(p/'test.csproj'),'--',str(root/'Assets/Resources'),str(root/'ArtSource/BlenderProjectiles/factory-samples.json')];env=dict(os.environ,DOTNET_CLI_HOME=str(p/'cli'),DOTNET_NOLOGO='1')
  subprocess.run(command,env=env,check=True)
