@@ -741,6 +741,44 @@ namespace Emberfall
             return equipped != null && equipped.mechanic == mechanic;
         }
 
+        private bool SelectedMechanicB(EquipmentMechanic mechanic)
+        {
+            if(!HasMechanic(mechanic))return false;
+            ItemData item=Equipped(BuildCatalog.MechanicSlot(mechanic));
+            return item!=null&&item.mechanicVariantUnlocked&&item.mechanicVariant==1;
+        }
+        /// <summary>Rank effects under the actually worn class-valid mechanism, shared by current and draft previews.</summary>
+        public string SkillEffectSummary(int skill,int rank)
+        {
+            if(skill<0||skill>=GameBalance.SkillCount||rank<1||rank>3)return "未习得";
+            HeroClass hero=Profile.heroClass;
+            if(hero==HeroClass.Ranger&&skill==0&&SelectedMechanicB(EquipmentMechanic.VenomSpread))
+                return "收束毒矢 · 蔓毒护符 B：一发窄幅实体毒矢，直伤 "+(100*BuildCatalog.ConcentratedVenomCoefficient(rank)).ToString("0.##")+"%攻击；只命中首个实际拦截目标，遵守墙体与前排碰撞，固定目标意图不保证送达。取消扇形、多目标爆炸与毒传播；保留普通三毒引爆，独立且一次。";
+            string text=GameBalance.SkillEvolution(hero,skill,rank);
+            if(hero==HeroClass.Ranger&&skill==0&&HasMechanic(EquipmentMechanic.VenomSpread))
+                return text+"\n"+BuildCatalog.MechanicDescription(EquipmentMechanic.VenomSpread).Split(new[]{"变体B："},StringSplitOptions.None)[0];
+            if(hero==HeroClass.Arcanist&&skill==0&&HasMechanic(EquipmentMechanic.FrostEcho))
+            {
+                bool wide=SelectedMechanicB(EquipmentMechanic.FrostEcho);
+                text+="\n当前霜回 "+(wide?"B":"A")+" 修正：本阶首击倍率 ×"+BuildCatalog.FrostEchoOpeningMultiplier(wide).ToString("0.##")+"；0.7秒回响伤害 "+(100*BuildCatalog.FrostEchoCoefficient(wide)*CombatBalance.RankPower(rank)).ToString("0.##")+"%攻击；回响范围倍率 ×"+BuildCatalog.FrostEchoRadiusMultiplier(wide).ToString("0.##")+"。追加阶级攻击保留。";
+            }
+            if(hero==HeroClass.Arcanist&&skill==1&&HasMechanic(EquipmentMechanic.CinderTrail))
+            {
+                bool concentrated=SelectedMechanicB(EquipmentMechanic.CinderTrail);
+                text+="\n当前余烬 "+(concentrated?"B":"A")+" 修正：陨星直伤倍率 ×"+BuildCatalog.CinderDirectMultiplier.ToString("0.##")+"（与专精相乘）；火场半径倍率 ×"+BuildCatalog.CinderTrailRadiusMultiplier(concentrated).ToString("0.##")+"；每跳相对本阶首陨伤害 ×"+BuildCatalog.CinderTrailTickMultiplier(concentrated).ToString("0.####")+"。";
+            }
+            if(hero==HeroClass.Arcanist&&(skill==0||skill==1||skill==5||skill==9))
+                text+="\n当前专精覆盖："+BuildCatalog.SpecializationDescription(Profile.specialization);
+            if(hero==HeroClass.Vanguard&&HasMechanic(EquipmentMechanic.ReturningBlade))
+            {
+                string[] variants=BuildCatalog.MechanicDescription(EquipmentMechanic.ReturningBlade).Split(new[]{"变体B："},StringSplitOptions.None);
+                text+="\n同时生效的回刃 "+(SelectedMechanicB(EquipmentMechanic.ReturningBlade)?"B："+variants[1]:"A："+variants[0]);
+            }
+            if(hero==HeroClass.Summoner&&(skill==2||skill==4||skill==9)&&HasMechanic(EquipmentMechanic.TwinSummonResonance))
+                text+="\n数量与继承倍率以上限机制为准："+BuildCatalog.MechanicDescription(EquipmentMechanic.TwinSummonResonance);
+            return text;
+        }
+
         public bool HasDiscoveredMechanic(EquipmentMechanic mechanic)
         {
             return Profile.discoveredMechanics != null && Profile.discoveredMechanics.Contains(mechanic);
@@ -1079,7 +1117,7 @@ namespace Emberfall
             {
                 if(index<0||index>=GameBalance.SkillCount||!SkillChanged(index))return "";
                 int before=OriginalSkillRank(index),after=SkillRank(index);
-                string text=(after<before?"退阶：撤回原阶效果，按新阶能力结算。":"进阶：按新阶能力结算。")+"\n原 "+before+"阶："+GameBalance.SkillEvolution(source.heroClass,index,before)+"\n新 "+after+"阶："+GameBalance.SkillEvolution(source.heroClass,index,after);
+                string text=(after<before?"退阶：撤回原阶效果，按新阶能力结算。":"进阶：按新阶能力结算。")+"\n原 "+before+"阶："+owner.SkillEffectSummary(index,before)+"\n新 "+after+"阶："+preview.SkillEffectSummary(index,after);
                 if(!GameBalance.IsPassive(index))text+="\n基础冷却 "+GameBalance.EffectiveCooldown(source.heroClass,index,before).ToString("0.##")+" → "+GameBalance.EffectiveCooldown(source.heroClass,index,after).ToString("0.##")+"秒；消耗 "+GameBalance.SkillEnergyCost(source.heroClass,index).ToString("0.##")+"（不变）";
                 return text;
             }

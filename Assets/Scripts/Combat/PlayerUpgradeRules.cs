@@ -62,7 +62,7 @@ namespace Emberfall
 
         public static float MeteorDirectMultiplier(ElementalistSpecialization specialization, bool cinderTrail)
         {
-            return (specialization == ElementalistSpecialization.Shatter ? .85f : specialization == ElementalistSpecialization.Burn ? .8f : 1f) * (cinderTrail ? .8f : 1f);
+            return (specialization == ElementalistSpecialization.Shatter ? .85f : specialization == ElementalistSpecialization.Burn ? .8f : 1f) * (cinderTrail ? BuildCatalog.CinderDirectMultiplier : 1f);
         }
         public static float ShatterMultiplier(ElementalistSpecialization specialization)
         { return specialization == ElementalistSpecialization.Shatter ? 1f : specialization == ElementalistSpecialization.Burn ? 0f : .5f; }

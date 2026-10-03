@@ -60,6 +60,15 @@ namespace Emberfall
             return mechanic == EquipmentMechanic.CinderTrail || mechanic == EquipmentMechanic.ReturningBlade ? ItemSlot.Weapon : ItemSlot.Relic;
         }
 
+        // Shared with combat dispatch and allocation previews; do not duplicate selected-variant budgets.
+        public static float ConcentratedVenomCoefficient(int rank){return rank<=1?2.4f:rank==2?3.6f:4.8f;}
+        public static float FrostEchoOpeningMultiplier(bool wide){return wide?.65f:.8f;}
+        public static float FrostEchoCoefficient(bool wide){return wide?.45f:.6f;}
+        public static float FrostEchoRadiusMultiplier(bool wide){return wide?1.35f:1f;}
+        public static float CinderTrailRadiusMultiplier(bool concentrated){return concentrated?.7f:1f;}
+        public static float CinderTrailTickMultiplier(bool concentrated){return concentrated?1f/7f:.1f;}
+        public const float CinderDirectMultiplier=.8f;
+
         public static bool HasMechanicVariant(EquipmentMechanic mechanic)
         { return mechanic == EquipmentMechanic.FrostEcho || mechanic == EquipmentMechanic.CinderTrail || mechanic == EquipmentMechanic.ReturningBlade || mechanic == EquipmentMechanic.VenomSpread; }
 

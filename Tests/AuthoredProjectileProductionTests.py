@@ -18,6 +18,7 @@ def member(src,marker):
  a=src.index(marker);b=src.index('{',a);end=b+1;depth=1
  while depth:depth+=(src[end]=='{')-(src[end]=='}');end+=1
  return src[a:end]
+s+='namespace Emberfall{public static class BuildCatalog{'+member((root/'Assets/Scripts/Core/GameTypes.cs').read_text(),'public static float ConcentratedVenomCoefficient(')+'}}'
 header=source[source.index('    internal sealed class CombatProjectile'):source.index('        public static void Friendly')]
 methods=['public static void Friendly','internal static bool CanLaunchFromMuzzle','public static void BasicShot','public static void Hostile','private static CombatProjectile Make','private void OnDisable','private void OnDestroy','private void BindVisualOrigin','private void AlignBodyFlight']
 projectile='using System.Collections.Generic;using UnityEngine;namespace Emberfall{'+header+'\n'.join(member(source[source.index("    internal sealed class CombatProjectile"):],m) for m in methods)+'}}'

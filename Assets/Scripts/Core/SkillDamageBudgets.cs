@@ -95,7 +95,7 @@ namespace Emberfall
         public static PeriodicSkillBudget MeteorAftermath(int rank)
         {return new PeriodicSkillBudget(1.3f,2f,.5f,Rank(rank)==3?1.6f:0,0);}
         public static float MeteorTrailTick(int rank,bool concentrated)
-        {return OpeningImpact(HeroClass.Arcanist,1,rank)*(concentrated?1f/7f:.1f);}
+        {return OpeningImpact(HeroClass.Arcanist,1,rank)*BuildCatalog.CinderTrailTickMultiplier(concentrated);}
         public static float AdvancedImpact(HeroClass hero,int skill,int rank,int step)
         {
             bool final=step>=AdvancedSteps(hero,skill,rank)-1;

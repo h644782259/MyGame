@@ -1339,11 +1339,11 @@ namespace Emberfall
                 {
                     bool frostEcho = HasMechanic(EquipmentMechanic.FrostEcho);
                     bool wideEcho = MechanicVariant(EquipmentMechanic.FrostEcho) == 1;
-                    float novaPower = frostEcho ? (wideEcho ? .65f : .8f) : 1f;
+                    float novaPower = frostEcho ? BuildCatalog.FrostEchoOpeningMultiplier(wideEcho) : 1f;
                     CombatArea.Spawn(this,session,transform.position,3.7f*range,Damage(SkillDamageBudgets.OpeningImpact(HeroClass,slot,rank)*novaPower),0,0,0,1f,new Color(.51f,.92f,1f),statusSkill:0,statusRank:rank,castId:castId,visual:SkillVisualRecipe.Ice);
                     if (frostEcho)
                     {
-                        CombatArea.Spawn(this,session,transform.position,3.7f*range*(wideEcho?1.35f:1f),Damage((wideEcho?.45f:.6f)*power),0,.7f,0,1f,new Color(.51f,.92f,1f),statusSkill:0,statusRank:rank,castId:castId,visual:SkillVisualRecipe.Ice,trackedMechanic:1);
+                        CombatArea.Spawn(this,session,transform.position,3.7f*range*BuildCatalog.FrostEchoRadiusMultiplier(wideEcho),Damage(BuildCatalog.FrostEchoCoefficient(wideEcho)*power),0,.7f,0,1f,new Color(.51f,.92f,1f),statusSkill:0,statusRank:rank,castId:castId,visual:SkillVisualRecipe.Ice,trackedMechanic:1);
                         session.RecordCombatAction("霜环回响");
                     }
                     if(rank>=2) CombatArea.Spawn(this,session,transform.position,3.7f*range,Damage(SkillDamageBudgets.OpeningImpact(HeroClass,slot,rank,1)),0,.5f,0,1f,new Color(.51f,.92f,1f),statusSkill:0,statusRank:rank,castId:castId,visual:SkillVisualRecipe.Ice);
@@ -1367,7 +1367,7 @@ namespace Emberfall
                     if (HasMechanic(EquipmentMechanic.CinderTrail))
                     {
                         // Four ticks total 40% of the base first meteor impact.
-                        CombatArea.Spawn(this,session,target,3f*range*(MechanicVariant(EquipmentMechanic.CinderTrail)==1?.7f:1f),CombatAttack*SkillDamageBudgets.MeteorTrailTick(rank,MechanicVariant(EquipmentMechanic.CinderTrail)==1),0,1.2f,1.5f,.5f,new Color(1f,.43f,.22f),castId:castId,visual:SkillVisualRecipe.Fire,trackedMechanic:0);
+                        CombatArea.Spawn(this,session,target,3f*range*BuildCatalog.CinderTrailRadiusMultiplier(MechanicVariant(EquipmentMechanic.CinderTrail)==1),CombatAttack*SkillDamageBudgets.MeteorTrailTick(rank,MechanicVariant(EquipmentMechanic.CinderTrail)==1),0,1.2f,1.5f,.5f,new Color(1f,.43f,.22f),castId:castId,visual:SkillVisualRecipe.Fire,trackedMechanic:0);
                         session.RecordCombatAction("余烬地带");
                     }
                 }
