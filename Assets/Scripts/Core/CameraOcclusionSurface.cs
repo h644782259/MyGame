@@ -11,10 +11,12 @@ namespace Emberfall
         private static int fadedCount;
         private Renderer visual;
         private Renderer[] hierarchy;
-        private Material[] hierarchyOriginals;
+        private Material[][] hierarchyOriginals;
+        private Renderer[] fadeRenderers;
+        private bool externalChange;
         private readonly Dictionary<Material,Material> hierarchyFades=new Dictionary<Material,Material>();
 
-        private Material original,fade;
+        private Material fade; // First owned single-renderer slot; kept for group state reporting.
         private float alpha=1;
         private BuildingOcclusionGroup group;
         private bool requested,heroRequested,targetRequested;
@@ -58,7 +60,10 @@ namespace Emberfall
             LastOccluders=0;LastHeroOccluders=0;LastTargetOccluders=0;hitGroups.Clear();admittedGroups.Clear();
             foreach(var surface in surfaces)
             {
-                if(surface==null||surface.visual==null)continue;
+                if(surface==null)continue;
+                surface.externalChange=surface.hierarchyFades.Count>0&&!surface.BindingsIntact();
+                if(surface.externalChange)surface.Restore();
+                if(surface.visual==null)continue;
                 Bounds bounds=surface.visual.bounds;bounds.Expand(.7f);
                 surface.heroRequested=surface.hierarchy!=null?(surface.HierarchyProtects(camera,torso)||surface.HierarchyProtects(camera,feet)):surface.visual.enabled&&(Protects(bounds,camera,torso)||Protects(bounds,camera,feet));
                 surface.targetRequested=surface.hierarchy!=null?protectTarget&&surface.HierarchyProtects(camera,target):surface.visual.enabled&&protectTarget&&Protects(bounds,camera,target);
@@ -72,8 +77,11 @@ namespace Emberfall
             int available=CameraVisibilityRules.MaximumFaded-fadedCount;
             foreach(var group in hitGroups)
             {
-                int needed=0;foreach(var surface in surfaces)if(surface!=null&&surface.group==group&&surface.CanFade)needed+=surface.RequiredFadeSlots;
-                if(CameraVisibilityRules.ReserveGroup(ref available,needed))admittedGroups.Add(group);
+                int needed=0;bool complete=true;
+                foreach(var surface in surfaces)if(surface!=null&&surface.group==group)
+                {if(!surface.CanFade){complete=false;break;}needed+=surface.RequiredFadeSlots;}
+                if(complete&&CameraVisibilityRules.ReserveGroup(ref available,needed))admittedGroups.Add(group);
+                else if(!complete)foreach(var surface in surfaces)if(surface!=null&&surface.group==group)surface.Restore();
             }
             foreach(var surface in surfaces)
             {
@@ -89,18 +97,40 @@ namespace Emberfall
         }
         private bool HierarchyProtects(Vector3 camera,Vector3 point)
         {foreach(var renderer in hierarchy)if(renderer!=null&&renderer.enabled){Bounds bounds=renderer.bounds;bounds.Expand(.7f);if(Protects(bounds,camera,point))return true;}return false;}
+        private Renderer[] Renderers {get{return hierarchy??new[]{visual};}}
+        // Negative means one slot is unsupported: never admit a partial tree or building.
         private int RequiredFadeSlots
         {
             get
             {
-                if(hierarchy==null)return fade==null?1:0;
-                if(hierarchyFades.Count>0)return 0;
+                if(hierarchyFades.Count>0)return BindingsIntact()?0:-1;
                 var materials=new HashSet<Material>();
-                foreach(var renderer in hierarchy)if(renderer!=null&&renderer.sharedMaterial!=null&&renderer.sharedMaterial.HasProperty("_Color"))materials.Add(renderer.sharedMaterial);
+                foreach(var renderer in Renderers)
+                {
+                    if(renderer==null)continue;
+                    var slots=renderer.sharedMaterials;if(slots.Length==0)return -1;
+                    foreach(var source in slots)
+                    {if(source==null||!source.HasProperty("_Color"))return -1;materials.Add(source);}
+                }
                 return materials.Count;
             }
         }
-        private bool CanFade {get{return visual!=null&&visual.sharedMaterial!=null&&visual.sharedMaterial.HasProperty("_Color");}}
+        private bool CanFade {get{return visual!=null&&!externalChange&&RequiredFadeSlots>=0;}}
+        private bool BindingsIntact()
+        {
+            for(int i=0;i<fadeRenderers.Length;i++)
+            {
+                var renderer=fadeRenderers[i];if(renderer==null)return false;
+                var current=renderer.sharedMaterials;var saved=hierarchyOriginals[i];
+                if(current.Length!=saved.Length)return false;
+                for(int j=0;j<saved.Length;j++)
+                {
+                    Material owned;
+                    if(saved[j]==null||!saved[j].HasProperty("_Color")||!hierarchyFades.TryGetValue(saved[j],out owned)||current[j]!=owned)return false;
+                }
+            }
+            return true;
+        }
         private static bool Protects(Bounds bounds,Vector3 camera,Vector3 point)
         {
             Vector3 min=bounds.min,max=bounds.max;
@@ -109,67 +139,64 @@ namespace Emberfall
         }
         private void SetFade(bool occluded,float delta)
         {
-            if(hierarchy!=null){SetHierarchyFade(occluded,delta);return;}
-            if(occluded&&fade==null)
-            {
-                if(fadedCount>=CameraVisibilityRules.MaximumFaded)return;
-                original=visual.sharedMaterial;if(original==null||!original.HasProperty("_Color"))return;
-                fade=new Material(original){name="Camera fade (owned)"};
-                fade.SetInt("_SrcBlend",(int)BlendMode.SrcAlpha);fade.SetInt("_DstBlend",(int)BlendMode.OneMinusSrcAlpha);
-                fade.SetInt("_ZWrite",0);if(fade.HasProperty("_Mode"))fade.SetFloat("_Mode",2);
-                fade.DisableKeyword("_ALPHATEST_ON");fade.DisableKeyword("_ALPHAPREMULTIPLY_ON");fade.EnableKeyword("_ALPHABLEND_ON");fade.renderQueue=3000;
-                visual.sharedMaterial=fade;fadedCount++;
-            }
-            alpha=CameraVisibilityRules.FadeStep(alpha,occluded,delta);
-            if(fade!=null){Color color=original.color;color.a*=alpha;fade.color=color;}
-            if(!occluded&&alpha>.995f)Restore();
-        }
-        private void SetHierarchyFade(bool occluded,float delta)
-        {
+            occluded=occluded&&CanFade;
             if(occluded&&hierarchyFades.Count==0)
             {
                 int needed=RequiredFadeSlots;
-                if(needed==0||needed>CameraVisibilityRules.MaximumFaded-fadedCount)return;
-                // Refuse an unsupported material rather than fading only part of a tree.
-                foreach(var renderer in hierarchy)if(renderer!=null&&(renderer.sharedMaterial==null||!renderer.sharedMaterial.HasProperty("_Color")))return;
-                hierarchyOriginals=new Material[hierarchy.Length];
-                for(int i=0;i<hierarchy.Length;i++)
+                if(needed<=0||needed>CameraVisibilityRules.MaximumFaded-fadedCount)return;
+                fadeRenderers=Renderers;hierarchyOriginals=new Material[fadeRenderers.Length][];
+                // Snapshot all slots before assigning any clone. Deduplicate across the
+                // complete logical surface, including repeated slots on the same renderer.
+                for(int i=0;i<fadeRenderers.Length;i++)
                 {
-                    var renderer=hierarchy[i];if(renderer==null)continue;
-                    Material source=renderer.sharedMaterial;hierarchyOriginals[i]=source;
-                    if(!hierarchyFades.ContainsKey(source))
+                    var renderer=fadeRenderers[i];if(renderer==null){hierarchyOriginals[i]=new Material[0];continue;}
+                    var slots=renderer.sharedMaterials;hierarchyOriginals[i]=slots;
+                    foreach(var source in slots)if(!hierarchyFades.ContainsKey(source))
                     {
-                        Material owned=new Material(source){name="Camera hierarchy fade (owned)"};
+                        Material owned=new Material(source){name=hierarchy==null?"Camera fade (owned)":"Camera hierarchy fade (owned)"};
                         owned.SetInt("_SrcBlend",(int)BlendMode.SrcAlpha);owned.SetInt("_DstBlend",(int)BlendMode.OneMinusSrcAlpha);
                         owned.SetInt("_ZWrite",0);if(owned.HasProperty("_Mode"))owned.SetFloat("_Mode",2);
                         owned.DisableKeyword("_ALPHATEST_ON");owned.DisableKeyword("_ALPHAPREMULTIPLY_ON");owned.EnableKeyword("_ALPHABLEND_ON");owned.renderQueue=3000;
                         hierarchyFades.Add(source,owned);
+                        if(hierarchy==null&&fade==null)fade=owned;
                     }
                 }
                 fadedCount+=hierarchyFades.Count;
-                for(int i=0;i<hierarchy.Length;i++)if(hierarchy[i]!=null)hierarchy[i].sharedMaterial=hierarchyFades[hierarchyOriginals[i]];
+                for(int i=0;i<fadeRenderers.Length;i++)if(fadeRenderers[i]!=null)
+                {
+                    var saved=hierarchyOriginals[i];var slots=new Material[saved.Length];
+                    for(int j=0;j<saved.Length;j++)slots[j]=hierarchyFades[saved[j]];
+                    fadeRenderers[i].sharedMaterials=slots;
+                }
             }
             alpha=CameraVisibilityRules.FadeStep(alpha,occluded,delta);
-            foreach(var pair in hierarchyFades){Color color=pair.Key.color;color.a*=alpha;pair.Value.color=color;}
+            foreach(var pair in hierarchyFades)if(pair.Key!=null&&pair.Value!=null)
+            {Color color=pair.Key.color;color.a*=alpha;pair.Value.color=color;}
             if(!occluded&&alpha>.995f)Restore();
         }
         private void Restore()
         {
             if(hierarchyFades.Count>0)
             {
-                for(int i=0;i<hierarchy.Length;i++)
+                for(int i=0;i<fadeRenderers.Length;i++)
                 {
-                    Material owned;
-                    if(hierarchy[i]!=null&&hierarchyOriginals[i]!=null&&hierarchyFades.TryGetValue(hierarchyOriginals[i],out owned)&&hierarchy[i].sharedMaterial==owned)
-                        hierarchy[i].sharedMaterial=hierarchyOriginals[i];
+                    var renderer=fadeRenderers[i];if(renderer==null)continue;
+                    var current=renderer.sharedMaterials;var saved=hierarchyOriginals[i];bool changed=false;
+                    for(int j=0;j<current.Length&&j<saved.Length;j++)
+                    {
+                        Material owned;
+                        // External replacements and resized material arrays belong to
+                        // their caller; restore only slots still holding our exact clone.
+                        if(!ReferenceEquals(saved[j],null)&&hierarchyFades.TryGetValue(saved[j],out owned)&&current[j]==owned)
+                        {current[j]=saved[j];changed=true;}
+                    }
+                    if(changed)renderer.sharedMaterials=current;
                 }
                 fadedCount=Mathf.Max(0,fadedCount-hierarchyFades.Count);
-                foreach(var owned in hierarchyFades.Values)Destroy(owned);
-                hierarchyFades.Clear();hierarchyOriginals=null;
+                foreach(var owned in hierarchyFades.Values)if(owned!=null)Destroy(owned);
+                hierarchyFades.Clear();hierarchyOriginals=null;fadeRenderers=null;
             }
-            if(fade!=null)
-            {if(visual!=null&&visual.sharedMaterial==fade)visual.sharedMaterial=original;Destroy(fade);fade=null;fadedCount=Mathf.Max(0,fadedCount-1);}
-            alpha=1;
+            fade=null;alpha=1;
         }
         public static void RestoreAll(){foreach(var surface in surfaces)if(surface!=null){surface.Restore();if(surface.group!=null)surface.group.SetOccluded(false);}LastOccluders=0;LastHeroOccluders=0;LastTargetOccluders=0;}
         private void OnDisable(){surfaces.Remove(this);Restore();}

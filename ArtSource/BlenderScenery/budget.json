@@ -1,0 +1,48 @@
+{
+  "WayfarerPot": {
+    "triangles": 480,
+    "vertices": 256,
+    "materials": 2,
+    "textures": 0,
+    "dimensions_blender_xyz_m": [
+      0.7400000095367432,
+      0.7400000095367432,
+      0.9399999976158142
+    ],
+    "fbx_bytes": 20940,
+    "sha256": "38c0f39b506653722096c75a2d1ec3127adc2321fd0fedb07208da0593ceae1a"
+  },
+  "FracturedRubble": {
+    "triangles": 60,
+    "vertices": 36,
+    "materials": 1,
+    "textures": 0,
+    "dimensions_blender_xyz_m": [
+      1.2223036289215088,
+      0.9126296639442444,
+      0.6416406035423279
+    ],
+    "fbx_bytes": 16972,
+    "sha256": "93173280fb6ce494f63a1907d0ea7c939c092e8b221fc0656ca050e7195bc7c4"
+  },
+  "OpenCanopyTree": {
+    "triangles": 564,
+    "vertices": 334,
+    "materials": 2,
+    "textures": 0,
+    "dimensions_blender_xyz_m": [
+      3.1626014709472656,
+      2.9574332237243652,
+      3.545639991760254
+    ],
+    "fbx_bytes": 32316,
+    "sha256": "13a9783db16cb38c3b6f25c9514d604f867c4a450f58912d30950d2150a2d9e0"
+  },
+  "_validation": {
+    "blender": "4.3.2",
+    "unity_import_validated": false,
+    "texture_bytes_added": 0,
+    "max_triangles_per_asset": 1024,
+    "low_tier": "Same bounded opaque meshes; no particles, alpha cards, tessellation or additional textures"
+  }
+}

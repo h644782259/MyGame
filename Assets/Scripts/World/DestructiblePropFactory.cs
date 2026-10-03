@@ -17,9 +17,12 @@ namespace Emberfall
             Color tint=kind==DestructibleKind.Crate?new Color(.37f,.23f,.13f):kind==DestructibleKind.Pot?new Color(.49f,.27f,.18f):new Color(.35f,.4f,.43f);
             Material body=resources.Material(tint,false,kind==DestructibleKind.Crate?VisualSurface.Wood:VisualSurface.Stone);
             Material trim=resources.Material(new Color(.56f,.42f,.23f),false,VisualSurface.Metal);
-            if(kind==DestructibleKind.Crate)
+            bool authored=(kind==DestructibleKind.Pot||kind==DestructibleKind.Rubble) &&
+                BlenderSceneryArt.Create(kind==DestructibleKind.Pot?"WayfarerPot":"FracturedRubble",model,Vector3.zero,resources)!=null;
+            if(authored) { /* Intact model remains owned by the same destruction controller. */ }
+            else if(kind==DestructibleKind.Crate)
             {
-                GameObject pilot=BlenderPilotArt.CreateProp("SupplyCrate",model,Vector3.zero);
+                GameObject pilot=BlenderSceneryArt.CreatePilotProp("SupplyCrate",model,Vector3.zero);
                 if(pilot==null)
                 {
                 Part(model,"Weathered crate",PrimitiveType.Cube,new Vector3(0,.52f,0),new Vector3(.86f,1.04f,.84f),body);
