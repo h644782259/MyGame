@@ -42,7 +42,7 @@ namespace Emberfall
             VanguardLayer(VanguardArtPose.Landing,locomotion.Landing,1);
             // Keep exact existing action clocks: these clips add torso,
             // free-arm and cloak counterbalance; sword/right arm offsets are zero in both.
-            if(acting&&(actionBasic||actionSkill==0))VanguardLayer(actionBasic?VanguardArtPose.Basic:VanguardArtPose.Skill,progress,1);
+            if(acting&&((actionBasic&&actionSkill!=-2)||actionSkill==0))VanguardLayer(actionBasic?VanguardArtPose.Basic:VanguardArtPose.Skill,progress,1);
             if(hurt&&!vanguardHurt)vanguardHurtStart=clock;
             vanguardHurt=hurt;
             float age=clock-vanguardHurtStart;
