@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Actual state anchors, pooled authored cage, MPB and healing sequence; managed Unity boundary, not rendering."""
+from CastReceiptFixtureSources import include_cast_receipt_source
 from pathlib import Path
 import os,sys,tempfile,subprocess
 root=Path(__file__).resolve().parents[1]
@@ -32,7 +33,7 @@ sequence=sequence.replace('public static class SummonedCompanion{public static f
 with tempfile.TemporaryDirectory(prefix='protection-presentation-') as tmp:
  p=Path(tmp);(p/'Stubs.cs').write_text(shell);(p/'Player.cs').write_text(player);(p/'Sequence.cs').write_text(sequence);(p/'Test.cs').write_text((root/'Tests/ProtectionPresentationProductionTests.cs').read_text())
  for f in ['Core/FilledVfxRecipes','Core/FilledVfxPlacement','Core/CombatVisualBudget','Combat/CombatVisualLease','Combat/AnchoredImpactMesh','Combat/FilledSkillVfx','Combat/AuthoredActorMeshes','Combat/AuthoredSpellBases','Combat/AdvancedSkillVfx']:(p/(Path(f).name+'.cs')).write_text((root/('Assets/Scripts/'+f+'.cs')).read_text())
- (p/'Test.csproj').write_text('<Project Sdk="Microsoft.NET.Sdk"><PropertyGroup><TargetFramework>net8.0</TargetFramework><OutputType>Exe</OutputType></PropertyGroup></Project>');(p/'NuGet.Config').write_text('<configuration><packageSources><clear /></packageSources></configuration>')
+ (p/'Test.csproj').write_text('<Project Sdk="Microsoft.NET.Sdk"><PropertyGroup><TargetFramework>net8.0</TargetFramework><OutputType>Exe</OutputType></PropertyGroup></Project>');include_cast_receipt_source(p/'Test.csproj');(p/'NuGet.Config').write_text('<configuration><packageSources><clear /></packageSources></configuration>')
  sdk=sys.argv[1] if len(sys.argv)>1 else 'dotnet';cmd=[sdk,'run','--project',str(p/'Test.csproj'),'--',str(root/'Assets/Resources')];env=dict(os.environ,DOTNET_CLI_HOME=str(p/'cli'),DOTNET_NOLOGO='1')
  subprocess.run(cmd,env=env,check=True)
  for file,old,new,oracle in [('Sequence.cs','if(owner.Health>healthBefore)','if(true)','full HP produces no healing-success pulse'),('Sequence.cs','if(pet.Health>before)','if(true)','full caster wounded companion heals only real recipient')]:

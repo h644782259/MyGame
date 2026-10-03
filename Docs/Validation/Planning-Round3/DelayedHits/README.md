@@ -29,3 +29,5 @@ The teleport/entry/death/world-retirement epoch boundary is represented in the m
 `consumer-audit.json` lists new APIs, all candidate explicit-source Python fixtures, fake actor consumers and runner requirements. The new shared `Core/CastFirstHitReceipt.cs` must accompany standalone compilations of MasteryCoreRuntime/EnemyControlPolicy and deferred producers. Unrelated fake actor/OnDisable fixtures need neutral receipt boundaries or the real partial when qualification itself is tested. The integrator owns those shared fixture registrations and the complete frozen suite; they have not been silently claimed passing here.
 
 Register `Tests/DelayedCastFirstHitTests.py` and `Tests/DelayedCastProducerLifetimeTests.py`, passing the normal dotnet path. The new tests do not require Unity or external feeds. No ZIP, Library operation, PR or push was performed.
+
+Follow-up consumer adaptation is complete: see Compatibility/README.md and Compatibility/results.json for 47 passing managed suites and repaired existing source contracts. Root owns the final combined full run and the separately edited OpportunityChannelsRound2 fixture.

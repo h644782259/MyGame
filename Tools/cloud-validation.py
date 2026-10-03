@@ -60,6 +60,10 @@ def write_project(directory, sources, program=None, references=None, framework="
         entry = directory / "Program.cs"
         entry.write_text(program, encoding="utf-8")
         sources = [*sources, entry]
+    # Pure shared lifetime receipt types used by combat/core rules and actor fixtures.
+    receipt = ROOT / "Assets/Scripts/Core/CastFirstHitReceipt.cs"
+    if receipt not in sources and any("CastFirstHit" in Path(path).read_text(encoding="utf-8") for path in sources):
+        sources = [*sources, receipt]
     source_items = "\n".join("    <Compile Include=" + quoteattr(str(path)) + " />" for path in sources)
     reference_items = ""
     if references is not None:

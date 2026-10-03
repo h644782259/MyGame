@@ -31,7 +31,7 @@ check('Profile.lastDungeonRewardId == rewardId' in complete and 'candidate.lastD
 check(complete.count('CommitCandidate(candidate)')==1 and 'candidate.clearedRuns' in complete and 'candidate.bestFloor' in complete and 'candidate.pendingChestTier' in complete and 'candidate.pendingFirstClearReward' in complete,'one candidate includes progress and every ordinary-clear entitlement')
 check(complete.index('CommitCandidate(candidate)')<complete.index('LeveledUp(level)'),'level-up events occur only after durable completion')
 check('Profile.pendingFashionChest || Profile.pendingChestReveal' in complete,'completion cannot overwrite an existing chest entitlement')
-check('TierRewardRules.ChestGoldMinimum(candidate.pendingChestTier)' in p and 'profile.pendingChestTier = TierRewardRules.ClampTier' in p,'chest uses earned tier and old saves get bounded migration')
+check('TierRewardRules.ChestGoldMinimum(Profile.pendingChestTier)' in method(p,'public string OpenDungeonChest(') and 'pendingChestRollTier != Profile.pendingChestTier' in method(p,'public string OpenDungeonChest(') and 'profile.pendingChestTier = TierRewardRules.ClampTier' in p,'chest uses earned tier and old saves get bounded migration')
 check('TierRewardRules.DropRarity(boss, dungeonTier, roll)' in p,'loot rarity consumes actual dungeon tier')
 ui=read('Assets/Scripts/UI/GameUI.Expedition.cs')
 build_ui=read('Assets/Scripts/UI/GameUI.BuildPlans.cs')

@@ -91,10 +91,11 @@
     "30284 actual actor/Enemy.TrySkillInterrupt/core/registry assertions",
     "14 actual producer acquire/OnDisable projection assertions",
     "exact old monotonic core and interrupt gates rejected after compilation",
-    "missing producer release rejected after compilation"
+    "missing producer release rejected after compilation",
+    "47 compatibility managed suites pass; Compatibility/results.json maps exact final raw logs"
   ],
   "not_run": [
-    "full registered suite (root integration owns consumer fixture updates and full frozen run)",
+    "Full registered integration suite belongs to root frozen run; OpportunityChannelsRound2Tests.py owned by root integration",
     "Unity editor/player/devices"
   ]
 }
