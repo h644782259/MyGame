@@ -162,38 +162,6 @@
       "triangles": 140
     },
     {
-      "path": "Assets/Resources/BlenderVfx/Crescent.bytes",
-      "bytes": 5564,
-      "sha256": "9c73efc3c01ae3043c392a7037f8e4e4937ff05e04c0e9b3851b013b83ae55a2",
-      "guid": "40e8988fb6201633fc87248eac429a73",
-      "vertices": 100,
-      "triangles": 196
-    },
-    {
-      "path": "Assets/Resources/BlenderVfx/CrescentCore.bytes",
-      "bytes": 5564,
-      "sha256": "b2a1dc7e5a13e5ad19bb98745884b706e1c7d2a4c6ed53ab58d75c59b561da81",
-      "guid": "cbc20be8cfb2c770305f4133907826fa",
-      "vertices": 100,
-      "triangles": 196
-    },
-    {
-      "path": "Assets/Resources/BlenderVfx/Fault.bytes",
-      "bytes": 252,
-      "sha256": "00beb38b54a77c8166899d4434e76c2dbeb2fb54f1e5fa3e9fbeffd977840e62",
-      "guid": "0d2470dd60f2bc7799bd349d0bbb03e6",
-      "vertices": 6,
-      "triangles": 4
-    },
-    {
-      "path": "Assets/Resources/BlenderVfx/Shard.bytes",
-      "bytes": 244,
-      "sha256": "64c47cfb2d2e7e891b44f141bd5dd88432fbdae841ffac06ace4e960427abc67",
-      "guid": "b185fec88d62bb16552173d2193ffb63",
-      "vertices": 5,
-      "triangles": 6
-    },
-    {
       "path": "Assets/Resources/BlenderScenery/FracturedRubble.fbx",
       "bytes": 16972,
       "sha256": "93173280fb6ce494f63a1907d0ea7c939c092e8b221fc0656ca050e7195bc7c4",
@@ -244,12 +212,28 @@
       "triangles": 44
     },
     {
+      "path": "Assets/Resources/BlenderSpellBases/FirePrimary.bytes",
+      "bytes": 5916,
+      "sha256": "afca70715706d053ff7d098cf44b6b9745147a9bd416d409bf008ff454789b5a",
+      "guid": "39cd837936ccec07cf9b917df5fc5df0",
+      "vertices": 108,
+      "triangles": 204
+    },
+    {
       "path": "Assets/Resources/BlenderSpellBases/Flame.bytes",
       "bytes": 3996,
       "sha256": "e531453265853fc95e73e9bd0d6dee13bb814bfe0842fa1657f223036d991679",
       "guid": "9e33d7236e27f8a748e4e39fce393003",
       "vertices": 72,
       "triangles": 140
+    },
+    {
+      "path": "Assets/Resources/BlenderSpellBases/IcePrimary.bytes",
+      "bytes": 2236,
+      "sha256": "72c6e83b64b3bea791dd9e2828a83230336d4f09f1267b1b3dc873b83df92a0f",
+      "guid": "f726e93229e7a304f68c32003546b571",
+      "vertices": 44,
+      "triangles": 68
     },
     {
       "path": "Assets/Resources/BlenderSpellBases/Lightning.bytes",
@@ -282,9 +266,43 @@
       "guid": "fa4db51637424319d7c460ccf92b1625",
       "vertices": 88,
       "triangles": 132
+    },
+    {
+      "path": "Assets/Resources/BlenderVfx/Crescent.bytes",
+      "bytes": 5564,
+      "sha256": "9c73efc3c01ae3043c392a7037f8e4e4937ff05e04c0e9b3851b013b83ae55a2",
+      "guid": "40e8988fb6201633fc87248eac429a73",
+      "vertices": 100,
+      "triangles": 196
+    },
+    {
+      "path": "Assets/Resources/BlenderVfx/CrescentCore.bytes",
+      "bytes": 5564,
+      "sha256": "b2a1dc7e5a13e5ad19bb98745884b706e1c7d2a4c6ed53ab58d75c59b561da81",
+      "guid": "cbc20be8cfb2c770305f4133907826fa",
+      "vertices": 100,
+      "triangles": 196
+    },
+    {
+      "path": "Assets/Resources/BlenderVfx/Fault.bytes",
+      "bytes": 252,
+      "sha256": "00beb38b54a77c8166899d4434e76c2dbeb2fb54f1e5fa3e9fbeffd977840e62",
+      "guid": "0d2470dd60f2bc7799bd349d0bbb03e6",
+      "vertices": 6,
+      "triangles": 4
+    },
+    {
+      "path": "Assets/Resources/BlenderVfx/Shard.bytes",
+      "bytes": 244,
+      "sha256": "64c47cfb2d2e7e891b44f141bd5dd88432fbdae841ffac06ace4e960427abc67",
+      "guid": "b185fec88d62bb16552173d2193ffb63",
+      "vertices": 5,
+      "triangles": 6
     }
   ],
-  "newResourceBytes": 330640,
+  "newResourceBytes": 338792,
   "newTextures": 0,
-  "existingGuidsPreserved": 306
+  "existingGuidsPreserved": 306,
+  "resourceFiles": 38,
+  "sourceRuntimeCommit": "cda8a9045b3ea6e11b352cff40af8a39b5939e4c"
 }
