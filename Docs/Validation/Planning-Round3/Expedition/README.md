@@ -47,3 +47,11 @@
 - CampPracticeSessionBoundary、VanguardRecoveryIntegrationTests 补非远征 RoomBranchChoiceOpen=false。未改其生产练习/恢复代码和原断言。
 - 共享 runtime 小触点：GameSession.cs 的 InputBlocked / UpdateTimeScale；GameSession.Expedition.cs 的种子初始化；GameUI.cs 的面板和 Esc；GameUI.RunRecap.cs 的重试按钮。其余逻辑在 RoomChainState / GameSession.RoomChain / 新 RoomBranch partial 与 geometry。
 - 新 .cs 保留一次生成的稳定 .meta GUID；无资源包、ZIP、Library、PR、推送或主分支写入。
+
+## 审查修复：分支确认仅执行一次保存前置检查
+
+原实现确认分支先保存并锁定选择，再由 EnterNextRoom 二次保存；第二次写失败会把玩家留在已锁定分支的第二房。现普通 EnterNextRoom 与 ConfirmRoomBranch 各自只执行一次 SaveBeforeLeaving，通过后调用私有 EnterNextRoomAfterSave 进行房间状态推进及构建。没有跳过普通房间旅行的保存，也没有公开“无需保存”的入口。
+
+最终补测 `branch-atomic-save.log`：3,789 生产链断言、原两个负控及新增恢复双保存的编译负控通过。故障按实际 Save 调用序号注入：首次失败保留未选分支、面板、输入阻塞和 epoch；首次成功而第二次配置为失败时仍成功切房，实际写入计数恰好 +1；再次确认任一选项不写入、不推进第二次。新负控运行原双保存路径，在此精确行为断言失败。
+
+`free-seal-atomic-save.log`、`first-choice-atomic-save.log` 回归原首房/印记及负控通过；`source-atomic-save.log` 回归房间、保存、持久化源契约；`api-atomic-save.log` 三宏全量 API 编译 0 错误/警告。三个房间 host runner 提取新增的真实私有 helper，其余测试消费者不变。仍无 Unity 执行声明。

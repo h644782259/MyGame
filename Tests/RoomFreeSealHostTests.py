@@ -7,7 +7,7 @@ def member(path,signature):
  source=(root/path).read_text();a=source.index(signature);b=source.index('{',a)+1;depth=1
  while depth:depth+=(source[b]=='{')-(source[b]=='}');b+=1
  return source[a:b]
-methods='\n'.join(member('Assets/Scripts/Core/GameSession.RoomChain.cs',s) for s in ['public bool NearRoomExit','private void BeginRoomChainScene()','private void RecordRoomDefeat(','public bool EnterNextRoom()'])+'\n'+member('Assets/Scripts/Core/GameSession.cs','public bool SaveBeforeLeaving()')
+methods='\n'.join(member('Assets/Scripts/Core/GameSession.RoomChain.cs',s) for s in ['public bool NearRoomExit','private void BeginRoomChainScene()','private void RecordRoomDefeat(','public bool EnterNextRoom()','private bool EnterNextRoomAfterSave()'])+'\n'+member('Assets/Scripts/Core/GameSession.cs','public bool SaveBeforeLeaving()')
 with tempfile.TemporaryDirectory(prefix='room-free-seals-') as temporary:
  p=Path(temporary)
  files=['Core/RoomChainState','Core/RoomTactics','Core/RoomTacticalRegion','Core/DeferredRoomChoice','Core/EscapePostPolicy','Core/GameSession.RoomTactics','World/WorldTraversal','World/TacticalRoomGeometry','World/EscapeRoomFormation','World/RoomBranchGeometry','UI/ChapterSealPresentation','UI/RoomObjectivePresentation']

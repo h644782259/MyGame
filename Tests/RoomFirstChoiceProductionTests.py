@@ -14,7 +14,7 @@ def member(s,sig):
  while d:d+=(s[b]=='{')-(s[b]=='}');b+=1
  return s[a:b]
 room=source('Assets/Scripts/Core/GameSession.RoomChain.cs');session=source('Assets/Scripts/Core/GameSession.cs')
-methods='\n'.join(member(room,s) for s in ['public bool NearRoomExit','private void BeginRoomChainScene()','private void RecordRoomDefeat(','public bool EnterNextRoom()','private bool ConfirmRoomInterlude('])+'\n'+'\n'.join(member(session,s) for s in ['public bool SaveBeforeLeaving()','public bool InputBlocked','private void UpdateTimeScale()'])
+methods='\n'.join(member(room,s) for s in ['public bool NearRoomExit','private void BeginRoomChainScene()','private void RecordRoomDefeat(','public bool EnterNextRoom()','private bool EnterNextRoomAfterSave()','private bool ConfirmRoomInterlude('])+'\n'+'\n'.join(member(session,s) for s in ['public bool SaveBeforeLeaving()','public bool InputBlocked','private void UpdateTimeScale()'])
 methods+='\n'+member(source('Assets/Scripts/Core/GameSession.RoomBranch.cs'),'public bool RoomBranchChoiceOpen')
 # Reuse the room host's explicit scene/enemy/persistence doubles, but replace its
 # choice and pause shortcuts with the real production implementations.

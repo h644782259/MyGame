@@ -60,6 +60,11 @@ namespace Emberfall
    if(RoomChainRun==null||!NearRoomExit||InputBlocked||pendingRoomChoice.Pending)return false;
    if(RoomChainRun.OpenBranchChoice()){SuspendInputs();UpdateTimeScale();return false;}
    if(!SaveBeforeLeaving())return false;
+   return EnterNextRoomAfterSave();
+  }
+  // Both ordinary travel and branch confirmation arrive with one successful preflight.
+  private bool EnterNextRoomAfterSave()
+  {
    if(!RoomChainRun.Next(true,false))return false;
    SuspendInputs();changingZone=true;
    try

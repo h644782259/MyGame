@@ -16,7 +16,7 @@ namespace Emberfall
    if(branch!=RoomBranch.Seal&&branch!=RoomBranch.Supply)return false;
    if(!SaveBeforeLeaving())return false;
    if(!RoomChainRun.SelectBranch(branch))return false;
-   UpdateTimeScale();return EnterNextRoom();
+   UpdateTimeScale();return EnterNextRoomAfterSave();
   }
   public bool CanRetryRoomChain {get{return HasStarted&&InDungeon&&!ChapterActive&&!PracticeActive&&RoomChainRun!=null&&RoomChainRun.Finished&&RoomChainRun.Failed&&RoomChainRun.Room!=null&&Player!=null&&!changingZone&&!retryingRoomChain&&lastRoomRetryFrame!=Time.frameCount;}}
   public bool RetryFailedRoomChain()

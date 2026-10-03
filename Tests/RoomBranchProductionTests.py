@@ -14,7 +14,7 @@ def member(s,sig):
  while d:d+=(s[b]=='{')-(s[b]=='}');b+=1
  return s[a:b]
 room=source('Assets/Scripts/Core/GameSession.RoomChain.cs');session=source('Assets/Scripts/Core/GameSession.cs')
-methods='\n'.join(member(room,s) for s in ['public bool NearRoomExit','private void BeginRoomChainScene()','private void RecordRoomDefeat(','public bool EnterNextRoom()','private bool ConfirmRoomInterlude(','private void ResetRoomChain('])+'\n'+'\n'.join(member(session,s) for s in ['public bool SaveBeforeLeaving()','public bool InputBlocked','private void UpdateTimeScale()','private bool ChangeZone(bool dungeon)'])
+methods='\n'.join(member(room,s) for s in ['public bool NearRoomExit','private void BeginRoomChainScene()','private void RecordRoomDefeat(','public bool EnterNextRoom()','private bool EnterNextRoomAfterSave()','private bool ConfirmRoomInterlude(','private void ResetRoomChain('])+'\n'+'\n'.join(member(session,s) for s in ['public bool SaveBeforeLeaving()','public bool InputBlocked','private void UpdateTimeScale()','private bool ChangeZone(bool dungeon)'])
 # Reuse the room host's explicit scene/enemy/persistence doubles, but replace its
 # choice and pause shortcuts with the real production implementations.
 fixture=source('Tests/RoomFreeSealHostTests.cs').split('public static class RoomFreeSealHostTests')[0]
@@ -58,13 +58,15 @@ fixture=fixture.replace('private bool objectiveHealedThisWave,changingZone;','''
  private void ResetArenaMode(bool dungeon){ResetRoomChain(dungeon);}
 ''')
 fixture+='\nnamespace Emberfall{public class ChapterBoundary{public int Tier=1,Layout;public UnityEngine.Vector3 Entrance;}public static class ChapterRoomGeometry{public static ChapterBoundary Plan(int n,int i,int s)=>new ChapterBoundary();}public enum ExpeditionModeFailure{Abandoned}public class ArenaBoundary{public void Fail(ExpeditionModeFailure f){}}public class RunMechanismEvidence{public void Reset(){}}}\nnamespace UnityEngine{public static class Random{public static int Calls;public static int Range(int a,int b){Calls++;return 999;}}}'
+fixture=fixture.replace('public bool Fail;public string LastError;', 'public int FailOnSave=-1;public bool Fail;public string LastError;').replace('LastError=Fail?', 'LastError=(Fail||Saves==FailOnSave)?')
 probe=source('Tests/RoomBranchProductionTests.cs')
 with tempfile.TemporaryDirectory(prefix='room-branch-') as temporary:
  base=Path(temporary)
  env=dict(os.environ,DOTNET_CLI_HOME=str(base/'cli'),DOTNET_NOLOGO='1')
- for mode,expected in [('current',None),('old-third-room','selected objective replaces old seed objective'),('reroll-retry','retry retains seed branch and conditions')]:
+ for mode,expected in [('current',None),('old-third-room','selected objective replaces old seed objective'),('reroll-retry','retry retains seed branch and conditions'),('double-save-branch','single preflight enters selected room despite second-write fault')]:
   p=base/mode;p.mkdir(exist_ok=True)
   for name,s in originals.items():
+   if mode=='double-save-branch' and name=='GameSession.RoomBranch.cs':s=replace_required(s,'UpdateTimeScale();return EnterNextRoomAfterSave();','UpdateTimeScale();return EnterNextRoom();')
    if mode=='old-third-room' and name=='RoomChainState.cs':s=replace_required(s,'Room.Index+1,Room.Seed,SelectedBranch','Room.Index+1,Room.Seed')
    (p/name).write_text(s)
   body=replace_required(methods,'if(retryingRoomChain)runSeed=roomRetrySeed;','if(retryingRoomChain)runSeed=roomRetrySeed+1;') if mode=='reroll-retry' else methods
