@@ -686,7 +686,7 @@ namespace Emberfall
                     enemy.TrySkillInterrupt(this, skillIndex, castId);
                     if(!basic&&damage.Amount>0)RegisterSkillHit(castId);
                     float healthBefore = enemy.Health;
-                    enemy.TakeDamage(damage.Amount,delta.normalized,knockback,stun,critical:damage.IsCritical);
+                    enemy.TakeDamage(damage.Amount,delta.normalized,knockback,stun,critical:damage.IsCritical,practiceCastId:basic?0:castId);
                     if (enemy.Health < healthBefore) lastMeleeDamagedEnemy = true;
                     if (knockdown > 0 && enemy.StatusEffects != null) enemy.StatusEffects.Knockdown(knockdown);
                 }
@@ -861,7 +861,7 @@ namespace Emberfall
             return item != null && item.mechanic == mechanic ? item.mechanicVariant : 0;
         }
         internal int NewCastId() { return ++nextCastId; }
-        internal void RegisterSkillHit(int castId){if(session!=null&&!session.InputBlocked&&!session.CombatEnded&&!IsDead){masteryCore.SkillHit(castId);session.RecordPracticeSkillHit(castId);}}
+        internal void RegisterSkillHit(int castId){if(session!=null&&!session.InputBlocked&&!session.CombatEnded&&!IsDead)masteryCore.SkillHit(castId);}
         internal void ElementalAdvancedArea(Vector3 at, float radius, CombatDamage direct, int castId, bool final)
         {
             CombatImpactBatch.Begin();
@@ -888,7 +888,7 @@ namespace Emberfall
                     else if (status.TryShatter(this, castId)) amount += direct.WithoutCritical().Amount * .6f;
                 }
                 float healthBeforeFinale=enemy.Health;
-                enemy.TakeDamage(amount, Vector3.zero, 0, final?.3f:0, critical:direct.IsCritical);
+                enemy.TakeDamage(amount, Vector3.zero, 0, final?.3f:0, critical:direct.IsCritical,practiceCastId:castId);
                 if(burnSettlement!=null&&burnSettlement.Apply())RecordBurnCash(castId,impactEpoch,enemy.transform.position);
                 if(final&&enemy.Health<healthBeforeFinale)FilledSkillVfx.ConfirmFinale(this,castId);
             }
@@ -1006,7 +1006,7 @@ namespace Emberfall
                     var impact=volley==null?damage:volley.Apply(enemy,damage,true);if(impact.Amount<=0)continue;
                     if(confirmedSkillCast)RegisterSkillHit(castId);ApplySpellDodgeBoon(enemy);
                     float healthBeforeFinale=enemy.Health;
-                    enemy.TakeDamage(impact.Amount,delta.normalized,knockback,stun,critical:impact.IsCritical);
+                    enemy.TakeDamage(impact.Amount,delta.normalized,knockback,stun,critical:impact.IsCritical,practiceCastId:castId);
                     // Confirm after the real mutation even if its death callback just finished the mode.
                     if(enemy.Health<healthBeforeFinale)FilledSkillVfx.ConfirmFinale(this,castId);
                 }

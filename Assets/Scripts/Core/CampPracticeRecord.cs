@@ -23,6 +23,7 @@ namespace Emberfall
         {if(duration!=10&&duration!=60)throw new ArgumentOutOfRangeException("duration");Scenario=scenario;Duration=duration;Configuration=configuration;Seed=seed;}
         private static bool Valid(float n){return n>0&&!float.IsNaN(n)&&!float.IsInfinity(n);}
         public void Advance(float dt){if(!Finished&&Valid(dt)){Elapsed=Math.Min(Duration,Elapsed+dt);if(Elapsed>=Duration)Finish("计时完成");}}
+        public void ConfirmedHealthLoss(float amount,int castId=0){if(!Finished&&Valid(amount)){Damage(amount);Hit(castId);}}
         public void Damage(float amount){if(!Finished&&Valid(amount))ActualDamage+=amount;}
         public void Energy(float delta){if(Finished||float.IsNaN(delta)||float.IsInfinity(delta))return;if(delta<0)EnergySpent-=delta;else EnergyRestored+=delta;}
         private static void Count<T>(Dictionary<T,int> counts,T key){int n;counts.TryGetValue(key,out n);counts[key]=n+1;}

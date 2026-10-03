@@ -38,7 +38,7 @@ namespace Emberfall
                     if (delta.magnitude <= 5f * range && (delta.sqrMagnitude < .1f || Vector3.Angle(player.transform.forward, delta) < 55) && CombatSight.Melee(player.transform.position,enemy.transform.position))
                     {
                         float contactHealth=enemy.Health;
-                        enemy.TakeDamage(impact.Amount, delta.normalized, 1.25f + rank * .2f, .2f, critical: impact.IsCritical);
+                        enemy.TakeDamage(impact.Amount, delta.normalized, 1.25f + rank * .2f, .2f, critical: impact.IsCritical,practiceCastId:propCast);
                         if(enemy.Health<contactHealth)FilledSkillVfx.IdentityContact(player,enemy.transform.position,player.transform.forward,.6f,color,3,CombatVisualPriority.RealContact);
                         player.RegisterSkillHit(propCast);
                     }
@@ -94,13 +94,13 @@ namespace Emberfall
                     if (delta.magnitude > Radius || !CombatSight.Area(transform.position,enemy.transform.position)) continue;
                     if (pendingFinisher)
                     {
-                        enemy.TakeDamage(finisherDamage.Amount, -delta.normalized, .3f, .25f, critical: finisherDamage.IsCritical);
+                        enemy.TakeDamage(finisherDamage.Amount, -delta.normalized, .3f, .25f, critical: finisherDamage.IsCritical,practiceCastId:castId);
                         owner.RegisterSkillHit(castId);
                         if (!enemy.IsDead) enemy.StatusEffects.Knockup(.7f + rank * .1f, 1.2f + rank * .2f);
                     }
                     else
                     {
-                        enemy.TakeDamage(damage*SummonerDamageRules.MarkTickCoefficient,Vector3.zero,impact:false);
+                        enemy.TakeDamage(damage*SummonerDamageRules.MarkTickCoefficient,Vector3.zero,impact:false,practiceCastId:castId);
                         owner.RegisterSkillHit(castId);
                     }
                 }

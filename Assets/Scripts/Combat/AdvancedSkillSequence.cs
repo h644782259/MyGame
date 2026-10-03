@@ -246,7 +246,7 @@ namespace Emberfall
                 ElementalCombatVfx.Lightning(previous + Vector3.up * 1.15f, position + Vector3.up * 1.15f);
                 owner.RegisterSkillHit(castId);
                 owner.ApplySpellDodgeBoon(nearest);
-                nearest.TakeDamage(damage.Amount*SkillDamageBudgets.AdvancedImpact(heroClass,skill,rank,step),forward,.05f,.35f+rank*.15f, critical:damage.IsCritical);
+                nearest.TakeDamage(damage.Amount*SkillDamageBudgets.AdvancedImpact(heroClass,skill,rank,step),forward,.05f,.35f+rank*.15f, critical:damage.IsCritical,practiceCastId:castId);
                 if(nearest.Health<endpointHealth) {
                 if(!FilledSkillVfx.IdentityContact(owner,position,Vector3.forward,.85f,new Color(.7f,.85f,1f),2,CombatVisualPriority.RealContact)) AdvancedSkillVfx.Beam(owner,previous+Vector3.up*1.1f,position+Vector3.up*1.1f,new Color(.7f,.85f,1f),.55f,.17f);
                 }
@@ -295,7 +295,7 @@ namespace Emberfall
             {
                 EnemyController enemy=session.Enemies[i];
                 if(enemy!=null && !enemy.IsDead && CombatFx.SegmentDistance(enemy.transform.position,a,b)<=width+(enemy.IsBoss?.8f:.4f) && CombatSight.Melee(a,enemy.transform.position))
-                {owner.RegisterSkillHit(castId);enemy.TakeDamage(amount.Amount,forward,knockback,stun, critical:amount.IsCritical);}
+                {owner.RegisterSkillHit(castId);enemy.TakeDamage(amount.Amount,forward,knockback,stun, critical:amount.IsCritical,practiceCastId:castId);}
             }
                     }
             finally { CombatImpactBatch.End(); }

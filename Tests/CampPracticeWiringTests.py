@@ -11,8 +11,8 @@ assert 'if(PracticeActive)return false;' in s[s.index('public bool TryCollectGro
 assert 'if(PracticeActive)return false;' in s[s.index('public bool SaveBeforeLeaving()'):]
 assert 'if(PracticeActive){PracticeRecord.Mechanism(key);return;}' in text('Core/GameSession.Expedition.cs')
 assert 'if(PracticeActive)return;' in text('Core/GameSession.Expedition.cs')
-assert 'PracticeRecord.Damage(previousHealth-Health)' in text('Combat/EnemyController.cs')
-assert 'session.RecordPracticeCast(castId,slot)' in p and 'session.RecordPracticeSkillHit(castId)' in p
+assert 'PracticeRecord.ConfirmedHealthLoss(previousHealth-Health,practiceCastId)' in text('Combat/EnemyController.cs')
+assert 'session.RecordPracticeCast(castId,slot)' in p and 'session.RecordPracticeSkillHit(castId)' not in p
 assert p.index('session = game;') < p.index('skillRuntime.EnergyChanged=session.RecordPracticeEnergy')
 assert 'DrawPracticeCombatHUD();DrawPracticeOverlay();' in ui
 assert 'panel=Panel.None' in text('UI/GameUI.Practice.cs') and 'panel=practiceReturnPanel' in text('UI/GameUI.Practice.cs')
