@@ -3,6 +3,7 @@
 Managed mesh/TRS sampling, not Unity rendering or gameplay collision validation.
 """
 import os
+import json
 import argparse
 import sys
 from pathlib import Path
@@ -50,6 +51,15 @@ class Export{static float Floor(CombatModel model)=>model.GetComponentsInChildre
     command=[dotnet,'run','--project',str(project),'--',str(output)]
     env=dict(os.environ,DOTNET_CLI_HOME=str(p/'cli'),DOTNET_NOLOGO='1')
     subprocess.run(command,env=env,check=True)
+    guardian=next(case for case in json.loads(output.read_text()) if case['name']=='Guardian down')
+    minimum=lambda part:min(v[1] for v in part['vertices'])
+    feet=[minimum(part) for part in guardian['parts'] if part['name']=='Boot']
+    shoulders=[minimum(part) for part in guardian['parts'] if part['name']=='Guardian layered pauldron']
+    hammer=next(minimum(part) for part in guardian['parts'] if part['name']=='Great Hammer')
+    assert len(feet)==2 and all(-.005<=y<=.025 for y in feet), ('both actual boots must support the down pose',feet)
+    assert -.005<=min(shoulders)<=.025, ('body armor support must contact floor independently of weapon',shoulders)
+    assert hammer>.20, ('hammer is not the claimed body support',hammer)
+    print('PASS Guardian down independent support: boot minima='+str(feet)+' body-shoulder minimum='+str(min(shoulders))+' hammer minimum='+str(hammer),flush=True)
     overlay=p/'CombatModel.Knockdown.cs';original=overlay.read_text()
     assert 'new Vector3(.06f,.30f,-.06f)' in original
     overlay.write_text(original.replace('new Vector3(.06f,.30f,-.06f)','new Vector3(.06f,0,-.06f)'))

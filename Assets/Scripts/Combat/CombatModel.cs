@@ -55,6 +55,7 @@ namespace Emberfall
         public void BeginDeath()
         {
             if (dying) return;
+            RestoreKnockdownForDeath();
             dying = true;
             SetBlenderPilotVisible(false);
             foreach (Material material in palette.Values)
@@ -1239,6 +1240,7 @@ namespace Emberfall
 
         private void OnDestroy()
         {
+            ReleasePilotRendererGroup();
             foreach(Material material in palette.Values) if(material!=null) Destroy(material);
         }
     }

@@ -24,6 +24,12 @@ namespace Emberfall
         private int pilotRendererRevision=-1;
         internal void InvalidatePilotRendererGroup()
         {RendererGroupCache.Invalidate(transform);if(pilotRendererGroup!=null)pilotRendererGroup.Invalidate();}
+        private void ReleasePilotRendererGroup()
+        {
+            RestorePilotRendererStates();
+            if(pilotRendererGroup!=null)pilotRendererGroup.Dispose();
+            pilotRendererGroup=null;pilotRendererRevision=-1;pilotVisible=false;
+        }
         private void ConfigureBlenderPilot()
         {
             // Complete combat rigs keep one body for the entire equipment/action lifecycle.

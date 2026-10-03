@@ -7,7 +7,10 @@ namespace Emberfall
         // Restore the previous overlay before either a fresh base animation or a paused resample.
         private readonly EnemyKnockdownPose knockdownPose = new EnemyKnockdownPose();
         private Transform[] knockdownJoints;
-        private Quaternion[] knockdownBaseRotations;
+        private Quaternion[] knockdownBaseRotations, knockdownDisplayedRotations;
+        private Vector3 knockdownDisplayedPosition;
+        private Quaternion knockdownDisplayedRotation;
+        private bool knockdownDisplayed;
         private Vector3 knockdownBasePosition;
         private Quaternion knockdownBaseRotation;
         private bool knockdownApplied;
@@ -34,11 +37,12 @@ namespace Emberfall
                 knockdownPose.Advance(downRemaining,airborne,delta,heavy);
             }
             float weight=knockdownPose.Weight;
-            if(weight<=0)return true; // Ordinary hurt/recoil retains the complete current attack pose.
+            if(weight<=0){knockdownDisplayed=false;return true;} // Ordinary hurt/recoil retains the complete current attack pose.
             if(knockdownJoints==null)
             {
-                knockdownJoints=new[]{spine,pelvis,headRig,leftArm,rightArm,leftElbow,rightElbow,leftLeg,rightLeg,leftKnee,rightKnee};
+                knockdownJoints=new[]{spine,pelvis,headRig,leftArm,rightArm,leftElbow,rightElbow,leftLeg,rightLeg,leftKnee,rightKnee,body};
                 knockdownBaseRotations=new Quaternion[knockdownJoints.Length];
+                knockdownDisplayedRotations=new Quaternion[knockdownJoints.Length];
             }
             knockdownBasePosition=transform.localPosition;
             knockdownBaseRotation=transform.localRotation;
@@ -56,11 +60,26 @@ namespace Emberfall
             DownJoint(4,new Vector3(heavy?45f:-15f,10f,28f),weight);
             DownJoint(5,new Vector3(-24f+brace*16f,0,0),weight);
             DownJoint(6,new Vector3(-38f,0,0),weight);
-            DownJoint(7,new Vector3(-18f-brace*18f,0,-13f),weight);
-            DownJoint(8,new Vector3(8f,0,16f),weight);
+            DownJoint(7,new Vector3((heavy?-12f:-18f)-brace*18f,0,-13f),weight);
+            DownJoint(8,new Vector3(heavy?13.6f:8f,0,16f),weight);
             DownJoint(9,new Vector3(38f+brace*25f,0,0),weight);
             DownJoint(10,new Vector3(19f,0,0),weight);
+            knockdownDisplayedPosition=transform.localPosition;
+            knockdownDisplayedRotation=transform.localRotation;
+            for(int i=0;i<knockdownJoints.Length;i++)
+                if(knockdownJoints[i]!=null)knockdownDisplayedRotations[i]=knockdownJoints[i].localRotation;
+            knockdownDisplayed=true;
             return true;
+        }
+        private void RestoreKnockdownForDeath()
+        {
+            // Animate may already have restored the base this Update while status LateUpdate
+            // has not run yet. Hand death the last complete displayed pose, never that scratch pose.
+            if(!knockdownDisplayed)return;
+            transform.localPosition=knockdownDisplayedPosition;
+            transform.localRotation=knockdownDisplayedRotation;
+            for(int i=0;i<knockdownJoints.Length;i++)
+                if(knockdownJoints[i]!=null)knockdownJoints[i].localRotation=knockdownDisplayedRotations[i];
         }
         private void DownJoint(int index,Vector3 degrees,float weight)
         {

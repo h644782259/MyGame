@@ -26,11 +26,22 @@ f=f.replace('public static Quaternion identity=>','public static Quaternion Sler
 f=f.replace('public const float PI=', 'public static float Exp(float x)=>(float)Math.Exp(x);public static float SmoothStep(float a,float b,float t){t=Clamp01(t);return a+(b-a)*t*t*(3-2*t);}public static float MoveTowards(float a,float b,float d)=>Math.Abs(b-a)<=d?b:a+Math.Sign(b-a)*d;public const float PI=')
 with tempfile.TemporaryDirectory(prefix='enemy-knockdown-production-') as directory:
     p=Path(directory)
-    for path in ['Assets/Scripts/Combat/CombatModel.Knockdown.cs','Assets/Scripts/Core/LocomotionPoseState.cs','Tests/EnemyKnockdownProductionTests.cs']:
+    for path in ['Assets/Scripts/Combat/CombatModel.Knockdown.cs','Assets/Scripts/Core/LocomotionPoseState.cs','Tests/EnemyKnockdownProductionTests.cs','Tests/EnemyKnockdownDeathTests.cs']:
         (p/Path(path).name).write_text((root/path).read_text())
+    f=f.replace('public sealed class Material:Object{','public sealed class Material:Object{public void SetFloat(string n,float v){}public void SetInt(string n,int v){}public void DisableKeyword(string n){}public void EnableKeyword(string n){}')
+    f=f.replace('public enum ShadowCastingMode{Off}', 'public enum ShadowCastingMode{Off}public enum BlendMode{SrcAlpha,OneMinusSrcAlpha}')
     (p/'Fixture.cs').write_text(f)
+    f=f.replace('public bool HasStarted,ModeFinished,InputBlocked;', 'public bool HasStarted,ModeFinished,InputBlocked,Paused,IsDead,InDungeon;')
+    (p/'Fixture.cs').write_text(f)
+    controller=(root/'Assets/Scripts/Combat/EnemyController.cs').read_text()
+    dissolve=(root/'Assets/Scripts/Combat/EnemyDeathDissolve.cs').read_text()
+    initialize=member(dissolve,'public void Initialize(')
+    initialize=initialize[:initialize.index('            ash =')]+ '}' # Capture/BeginDeath are actual; particle creation is out of scope.
+    update=member(controller,'private void Update(')
+    update=update[:update.index('            if (RegroupMobileSupport')]+ 'throw new System.Exception("death-order fixture only supports the real stunned Update path");}'
+    (p/'DeathMethods.cs').write_text('using UnityEngine;namespace Emberfall{public sealed partial class CombatModel{'+member(source,'public void BeginDeath(')+'}public sealed partial class EnemyController{'+member(controller,'internal void BeginDeath(')+member(controller,'private void AnimateModel(')+update+'}internal partial class EnemyDeathDissolve{'+initialize+'}}')
     (p/'Model.cs').write_text('using UnityEngine;namespace Emberfall{public sealed partial class CombatModel{'+''.join(member(source,s) for s in ['public void Animate(','public void Recoil(','private void ApplyRecoil('])+'}public partial class EnemyStatusEffects{'+member(status,'private void LateUpdate(')+'}}')
-    (p/'Program.cs').write_text('System.Console.WriteLine(EnemyKnockdownProductionTests.Run());')
+    (p/'Program.cs').write_text('System.Console.WriteLine(EnemyKnockdownProductionTests.Run());System.Console.WriteLine(EnemyKnockdownDeathTests.Run());')
     project=p/'Test.csproj';project.write_text('<Project Sdk="Microsoft.NET.Sdk"><PropertyGroup><OutputType>Exe</OutputType><TargetFramework>net8.0</TargetFramework><NoWarn>0649;0169</NoWarn></PropertyGroup></Project>')
     config=p/'NuGet.Config';config.write_text('<configuration><packageSources><clear /></packageSources></configuration>')
     env=dict(os.environ,DOTNET_CLI_HOME=str(p/'cli'),DOTNET_NOLOGO='1',DOTNET_CLI_TELEMETRY_OPTOUT='1')
@@ -44,6 +55,7 @@ with tempfile.TemporaryDirectory(prefix='enemy-knockdown-production-') as direct
         ('death','if (dying || enemyOwner.IsDead) return true;','','death owns final pose'),
         ('airborne','float target=airborne ||','float target=false ||','airborne supersedes ground pose'),
         ('restore','            RestoreKnockdownBase();','', 'paused pose stays exact'),
+        ('stale-display-cache','knockdownDisplayed=false;return true;', 'return true;', 'death capture keeps last complete displayed pose'),
     ]:
         assert before in original,label
         overlay.write_text(original.replace(before,after))
@@ -51,3 +63,17 @@ with tempfile.TemporaryDirectory(prefix='enemy-knockdown-production-') as direct
         if result.returncode==0 or expected not in result.stdout+result.stderr:raise AssertionError(label+' mutation not caught as expected\n'+result.stdout+result.stderr)
         print('PASS: production '+label+' mutation rejected ('+expected+')',flush=True)
         overlay.write_text(original)
+
+    model=p/'DeathMethods.cs';original=model.read_text()
+    for label,before,after in [
+        ('missing-display-handoff','            RestoreKnockdownForDeath();',''),
+        ('capture-before-finalize','            model.BeginDeath(); // Finalize the displayed pose before capturing death ownership.',''),
+    ]:
+        assert before in original
+        changed=original.replace(before,after)
+        if label=='capture-before-finalize':changed=changed.replace('startScale = visual.localScale;', 'startScale = visual.localScale;model.BeginDeath();')
+        model.write_text(changed)
+        failure=subprocess.run(command,env=env,capture_output=True,text=True)
+        if failure.returncode==0 or 'death capture keeps last complete displayed pose' not in failure.stdout+failure.stderr:raise AssertionError(label+' mutation did not fail correctly\n'+failure.stdout+failure.stderr)
+        print('PASS: compiled '+label+' mutation rejected at real controller/death capture ordering',flush=True)
+        model.write_text(original)

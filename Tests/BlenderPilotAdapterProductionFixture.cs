@@ -43,6 +43,22 @@ class BlenderPilotAdapterProductionTests{
   UnityEngine.Object.Destroy(added);m.Sample();C(m.Visible,"deleted hierarchy refresh does not interrupt supported pilot");
   m.Unsupported("airborne");m.Sample();C(m.GetComponentsInChildren<Renderer>(true).Where(x=>x.gameObject.name=="visible old").Single().enabled,"fallback still restores original group after repeated structural changes");UnityEngine.Object.Destroy(m.gameObject);UnityEngine.Object.Destroy(detached);
  }
+ static void RendererCacheRelease(){
+  Ready();BlenderPilotArt.Enabled=true;var m=Model();m.Sample();
+  var flags=BindingFlags.Instance|BindingFlags.NonPublic;var cache=(RendererGroupCache)typeof(CombatModel).GetField("pilotRendererGroup",flags).GetValue(m);
+  var survivor=Child(m.gameObject,"surviving detached group");var shown=Child(survivor,"originally shown").AddComponent<Renderer>();var hidden=Child(survivor,"originally hidden").AddComponent<Renderer>();hidden.enabled=false;m.Sample();
+  var localCache=new RendererGroupCache(survivor.transform);localCache.Read();
+  survivor.transform.SetParent(null); // Do not call model.Sample or cache.Read before owner destruction.
+  foreach(var observer in survivor.GetComponentsInChildren<RendererGroupObserver>(true))
+  {var owners=(List<RendererGroupCache>)typeof(RendererGroupObserver).GetField("owners",flags).GetValue(observer);C(owners.Count==1&&ReferenceEquals(owners[0],localCache),"detached subtree immediately drops old cache but keeps its own live cache");}
+  UnityEngine.Object.Destroy(m.gameObject);
+  C(shown.enabled&&!hidden.enabled,"model destruction restores detached hidden renderer states without another sample");
+  C(typeof(CombatModel).GetField("pilotRendererGroup",flags).GetValue(m)==null&&typeof(RendererGroupCache).GetField("root",flags).GetValue(cache)==null,"actual OnDestroy clears model and cache root references");
+  C(((Renderer[])typeof(RendererGroupCache).GetField("renderers",flags).GetValue(cache)).Length==0&&((List<RendererGroupObserver>)typeof(RendererGroupCache).GetField("observers",flags).GetValue(cache)).Count==0,"actual OnDestroy clears cached membership and observer list");
+  typeof(CombatModel).GetMethod("ReleasePilotRendererGroup",flags).Invoke(m,null);localCache.Dispose();
+  C(survivor.GetComponentsInChildren<RendererGroupObserver>(true).All(o=>((List<RendererGroupCache>)typeof(RendererGroupObserver).GetField("owners",flags).GetValue(o)).Count==0),"idempotent owner teardown and local dispose leave no observer subscription");
+  UnityEngine.Object.Destroy(survivor);
+ }
  static void Main(){
  C(!BlenderPilotArt.Enabled,"pilot disabled on fresh startup");Ready();int loads=Resources.Loads;C(BlenderPilotVisual.Create(null)==null&&Resources.Loads==loads,"disabled pilot never loads assets");
  BlenderPilotArt.Enabled=true;Resources.Items.Clear();C(BlenderPilotVisual.Create(null)==null,"missing model falls back");
@@ -67,6 +83,7 @@ class BlenderPilotAdapterProductionTests{
  var combat=new GameObject("combat only").AddComponent<CombatModel>();combat.heroClass=HeroClass.Vanguard;combat.Init();C(combat.View==null&&!combat.Sample(),"combat never switches incomplete whole-body pilot");
  BlenderPilotReadinessTests.Run();
  RendererMembership();
+ RendererCacheRelease();
  Console.WriteLine("PASS: "+n+" production Blender adapter/create/sampler/commit/anchor/fallback/ownership checks (managed Unity boundaries)");
  }
 }

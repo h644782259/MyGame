@@ -13,7 +13,19 @@ namespace Emberfall
         internal int Revision {get;private set;}
         internal bool Dirty {get{return dirty;}}
         internal RendererGroupCache(Transform owner){root=owner;}
-        internal void Invalidate(){dirty=true;}
+        internal void Invalidate()
+        {
+            dirty=true;
+            // A removed subtree may outlive this model and may never trigger Read again.
+            // Release its observer subscriptions at the structural event, not lazily.
+            for(int i=observers.Count-1;i>=0;i--)
+            {
+                var observer=observers[i];
+                if(observer!=null&&root!=null&&(observer.transform==root||observer.transform.IsChildOf(root)))continue;
+                if(observer!=null)observer.Remove(this);
+                observers.RemoveAt(i);
+            }
+        }
         internal static void Invalidate(Transform part)
         {
             if(part==null)return;
@@ -45,7 +57,7 @@ namespace Emberfall
         private readonly List<RendererGroupCache> owners=new List<RendererGroupCache>();
         internal void Add(RendererGroupCache owner){if(!owners.Contains(owner))owners.Add(owner);}
         internal void Remove(RendererGroupCache owner){owners.Remove(owner);}
-        internal void InvalidateOwners(){foreach(var owner in owners)owner.Invalidate();}
+        internal void InvalidateOwners(){foreach(var owner in owners.ToArray())owner.Invalidate();}
         private void Changed(){InvalidateOwners();}
         private void OnTransformChildrenChanged(){Changed();}
         private void OnTransformParentChanged(){Changed();}

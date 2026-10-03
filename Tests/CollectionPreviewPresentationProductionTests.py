@@ -18,7 +18,7 @@ with tempfile.TemporaryDirectory(prefix='preview-presentation-') as directory:
 
  # Missing hierarchy notifications must invalidate the actual host/cache regression.
  source.write_text(original)
- cache=p/'RendererGroupCache.cs';cache.write_text(cache.read_text().replace('foreach(var owner in owners)owner.Invalidate();',''))
+ cache=p/'RendererGroupCache.cs';cache.write_text(cache.read_text().replace('foreach(var owner in owners.ToArray())owner.Invalidate();',''))
  subprocess.run([dotnet,'build',str(project),'--no-restore','-v:q'],env=env,check=True,stdout=subprocess.DEVNULL)
  result=subprocess.run(cmd+['--no-build'],env=env,capture_output=True,text=True)
  assert result.returncode and 'hierarchy addition invalidates actual preview membership and texture' in result.stdout+result.stderr,result.stdout+result.stderr

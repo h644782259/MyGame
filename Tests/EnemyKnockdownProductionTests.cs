@@ -5,11 +5,11 @@ using UnityEngine;
 namespace Emberfall
 {
     public enum EnemyKind{Goblin,Guardian,Slime,Wisp}
-    public sealed class EnemyController:MonoBehaviour{public bool IsDead,IsBoss;public EnemyKind Kind;public EnemyStatusEffects StatusEffects;}
+    public sealed partial class EnemyController:MonoBehaviour{public bool IsDead,IsBoss;public EnemyKind Kind;public EnemyStatusEffects StatusEffects;}
     public partial class EnemyStatusEffects:MonoBehaviour
     {
         private EnemyController enemy;private Transform model;private CombatModel knockdownModel;private bool wasDown;
-        private float downTime;public bool IsAirborne;public float AirborneHeight;
+        private float downTime;public float MoveMultiplier=>1;public bool IsAirborne;public float AirborneHeight;
         public float Remaining=>downTime;
         public void Setup(EnemyController owner){enemy=owner;}
         public void Timer(float remaining){downTime=remaining;}
@@ -29,12 +29,12 @@ namespace Emberfall
         private void ApplyCompanionPose(){}
         public void Setup(EnemyController owner,bool supported=true)
         {
-            enemyOwner=owner;articulatedEnemy=supported;
+            enemyOwner=owner;articulatedEnemy=supported;body=new GameObject("body").transform;body.SetParent(transform,false);
             var joints=new Transform[11];for(int i=0;i<joints.Length;i++){joints[i]=new GameObject("joint"+i).transform;joints[i].SetParent(transform,false);joints[i].localPosition=new Vector3((i%2-.5f)*.4f,.7f+i*.08f,0);}
             spine=joints[0];pelvis=joints[1];headRig=joints[2];leftArm=joints[3];rightArm=joints[4];leftElbow=joints[5];rightElbow=joints[6];leftLeg=joints[7];rightLeg=joints[8];leftKnee=joints[9];rightKnee=joints[10];
         }
         public float DownWeight=>knockdownPose.Weight;
-        public Quaternion[] Snapshot()=>new[]{transform.localRotation,spine.localRotation,pelvis.localRotation,headRig.localRotation,leftArm.localRotation,rightArm.localRotation,leftElbow.localRotation,rightElbow.localRotation,leftLeg.localRotation,rightLeg.localRotation,leftKnee.localRotation,rightKnee.localRotation};
+        public Quaternion[] Snapshot()=>new[]{transform.localRotation,spine.localRotation,pelvis.localRotation,headRig.localRotation,leftArm.localRotation,rightArm.localRotation,leftElbow.localRotation,rightElbow.localRotation,leftLeg.localRotation,rightLeg.localRotation,leftKnee.localRotation,rightKnee.localRotation,body.localRotation};
         public void Death(){dying=true;}
         public void Attack(EnemyPosePhase value,float progress){enemyActionPhase=value;enemyActionProgress=progress;}
     }
@@ -43,15 +43,15 @@ public static class EnemyKnockdownProductionTests
 {
     static int checks;
     static void C(bool value,string label){checks++;if(!value)throw new Exception(label);}
-    static bool Same(Quaternion[] a,Quaternion[] b)=>a.Zip(b,(x,y)=>(x.Rotate(Vector3.up)-y.Rotate(Vector3.up)).sqrMagnitude<.00000001f&&(x.Rotate(Vector3.forward)-y.Rotate(Vector3.forward)).sqrMagnitude<.00000001f).All(v=>v);
-    static (CombatModel model,EnemyController enemy,EnemyStatusEffects status) Create(bool heavy=false,bool supported=true,bool boss=false)
+    internal static bool Same(Quaternion[] a,Quaternion[] b)=>a.Zip(b,(x,y)=>(x.Rotate(Vector3.up)-y.Rotate(Vector3.up)).sqrMagnitude<.00000001f&&(x.Rotate(Vector3.forward)-y.Rotate(Vector3.forward)).sqrMagnitude<.00000001f).All(v=>v);
+    internal static (CombatModel model,EnemyController enemy,EnemyStatusEffects status) Create(bool heavy=false,bool supported=true,bool boss=false)
     {
         GameSession.Instance=new GameSession{HasStarted=true};Time.deltaTime=.016f;Time.time=10;
         var host=new GameObject("logical root");host.transform.position=new Vector3(5,0,8);var enemy=host.AddComponent<EnemyController>();enemy.Kind=heavy?EnemyKind.Guardian:EnemyKind.Goblin;enemy.IsBoss=boss;
         var status=host.AddComponent<EnemyStatusEffects>();status.Setup(enemy);enemy.StatusEffects=status;
         var visual=new GameObject("visual");visual.transform.SetParent(host.transform,false);visual.transform.localScale=Vector3.one*(heavy?1.15f:.8f);var model=visual.AddComponent<CombatModel>();model.Setup(enemy,supported);return(model,enemy,status);
     }
-    static void Frame((CombatModel model,EnemyController enemy,EnemyStatusEffects status) scene,float remaining,float delta=.016f,bool animate=true)
+    internal static void Frame((CombatModel model,EnemyController enemy,EnemyStatusEffects status) scene,float remaining,float delta=.016f,bool animate=true)
     {
         Time.frameCount++;Time.deltaTime=delta;Time.time+=Math.Max(0,delta);scene.status.Timer(remaining);
         if(animate)scene.model.Animate(0,0,false);scene.status.Sample();C(scene.status.Remaining==remaining,"visual never modifies granted control timer");
@@ -87,7 +87,7 @@ public static class EnemyKnockdownProductionTests
         {
             var s=Create();s.model.Attack(EnemyPosePhase.Windup,.8f);Frame(s,0);var attacking=s.model.Snapshot();
             s.model.Recoil(Vector3.forward,1);Time.frameCount++;s.model.Animate(0,.8f,true);var recoilPose=s.model.Snapshot();s.status.Sample();
-            C(s.model.DownWeight==0&&Same(attacking,recoilPose)&&Same(recoilPose,s.model.Snapshot()),"ordinary hurt never fakes interruption or replaces attack joints");
+            C(s.model.DownWeight==0&&Same(attacking.Take(12).ToArray(),recoilPose.Take(12).ToArray())&&Same(recoilPose,s.model.Snapshot()),"ordinary hurt never fakes interruption or replaces attack joints");
             C(s.model.transform.localPosition.z>0,"ordinary recoil remains additive");
         }
         foreach(bool boss in new[]{false,true})
