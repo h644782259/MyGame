@@ -1,6 +1,6 @@
 # Forty-slot visual coverage closure — F6
 
-Baseline: PR35 `0daa0f2dec8b53f695888032e3972b24a8145773`. This finite audit covers the existing four classes × ten slots, shared ordinary projectiles, real status channels, fields and existing bosses. It does not create new skills, speculative passive casts or forty duplicate meshes. F6 does not edit `CombatEffects.cs`; ordinary projectile bodies, meteor kernel and Neutral trap primary belong to the parallel F5 branch. Rows identify that dependency explicitly rather than claiming it is present at this commit.
+Integrated runtime snapshot: Windows `8659466c3a0f9bbc00915b97d9405d40cc3ed939` (F1–F6 together), after the PR35 `0daa0f2` review baseline. The finite scope is the existing four classes × ten slots, ordinary projectiles, real status channels, fields and existing bosses. It creates no new skill or speculative passive cast. F1 class/companion, F2 enemy/anchor and F5 projectile/meteor/trap implementations are now present at the actual factories; they are no longer future dependencies. This document closes source routing classification, not engine acceptance. The combined integration checks and full aggregate are pending parent validation at this documentation freeze.
 
 **Acceptance boundary:** actual production control flow + authored bytes execute in managed Unity doubles; exported mesh samples are rendered by Blender. This is not Unity import/rendering, real shader, player footage or device performance acceptance. “Retain” means a named, connected existing presentation is intentionally preserved with the listed regression evidence. It does not mean every rank/pose/camera was inspected in Unity.
 
@@ -20,7 +20,7 @@ Persistent Protection alone uses the same Cage with a body-envelope minimum widt
 - **S** `SummonerSpell.Cast/Update` owns impulse, thorn area, contract spawn and gravity target/tick/finisher. `SummonedCompanion.CastContract` owns actual partner success.
 - **C** `CombatArea` uses authoritative startup/tick/finish schedule and `SkillVisualRecipe`; **B** `CombatProjectile` owns launch, movement, collision and volley receipts. These remain unchanged by F6.
 - **V** `FilledSkillVfx`/`BlenderSkillVfx` provide actual authored geometry; dynamic `CombatSight` clipping remains authoritative. Pool generation/lease priorities and confirmed-finales contract remain.
-- **D** new `DefenseIdentityProductionTests`: extracts the *actual* three guard blocks and entire `TryDefensePassive`; runs Protection → Rune → Charge → real bytes → real lease/pool. Covers 3 guards×3 ranks, 4 passives, unlearned/cooldown rejection, refresh/reapply/independent channels/follow, pause/zero delta, early end, death/epoch, immediate lease release, detached same-frame re-rent and missing-asset fallback. Two compiled negative controls reject missing identity or ignored state.
+- **D** new `DefenseIdentityProductionTests`: extracts the *actual* three guard blocks and entire `TryDefensePassive`; runs Protection → Rune → Charge → real bytes → real lease/pool. Covers 3 guards×3 ranks, 4 passives, unlearned/cooldown rejection, refresh/reapply/independent channels/follow, pause/zero delta, early end, death/epoch, immediate lease release, detached same-frame re-rent and missing-asset fallback. Three compiled negative controls reject missing identity, missing body envelope or ignored state.
 - **T** `StatusFeedbackProductionTests`: actual basic-hit/status/aura chain and real tick/receipt rules; consume/reapply, Burn/Frost feedback, paused wall-time, owner-epoch invalidation, death. `BurnFinaleProductionTests` retains existing due-drain/claim/delivery/no-double-tick checks.
 - **I** existing `AuthoredSpellIntegrationTests`, `SkillIdentityCallsiteProductionTests`, `DenseFinaleProductionTests`: loaded identity, cover/low-tier budget, true health-loss lightning/contract endpoint and actual heal/charge event paths. `ArrowBatchGenerationProductionTests` guards stale pooled handles; `PlayerFinaleTailProductionTests` guards finale/tail identity separation.
 - **R** existing `SkillDamageBudgetTests`, `CombatTimingSourceTests`, skill/target/traversal tests verify existing rank budgets and source contracts. Source-only assertions are not mislabeled as executed visual/player tests.
@@ -42,8 +42,8 @@ Preparation means existing aim/charge/activation cue where applicable; it never 
 |Vanguard 7|大地崩裂|A case7 actual travelling fault points → beam/falling-blade/HitArea/launch; final burst then retire|Retain dynamic fault point schedule and authored impact; I/R|
 |Vanguard 8|不屈意志|No active cast; actual low-health/rank/cooldown gate → ProtectionCage; passiveTime end/retrigger retires|**Fixed true-trigger identity**, D; no invented cast|
 |Vanguard 9|终焉裁决|A case9 main judgment first → actual sword array beats; registered finale/independent tail retirement|Retain existing main/secondary ordering and protection priority; I/R|
-|Arcanist 0|冰霜新星|P → C IcePrimary impact/echo; rank3 B shards; actual frost/Burn specialization control path unchanged|Retain primary; shard body dependency F5; I/T/R|
-|Arcanist 1|陨星术|P → C original .7/1.1 startup and falling weathered-rock body → FirePrimary impact/aftermath; C ends|Retain scheduling/fire body; meteor-kernel refinement dependency F5 (baseline already WeatheredRock); I/T/R|
+|Arcanist 0|冰霜新星|P → C IcePrimary impact/echo; rank3 B shards; actual frost/Burn specialization control path unchanged|Retain primary; shard body integrated via F5 CasterBolt; I/T/R|
+|Arcanist 1|陨星术|P → C original .7/1.1 startup and falling weathered-rock body → FirePrimary impact/aftermath; C ends|Retain scheduling/fire body; F5 MeteorRock kernel integrated (baseline already WeatheredRock); I/T/R|
 |Arcanist 2|奥术风暴|P → C Lightning scheduled pulse/finisher using existing lightning identity; C end|Retain connected fork/lightning body, cover and budgets; I/R|
 |Arcanist 3|奥能亲和|Passive stats, no cast or visual timer|Retain no-cast rule; P/IsPassive/R|
 |Arcanist 4|雷霆锁链|A ChainLightning actual targets/dynamic links; endpoint ForkPulse only after actual health decrease; short contacts retire|Retain E03 true contacts; I executed callsite|
@@ -52,26 +52,26 @@ Preparation means existing aim/charge/activation cue where applicable; it never 
 |Arcanist 7|虚空漩涡|A case7 accepted target/real pull → existing Arcane lattice/strut impacts; sequence/tail ownership ends|Retain dynamic pull and existing lattice (procedural intentional mesh); I/R|
 |Arcanist 8|法力屏障|No active cast; real defense trigger → ProtectionCage, actual energy/control branch unchanged; passiveTime end|**Fixed true-trigger identity**, D|
 |Arcanist 9|天灾终章|A case9 actual specialization/beat selects ice/fire recipe; real final settlement confirms finale; tail separate|Retain alternating/type-true identity and burn settlement; I/T/R|
-|Ranger 0|扇形箭|P actual fan directions → B ordinary arrows/volley budget; collision/lifetime ends each shot|Retain actual directions/timing; authored ordinary ArrowBody dependency F5 (ArrowRain is separate); R|
-|Ranger 1|震荡陷阱|P → C Neutral startup/echo/control; original area end|**F5 shared Neutral trap primary dependency**; F6 does not claim old generic presentation complete; R|
+|Ranger 0|扇形箭|P actual fan directions → B ordinary arrows/volley budget; collision/lifetime ends each shot|Retain actual directions/timing; F5 authored ordinary ArrowBody integrated (ArrowRain is separate); R|
+|Ranger 1|震荡陷阱|P → C Neutral startup/echo/control; original area end|**F5 TrapCore integrated** at first Neutral/statusSkill1/startup>0 preparation; no second rank2 fake trap; R|
 |Ranger 2|天幕箭雨|P → C ArrowRain actual beats → authored synchronized arrows; area/arrow batch ends|Retain existing arrow timing, low-tier/cover; I/R|
 |Ranger 3|弱点洞察|Passive stats, no cast|Retain no-cast rule; P/IsPassive/R|
-|Ranger 4|逐风步|A case4 accepted backdash/mobility → B follow-up arrows and existing optional tail; timers end|Retain dynamic movement; ordinary arrow body dependency F5; R|
+|Ranger 4|逐风步|A case4 accepted backdash/mobility → B follow-up arrows and existing optional tail; timers end|Retain dynamic movement; F5 ordinary ArrowBody integrated; R|
 |Ranger 5|毒蔓牢笼|A case5 → C Poison/Vine scheduled damage and optional finale; real poison aura cleared on consume/state end|Retain authored vine/field, **fixed aura state lifetime**; T/I/R|
 |Ranger 6|森林祈愿|A Healing real recovery beats → existing ProtectionCage contact; event ends|Retain actual healing path; I|
-|Ranger 7|幻影连射|A case7 actual locked target/accepted muzzle → B scheduled piercing/homing arrows; target mark on real hit; volley ends|Retain actual mark/shot dispatch; ordinary arrow body dependency F5; R|
+|Ranger 7|幻影连射|A case7 actual locked target/accepted muzzle → B scheduled piercing/homing arrows; target mark on real hit; volley ends|Retain actual mark/shot dispatch; F5 ordinary ArrowBody integrated; R|
 |Ranger 8|灵风庇佑|No active cast; actual defense trigger → ProtectionCage; invulnerability/speed stays original; passiveTime end|**Fixed true-trigger identity**, D|
-|Ranger 9|万箭归星|A case9 generation-safe ArrowBatch actual beats/final impact + rank3 ordinary radial B; retire/tail separate|Retain pooled generation/finale chain; F5 ordinary radial body dependency; I/R|
+|Ranger 9|万箭归星|A case9 generation-safe ArrowBatch actual beats/final impact + rank3 ordinary radial B; retire/tail separate|Retain pooled generation/finale chain; F5 ordinary radial ArrowBody integrated; I/R|
 |Summoner 0|灵能冲击|S release ContractSigil; additional endpoint only after actual health loss; short contacts retire|Retain actual release/contact distinction; I|
 |Summoner 1|荆棘牢笼|S → C Poison recipe/Vine from ThornStartup/Duration/Interval; original control and area end|Retain vine structural family with existing class tint/status semantics; no claim poison DOT inferred solely from recipe; I/R|
-|Summoner 2|灵狼契约|S → CastContract Wolf; summon impact only if actual partner exists; separate companion lifecycle|Retain actual contract success/ownership; I and companion production tests; appearance F1|
+|Summoner 2|灵狼契约|S → CastContract Wolf; summon impact only if actual partner exists; separate companion lifecycle|Retain actual contract success/ownership; I and companion production tests; existing WolfV2 appearance retained|
 |Summoner 3|灵魂共鸣|Passive stats, no cast|Retain no-cast rule; P/IsPassive/R|
-|Summoner 4|星灵契约|S → actual Spirit partner spawn; companion real attacks use B; summon event ends, partner persists|Retain contract success; ordinary ContractBolt dependency F5, appearance F1|
+|Summoner 4|星灵契约|S → actual Spirit partner spawn; companion real attacks use B; summon event ends, partner persists|Retain contract success; F5 ordinary ContractBolt integrated, appearance integrated F1|
 |Summoner 5|灵魂护盾|P true guard → ProtectionCage; existing guard/share semantics; real guardTime ends visual|**Fixed state-bound identity**, D|
 |Summoner 6|回春共鸣|S → A Healing actual owner/partner recovery beats → ProtectionCage event; event ends|Retain real healing/partner dispatch; I|
 |Summoner 7|引力印记|S fixed accepted point/default preparation + actual pull/tick traversal; finisher after drained scheduled targets → Summon/ContractSigil impact; retire|Retain dynamic target/tick/finisher ownership; generic preparation is decorative fallback, not a missing damage identity; I/R|
 |Summoner 8|灵体庇护|No active cast; actual defense rank/cooldown trigger → ProtectionCage; passiveTime/epoch/death clears|**Fixed true-trigger identity**, D|
-|Summoner 9|远古树灵|S → actual Treant partner success → Summon impact; independent partner state|Retain contract/partner ownership; complete appearance F1, no new summon timing; I|
+|Summoner 9|远古树灵|S → actual Treant partner success → Summon impact; independent partner state|Retain contract/partner ownership; complete appearance integrated F1, no new summon timing; I|
 
 ## Sustained states and fields
 
@@ -82,17 +82,17 @@ Preparation means existing aim/charge/activation cue where applicable; it never 
 |Mark / Slow|Real `markTime/slowTime` and their gameplay multipliers; Summary current-target text|Retain explicit actual-state HUD; don't infer arbitrary color or add misleading permanent cast|
 |Knockdown / Airborne|Real control clocks → existing E04 actual pose / airborne transform|Retain existing production rig/floor tests, not a new aura|
 |Steel / Ice / Fire / Lightning / Spirit / ArrowRain / Poison fields|Actual `CombatArea` recipe and schedule → existing connected Filled/Elemental presentation|Retain loaded meshes and intentional dynamic composition; I covers actual resource/fallback/cover/low tier, R covers budgets. Ordinary actor status has separate ownership from area and burst tails|
-|Neutral trap|Actual Ranger1 C recipe had marker/generic feedback without filled primary|F5 owns the finite missing-primary repair; do not change its radius/startup here|
+|Neutral trap|Actual Ranger1 C recipe had marker/generic feedback without filled primary|F5 repair is integrated: `CombatArea.Spawn` → `AuthoredTrapVisual.Create`, clipped optional TrapCore, released at the original age>=delay; Decoration lease cap retained|
 
 ## Existing bosses — intentional runtime identity retained
 
 - Guardian normal/boss model + hammer/crown differences remain; `EnemyController` attack selection and `EnemyAttackTelegraph.Circle/Charge/Fan` draw the actual warning and confirmed attack shape. Shared decorative mesh upgrades do not alter warning radius or hit timing.
 - Large expedition `LargeBossRig` has distinct astrolabe chassis, core, opening petals and aim-aligned beam emitter. `LargeExpeditionBoss.DrawBeam/ClipBeam/BeamContains` remain dynamic authoritative beam/cover, interrupt symbol and timing arc. No offline replacement of danger contours.
 - Actual power anchors and live mask own core exposed/depowered feedback. `LargeBossRig.Shutdown` / `LargeBossShutdownVisual` own shutdown, not an unrelated generic explosion. Existing motion/sweep/shutdown production suites are retained.
-- No separate mesh work is justified in F6 merely to increase file counts. Candidate model/anchor refinement is the finite F2 owner, and ordinary hostile projectile identity is F5. F6 changes neither damage nor boss states.
+- No separate mesh work is justified in F6 merely to increase file counts. F2 is integrated through `EnemySilhouetteArt.ApplyEnemy` and `ApplyAnchors`; the latter runs on actual `LargeExpeditionBoss.CreateAnchors` while leaving placement/state intact. F5 `CombatProjectile.Hostile` explicitly selects HostileBolt through `Make` → `AuthoredProjectileMeshes.Load`. F6 changes neither damage nor boss states.
 
 ## Deliverables and acceptance
 
 `ArtSource/DefenseIdentity/production.log`, `status.log`, `Runtime-Samples.json`, `Defense-Actual-Construction.png`, `preview.py` and README provide new hookup evidence and reproduction. Existing identity `.blend`/builder/source manifests remain authoritative; zero incremental asset bytes outside evidence. Targeted production regressions and three-platform API compilation are recorded separately and pass. The aggregate raw log is intentionally incomplete: the parent owns one consolidated full run. None is engine verification.
 
-The forty rows above close classification for all existing slots at this branch. External F1/F2/F5 work is explicitly assigned and must be resolved when assembling the full upgrade; it is not silently treated as shipped in F6. Unity import/material appearance, gameplay-camera readability and Windows/iOS device performance remain acceptance tasks. Android receives synchronized source only through parent workflow. No video is generated.
+The forty rows above close classification for all existing slots at this branch. F1 is integrated through `CombatModel.Part` → `ActorSilhouetteF1.Apply` with explicit treant-only generic roles and rigid Spirit wing parenting. F2 enemy/anchor and F5 projectile/trap routing are integrated as recorded above. Dedicated branch evidence lives in `ArtSource/ActorSilhouettes/F1`, `ArtSource/EnemySilhouettes` and `ArtSource/BlenderProjectiles`; it does not substitute for the still-pending parent combined full aggregate. Unity import/material appearance, gameplay-camera readability and Windows/iOS device performance remain acceptance tasks. Android receives synchronized source only through parent workflow. No video is generated.

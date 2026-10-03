@@ -1,0 +1,12 @@
+READ-ONLY FINAL INVENTORY AUDIT
+Windows runtime source 8659466c3a0f9bbc00915b97d9405d40cc3ed939
+Windows original baseline 25096ba7dbf6e9d7ba9463ec29104c2c462da426
+PASS all 124 recorded current Resources payload SHA-256 and byte lengths match actual worktree files
+PASS 112 added Resources / 1094536 source bytes / 111 meshes / 11866 unique source triangles / 1 animation-data file
+PASS Windows/iOS added art resource+meta parity; only five original font paths differ
+PASS Windows integrated snapshot 8659466c3a0f9bbc00915b97d9405d40cc3ed939 preserved 306 baseline GUIDs; 0 changed/missing/duplicate
+PASS iOS current checkout snapshot 2b2469d3a6ed3da5d622bd95127219da54268dd4 preserved 309 baseline GUIDs; 0 changed/missing/duplicate
+PASS 40 existing skill classification rows; no unchecked production candidate in finite checklist
+No production, tests or tools edited by this audit.
+Combined integration regression/full aggregate pending parent validation.
+Not Unity engine, packaging, imported-memory, GPU, FPS or device acceptance.
