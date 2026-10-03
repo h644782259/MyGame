@@ -127,14 +127,18 @@ namespace Emberfall
             foreach(var tactic in RunChoices.Active)chapterRetryTactic=tactic;
             UpdateTimeScale();Notify(ChapterDefinition.Get(receipt.Node).Story+" · "+ChapterObjectiveStatus);return true;
         }
+        private ThreatAdmissionPolicy chapterThreatAdmission;
         private void ResetChapterRun()
         {
+            if(chapterThreatAdmission!=null)chapterThreatAdmission.Reset();chapterThreatAdmission=null;
             if(ChapterRun!=null)ChapterRun.Fail();ChapterRun=null;chapterReceipt=null;chapterPlan=null;ChapterResult=null;chapterBossDeathFrame=-1;chapterResultSkipped=false;
             chapterEnemies.Clear();chapterSupplier=null;chapterExit=chapterObjective=null;chapterObjectives[0]=chapterObjectives[1]=null;chapterFirstSealSeconds=chapterSecondSealSeconds=0;
             if(Progression!=null)Progression.CancelChapterRun();
         }
         private void BeginChapterRoom()
         {
+            if(chapterThreatAdmission!=null)chapterThreatAdmission.Reset();
+            chapterThreatAdmission=ThreatAdmissionPolicy.IsPilot(ChapterActive,(int)ActiveChapterNode,(int)ActiveChapterDifficulty,ChapterRoomIndex)?new ThreatAdmissionPolicy(ChapterSeed):null;
             ChapterRun.BindRoom(Player.CombatEpoch);chapterEnemies.Clear();chapterSupplier=null;
             DungeonWave=ChapterRoomIndex+1;wavePopulation=Mathf.Max(1,ChapterRun.EnemyCount);objectiveHealedThisWave=false;
             chapterExit=WorldBuilder.MakeLootBeacon(chapterPlan.Exit,new Color(.25f,.8f,1));chapterExit.transform.SetParent(world.transform,true);chapterExit.SetActive(ChapterRun.DoorUnlocked);
@@ -163,6 +167,8 @@ namespace Emberfall
                     !WorldTraversal.CanReach(chapterPlan.Entrance,point,radius)||!ChapterRun.Register(ChapterRoomIndex,Player.CombatEpoch,index))
                 {FailChapter("房间 "+(ChapterRoomIndex+1)+"：敌人 #"+index+" 生成/可达性登记失败");return;}
                 occupied.Add(point);SpawnEnemy(kind,DungeonEntryLevel,point,boss);var enemy=Enemies[Enemies.Count-1];
+                if(chapterThreatAdmission!=null&&index<4&&!boss&&(kind==EnemyKind.Guardian||kind==EnemyKind.Wisp))
+                    enemy.ConfigureThreatAdmission(chapterThreatAdmission,index);
                 chapterEnemies.Add(enemy,new ChapterEnemyReceipt{Run=ChapterRun,Room=ChapterRoomIndex,Epoch=Player.CombatEpoch,Index=index});
                 if(!Progression.RegisterChapterEnemy(chapterReceipt,ChapterRoomIndex,index,boss))
                 {FailChapter("房间 "+(ChapterRoomIndex+1)+"：敌人 #"+index+" 经验预算登记失败");return;}
@@ -195,7 +201,9 @@ namespace Emberfall
         }
         private void TickChapterRun()
         {
-            if(!ChapterActive||ChapterFinished||InputBlocked||Player==null)return;
+            if(!ChapterActive||ChapterFinished||InputBlocked||Player==null)
+            {if(chapterThreatAdmission!=null){if(!ChapterActive||ChapterFinished)chapterThreatAdmission.Reset();else chapterThreatAdmission.Advance(0,true);}return;}
+            if(chapterThreatAdmission!=null)chapterThreatAdmission.Advance(Time.deltaTime);
             if(chapterObjective!=null&&!ChapterRun.DoorUnlocked)
             {
                 if(ChapterRun.Objective==RoomObjective.Purify)

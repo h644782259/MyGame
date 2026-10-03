@@ -140,6 +140,7 @@ namespace Emberfall
         private int skillIndex = -1, castId;
         private ProjectileVolleyBudget<EnemyController> volley;
         private string damageSource = "敌方弹幕";
+        private System.Action hostileEnded;
         private GameSession session;
         private PlayerController owner;
         private PlayerController playerGeneration;
@@ -239,7 +240,7 @@ namespace Emberfall
             if (CombatReviewEvents.Enabled) CombatReviewEvents.Emit("projectilelaunch",CombatReviewObjectId.Get(player),selected==null?"0":CombatReviewObjectId.Get(selected),detail:CombatReviewObjectId.Get(projectile).ToString());
         }
 
-        public static void Hostile(GameSession game, Vector3 at, Vector3 forward, float amount, float velocity = 8f, string sourceName = "敌方弹幕")
+        public static void Hostile(GameSession game, Vector3 at, Vector3 forward, float amount, float velocity = 8f, string sourceName = "敌方弹幕", System.Action onEnded = null)
         {
             CombatProjectile projectile = Make(at, forward, new Color(1f,.31f,.48f), false,"HostileBolt");
             projectile.session = game;
@@ -247,6 +248,7 @@ namespace Emberfall
             projectile.epoch = game.Player.CombatEpoch;
             projectile.hostile = true;
             projectile.damageSource = sourceName;
+            projectile.hostileEnded = onEnded;
             projectile.damage = amount;
             projectile.speed = velocity;
             projectile.lifetime = 3f;
@@ -440,8 +442,12 @@ namespace Emberfall
             if (Mathf.Abs(transform.position.x) > bound || Mathf.Abs(transform.position.z) > bound) Destroy(gameObject);
         }
 
+        private void OnDisable()
+        {var ended=hostileEnded;hostileEnded=null;if(ended!=null)ended();}
+
         private void OnDestroy()
         {
+            OnDisable();
             if (!hostile && owner != null && CombatReviewEvents.Enabled) CombatReviewEvents.Emit("projectileend",CombatReviewObjectId.Get(owner),skill:skillIndex,detail:CombatReviewObjectId.Get(this)+":"+terminationReason+":hits="+hitTargets.Count);
             hostileProjectiles.Remove(this);
             if (bodyMaterial != null) Destroy(bodyMaterial);

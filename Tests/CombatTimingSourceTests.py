@@ -11,9 +11,9 @@ enemy=read('Combat/EnemyController.cs');status=read('Combat/EnemyStatusEffects.c
 spell=read('Combat/SummonerSpell.cs');charge=read('Combat/SkillChargeController.cs');player=read('Combat/PlayerController.cs')
 allfx=read('Combat/CombatEffects.cs');area=allfx[allfx.index('internal sealed class CombatArea'):]
 check('advanceBudget.Advance(dt, distance' in enemy and '!advanceBudget.FallbackActive' in enemy,'boss post-fan range gate has bounded approach and arena-pattern fallback')
-prepare=enemy[enemy.index('private void PrepareAttack'):enemy.index('private float ImpactRadius')]
+prepare=enemy[enemy.index('private bool PrepareAttack'):enemy.index('private float ImpactRadius')]
 check('advanceBudget.Reset();' in prepare,'every real new attack resets its own approach budget')
-select=enemy[enemy.index('private BossAttackPolicy.Move SelectBossMove'):enemy.index('private void BeginAttack')]
+select=enemy[enemy.index('private BossAttackPolicy.Move SelectBossMove'):enemy.index('private bool BeginAttack')]
 check('BossAttackPolicy.LegalFallback(selected, distance, advanceBudget.FallbackActive,' in select and 'CanUseBossAttack(BossAttackPolicy.Move.Fan, target)' in select,'expired chase resolves to an actually visible ranged attack, including the anti-repeat charge band')
 check('AdventureResultPolicy.AcceptsDamage(session.HasStarted,session.CombatEnded)' in enemy,'late ordinary-dungeon and mode damage are terminal guarded')
 statusUpdate=status[status.index('private void Update()'):status.index('private void LateUpdate()')]
