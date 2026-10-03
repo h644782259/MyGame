@@ -7,7 +7,13 @@ namespace Emberfall
 {
     public sealed partial class CombatModel
     {
+        // Construction/equipment suite deliberately disables optional pose art.
+        // It preserves the real factory call; VanguardActionsProductionTests owns
+        // the actual library selection, decode and pose-adapter checks.
+        private void ConfigureVanguardArt() {}
         private bool pilotHasGear, pilotHasFashion, pilotVisible;
+        private void InvalidatePilotRendererGroup() {} // No display cache in this disabled-feature boundary.
+        private void ReleasePilotRendererGroup() {} // No display cache resources in this boundary.
         private BlenderPilotVisual blenderPilot;
         private static bool PilotStarterCompatible(ItemData item,ItemSlot slot) { return false; }
         private void ConfigureBlenderPilot() { blenderPilot=null;pilotVisible=false; }

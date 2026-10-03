@@ -5,6 +5,7 @@ from pathlib import Path
 root=Path(__file__).resolve().parents[1];dotnet=sys.argv[1] if len(sys.argv)>1 else os.environ.get('DOTNET','dotnet')
 with tempfile.TemporaryDirectory(prefix='preview-presentation-') as directory:
  p=Path(directory)
+ (p/'RendererGroupCache.cs').write_text((root/'Assets/Scripts/Core/RendererGroupCache.cs').read_text())
  for name in ['CollectionModelPreview','CollectionPreviewState','CollectionPreviewComposition']:(p/(name+'.cs')).write_text((root/'Assets/Scripts/UI'/(name+'.cs')).read_text())
  for name in ['CollectionRenderLifecycleTests','CollectionPreviewCompositionTests']:(p/(name+'.cs')).write_text((root/'Tests'/(name+'.cs')).read_text())
  (p/'Program.cs').write_text('System.Console.WriteLine(CollectionRenderLifecycleTests.Run());System.Console.WriteLine(CollectionPreviewCompositionTests.Run());');project=p/'Test.csproj';project.write_text('<Project Sdk="Microsoft.NET.Sdk"><PropertyGroup><TargetFramework>net8.0</TargetFramework><OutputType>Exe</OutputType></PropertyGroup></Project>');(p/'NuGet.Config').write_text('<configuration><packageSources><clear /></packageSources></configuration>')
@@ -14,3 +15,11 @@ with tempfile.TemporaryDirectory(prefix='preview-presentation-') as directory:
   assert original.count(before)==1;source.write_text(original.replace(before,after));subprocess.run([dotnet,'build',str(project),'--no-restore','-v:q'],env=env,check=True,stdout=subprocess.DEVNULL)
   result=subprocess.run(cmd+['--no-build'],env=env,capture_output=True,text=True);assert result.returncode and 'System.Exception: '+expected in result.stdout+result.stderr,result.stdout+result.stderr
  print('PASS: four compiled imported-group/presentation-action/cached-envelope negative controls fail exact host assertions')
+
+ # Missing hierarchy notifications must invalidate the actual host/cache regression.
+ source.write_text(original)
+ cache=p/'RendererGroupCache.cs';cache.write_text(cache.read_text().replace('foreach(var owner in owners.ToArray())owner.Invalidate();',''))
+ subprocess.run([dotnet,'build',str(project),'--no-restore','-v:q'],env=env,check=True,stdout=subprocess.DEVNULL)
+ result=subprocess.run(cmd+['--no-build'],env=env,capture_output=True,text=True)
+ assert result.returncode and 'hierarchy addition invalidates actual preview membership and texture' in result.stdout+result.stderr,result.stdout+result.stderr
+ print('PASS: missing hierarchy cache notification rejected by actual preview host')

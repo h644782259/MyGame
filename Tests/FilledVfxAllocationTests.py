@@ -19,7 +19,7 @@ with tempfile.TemporaryDirectory(prefix='emberfall-filled-vfx-') as temp:
     command=[dotnet,'run','--project',str(project),'--no-restore','-c','Release']
     subprocess.run(command,check=True)
     # Move actual primary Add calls after ornaments. This restores the defective mobile allocation order.
-    start=source.index('        public static void Impact(');end=source.index('        internal static FilledSkillVfx BeginArrowBatch(',start)
+    start=source.index('        public static void Impact(');end=source.index('        internal static ArrowBatchHandle BeginArrowBatch(',start)
     impact=source[start:end];calls=[]
     for marker in ['fx.Add(rupture,Vector3.up*.07f','fx.Add(main,Vector3.zero','fx.Add(rupture,Vector3.up*.11f']:
         begin=impact.index(marker);finish=impact.index(';',begin)+1;calls.append(impact[begin:finish]);impact=impact[:begin]+impact[finish:]

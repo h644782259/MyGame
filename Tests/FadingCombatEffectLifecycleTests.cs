@@ -86,6 +86,7 @@ namespace UnityEngine
     public class GameObject:Object
     {
         public bool activeSelf=true,PendingDestroy;public Transform transform=new Transform();readonly List<Component> components=new List<Component>();
+        public T GetComponent<T>()where T:Component{foreach(var c in components)if(c is T value)return value;return null;}
         public T AddComponent<T>()where T:Component,new(){var c=new T{gameObject=this};components.Add(c);Invoke(c,"OnEnable");return c;}
         static void Invoke(Component c,string name){c.GetType().GetMethod(name,BindingFlags.Instance|BindingFlags.NonPublic)?.Invoke(c,null);}
         public void Call(string name){foreach(var c in components)Invoke(c,name);}

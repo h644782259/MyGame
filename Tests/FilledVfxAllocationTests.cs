@@ -88,7 +88,7 @@ public static class FilledVfxAllocationTests
 namespace Emberfall
 {
     // Resource boundary for legacy procedural allocation tests; authored success is tested separately.
-    internal static class AuthoredSpellBases { internal static UnityEngine.Mesh Load(string name){return null;} }
+    internal static class AuthoredSpellBases { internal static UnityEngine.Mesh Load(string name){return null;} internal static UnityEngine.Mesh Identity(string name){return null;} }
     public sealed class PlayerController:MonoBehaviour{public bool IsDead;public int CombatEpoch;}
     public sealed class GameSession{public static GameSession Instance;public PlayerController Player;public bool HasStarted,ModeFinished,InputBlocked;}
     public static class EffectPreferences{public static bool ReducedEffects;public static float EffectsScale=1;}

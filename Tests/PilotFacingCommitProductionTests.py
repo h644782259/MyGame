@@ -26,7 +26,7 @@ fixture=fixture.replace('public static Vector3 zero=>','public static Vector3 op
 fixture=fixture.replace('public static Quaternion Inverse(', 'public static Quaternion LookRotation(Vector3 v)=>Euler(0,(float)(Math.Atan2(v.x,v.z)*180/Math.PI),0);public static Quaternion RotateTowards(Quaternion a,Quaternion b,float max)=>b;public static Quaternion Inverse(')
 with tempfile.TemporaryDirectory(prefix='pilot-facing-') as tmp:
  p=Path(tmp)
- for f in ['Combat/BlenderPilotVisual','Combat/CombatModel.BlenderPilot','Combat/CombatModel.WeaponRig','Core/BlenderPilotPosePolicy','Core/BasicActionTimeline','Core/SkillDamageBudgets','Core/CombatBalance','Core/WeaponStructure','Core/LocomotionPoseState']:(p/(Path(f).name+'.cs')).write_text((r/('Assets/Scripts/'+f+'.cs')).read_text())
+ for f in ['Combat/BlenderPilotVisual','Combat/CombatModel.BlenderPilot','Combat/CombatModel.WeaponRig','Core/RendererGroupCache','Core/BlenderPilotPosePolicy','Core/BasicActionTimeline','Core/SkillDamageBudgets','Core/CombatBalance','Core/WeaponStructure','Core/LocomotionPoseState']:(p/(Path(f).name+'.cs')).write_text((r/('Assets/Scripts/'+f+'.cs')).read_text())
  for name in ['BlenderPilotLayerProductionFixture.cs','BlenderPilotReadinessTests.cs','PilotFacingCommitProductionFixture.cs']:(p/name).write_text((r/'Tests'/name).read_text())
  (p/'Fixture.cs').write_text(fixture)
  types=''.join(member((r/'Assets/Scripts/Core/GameTypes.cs').read_text(),s) for s in ['public enum EnemyKind','public enum FashionSlot','public enum ItemSlot','public enum Rarity','public enum EquipmentMechanic','public class ItemData'])

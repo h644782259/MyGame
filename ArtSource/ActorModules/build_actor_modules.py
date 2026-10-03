@@ -2,7 +2,7 @@
 Run from any cwd: blender -b --factory-startup --python <this-file>.
 Blender mesh source -> little-endian Unity-axis .bytes, no runtime topology recipe.
 """
-import bpy, math, struct, json, hashlib
+import bpy, bmesh, math, struct, json, hashlib
 from pathlib import Path
 from mathutils import Vector
 ROOT=Path(__file__).resolve().parents[2]
@@ -45,9 +45,23 @@ rings('Pauldron',[(-.5,.28,.28,0),(-.32,.48,.40,0),(-.20,.50,.48,0),(.04,.47,.48
 rings('Helmet',[(-.5,.34,.40,.03),(-.34,.47,.47,.03),(.10,.5,.5,0),(.35,.39,.41,0),(.5,.17,.23,-.03)],12)
 # Boots and paws show a forward toe and pronounced narrow ankle.
 rings('Boot',[(-.5,.44,.50,0),(-.35,.50,.50,0),(-.16,.44,.43,.01),(.02,.34,.26,-.15),(.5,.29,.24,-.15)],8)
-rings('WolfHead',[(-.5,.24,.35,.05),(-.18,.43,.49,.01),(.13,.5,.41,-.10),(.40,.38,.30,-.15),(.5,.18,.18,-.14)],4,angular=math.pi/4)
-rings('WolfTorso',[(-1,.15,.18,0),(-.7,.5,.5,0),(-.25,.46,.44,0),(.35,.48,.47,0),(.75,.5,.5,0),(1,.17,.18,0)],12,height=2)
-rings('Paw',[(-1,.34,.43,.08),(-.8,.50,.50,.04),(-.35,.36,.34,0),(.4,.36,.36,-.02),(1,.50,.48,0)],8,height=2)
+# Wolf silhouette v2: longitudinal skull, tapered muzzle and pointed ears.
+# All original sockets and capsule/cube envelopes retained; only wolf geometry changes.
+def wolf_longitudinal(name,rows,sides=8):
+    o=rings(name,rows,sides)
+    # longitudinal ring axis y becomes forward z; previous z becomes vertical y.
+    for v in o.data.vertices:
+        y,z=v.co.z,-v.co.y;v.co.z=z;v.co.y=-y
+    bm=bmesh.new();bm.from_mesh(o.data);bmesh.ops.recalc_face_normals(bm,faces=list(bm.faces));bm.to_mesh(o.data);bm.free();o.data.update()
+    return o
+wolf_longitudinal('WolfHead',[(-.5,.20,.23,.04),(-.31,.43,.43,.03),(-.02,.5,.49,0),(.24,.38,.36,-.06),(.5,.22,.18,-.14)],10)
+rings('WolfTorso',[(-1,.17,.19,0),(-.8,.40,.41,0),(-.47,.45,.47,0),(-.12,.32,.33,.06),(.20,.41,.45,.015),(.56,.5,.5,0),(.83,.40,.48,-.04),(1,.23,.30,-.05)],12,height=2)
+# Lower leg narrows at ankle; forward toe and broad shoulder produce a real four-leg silhouette.
+rings('Paw',[(-1,.40,.48,.06),(-.80,.48,.5,.055),(-.60,.26,.32,-.07),(-.20,.23,.24,-.12),(.2,.37,.30,-.11),(.62,.5,.42,-.02),(1,.44,.43,0)],8,height=2)
+rings('WolfHindLeg',[(-1,.36,.49,.04),(-.8,.46,.5,.04),(-.59,.23,.28,-.1),(-.26,.24,.24,-.14),(.10,.43,.40,.015),(.51,.5,.5,.05),(1,.38,.43,0)],8,height=2)
+wolf_longitudinal('WolfMuzzle',[(-.5,.49,.42,0),(-.27,.5,.5,0),(.15,.39,.33,-.04),(.5,.23,.21,-.03)],8)
+rings('WolfEar',[(-.5,.43,.42,0),(-.20,.5,.5,0),(.05,.39,.32,0),(.50,.015,.035,-.04)],4,angular=math.pi/4)
+rings('WolfTail',[(-1,.045,.045,0),(-.60,.24,.31,0),(-.13,.5,.5,0),(.36,.43,.40,0),(1,.20,.23,0)],8,height=2)
 # Hand-cut gem silhouette instead of round orb; top/bottom retain socket centre.
 rings('SpiritCore',[(-.5,.035,.035,0),(-.30,.27,.27,0),(.02,.50,.50,0),(.26,.36,.36,0),(.5,.06,.06,0)],8)
 # Low irregular gelatin shoulders; bottom remains flattened at original floor envelope.
