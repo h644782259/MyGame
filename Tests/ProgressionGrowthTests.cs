@@ -31,7 +31,7 @@ public static class ProgressionGrowthTests
             bool enhanced=rank==20; var core=new MasteryCoreRuntime();
             core.Configure((int)MasteryType.Offense,rank);
             Check(core.BasicHit()==0&&core.PerfectDodge()==0&&core.DamageTaken(.1f)==0&&core.SkillSpent(120).Energy==0,"offense only follows combo events");
-            core.SkillHit(1);Check(Near(core.BasicHit(),enhanced?.35f:.2f)&&core.BasicHit()==0,"skill arms one confirmed basic follow-up");
+            core.SkillHit(1);Check(Near(core.BasicHit(),enhanced?1f:.6f)&&core.BasicHit()==0,"skill arms one confirmed basic follow-up");
             core.SkillHit(2);core.Advance(enhanced?4:6);core.SkillHit(2);core.SkillHit(1);
             Check(core.BasicHit()==0,"casts first seen during cooldown and stale DoT cannot rearm");
             core.SkillHit(3);core.Configure((int)MasteryType.Offense,rank+1);

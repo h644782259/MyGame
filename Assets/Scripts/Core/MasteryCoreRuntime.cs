@@ -18,6 +18,7 @@ namespace Emberfall
         public int Core { get; private set; } = -1;
         public int Tier { get; private set; }
         public float WardReduction { get { return Core == (int)MasteryType.Guard && Tier > 0 ? Tier == 1 ? .15f : .25f : 0; } }
+        public float ComboRemaining { get { return Core == (int)MasteryType.Offense && Tier > 0 && cooldown <= 0 ? comboRemaining : 0; } }
         private float cooldown, comboRemaining, energySpent;
         private int lastCast;
         public void Configure(int core, int invested)
@@ -45,7 +46,7 @@ namespace Emberfall
         {
             if (Core != (int)MasteryType.Offense || Tier == 0 || comboRemaining <= 0 || cooldown > 0) return 0;
             comboRemaining = 0; cooldown = Tier == 1 ? 6 : 4;
-            return Tier == 1 ? .20f : .35f;
+            return Tier == 1 ? .60f : 1.00f;
         }
         public float DamageTaken(float healthFraction)
         {

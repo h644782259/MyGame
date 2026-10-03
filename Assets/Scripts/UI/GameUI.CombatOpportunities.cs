@@ -60,6 +60,7 @@ namespace Emberfall
             if(hero==null||hero.IsDead||session.InputBlocked||!session.HasStarted)return "技能快捷栏";
             string failure=session.ControlFailure("attack");
             if(!string.IsNullOrEmpty(failure))return "左键普攻 · "+failure;
+            if(hero.MasteryComboReady)return "左键普攻 · 连击就绪";
             var opportunity=hero.BasicOpportunity();
             return opportunity.Actionable?"左键普攻 · "+opportunity.Caption:"技能快捷栏";
         }

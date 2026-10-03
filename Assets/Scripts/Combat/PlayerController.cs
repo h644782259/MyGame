@@ -724,8 +724,7 @@ namespace Emberfall
                     session.RecordCombatAction("职业能力");
                 }
             }
-            float followup=masteryCore.BasicHit();
-            if(followup>0&&ValidAimTarget(enemy)){enemy.TakeDamage(CombatAttack*followup,Vector3.zero,impact:false);session.RecordCombatAction("连击核心");}
+            SettleMasteryCombo(enemy);
             if (ValidAimTarget(enemy) && classDodgeTime > 0)
             {
                 classDodgeTime = 0;
@@ -993,6 +992,7 @@ namespace Emberfall
             CombatImpactBatch.Begin();
             try
             {
+            bool confirmedSkillCast=castId>0;
             if(castId==0)castId=NewCastId();
             DestructibleProp.StrikeArea(this,at,radius,damage,castId);
             for (int i = session.Enemies.Count - 1; i >= 0; i--)
@@ -1003,7 +1003,7 @@ namespace Emberfall
                 if (delta.magnitude <= radius + (enemy.IsBoss ? .85f : .4f) + enemy.HitFootprintBonus && CombatSight.Area(at,enemy.transform.position))
                 {
                     var impact=volley==null?damage:volley.Apply(enemy,damage,true);if(impact.Amount<=0)continue;
-                    RegisterSkillHit(castId);ApplySpellDodgeBoon(enemy);
+                    if(confirmedSkillCast)RegisterSkillHit(castId);ApplySpellDodgeBoon(enemy);
                     float healthBeforeFinale=enemy.Health;
                     enemy.TakeDamage(impact.Amount,delta.normalized,knockback,stun,critical:impact.IsCritical);
                     // Confirm after the real mutation even if its death callback just finished the mode.

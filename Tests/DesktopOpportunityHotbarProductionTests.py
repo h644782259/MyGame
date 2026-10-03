@@ -29,7 +29,7 @@ namespace Emberfall {
  public static class MobileControls{public static bool Active;}
  public class SkillChargeController{public bool IsCharging,ConsumedThisFrame;public int SkillIndex;}
  public class PlayerController{
-  public float Energy=100;public bool IsDead;public float[] Cooldowns=new float[10];public List<int> Queries=new List<int>();public int BasicQueries;
+  public float Energy=100;public bool IsDead,MasteryComboReady;public float[] Cooldowns=new float[10];public List<int> Queries=new List<int>();public int BasicQueries;
   public Dictionary<int,CombatOpportunityState> Observations=new Dictionary<int,CombatOpportunityState>();public CombatOpportunityState Basic;
   public SkillChargeController Charge=new SkillChargeController();public T GetComponent<T>()where T:class=>Charge as T;
   public float CooldownRemaining(int slot)=>Cooldowns[slot];
@@ -68,6 +68,7 @@ namespace Emberfall {
    p.skillRanks[1]=0;view.Draw();Check(hero.Queries.Count==0&&!view.identities.Contains(1),"unlearned remapped skill remains empty");p.skillRanks[1]=1;
    p.heroClass=HeroClass.Summoner;p.equippedSkills[0]=-1;p.equippedSkills[7]=4;hero.Observations[4]=new CombatOpportunityState(CombatOpportunityKind.EmpoweredContract,7.5f);view.Draw();Check(view.At(7,"强化 7.5")&&hero.Queries.SequenceEqual(new[]{4}),"actual remapped contract reads skill four in slot seven");
    p.heroClass=HeroClass.Vanguard;hero.Basic=new CombatOpportunityState(CombatOpportunityKind.Counter,.8f);view.Draw();Check(view.Has("左键普攻 · 反击 0.8"),"desktop basic control names left click and actual counter window");hero.Basic=default;view.Draw();Check(view.Has("技能快捷栏")&&!view.Has("左键普攻 · 反击 0.8"),"expired counter restores ordinary hotbar heading");
+   hero.MasteryComboReady=true;view.Draw();Check(view.Has("左键普攻 · 连击就绪"),"actual core readiness appears near basic action");hero.MasteryComboReady=false;
    hero.Basic=new CombatOpportunityState(CombatOpportunityKind.Counter,1);view.session.Failures["attack"]="距离不足";view.Draw();Check(view.Has("左键普攻 · 距离不足")&&hero.BasicQueries==0,"basic rejection takes priority over opportunity");
    Check(view.dispatches==0,"drawing opportunity never dispatches any cast or panel");
    Console.WriteLine("PASS: "+checks+" real desktop DrawHotbar remapping/priority/input-state observations (managed drawing, not Unity)");
