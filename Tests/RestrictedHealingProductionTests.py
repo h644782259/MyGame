@@ -39,7 +39,7 @@ def add_production(p):
  methods=''.join(member(path,s) for path,s in [('Core/GameSession.Expedition.cs','public bool TrySpendHealingCharge('),('Core/GameSession.cs','public void DrinkPotion(')])
  (p/'HealingSession.cs').write_text('using UnityEngine;namespace Emberfall{public partial class GameSession{'+methods+'}}')
  (p/'HealingTests.cs').write_text((root/'Tests/RestrictedHealingProductionTests.cs').read_text())
- (p/'SequenceBoundary.cs').write_text('using UnityEngine;namespace Emberfall{public enum CombatVisualPriority{ActionBody}public class FilledSkillVfx{public struct ArrowBatchHandle{}public static ArrowBatchHandle BeginArrowBatch(PlayerController p,Vector3 t,float r,Color c,CombatVisualPriority priority=CombatVisualPriority.ActionBody,int castId=0)=>default;}}')
+ (p/'SequenceBoundary.cs').write_text('using UnityEngine;namespace Emberfall{public enum CombatVisualPriority{ActionBody,RealContact}public class FilledSkillVfx{public static bool IdentityContact(PlayerController owner,Vector3 at,Vector3 forward,float r,Color c,int identity,CombatVisualPriority priority=CombatVisualPriority.RealContact)=>false;public struct ArrowBatchHandle{}public static ArrowBatchHandle BeginArrowBatch(PlayerController p,Vector3 t,float r,Color c,CombatVisualPriority priority=CombatVisualPriority.ActionBody,int castId=0)=>default;}}')
 
 # Reuse construction/compilation setup, not the old test body or mutations.
 harness=(root/'Tests/MobilePinnedTargetProductionTests.py').read_text().split(' env=dict')[0]
