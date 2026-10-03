@@ -375,6 +375,7 @@ def main():
                              ("blender-skill-vfx-production", "BlenderSkillVfxProductionTests.py"),
                              ("blender-scenery-production", "BlenderSceneryProductionTests.py"),
                              ("authored-projectile-production", "AuthoredProjectileProductionTests.py"),
+                             ("fixed-scenery-production", "FixedSceneryProductionTests.py"),
                              ("authored-spell-bases", "AuthoredSpellBasesProductionTests.py"),
                              ("authored-spell-integration", "AuthoredSpellIntegrationTests.py"),
                              ("camera-occlusion-slots", "CameraOcclusionSlotsProductionTests.py"),
