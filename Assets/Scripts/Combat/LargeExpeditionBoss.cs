@@ -169,6 +169,7 @@ namespace Emberfall
                     Transform brace=LargeBossRig.Joint(model,"Anchor bronze cage",Vector3.zero);brace.localRotation=Quaternion.Euler(0,arm*120,0);
                     LargeBossRig.Part(brace,"Anchor claw",PrimitiveType.Capsule,new Vector3(0,.45f,.3f),new Vector3(.1f,.34f,.12f),trim).localRotation=Quaternion.Euler(-12,0,0);
                 }
+                EnemySilhouetteArt.ApplyAnchors(model);
                 var prop=root.gameObject.AddComponent<DestructibleProp>();
                 prop.Initialize(DestructibleKind.Crate,level,.55f,false,PropRecovery.None,model,shell);
                 anchors[i]=prop;mask|=1<<i;

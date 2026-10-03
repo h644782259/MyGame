@@ -408,6 +408,7 @@ namespace Emberfall
             CombatModel model = Create(parent);
             model.BuildEnemy(kind, boss);
             model.EnhanceEnemy(kind, boss);
+            EnemySilhouetteArt.ApplyEnemy(model);
             return model;
         }
 

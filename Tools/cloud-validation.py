@@ -389,6 +389,8 @@ def main():
                              ("tactical-enemy-assembly", "TacticalEnemyAssemblyTests.py"),
                              ("filled-vfx-pool-production", "FilledVfxPoolProductionTests.py"),
                              ("arrow-batch-generation-production", "ArrowBatchGenerationProductionTests.py"),
+                             ("enemy-silhouette-production", "EnemySilhouetteProductionTests.py"),
+                             ("enemy-silhouette-animation", "EnemySilhouetteAnimationTests.py"),
                              ("wolf-silhouette-production", "WolfSilhouetteProductionTests.py")]:
             passed = run_check(name, [[sys.executable, str(ROOT/"Tests"/script), dotnet]], dict(env, DOTNET=dotnet), output, report)
             failed = failed or not passed

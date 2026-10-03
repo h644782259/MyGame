@@ -1,0 +1,162 @@
+{
+  "source": "Original Blender script; no external inputs",
+  "blender": "4.3.2",
+  "assets": {
+    "GoblinEar": {
+      "triangles": 36,
+      "bytes": 3900,
+      "bounds": [
+        [
+          -0.3535533845424652,
+          -1.0,
+          -0.3535533845424652
+        ],
+        [
+          0.3535533845424652,
+          1.0,
+          0.3535533845424652
+        ]
+      ],
+      "sha256": "4abbb15c6feafcbd96022d790e330f76df133d074387f37ba5317c0c4cc5ac11"
+    },
+    "GoblinCap": {
+      "triangles": 140,
+      "bytes": 15132,
+      "bounds": [
+        [
+          -0.5,
+          -0.5,
+          -0.5
+        ],
+        [
+          0.5,
+          0.5,
+          0.5
+        ]
+      ],
+      "sha256": "95b185d320051434ca1700ff8f82317d3a903c170ca3097e79a7c13bc855d18b"
+    },
+    "GoblinKnife": {
+      "triangles": 76,
+      "bytes": 8220,
+      "bounds": [
+        [
+          -0.18000000715255737,
+          -0.5,
+          -0.5
+        ],
+        [
+          0.47999998927116394,
+          0.5,
+          0.5
+        ]
+      ],
+      "sha256": "b0621801f5519bb9ff5f46baa08f494e133b5dbc43ee1f762951812c4a8047d0"
+    },
+    "GuardianChest": {
+      "triangles": 60,
+      "bytes": 6492,
+      "bounds": [
+        [
+          -0.5,
+          -0.5,
+          -0.5
+        ],
+        [
+          0.5,
+          0.5,
+          0.5
+        ]
+      ],
+      "sha256": "02b2fedd8e00b33f6b2d2cdf8bcaa634a13b80e8216c21add6c453d3e75cd6c1"
+    },
+    "GuardianShoulder": {
+      "triangles": 44,
+      "bytes": 4764,
+      "bounds": [
+        [
+          -0.5,
+          -0.5,
+          -0.5
+        ],
+        [
+          0.5,
+          0.5,
+          0.5
+        ]
+      ],
+      "sha256": "0506a8a33639a93415a485d7d892583d44d1ee82a95035b59f6d9a36f5f25f83"
+    },
+    "GuardianCrown": {
+      "triangles": 228,
+      "bytes": 24636,
+      "bounds": [
+        [
+          -0.5,
+          -0.5,
+          -0.5
+        ],
+        [
+          0.5,
+          0.5,
+          0.5
+        ]
+      ],
+      "sha256": "61a4d2954ed71510a645ce424d5b112cca995fe87ad405b3728e0dddf3f5ba3c"
+    },
+    "AnchorPlinth": {
+      "triangles": 136,
+      "bytes": 14700,
+      "bounds": [
+        [
+          -0.5,
+          -1.0,
+          -0.4755282700061798
+        ],
+        [
+          0.5,
+          1.0,
+          0.4755282700061798
+        ]
+      ],
+      "sha256": "74cfa952bc640d12a6155a03087dc991993ddcd25848da82c30f19e34f8a1998"
+    },
+    "AnchorCrystal": {
+      "triangles": 56,
+      "bytes": 6060,
+      "bounds": [
+        [
+          -0.4330126941204071,
+          -0.5,
+          -0.5
+        ],
+        [
+          0.4330126941204071,
+          0.5,
+          0.5
+        ]
+      ],
+      "sha256": "b8f35b3f9df08686cf410a1aea063ff8bf4c33a4575b4d1f4f1f28f42d36c33c"
+    },
+    "AnchorClaw": {
+      "triangles": 56,
+      "bytes": 6060,
+      "bounds": [
+        [
+          -0.5,
+          -1.0,
+          -0.4330126941204071
+        ],
+        [
+          0.5,
+          1.0,
+          0.4330126941204071
+        ]
+      ],
+      "sha256": "c56b3fc403a46c7997dbdea58b940815a69f53a9e8f4a292161a7530382836ab"
+    }
+  },
+  "total_source_bytes": 89964,
+  "new_textures": 0,
+  "new_runtime_materials": 0
+}
