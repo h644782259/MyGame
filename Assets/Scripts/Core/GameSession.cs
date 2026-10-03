@@ -30,7 +30,7 @@ namespace Emberfall
                 return Time.unscaledTime < notificationUntil ? notification : "";
             }
         }
-        public bool InputBlocked { get { return !HasStarted || Paused || uiBlocking || IsDead || ModeFinished || RunChoices.AwaitingChoice || DungeonSelectionOpen || pauseState.BackgroundPaused; } }
+        public bool InputBlocked { get { return !HasStarted || Paused || uiBlocking || IsDead || ModeFinished || RunChoices.AwaitingChoice || RoomBranchChoiceOpen || DungeonSelectionOpen || pauseState.BackgroundPaused; } }
         public bool PointerOverUI { get { return ui != null && ui.IsPointerOverUI; } }
         public bool CanChangeLoadout { get { return HasStarted && !IsDead; } }
         public string Objective
@@ -315,7 +315,7 @@ namespace Emberfall
             else if (!string.IsNullOrEmpty(Progression.LastError)) Notify(Progression.LastError);
             return changed;
         }
-        private void UpdateTimeScale() { Time.timeScale = pauseState.CanAdvance(HasStarted, Paused, uiBlocking || RunChoices.AwaitingChoice || DungeonSelectionOpen || ModeFinished, IsDead) ? 1 : 0; }
+        private void UpdateTimeScale() { Time.timeScale = pauseState.CanAdvance(HasStarted, Paused, uiBlocking || RunChoices.AwaitingChoice || RoomBranchChoiceOpen || DungeonSelectionOpen || ModeFinished, IsDead) ? 1 : 0; }
 
         public bool IsNearDungeonEntrance {get{return NearPortal();}}
         private bool NearPortal() { return Player != null && PortalInteractionPolicy.IsNear((Player.transform.position-new Vector3(0,0,11)).sqrMagnitude); }

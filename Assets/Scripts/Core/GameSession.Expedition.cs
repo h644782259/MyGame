@@ -55,7 +55,7 @@ namespace Emberfall
             if (dungeon)
             {
                 DungeonEntryLevel = Mathf.Clamp(Progression.Profile.level,2,100);
-                runSeed = Random.Range(0, 1000000);
+                runSeed = retryingRoomChain ? roomRetrySeed : Random.Range(0, 1000000);
                 DungeonLayout = runSeed % 2;
                 HealingCharges = 3;
 

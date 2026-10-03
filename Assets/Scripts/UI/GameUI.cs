@@ -172,6 +172,7 @@ namespace Emberfall
             ReconcileProgressionGoalSurface();
             bool gameplayBackAllowed=GameplayBackAllowed;
             if(Input.GetKeyDown(KeyCode.Escape))backConsumedFrame=Time.frameCount;
+            if(session.RoomBranchChoiceOpen&&!session.Paused){if(Input.GetKeyDown(KeyCode.Escape)){session.CancelRoomBranchChoice();BlockUITransition();}return;}
             if(exitRequest.Open){if(Input.GetKeyDown(KeyCode.Escape)){exitRequest.Cancel();exitError=null;BlockUITransition();}return;}
             if(mobileCastFinger!=-1000&&(session.InputBlocked||panel!=Panel.None))CancelMobileCast();
             if (suppressHotbarMouse && !Input.GetMouseButton(0)) suppressHotbarMouse = false;
@@ -289,6 +290,7 @@ namespace Emberfall
                 {if(panel==Panel.Controls)DrawControls();else if(panel==Panel.Bindings)DrawBindings();else if(panel==Panel.SaveLocation)DrawSaveLocation();else DrawTravelMap();}
                 else if (session.IsDead) {if(session.ChapterFinished)DrawChapterResult();else DrawDeath();}
                 else if (session.DungeonSelectionOpen) DrawDungeonSelection();
+                else if (session.RoomBranchChoiceOpen) DrawRoomBranchChoice();
                 else if (session.RunChoices.AwaitingChoice) DrawBlessingChoice();
                 else if(session.ChapterFinished)DrawChapterResult();
                 else if(session.ModeFinished){if(DrawStructuredRunRecap(false))session.ReturnToCamp();}

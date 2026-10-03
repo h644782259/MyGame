@@ -46,7 +46,7 @@ namespace Emberfall
  public class CombatProjectile:Component{}public class ThreatAdmissionPolicy{public void Release(int id){}public void Withdraw(int id){}}public class LargeBoss{public LargeBoss State=>this;public bool Interruptible;public void StopEncounter(){}}
  public static class WorldTraversal{public static Vector3 Move(Vector3 a,Vector3 b,float radius){return new Vector3(a.x+b.x,a.y+b.y,a.z+b.z);}public static bool HasLineOfSight(Vector3 a,Vector3 b){return true;}}
  public sealed partial class GameSession:MonoBehaviour
- {
+ { public bool RoomBranchChoiceOpen=>false;
   public class PendingLoot{public bool Collecting;public ItemData Item=new ItemData();public GroundLootPickup Pickup;}public Dictionary<string,PendingLoot> pendingLoot=new Dictionary<string,PendingLoot>();public HashSet<string> collectedGroundLoot=new HashSet<string>();void LogSystem(string text){}
   public static GameSession Instance;public bool HasStarted=true,DungeonRewardPending,ModeRewardPending;private bool applicationQuitSavePrepared,applicationQuitSaveAccepted;private readonly ApplicationPauseState pauseState=new ApplicationPauseState();private readonly SaveLifecycleGate lifecycleSave=new SaveLifecycleGate();
   private bool TrySettleSideEventRewards()=>true;private bool TrySettleDungeonReward()=>true;private bool TrySettleArenaReward()=>true;private bool PreserveWorldLoot()=>true;private void SuspendInputs(){}private void OnProgressChanged(){}private void OnLevelUp(int level){}
