@@ -20,7 +20,7 @@ with tempfile.TemporaryDirectory(prefix='chapter-host-production-') as temp:
     (folder/'ChapterEntryPresentation.cs').write_text((root/'Assets/Scripts/UI/ChapterEntryPresentation.cs').read_text())
     (folder/'ChapterRoomGeometry.cs').write_text((root/'Assets/Scripts/World/ChapterRoomGeometry.cs').read_text())
     for name in ['ProgressionTests','ChapterHostFixture']:(folder/(name+'.cs')).write_text((root/'Tests'/(name+'.cs')).read_text())
-    methods=[method('Assets/Scripts/Core/GameSession.cs',signature) for signature in ['private bool ChangeZone(bool dungeon)','public bool SaveBeforeLeaving()','private void SpawnEnemy(','public void OnEnemyKilled(','public void OnPlayerDied()']]
+    methods=[method('Assets/Scripts/Core/GameSession.cs',signature) for signature in ['private bool ChangeZone(bool dungeon)','public bool SaveBeforeLeaving()','private void SpawnEnemy(','public void OnEnemyKilled(','public void OnPlayerDied()','public void Respawn()']]
     methods.append(method('Assets/Scripts/Core/GameSession.Modes.cs','public bool ModeFinished'))
     methods.append(method('Assets/Scripts/Core/GameSession.RoomTactics.cs','private static bool LiveRoomEnemy('))
     methods.append(method('Assets/Scripts/Core/GameSession.Expedition.cs','private void ResetExpedition('))
@@ -46,6 +46,8 @@ with tempfile.TemporaryDirectory(prefix='chapter-host-production-') as temp:
              ('EnemyStats.cs','Health = MaxHealth;','MaxHealth*=ChapterDefinition.HealthMultiplier(game.ActiveChapterDifficulty);Health = MaxHealth;','chapter difficulty multiplies already tier-scaled stats exactly once')]
     mutants.append(('GameSession.Chapter.cs','if(redrockReplay&&ChapterRun!=null&&!ChapterRun.Finished&&!ChapterRun.Failed)','if(redrockReplay)','REPLAY_ADMISSION alternates only successfully admitted eligible runs'))
     mutants.append(('GameSession.Chapter.cs','redrockRouteOwner!=Progression.SaveFilePath||!previousRedrockSplit','true','REPLAY_ADMISSION alternates only successfully admitted eligible runs'))
+    mutants += [('GameSession.Chapter.cs','if(!CanRetryChapter||!SaveBeforeLeaving())return false;','if(!CanRetryChapter)return false;','RETRY_SAVE atomic preflight preserves failed world and death state'),
+                ('GameSession.Chapter.cs','receipt.Difficulty,chapterRetrySeed','receipt.Difficulty,chapterRetrySeed+1','RETRY_RESET rebuilds node start with same seed and new enemies')]
     for name,before,after,expected in mutants:
         path=folder/name;original=path.read_text()
         if before not in original:raise AssertionError('mutation anchor missing: '+name)
