@@ -906,7 +906,9 @@ namespace Emberfall
             if (actionDuration > 0 && Time.frameCount != actionStartedFrame) actionAge = Mathf.Min(actionAge + dt, actionDuration);
             float t = actionDuration > 0 ? actionAge / actionDuration : 1f;
             bool acting = t < 1f;
-            if (SampleBlenderPilot(acting,t,hurt)) return;
+            if (!(acting && actionBasic && actionSkill == -2))
+            { if (SampleBlenderPilot(acting,t,hurt)) return; }
+            else SetBlenderPilotVisible(false);
             float stride = Mathf.Sin(gaitPhase) * speed;
             float lift = Mathf.Abs(Mathf.Sin(gaitPhase));
             float breathing = Mathf.Sin((isolatedPreview?previewTime:Time.time) * 2f + phase);
@@ -945,6 +947,13 @@ namespace Emberfall
                     swordRig.localRotation = Pose(new Vector3(24, 0, -8), new Vector3(-32, 0, -18), new Vector3(65, 0, 10), t);
                     leftArm.localRotation = Pose(new Vector3(-10, 0, -8), new Vector3(-47, 0, -19), new Vector3(-34, 0, -22), t);
                     leftElbow.localRotation = Quaternion.Euler(-35f, 0, 0);
+                    if(actionBasic && actionSkill == -2)
+                    {
+                        spine.localRotation = Pose(Vector3.zero,new Vector3(-5,-12,0),new Vector3(9,0,0),t);
+                        rightArm.localRotation = Pose(idleR,new Vector3(-60,-8,12),new Vector3(-92,0,4),t);
+                        rightElbow.localRotation = Pose(new Vector3(-16,0,0),new Vector3(-75,0,0),new Vector3(-3,0,0),t);
+                        swordRig.localRotation = Pose(new Vector3(24,0,-8),new Vector3(140,0,0),new Vector3(180,0,0),t);
+                    }
                 }
                 else rightArm.localRotation = Quaternion.Euler(idleR);
             }

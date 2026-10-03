@@ -1043,7 +1043,7 @@ namespace Emberfall
             return item!=null && item.mechanicVariantUnlocked && HasElementVariant(item) ? item.mechanicVariant : -1;
         }
         private static bool HasElementVariant(ItemData item)
-        {return item!=null && (item.mechanic==EquipmentMechanic.FrostEcho || item.mechanic==EquipmentMechanic.CinderTrail);}
+        {return item!=null && (BuildCatalog.HasMechanicVariant(item.mechanic));}
 
         public string CurrentBuildSummary() { return DescribeBuild(CaptureBuild()); }
         public string BuildPresetSummary(int slot)
@@ -2518,7 +2518,7 @@ namespace Emberfall
             item.upgradeLevel = Clamp(item.upgradeLevel, 0, MaximumUpgrade);
             if (!Enum.IsDefined(typeof(EquipmentMechanic), item.mechanic) ||
                 (item.mechanic != EquipmentMechanic.None && BuildCatalog.MechanicSlot(item.mechanic) != item.slot)) item.mechanic = EquipmentMechanic.None;
-            item.mechanicVariant = item.mechanicVariantUnlocked && (item.mechanic == EquipmentMechanic.FrostEcho || item.mechanic == EquipmentMechanic.CinderTrail) ? Clamp(item.mechanicVariant, 0, 1) : 0;
+            item.mechanicVariant = item.mechanicVariantUnlocked && (BuildCatalog.HasMechanicVariant(item.mechanic)) ? Clamp(item.mechanicVariant, 0, 1) : 0;
             EnsureUpgradeBasis(item);
             if (string.IsNullOrWhiteSpace(item.name)) item.name = "无名" + ItemBaseName(item.slot, hero);
             if (item.name.Length > 60) item.name = item.name.Substring(0, 60);

@@ -46,7 +46,7 @@ namespace Emberfall
  public static class CombatProjectile{public static bool CanLaunchFromMuzzle(PlayerController p,Vector3 at,CombatDamage d,int cast)=>true;public static void Friendly(PlayerController player,GameSession game,Vector3 at,Vector3 forward,CombatDamage amount,Color tint,bool piercing=false,bool arrow=false,bool basic=false,float size=1,float velocity=0,EnemyController tracking=null,CombatDamage blastDamage=default,float blastRadius=0,int skillIndex=-1,int castId=0,object companionSource=null,ProjectileVolleyBudget<EnemyController> volley=null,EnemyController markTarget=null,float markStrength=0){}public static int Shots;public static EnemyController Last;public static void BasicShot(PlayerController p,GameSession s,Vector3 a,Vector3 b,CombatDamage d,Color c,bool r,EnemyController e){Shots++;Last=e;}}
  public static class CombatReviewEvents{public static bool Enabled=false;public static void Emit(string name,int id,int skill=0){}}public static class CombatReviewObjectId{public static int Get(object o)=>1;}
  public static class SummonedCompanion{public static EnemyController Team;public static int Commands;public static EnemyController ExplicitFocus(PlayerController p)=>Team;}
- public class AdvancedSkillVfx:MonoBehaviour{public static AdvancedSkillVfx Rune(params object[] a)=>new AdvancedSkillVfx();}
+ public class AdvancedSkillVfx:MonoBehaviour{public static void Beam(params object[] a){}public static AdvancedSkillVfx Rune(params object[] a)=>new AdvancedSkillVfx();}
  public sealed partial class PlayerController:MonoBehaviour
  {
   public GameSession session;public HeroClass HeroClass=HeroClass.Arcanist;public bool IsDead,TraversalStartedThisFrame;public int CombatEpoch=1;public EnemyController AimTarget,FocusTarget;public Vector3 aimPoint;public Vector3 AimPoint=>aimPoint;
@@ -60,7 +60,7 @@ namespace Emberfall
   public class Stats{public float Damage=10;}Stats stats=new Stats();float CombatAttack=>stats.Damage;int MechanicVariant(EquipmentMechanic m)=>0;Mastery masteryCore=new Mastery();void TraversalFailure(){}
   public void RecordEmission(Vector3 target,EnemyController confirmedTarget=null){Casts++;LastCast=target;LastCastEnemy=confirmedTarget;}
 
-  CombatDamage Damage(float n)=>new CombatDamage();bool HasMechanic(EquipmentMechanic m)=>false;bool Melee(float r,float a,CombatDamage d,float k,float s,float knockdown=0,bool basic=false,int skillIndex=-1,int castId=0)=>false;
+  CombatDamage Damage(float n)=>new CombatDamage();bool HasMechanic(EquipmentMechanic m)=>false;bool ReturningCounterVariant=>false;bool Melee(float r,float a,CombatDamage d,float k,float s,float knockdown=0,bool basic=false,int skillIndex=-1,int castId=0,bool counterThrust=false)=>false;
   public Vector3 Aim(Vector3 movement)=>ResolveMobileAim(movement);public void Attack()=>BasicAttack();public void AdvanceCharge(float dt){typeof(SkillChargeController).GetMethod("Advance",BindingFlags.Instance|BindingFlags.NonPublic).Invoke(charge,new object[]{dt});}
  }
  public partial class SkillTargetingController
@@ -143,3 +143,5 @@ public static class MobilePinnedTargetProductionTests
   return "PASS: "+n+" actual pointer/aim/basic/targeting/charge assertions (managed scene doubles, not touch-device delivery)";
  }
 }
+
+namespace Emberfall{internal static class ReturningCounterRules{internal static UnityEngine.Vector3 Advance(UnityEngine.Vector3 a,UnityEngine.Vector3 b,UnityEngine.Vector3 c){throw new System.Exception("ReturningBlade is disabled in aim fixture; actual adapter has its own suite");}}}

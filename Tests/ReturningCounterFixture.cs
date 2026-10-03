@@ -1,0 +1,43 @@
+using System;using System.Collections.Generic;using UnityEngine;
+namespace UnityEngine{public struct Color{public Color(float r,float g,float b,float a=1){}}public class Transform{public Vector3 position,forward=new Vector3(0,0,1);}}
+namespace Emberfall{
+ public static class CombatFx{public static Vector3 Flat(Vector3 v){v.y=0;return v;}public static float SegmentDistance(Vector3 p,Vector3 a,Vector3 b){var d=b-a;return Vector3.Distance(p,a+d*Mathf.Clamp(d.sqrMagnitude<.00001f?0:Vector3.Dot(p-a,d)/d.sqrMagnitude,0,1));}public static void WeaponSlash(params object[] a){}}
+ public class EnemyController{public Transform transform=new Transform();public bool IsDead,IsBoss;public float Health=1000,HitFootprintBonus;public Status StatusEffects=new Status();public void TrySkillInterrupt(params object[] a){}public void TakeDamage(float amount,Vector3 direction,float knockback=0,float stun=0,bool critical=false){Health-=amount;IsDead=Health<=0;}}
+ public class Status{public void Knockdown(float f){}}
+ public class GameSession{public bool HasStarted=true;public List<EnemyController> Enemies=new List<EnemyController>();public Progress Progression=new Progress();public void RecordCombatAction(string s){}public void RecordClassTutorial(HeroClass h){}public void SpawnMechanismText(params object[] a){}}
+ public class Progress{public ItemData item=new ItemData{mechanic=EquipmentMechanic.ReturningBlade};public ItemData Equipped(ItemSlot s)=>item;}
+ public struct CombatDamage{public float Amount;public bool IsCritical;}
+ public static class CombatImpactBatch{public static void Begin(){}public static void End(){}}
+ public static class DestructibleProp{public static void StrikeCone(params object[] a){}public static void StrikeLine(params object[] a){}}
+ public static class CombatReviewEvents{public static bool Enabled;public static void Emit(string a,string b,int skill=0,string detail=""){}}
+ public static class CombatReviewObjectId{public static string Get(object a)=>"test";}
+ public enum SoundCue{Attack}public static class GameAudio{public static void Play(SoundCue s){}}
+ public static class AdvancedSkillVfx{public static void Beam(params object[] a){}}
+ public static class CombatProjectile{public static void BasicShot(params object[] a){}}
+ public static class SummonedCompanion{public static void OnPerfectDodge(object o){}}
+ public class Recovery{public bool Blocked;}public class Charge{public bool IsCharging,ConsumedThisFrame;}
+ public class Model{public int Skill,Count;public void PlayAction(int skill,bool basic,float interval){Skill=skill;Count++;}}
+ public class Bonus{public float AttackSpeedMultiplier=1;}public class Runtime{public float Energy;public void RestoreEnergy(float f){Energy+=f;}}public class Mastery{public float PerfectDodge()=>0;}
+ public partial class PlayerController{
+  public HeroClass HeroClass=HeroClass.Vanguard;public Transform transform=new Transform();GameSession session=new GameSession();public EnemyController AimTarget;
+  bool TraversalStartedThisFrame,IsDead,lastMeleeDamagedEnemy,perfectDodgeAwarded;Recovery skillBasicRecovery=new Recovery();Charge charge;Model model=new Model();Bonus ActiveRunBonuses;float attackCooldown,mobilityTime,attackAnimation,counterTime,perfectDodgeCounterTime,perfectDodgeWindow,coreWardTime,classDodgeTime;int mobilityRank;
+  Runtime skillRuntime=new Runtime();Mastery masteryCore=new Mastery();float Energy=>skillRuntime.Energy;ElementalistSpecialization Specialization;Vector3 aimPoint;float CombatAttack=>100;CombatProcCooldown returningBladeProc=new CombatProcCooldown();
+  bool MobilePinnedActionAllowed(int i,bool b)=>true;void FaceAim(){}bool ValidAimTarget(EnemyController e)=>e!=null&&!e.IsDead;EnemyController MagicConeTarget()=>null;Vector3 EnemyBodyPoint(EnemyController e)=>e.transform.position;
+  bool HasMechanic(EquipmentMechanic m)=>session.Progression.item!=null&&session.Progression.item.mechanic==m;CombatDamage Damage(float p)=>new CombatDamage{Amount=p*100};int NewCastId()=>1;void RegisterSkillHit(int id){}void OnBasicAttackHitTarget(Vector3 at,EnemyController e,bool confirmed){Proc(e);}
+  EnemyController NearestOtherEnemy(Vector3 at,EnemyController excluded,float r){foreach(var e in session.Enemies)if(e!=excluded&&!e.IsDead&&Vector3.Distance(at,e.transform.position)<r)return e;return null;}
+  static int n;static void Check(bool b,string why){n++;if(!b)throw new Exception(why);}static bool Near(float a,float b)=>Math.Abs(a-b)<.001f;
+  EnemyController Enemy(float x,float z){var e=new EnemyController();e.transform.position=new Vector3(x,0,z);session.Enemies.Add(e);return e;}
+  static PlayerController Make(bool variant){WorldTraversal.Reset(ZoneKind.Dungeon);var p=new PlayerController();p.session.Progression.item.mechanicVariantUnlocked=variant;p.session.Progression.item.mechanicVariant=variant?1:0;return p;}
+  static void Main(){
+   var b=Make(true);b.BasicAttack();Check(b.counterTime==0&&b.perfectDodgeCounterTime==0,"empty basic/dodge cannot grant counter");b.NotifyPerfectDodge();Check(b.counterTime==0,"outside actual dodge window rejects award");b.perfectDodgeWindow=.2f;b.NotifyPerfectDodge();Check(b.counterTime==3&&b.perfectDodgeCounterTime==3,"B actual three-second window");b.counterTime-=.5f;b.NotifyPerfectDodge();Check(b.counterTime==2.5f,"one perfect dodge cannot refresh twice");
+   b=Make(true);var victim=b.Enemy(0,1);var bounce=b.Enemy(0,2);bounce.Health=1;b.Proc(victim);Check(bounce.Health==1&&b.counterTime==0&&b.returningBladeProc.Remaining==0,"B no bounce or return grant");
+   b=Make(true);var target=b.Enemy(0,3.7f);var side=b.Enemy(.8f,3.5f);b.AimTarget=target;b.perfectDodgeWindow=.2f;b.NotifyPerfectDodge();b.BasicAttack();Check(Near(b.transform.position.z,1.9f)&&Near(target.Health,825),"B approach and existing175 coefficient");Check(side.Health==1000,"B narrow side rejection");Check(b.counterTime==0&&b.perfectDodgeCounterTime==0&&b.model.Count==1&&b.model.Skill==-2,"counter consumed single thrust pose commit");Check(b.returningBladeProc.Remaining==0,"B no bounce or return grant");
+   b=Make(true);target=b.Enemy(0,2);side=b.Enemy(.8f,1.5f);b.BasicAttack();Check(target.Health==900&&side.Health==900&&b.transform.position.z==0&&b.model.Skill==-1,"B normal basic keeps cleave and removes8percent only");Check(b.counterTime==0&&b.returningBladeProc.Remaining==0,"B no bounce or return grant");
+   var a=Make(false);target=a.Enemy(0,2);side=a.Enemy(0,4);a.BasicAttack();Check(Near(target.Health,908)&&Near(side.Health,890)&&a.counterTime==1.8f,"A original92percent cleave and110percent bounce grantsreturn");a.perfectDodgeWindow=.2f;a.NotifyPerfectDodge();Check(a.counterTime==2,"A original two-second window");
+   b=Make(true);b.perfectDodgeWindow=.2f;b.NotifyPerfectDodge();b.counterTime=b.perfectDodgeCounterTime=0;target=b.Enemy(0,2);b.BasicAttack();Check(target.Health==900&&b.model.Skill==-1,"expired window normal basic");
+   WorldTraversal.Reset(ZoneKind.Dungeon);var origin=Vector3.zero;var forward=new Vector3(0,0,1);Check(Near(ReturningCounterRules.Advance(origin,forward,new Vector3(0,0,20)).z,2),"approach capped2m");WorldTraversal.AddBox(new Vector3(0,0,1),new Vector2(4,.001f));Check(ReturningCounterRules.Advance(origin,forward,new Vector3(0,0,4)).z<.55f,"thinwall swept player clearance");Check(ReturningCounterRules.Advance(new Vector3(0,0,1),forward,new Vector3(0,0,4)).z==1,"invalid origin never teleported");
+   b=Make(true);target=b.Enemy(0,3);WorldTraversal.AddBox(new Vector3(0,0,1),new Vector2(4,.001f));b.AimTarget=target;b.perfectDodgeWindow=.2f;b.NotifyPerfectDodge();b.BasicAttack();Check(target.Health==1000&&b.transform.position.z<.55f&&b.counterTime==3,"wallblocks approach and actual melee; miss retains opportunity");
+   WorldTraversal.Reset(ZoneKind.Wilderness);WorldTraversal.SetRiver(new[]{new Vector3(-5,0,1),new Vector3(5,0,1)},1,new Rect(-1,0,2,2));Check(ReturningCounterRules.Advance(new Vector3(3,0,0),forward,new Vector3(3,0,4)).z<.06f,"river no cross");Check(ReturningCounterRules.Advance(origin,forward,new Vector3(0,0,4)).z>1.9f,"actual bridge ground allowed");Console.WriteLine("PASS "+n+" production counter/basic/melee/dodge/ground assertions; managed not Unity");
+  }
+ }
+}
