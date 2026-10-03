@@ -10,7 +10,8 @@ subprocess.run([sys.executable,str(root/'ArtSource/VanguardActions/export_rig.py
 sys.argv=['x',dotnet];ns={'__file__':str(root/'Tests/EquipmentCompositionProductionTests.py')};exec((root/'Tests/EquipmentCompositionProductionTests.py').read_text().split('with tempfile.TemporaryDirectory')[0],ns);extract=ns['extract'];p=out/'export'
 for file in ['Combat/VanguardActionLibrary','Combat/CombatModel.VanguardArt','Core/LocomotionPoseState','Core/VisualMotionEnvelope','Core/BasicActionTimeline']:
  (p/(file.split('/')[-1]+'.cs')).write_text((root/'Assets/Scripts'/(file+'.cs')).read_text())
-model=p/'Model.cs';model.write_text(model.read_text().replace('private void ConfigureVanguardArt() {}',''))
+# Remove only the named optional pose boundary; this exporter loads the real adapter.
+boundary=p/'OptionalPilotBoundary.cs';boundary.write_text(boundary.read_text().replace('private void ConfigureVanguardArt() {}',''))
 source=(root/'Assets/Scripts/Combat/CombatModel.cs').read_text();motion=(root/'Assets/Scripts/Combat/CombatModel.Motion.cs').read_text()
 body='using System;using UnityEngine;namespace Emberfall {public sealed partial class CombatModel {private bool isolatedPreview,pilotOwnerDead,pilotAirborne,dying;private float previewTime,actionAge,actionDuration,gaitPhase;private int actionStartedFrame;private readonly LocomotionPoseState locomotion=new LocomotionPoseState();private readonly VisualMotionEnvelope visualMotion=new VisualMotionEnvelope();private bool SampleBlenderPilot(bool a,float b,bool c){return false;}private void AdvanceVisualMotion(float dt){throw new Exception("clock must be frozen");}private void ApplyVisualRecovery(float dt){}private void ApplyCasterSkillPose(float t){throw new Exception("not a vanguard");}private void AimArm(Transform a,Transform b,Vector3 c,Vector3 d){throw new Exception("not a vanguard");}'
 for sig in ['private static Quaternion Pose(','private void AnimateHero(']:body+=extract(source,sig)

@@ -9,7 +9,6 @@ companion=ns['extract'](ns['model'],'public static CombatModel Companion(')
 rigid=ns['extract']((root/'Assets/Scripts/Combat/CombatModel.CompanionAppearance.cs').read_text(),'private Transform CompanionRigidParent(')
 extra='namespace Emberfall {public sealed partial class CombatModel {private bool floating,treantCompanion; private Vector3 companionBodyScale; private Quaternion bodyRestRotation=Quaternion.identity; private Transform wolfJaw,companionRigid;private Vector3 companionRestPosition;private Quaternion companionRestRotation;'+companion+rigid+'} public class SummonedCompanion { public enum Kind {Wolf,Spirit,Treant} }}'
 # Other optional hero renderers are outside this companion geometry export.
-if 'ConfigureVanguardArt' in ns['body']:extra+='namespace Emberfall { public sealed partial class CombatModel { private void ConfigureVanguardArt() {} }}'
 (p/'Model.cs').write_text(ns['body']+extra);(p/'Types.cs').write_text(ns['data'])
 # Match the production extraction harness: the optional adapter boundary is
 # installed inside its with-block, so loading only its prefix does not copy it.

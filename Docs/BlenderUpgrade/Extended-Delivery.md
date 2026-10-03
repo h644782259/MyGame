@@ -15,3 +15,9 @@ This batch follows the separately frozen PR30–32 stack. It implements the six 
 All new geometry is original Blender work, with editable source and repeatable scripts; pose curves are exported from the editable blend. No Meshy, paid purchase, external credential or permission change was used. Shader look, transparent overdraw, motion aesthetics and actual visibility on mobile remain engine/device acceptance items. The pooled lifecycle checks measure managed test object counts, not Unity allocator, Frame Debugger or FPS.
 
 Damage, cooldown, rank, growth, targeting, warning bounds and control timers are unchanged. Visual-only transitions do not manufacture damage events. Production checks cannot replace playtesting and artistic review. Full frozen aggregate results and exact input manifests are recorded separately when complete; earlier per-agent logs are supporting snapshots, not the final-tree authority.
+
+## Input budget
+
+The full initial stack plus this extension contains 50 runtime resource files totaling 480,568 bytes, an increase of 141,776 bytes from frozen PR32. The extension comprises wolf +44,544 bytes, four skill identities25,792 bytes, tactical attachments25,092 bytes and swordguard pose curves46,348 bytes. These are resource input bytes, not Unity packaged/compressed/resident size. The separate frozen PR32 report continues to describe its own38-file338,792-byte snapshot. `ResourceBudget.json` describes this latest tree.
+
+Corrected renderer-enabled factory images and read-only treant/ranger geometry measurements are in `ArtSource/ActorModules/EnabledReview`. Static shoulder intersections were found on the treant. Ranger chest-wrap overlap exists but is pre-existing geometry, and the far-side bow is also occluded by its body/arms in the base outfit; the measurements do not establish a new in-game identity defect. No further character changes were made on that basis.
