@@ -12,8 +12,8 @@ cmd=[sdk,'run','--project',str(p/'Export.csproj')];env=dict(os.environ,DOTNET_CL
 for file,old,new,oracle in [('ActorSilhouetteF1.cs','if(!Enabled)return;','return;','actual F1 body loaded'),('CombatModel.WeaponArt.cs','if(swordRig!=null)','if(false)','actual F3 weapon loaded'),('Motion.cs','ApplyAuthoredVanguardPose(acting,t,hurt);','','actual Vanguard layer changes contact')]:
  target=p/file;original=target.read_text();assert old in original;target.write_text(original.replace(old,new,1));r=subprocess.run(cmd,env=env,capture_output=True,text=True);target.write_text(original);(out/('negative-'+file+'.log')).write_text(r.stdout+r.stderr);assert r.returncode!=0 and oracle in r.stdout+r.stderr,(oracle,r.stdout,r.stderr);print('PASS compiled layer control:',oracle)
 # Execute the existing actual F6 guard/passive -> AdvancedSkillVfx -> FilledSkillVfx resource pipeline.
-# Redirect ONLY its evidence destination so the inherited archived output is never overwritten.
-code=(root/'Tests/DefenseIdentityProductionTests.py').read_text().replace("str(root/'ArtSource/DefenseIdentity/Runtime-Samples.json')","str(Path('"+str(out/'protection.json')+"'))")
+# Use its explicit optional output argument; default runs never touch archived evidence.
+code=(root/'Tests/DefenseIdentityProductionTests.py').read_text()
 # Snapshot real production transforms at birth and three later ages, never scale exported data.
 sample=(root/'Tests/DefenseIdentityProductionTests.cs').read_text()
 sample=sample.replace('var fx=Child(anchor);Time.deltaTime=.75f;fx.gameObject.Call("Update");','var fx=Child(anchor);float[] deltas={0,.09f,.09f,.57f};float[] ages={0,.09f,.18f,.75f};for(int snapshot=0;snapshot<4;snapshot++){Time.deltaTime=deltas[snapshot];fx.gameObject.Call("Update");')
@@ -36,6 +36,6 @@ code+="""
  assert r.returncode!=0 and 'actual protection triangles cross assembled body' in r.stdout+r.stderr,r.stdout+r.stderr
  print('PASS compiled old persistent height rejected by actual body/effect triangle intersections',flush=True)
 """
-ns={'__file__':str(root/'Tests/DefenseIdentityProductionTests.py'),'sample':sample,'out':out};sys.argv=['defense',sdk];exec(compile(code,str(root/'Tests/DefenseIdentityProductionTests.py'),'exec'),ns)
+ns={'__file__':str(root/'Tests/DefenseIdentityProductionTests.py'),'sample':sample,'out':out};sys.argv=['defense',sdk,str(out/'protection.json')];exec(compile(code,str(root/'Tests/DefenseIdentityProductionTests.py'),'exec'),ns)
 subprocess.run([sys.executable,str(root/'ArtSource/FinalBodyEnvelope/measure.py'),str(out/'actors.json'),str(out/'protection.json'),str(out/'clearance.json')],check=True)
 if owned:shutil.rmtree(out)
