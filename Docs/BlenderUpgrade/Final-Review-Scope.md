@@ -1,0 +1,15 @@
+# Finite art upgrade review boundary
+
+The existing skill-effect previews were connected first. F1–F6 then closed the approved finite roster: four classes and existing companions, main enemies and boss anchors, starter/tier/fashion weapons, six fixed scenery groups and three NPC stations, ordinary projectile/meteor/trap presentation, and the existing forty skill slots. Qualified authored/procedural geometry was intentionally retained; dynamic hazards, trajectories, navigation, collision and damage schedules remained authoritative runtime systems. Subsequent explicitly authorized planning balance changes are isolated in their own PRs and final combined snapshot.
+
+Editable Blender sources, repeatable builders, original runtime inputs, stable GUIDs and fallback checks are retained. ResourceBudget.json and Cumulative-Budget.md distinguish unique source triangles and resource bytes from instantiated triangles, material ownership, compressed build size and resident memory. Zero new standalone texture or material assets is not a claim of zero runtime material instances.
+
+The actual enabled-factory eight-subject combined image is ArtSource/IntegratedActorArt/Combined-Factory.png. Each asset batch also retains same-camera before/after stills and raw exports. These are Blender reconstructions of production geometry/transforms/material properties, not Unity screenshots. No new videos were required in the revised scope.
+
+The final enabled scenery check includes all 27 mapped modules, missing/corrupt fallbacks, complete factories and actual CameraOcclusionSurface fade/restore. The explicit three-slot stress fixture validates multi-material behavior; the new F4 modules themselves remain one-submesh resources. Existing physics/navigation registration and runtime motion are exercised without changing them.
+
+Parent pixel review noted small distant observatory marks, similar NPC bodies and a lowered Treant crown obscuring the face in one attack angle. These remain gameplay-camera review points; no demonstrated regression justified expanding the finite asset list. Mobile low-budget fallbacks and visibility contracts are checked in managed fixtures; visual quality/performance in a real Unity camera remain unaccepted.
+
+Environment: Linux x86_64, Blender 4.3.2, .NET 8.0.425. Full managed runs explicitly set DOTNET_TieredCompilation=0, matching the reviewed PR35 verification setup. API compilation uses pinned Unity 2021.3.33 references with Windows/iOS/Android defines. Unity 6 Editor execution, import/shaders, actual physics callbacks, Windows/iOS device runs, GPU/frame time, memory and packaged size have not been measured. Editor acquisition was blocked; no access restriction or credential setting was bypassed.
+
+The initial full art run and its six fixture dependency failures remain under Validation/Final-Art-Preliminary. The corrected pure-art freeze and the separate art-plus-six-planning freeze must each be read by their own exact source commit and full report. Targeted checks never substitute for either complete report.
