@@ -25,6 +25,41 @@ namespace Emberfall
         int surfaceFrame=-1;
         bool framingDirty=true;
         bool equipmentFraming,equipmentDetail;
+        int equipmentHighlightSlot=-1;
+        readonly MaterialPropertyBlock highlightBlock=new MaterialPropertyBlock();
+        MaterialPropertyBlock[] savedHighlightBlocks;
+        bool[] highlighted;
+        public void SetEquipmentHighlight(int slot)
+        {slot=slot>=0&&slot<=2?slot:-1;if(equipmentHighlightSlot==slot)return;equipmentHighlightSlot=slot;state.Invalidate();}
+        // Explicit equipment subtrees only. Skin, wings and unrelated parts never flash.
+        internal static bool EquipmentPart(string name,int slot)
+        {
+            return slot==0?(name=="Equipped Weapon"||name=="Vanguard_Sword"):
+                slot==1?(name=="Equipped Armor"||name=="Equipped class costume"||name=="Equipped Shoulder"||name=="Equipped class shoulder"||name=="Equipped contract crown forks"):
+                slot==2&&name=="Equipped Relic";
+        }
+        bool HighlightPart(Transform part)
+        {for(var t=part;t!=null&&t!=avatar.transform;t=t.parent)if(EquipmentPart(t.name,equipmentHighlightSlot))return true;return false;}
+        void BeginEquipmentHighlight()
+        {
+            if(!equipmentFraming||equipmentHighlightSlot<0)return;
+            if(savedHighlightBlocks==null||savedHighlightBlocks.Length!=renderers.Length)
+            {savedHighlightBlocks=new MaterialPropertyBlock[renderers.Length];highlighted=new bool[renderers.Length];}
+            for(int i=0;i<renderers.Length;i++)
+            {
+                var renderer=renderers[i];if(renderer==null||!renderer.enabled||!renderer.gameObject.activeInHierarchy||!HighlightPart(renderer.transform))continue;
+                if(savedHighlightBlocks[i]==null)savedHighlightBlocks[i]=new MaterialPropertyBlock();
+                renderer.GetPropertyBlock(savedHighlightBlocks[i]);renderer.GetPropertyBlock(highlightBlock);
+                highlightBlock.SetColor("_Color",new Color(1f,.78f,.32f));highlightBlock.SetColor("_BaseColor",new Color(1f,.78f,.32f));
+                highlighted[i]=true;renderer.SetPropertyBlock(highlightBlock);
+            }
+        }
+        void EndEquipmentHighlight()
+        {
+            if(highlighted==null)return;
+            for(int i=0;i<highlighted.Length;i++)if(highlighted[i])
+            {if(renderers[i]!=null)renderers[i].SetPropertyBlock(savedHighlightBlocks[i]);highlighted[i]=false;}
+        }
         public void SetEquipmentFraming(bool enabled,bool detail)
         {if(equipmentFraming==enabled&&equipmentDetail==detail)return;equipmentFraming=enabled;equipmentDetail=detail;framingDirty=true;state.Invalidate();}
         public CollectionPreviewAction PreviewAction {get{return motion.Action;}}
@@ -42,8 +77,8 @@ namespace Emberfall
             if(Event.current==null||Event.current.type!=EventType.Repaint)return texture!=null&&texture.IsCreated()?texture:null;
             if(stage==null||camera==null)
             {
-                float yaw=state.Yaw;var mode=composition;var surface=requested;
-                Dispose();composition=mode;requested=surface;state.SetYaw(yaw);
+                float yaw=state.Yaw;var mode=composition;var surface=requested;var localMotion=motion;
+                Dispose();composition=mode;requested=surface;motion=localMotion;state.SetYaw(yaw);
                 // A failed contact/material allocation must not cache a partial stage.
                 // Preserve the selected angle, and let the original failure reach the caller.
                 try {CreateStage();}
@@ -54,7 +89,7 @@ namespace Emberfall
             if(texture==null)return null;
             if(!texture.IsCreated()){texture.Create();state.InvalidateTexture();}
             if(!texture.IsCreated())return null;
-            if(!equipmentFraming&&motion.Advance(Time.unscaledDeltaTime,Time.frameCount))state.Invalidate();
+            if(motion.Advance(Time.unscaledDeltaTime,Time.frameCount))state.Invalidate();
             if(rendererGroup!=null&&rendererGroup.Dirty){state.Invalidate();framingDirty=true;}
             if(!state.ShouldRender(true,Time.frameCount))return texture;
             if(state.NeedsModel)
@@ -75,8 +110,7 @@ namespace Emberfall
             avatar.transform.localRotation=Quaternion.Euler(0,state.Yaw,0);
             avatar.transform.localScale=Vector3.one;
             if(framingDirty){FrameModel();framingDirty=false;}
-            if(equipmentFraming)model.SamplePreview(0,CollectionPreviewAction.Idle,1);
-            else model.SamplePreview(motion.Time,motion.Action,motion.Progress,motion.OrbitYaw);
+            model.SamplePreview(motion.Time,motion.Action,motion.Progress,motion.OrbitYaw);
 
             turnRing.localRotation=Quaternion.Euler(0,motion.RingYaw,0);
             RenderIsolated();state.Rendered(Time.frameCount);
@@ -110,10 +144,16 @@ namespace Emberfall
             {
                 // Fixed game-unit fixture: neither candidate silhouette nor a pose changes framing.
                 camera.aspect=(float)texture.width/texture.height;
-                camera.orthographicSize=(equipmentDetail?2.1f:3.8f)*Mathf.Max(1,1/camera.aspect);
-                Vector3 target=avatar.transform.position+Vector3.up*1.25f;
-                camera.transform.position=target+new Vector3(0,6,7);camera.transform.LookAt(target);return;
+                camera.orthographic=equipmentDetail;
+                camera.fieldOfView=48f; // Same as GameSession's real default camera.
+                camera.orthographicSize=2.1f*Mathf.Max(1,1/camera.aspect);
+                Vector3 target=stage.transform.position+Vector3.up*(equipmentDetail?1.25f:.7f);
+                // Default live pitch48.36646°, distance19×1.2041595; fixed framing,
+                // no bounds fitting or following the moving preview mannequin.
+                camera.transform.position=target+(equipmentDetail?new Vector3(0,1.1134f,7.9221f):new Vector3(0,17.1f,-15.2f));
+                camera.transform.LookAt(target);return;
             }
+            camera.orthographic=true;
             bool found=false;Bounds bounds=new Bounds();
             // Cache the envelope of actual idle/attack/cast poses. Camera bounds do not
             // chase animated limbs, breathing, cloak vertices or orbit angles each frame.
@@ -148,10 +188,12 @@ namespace Emberfall
                 for(int i=0;i<sceneLights.Length;i++)if(sceneLights[i]!=null)
                 {sceneMasks[i]=sceneLights[i].cullingMask;if(!sceneLights[i].transform.IsChildOf(stage.transform))sceneLights[i].cullingMask&=~(1<<PreviewLayer);}
                 RenderSettings.ambientMode=UnityEngine.Rendering.AmbientMode.Flat;RenderSettings.ambientLight=new Color(.38f,.42f,.5f);RenderSettings.fog=false;
+                BeginEquipmentHighlight();
                 camera.Render();
             }
             finally
             {
+                EndEquipmentHighlight();
                 RenderSettings.ambientMode=ambientMode;RenderSettings.ambientLight=ambient;RenderSettings.fog=fog;
                 for(int i=0;i<sceneLights.Length;i++)if(sceneLights[i]!=null)sceneLights[i].cullingMask=sceneMasks[i];
             }
@@ -204,7 +246,7 @@ namespace Emberfall
             if(texture!=null){texture.Release();UnityEngine.Object.Destroy(texture);}
             if(shadowMaterial!=null)UnityEngine.Object.Destroy(shadowMaterial);if(ringMaterial!=null)UnityEngine.Object.Destroy(ringMaterial);if(shadowTexture!=null)UnityEngine.Object.Destroy(shadowTexture);
             stage=null;avatar=null;model=null;camera=null;texture=null;turnRing=null;shadowMaterial=ringMaterial=null;shadowTexture=null;renderers=null;sceneLights=null;sceneMasks=null;surfaceFrame=-1;
-            state=new CollectionPreviewState();motion=new CollectionPreviewMotion();framingDirty=true;
+            state=new CollectionPreviewState();motion=new CollectionPreviewMotion();framingDirty=true;savedHighlightBlocks=null;highlighted=null;
         }
     }
 }

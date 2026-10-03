@@ -915,7 +915,7 @@ namespace Emberfall
             if (actionDuration > 0 && Time.frameCount != actionStartedFrame) actionAge = Mathf.Min(actionAge + dt, actionDuration);
             float t = actionDuration > 0 ? actionAge / actionDuration : 1f;
             bool acting = t < 1f;
-            if (!(acting && actionBasic && actionSkill == -2))
+            if (!(acting && actionBasic && actionSkill == -2) && !(isolatedPreview && actionSkill == -3))
             { if (SampleBlenderPilot(acting,t,hurt)) return; }
             else SetBlenderPilotVisible(false);
             float stride = Mathf.Sin(gaitPhase) * speed;

@@ -1,7 +1,7 @@
 using System;
 namespace Emberfall
 {
-    public enum CollectionPreviewAction { Idle, Attack, Cast }
+    public enum CollectionPreviewAction { Idle, Attack, Cast, Move }
     public enum CollectionPreviewComposition { Full, Weapon, Back }
     // Physical pixel request, quantized to avoid native texture churn on tiny GUI reflows.
     public readonly struct CollectionPreviewSurface : IEquatable<CollectionPreviewSurface>
@@ -35,9 +35,9 @@ namespace Emberfall
         public float Time {get{return time;}}
         public float OrbitYaw {get{return orbitYaw;}}
         public CollectionPreviewAction Action {get;private set;}
-        public float Progress {get{return Action==CollectionPreviewAction.Idle?1:Math.Min(1,actionTime/(Action==CollectionPreviewAction.Attack?.95f:1.25f));}}
+        public float Progress {get{return Action==CollectionPreviewAction.Idle?1:Math.Min(1,actionTime/(Action==CollectionPreviewAction.Attack?.95f:Action==CollectionPreviewAction.Move?1.4f:1.25f));}}
         public void Play(CollectionPreviewAction value)
-        {if((int)value<0||(int)value>2)return;Action=value;actionTime=0;}
+        {if((int)value<0||(int)value>3)return;Action=value;actionTime=0;}
 
         public float BreathScale {get{return 1f+.004f*(float)Math.Sin(time*Math.PI*.5);}}
         public float RingYaw {get{return time*12%360;}}

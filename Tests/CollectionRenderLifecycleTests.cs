@@ -129,6 +129,31 @@ public static class CollectionRenderLifecycleTests
         late.transform.SetParent(avatar.transform,false);Time.frameCount++;Draw(changing);Check(cached().Contains(added),"reparent back refreshes preview membership");
         UnityEngine.Object.Destroy(added);var replacement=nested.AddComponent<Renderer>();replacement.FixedBounds=new Bounds(new Vector3(-5,2,0),new Vector3(2,2,2));changing.Invalidate();Time.frameCount++;Draw(changing);Check(cached().Contains(replacement)&&!cached().Contains(added),"explicit same-object renderer replacement invalidates preview cache");
         UnityEngine.Object.Destroy(late);Time.frameCount++;Draw(changing);Check(!cached().Contains(replacement),"destroyed subtree invalidates preview cache");changing.Dispose();UnityEngine.Object.Destroy(outside);
+        // Actual equipment preview host: same lens across item/pose changes, scoped tint.
+        var equipment=new CollectionModelPreview();equipment.SetEquipmentFraming(true,false);equipment.SetEquipmentHighlight(0);
+        Time.unscaledDeltaTime=.05f;Time.frameCount++;Draw(equipment);
+        var equipmentCamera=(Camera)typeof(CollectionModelPreview).GetField("camera",flags).GetValue(equipment);
+        Check(!equipmentCamera.orthographic&&equipmentCamera.fieldOfView==48,"combat viewing uses real default perspective FOV");
+        var stage=(GameObject)typeof(CollectionModelPreview).GetField("stage",flags).GetValue(equipment);
+        var delta=equipmentCamera.transform.position-stage.transform.position;
+        Check(Math.Abs(delta.y-17.8f)<.01f&&Math.Abs(delta.z+15.2f)<.001f,"combat viewing matches default live pitch distance and target height");
+        var fixedPosition=equipmentCamera.transform.position;equipment.Play(CollectionPreviewAction.Move);
+        for(int i=0;i<5;i++){Time.frameCount++;Draw(equipment);}
+        Check(CombatModel.LastAction==CollectionPreviewAction.Move&&equipmentCamera.transform.position.y==fixedPosition.y&&equipmentCamera.transform.position.z==fixedPosition.z,"equipment move sample preserves fixed camera");
+        equipment.Render(HeroClass.Arcanist,new ItemData{id="candidate",level=90},null,null,null,null);Time.frameCount++;
+        equipment.Render(HeroClass.Arcanist,new ItemData{id="candidate",level=90},null,null,null,null);
+        Check(equipmentCamera.transform.position.y==fixedPosition.y&&equipmentCamera.transform.position.z==fixedPosition.z,"candidate silhouette never auto fits equipment camera");
+        var mannequin=(GameObject)typeof(CollectionModelPreview).GetField("avatar",flags).GetValue(equipment);
+        var selectedRoot=new GameObject("Equipped Weapon");selectedRoot.transform.SetParent(mannequin.transform,false);
+        var chosenPart=selectedRoot.AddComponent<Renderer>();var untouched=mannequin.GetComponentsInChildren<Renderer>(true)[0];
+        chosenPart.Properties.SetColor("_Color",new Color(.2f,.3f,.4f));
+        bool scoped=false;Camera.DuringRender=()=>scoped=chosenPart.Properties.Values["_Color"].r==1&&!untouched.Properties.Values.ContainsKey("_Color");
+        Time.frameCount++;equipment.Render(HeroClass.Arcanist,new ItemData{id="candidate",level=90},null,null,null,null);
+        Check(scoped&&chosenPart.Properties.Values["_Color"].r==.2f,"only selected subtree tinted during render and exact properties restored");
+        equipment.Invalidate();Camera.ThrowOnRender=true;try{equipment.Render(HeroClass.Arcanist,new ItemData{id="candidate",level=90},null,null,null,null);}catch(Exception){}
+        Check(chosenPart.Properties.Values["_Color"].r==.2f,"render exception restores selected part tint");Camera.ThrowOnRender=false;Camera.DuringRender=null;
+        Check(!CollectionModelPreview.EquipmentPart("body",0)&&!CollectionModelPreview.EquipmentPart("Equipped Armor",0)&&!CollectionModelPreview.EquipmentPart("Equipped Relic",1),"unrelated body/slots never highlighted");
+        equipment.SetEquipmentFraming(true,true);Time.frameCount++;Draw(equipment);Check(equipmentCamera.orthographic,"showcase is distinct fixed orthographic view");equipment.Dispose();
         UnityEngine.Object.Destroy(world.gameObject);Time.unscaledDeltaTime=0;SystemInfo.SupportedSamples=4;
         return "PASS: "+checks+" production preview lifecycle checks (managed resource fixture, not Unity rendering)";
     }
@@ -215,13 +240,22 @@ namespace UnityEngine
     public class Camera:MonoBehaviour
     {
         public static int Renders;public static bool ThrowOnRender;public static Action DuringRender;
-        public bool orthographic,allowHDR,allowMSAA;public float aspect,orthographicSize,nearClipPlane,farClipPlane;
+        public bool orthographic,allowHDR,allowMSAA;public float aspect,orthographicSize,nearClipPlane,farClipPlane,fieldOfView;
         public CameraClearFlags clearFlags;public Color backgroundColor;public int cullingMask;public RenderTexture targetTexture;
         public void Render(){if(!targetTexture.IsCreated())throw new Exception("render to uncreated texture");DuringRender?.Invoke();if(ThrowOnRender)throw new Exception("simulated native render failure");Renders++;targetTexture.Populated=true;}
     }
     public class Light:Component{public LightType type;public float intensity;public Color color;public int cullingMask;public LightShadows shadows;}
     public class Collider:Component{public bool enabled;}
-    public class Renderer:Component{public bool enabled=true,receiveShadows;public Material sharedMaterial;public Rendering.ShadowCastingMode shadowCastingMode;public Bounds? FixedBounds;public Bounds bounds=>FixedBounds??new Bounds(transform.position+Vector3.up,Vector3.one*(1+CombatModel.PoseExtent));}
+    public class MaterialPropertyBlock {
+        public Dictionary<string,Color> Values=new Dictionary<string,Color>();
+        public void SetColor(string key,Color color){Values[key]=color;}
+        public void CopyFrom(MaterialPropertyBlock other){Values=new Dictionary<string,Color>(other.Values);}
+    }
+    public class Renderer:Component{
+        public MaterialPropertyBlock Properties=new MaterialPropertyBlock();
+        public void GetPropertyBlock(MaterialPropertyBlock block){block.CopyFrom(Properties);}
+        public void SetPropertyBlock(MaterialPropertyBlock block){Properties.CopyFrom(block);}
+public bool enabled=true,receiveShadows;public Material sharedMaterial;public Rendering.ShadowCastingMode shadowCastingMode;public Bounds? FixedBounds;public Bounds bounds=>FixedBounds??new Bounds(transform.position+Vector3.up,Vector3.one*(1+CombatModel.PoseExtent));}
     public class LineRenderer:Renderer{public bool useWorldSpace;public int positionCount;public float startWidth,endWidth;public void SetPosition(int i,Vector3 v){}}
     public static class RenderSettings{public static Rendering.AmbientMode ambientMode;public static Color ambientLight;public static bool fog;}
     public enum HideFlags{HideAndDontSave}public enum CameraClearFlags{SolidColor}public enum LightType{Directional}public enum LightShadows{None}
