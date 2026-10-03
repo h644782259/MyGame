@@ -36,7 +36,7 @@ namespace Emberfall
         internal void ConfigureThreatAdmission(ThreatAdmissionPolicy policy,int member)
         {threatAdmission=policy;threatMember=member;}
         private bool AdmitThreatAttack()
-        {return threatAdmission==null||threatAdmission.Request(threatMember);}
+        {return threatAdmission==null||threatAdmission.Request(threatMember,Time.time);}
         private CombatModel model;
         private LargeExpeditionBoss largeBoss;
         private float speed, damage, attackCooldown, windup, stunTime, hurtTime, attackAnimation, patrolPhase;

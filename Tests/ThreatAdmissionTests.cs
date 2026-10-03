@@ -37,7 +37,7 @@ public static class ThreatAdmissionTests
         }
         foreach(int times in served)Check(times>40,"no starvation under stable update order");
         Check(Math.Abs(served[0]-served[3])<=1,"FIFO rotation");
-        p.Reset();p.Request(0);p.Request(1);p.Advance(1);p.Finish(0);Check(p.Request(2),"stale waiter cannot block");
+        p.Reset();p.Request(0);p.Request(1);p.Advance(1);p.Advance(.01f);p.Finish(0);Check(p.Request(2),"stale waiter cannot block after missing a complete simulation pass");
         return "Threat admission: "+count+" checks PASS";
     }
 }

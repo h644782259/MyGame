@@ -12,6 +12,7 @@ def member(source,key):
   i+=1
  return source[start:i]
 fixture='''using System;using Emberfall;
+static class Time {public static float time;}
 struct Vector3 {public static Vector3 up;public static Vector3 operator +(Vector3 a,Vector3 b)=>a;public static Vector3 operator *(Vector3 a,float f)=>a;}
 struct Color {public Color(float r,float g,float b){}}
 class Transform {public Vector3 position;}
@@ -38,9 +39,9 @@ static class Program {static void C(bool b,string m){if(!b)throw new Exception(m
  var p=new ThreatAdmissionPolicy(12);var a=new Host{threatAdmission=p,threatMember=1};var b=new Host{threatAdmission=p,threatMember=2};
  C(a.Start(),"first actual prepare");C(a.preparing&&a.warnings==1&&a.attackNumber==1,"real warning started");
  C(!b.Start()&&b.attackNumber==0&&b.warnings==0&&!b.preparing,"denied prepare changes no attack state");
- p.Advance(.6f);C(b.Start(),"second actual prepare");var c=new Host{threatAdmission=p,threatMember=3};C(!c.Start(),"third blocked");
+ p.Advance(.6f);Time.time+=.6f;C(b.Start(),"second actual prepare");var c=new Host{threatAdmission=p,threatMember=3};C(!c.Start(),"third blocked");
  a.Cancel();C(!a.preparing&&a.warnings==0&&p.ActiveCount==1,"actual interruption clears warning and lease");
- p.Advance(.6f);C(c.Start(),"waiting can start after release");c.Finish();C(p.ActiveCount==1,"actual finish releases melee");
+ p.Advance(.6f);Time.time+=.6f;C(c.Start(),"waiting can start after release");c.Finish();C(p.ActiveCount==1,"actual finish releases melee");
  var end=p.LaunchVolley(2,2);var x=new Bolt(end);var y=new Bolt(end);b.Finish();b.IsDead=true;b.Cancel();C(p.ActiveCount==1,"real finish/death retains flying lease");
  x.End();x.End();C(p.ActiveCount==1,"actual disable exactly once");y.End();C(p.ActiveCount==0,"last actual bolt ends danger");
  Console.WriteLine("Actual PrepareAttack/CancelAttack/FinishAttack/projectile OnDisable: 11 checks PASS");}}
