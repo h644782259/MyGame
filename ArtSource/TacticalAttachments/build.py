@@ -15,7 +15,7 @@ def gem(name,pos,scale):
 def finish(name,color):
  bpy.ops.object.select_all(action='DESELECT')
  for o in pieces:o.select_set(True)
- bpy.context.view_layer.objects.active=pieces[0];bpy.ops.object.join();o=bpy.context.object;o.name=name
+ bpy.context.view_layer.objects.active=pieces[0];bpy.ops.object.join();o=bpy.context.object;o.name=name;bpy.ops.object.transform_apply(location=False,rotation=True,scale=True)
  bpy.context.scene.cursor.location=(0,0,0);bpy.ops.object.origin_set(type='ORIGIN_CURSOR')
  mat=bpy.data.materials.new(name);mat.diffuse_color=(*color,1);o.data.materials.clear();o.data.materials.append(mat);objects.append(o);pieces.clear()
 # Rear twin reservoirs and raised fork make supplier identifiable from elevated gameplay view.
@@ -36,7 +36,7 @@ for o in objects:
  m=o.data;m.calc_loop_triangles();data=[];idx=[]
  for tri in m.loop_triangles:
   for vi in tri.vertices:
-   v=m.vertices[vi].co;n=tri.normal;data.append((v.x,v.z,-v.y,n.x,n.z,-n.y,v.x+.5,v.z+.5));idx.append(len(idx))
+   v=o.matrix_world @ m.vertices[vi].co;n=(o.matrix_world.to_3x3().inverted().transposed() @ tri.normal).normalized();data.append((v.x,v.z,-v.y,n.x,n.z,-n.y,v.x+.5,v.z+.5));idx.append(len(idx))
  blob=struct.pack('<III',0x45464D31,len(data),len(idx))+b''.join(struct.pack('<8f',*v) for v in data)+struct.pack('<%dI'%len(idx),*idx)
  f=OUT/(o.name+'.bytes');f.write_bytes(blob);guid=hashlib.sha256(('emberfall.tactical-attachments.v1/'+o.name).encode()).hexdigest()[:32]
  f.with_suffix('.bytes.meta').write_text('fileFormatVersion: 2\nguid: '+guid+'\nTextScriptImporter:\n  externalObjects: {}\n  userData:\n  assetBundleName:\n  assetBundleVariant:\n')

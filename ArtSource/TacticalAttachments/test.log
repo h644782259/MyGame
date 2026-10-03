@@ -1,5 +1,5 @@
   Determining projects to restore...
-  Restored /tmp/live-tactics-nqnl5gdl/Test.csproj (in 71 ms).
+  Restored /tmp/live-tactics-8au8ih99/Test.csproj (in 58 ms).
 PASS: 40 actual tactical/guard/capture component lifecycle and damage assertions
 PASS E05 actual tactical state/component/loader/decoder/assets chain: three sockets, no duplicate markers, no steady object growth, owner/death/disable/destroy, cache reset and missing fallback. Managed, NOT Unity.
 PASS E05 compiled stale-state and failed-owner-hide mutants rejected

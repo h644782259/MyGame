@@ -38,6 +38,38 @@ namespace Emberfall
                 // crouch, knockdown, slime squash and boss scale remain inherited automatically.
                 obj.transform.localScale=bounds.size;
                 obj.transform.localPosition=bounds.center;
+                if(i==2&&body.name=="Breastplate")
+                {
+                    // Keep the support fins above the ordinary/guardian shoulder armour.
+                    obj.transform.localPosition+=new Vector3(0,bounds.size.y*.35f,0);
+                    obj.transform.localScale=new Vector3(bounds.size.x*1.35f,bounds.size.y,bounds.size.z);
+                }
+                if(i==1)
+                {
+                    if(body.name=="Slime Body"||body.name=="Spirit Core")
+                    {
+                        // These bodies also carry the face: use a small lower-front seal.
+                        obj.transform.localScale=bounds.size*.6f;
+                        obj.transform.localPosition+=new Vector3(0,-bounds.size.y*.34f,0);
+                    }
+                    // Guardian armour is a separate outer shell. Seat the badge beyond that
+                    // shell (including its raised crystal), measured in the moving body's frame.
+                    float front=bounds.center.z+bounds.size.z*.5f;
+                    foreach(var shell in enemy.GetComponentsInChildren<MeshFilter>(false))
+                    {
+                        if(shell.sharedMesh==null||(shell.name!="Guardian chest plate"&&shell.name!="Guardian ember crystal"))continue;
+                        var shellRenderer=shell.GetComponent<MeshRenderer>();if(shellRenderer==null||!shellRenderer.enabled)continue;
+                        var shellBounds=shell.sharedMesh.bounds;
+                        for(int corner=0;corner<8;corner++)
+                        {
+                            var point=shellBounds.center+new Vector3((corner&1)==0?-shellBounds.size.x*.5f:shellBounds.size.x*.5f,(corner&2)==0?-shellBounds.size.y*.5f:shellBounds.size.y*.5f,(corner&4)==0?-shellBounds.size.z*.5f:shellBounds.size.z*.5f);
+                            front=Mathf.Max(front,body.transform.InverseTransformPoint(shell.transform.TransformPoint(point)).z);
+                        }
+                    }
+                    var badge=meshes[i].bounds;
+                    float back=bounds.center.z+(badge.center.z-badge.size.z*.5f)*obj.transform.localScale.z;
+                    obj.transform.localPosition+=new Vector3(0,0,Mathf.Max(0,front+bounds.size.z*.035f-back));
+                }
                 obj.AddComponent<MeshFilter>().sharedMesh=meshes[i];
                 var renderer=obj.AddComponent<MeshRenderer>();renderer.sharedMaterial=materials[i];renderer.enabled=false;result.parts[i]=renderer;
             }
