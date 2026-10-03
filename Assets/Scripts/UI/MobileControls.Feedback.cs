@@ -33,7 +33,6 @@ namespace Emberfall
             else if(potionState=="满血")LabelControl(Potion,potionState,true);
             var combo=hero.BasicOpportunityWindow(true);if(combo.Window)LabelControl(Attack,combo.Caption,false,combo.Actionable);
             var counter=hero.BasicOpportunityWindow();if(counter.Window)LabelControl(new Rect(Attack.x,Attack.y,Attack.width,18),counter.Caption,true,counter.Actionable);
-            var opportunity=hero.BasicOpportunity();if(opportunity.Actionable)LabelControl(Attack,opportunity.Caption,true);
             string basicReason=hero.MobilePinnedActionReason(-1);if(basicReason.Length>0)LabelControl(Attack,basicReason,true);
             failure=session.ControlFailure("attack");if(!string.IsNullOrEmpty(failure))LabelControl(Attack,failure,true);
             var pinned=hero.MobilePinnedTarget;

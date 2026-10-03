@@ -66,13 +66,13 @@ namespace Emberfall
             return opportunity.Actionable?"左键普攻 · "+opportunity.Caption:"技能快捷栏";
         }
         private readonly CombatResultChannel resultChannel=new CombatResultChannel();
-        private CombatOpportunityState lastVisibleResult;
         private string CurrentCombatResult()
         {
             var hero=session.Player;
             bool blocked=hero==null||hero.IsDead||session.InputBlocked||!session.HasStarted;
-            var result=blocked?lastVisibleResult:hero.LatestCombatResult();
-            if(!blocked)lastVisibleResult=result;
+            // Read the actual receipt even on a blocked frame: it may have arrived
+            // after the last draw, immediately before pausing. Observation is read-only.
+            var result=hero==null?default(CombatOpportunityState):hero.LatestCombatResult(includeBlocked:true);
             return resultChannel.Observe(result,hero,hero==null?-1:hero.CombatEpoch,hero==null?null:hero.CurrentOpportunityTarget,blocked);
         }
         private string CurrentCombatOpportunity()

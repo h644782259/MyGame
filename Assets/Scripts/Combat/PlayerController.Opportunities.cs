@@ -51,11 +51,11 @@ namespace Emberfall
             if(session==null||session.Player!=this||IsDead||!session.HasStarted||session.InputBlocked||HeroClass!=HeroClass.Vanguard||jumping||attackCooldown>0||skillBasicRecovery.Blocked||charge!=null&&(charge.IsCharging||charge.ConsumedThisFrame)||!MobilePinnedActionAllowed(-1,false))return default;
             return new CombatOpportunityState(CombatOpportunityKind.Counter,CounterOpportunityRemaining);
         }
-        internal CombatOpportunityState LatestCombatResult()
+        internal CombatOpportunityState LatestCombatResult(bool includeBlocked=false)
         {
-            if(session==null||session.Player!=this||IsDead||!session.HasStarted||session.InputBlocked)return default;
+            if(session==null||session.Player!=this||IsDead||!session.HasStarted||!includeBlocked&&session.InputBlocked)return default;
             int count;float remaining;
-            if(BurnCashFeedback(out count,out remaining))return new CombatOpportunityState(CombatOpportunityKind.BurnCash,remaining,count,receipt:burnFeedbackCast);
+            if(BurnCashFeedback(out count,out remaining,includeBlocked))return new CombatOpportunityState(CombatOpportunityKind.BurnCash,remaining,count,receipt:burnFeedbackCast);
             int sequence;float age;
             if(HeroClass==HeroClass.Summoner&&SummonedCompanion.EmpoweredHitFeedback(this,out sequence,out count,out age))
                 return new CombatOpportunityState(CombatOpportunityKind.EmpoweredHit,2f-age,count,receipt:sequence);

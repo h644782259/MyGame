@@ -63,7 +63,7 @@ namespace Emberfall
  public partial class GameUI {private GameSession session;private PlayerController opportunityOwner;private int opportunityEpoch;public GameUI(GameSession value){session=value;}public string Read()=>CurrentCombatOpportunity();}
  public sealed partial class PlayerController
  { private int burnFeedbackCast;
-  internal bool BurnCashFeedback(out int targets,out float remaining){targets=0;remaining=0;return false;}
+  internal bool BurnCashFeedback(out int targets,out float remaining,bool includeBlocked=false){targets=0;remaining=0;return false;}
   public bool PinAllowed=true;internal bool MobilePinnedActionAllowed(int skill,bool feedback)=>PinAllowed;
   public float attackCooldown;public class Recovery{public bool Blocked;}public Recovery skillBasicRecovery=new Recovery();
   public SkillTargetingController targeting=new SkillTargetingController();
