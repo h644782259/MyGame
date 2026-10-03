@@ -18,6 +18,7 @@ namespace Emberfall
         private Color color;
         private EnemyController lockedTarget;
         private FilledSkillVfx arrowBatch;
+        private bool restrictedHealing;
 
         public static void Spawn(PlayerController hero, GameSession game, int index, int skillRank, Vector3 aim, Vector3 direction, CombatDamage strength, Color tint, int castId = 0)
         {
@@ -28,6 +29,7 @@ namespace Emberfall
             sequence.damage = strength; sequence.castId = castId==0?hero.NewCastId():castId; sequence.range = GameBalance.SkillRangeMultiplier(skillRank);
             sequence.target = aim; sequence.origin = hero.transform.position; sequence.forward = CombatFx.Flat(direction).normalized;
             sequence.color = tint;
+            sequence.restrictedHealing = game.ChallengeRun && game.InDungeon;
             sequence.Configure();
         }
 
@@ -75,7 +77,8 @@ namespace Emberfall
         private void Healing()
         {
             float total=rank==3?.55f:rank==2?.42f:.3f;
-            owner.Heal(owner.MaxHealth*total/5f);
+            float selfTotal=restrictedHealing?(rank==3?.8f:rank==2?.7f:.6f):total;
+            owner.Heal(owner.MaxHealth*selfTotal/5f);
             if (heroClass == HeroClass.Summoner) SummonedCompanion.HealAll(owner, total / 5f);
             Vector3 at=owner.transform.position;
             CombatFx.Ring(at,3.2f*range,color,.7f,.13f);

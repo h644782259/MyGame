@@ -455,6 +455,13 @@ namespace Emberfall
             session.RecordCombatAction("双契共鸣");
         }
 
+        public static bool HasHealingTarget(PlayerController owner)
+        {
+            foreach (var pet in active)
+                if (pet != null && pet.IsAlive && pet.Owner == owner && pet.Health < pet.MaxHealth) return true;
+            return false;
+        }
+
         public static void HealAll(PlayerController owner, float fraction)
         {
             foreach (var pet in active)
